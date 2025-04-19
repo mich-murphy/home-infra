@@ -2,50 +2,49 @@
 - name: disable root login
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^PermitRootLogin (yes|no|prohibit-password|forced-commands-only)"
+    regexp: "^(#\\s*)?PermitRootLogin (yes|no|prohibit-password|forced-commands-only)"
     line: "PermitRootLogin no"
     state: present
 
 - name: disable password authentication
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^PasswordAuthentication (yes|no)"
+    regexp: "^(#\\s*)?PasswordAuthentication (yes|no)"
     line: "PasswordAuthentication no"
     state: present
 
 - name: disable any keyboard interactive authentication
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^KbdInteractiveAuthentication (yes|no)"
+    regexp: "^(#\\s*)KbdInteractiveAuthentication (yes|no)"
     line: "KbdInteractiveAuthentication no"
     state: present
 
 - name: disable x11 forwarding
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^X11Forwarding (yes|no)"
+    regexp: "^(#\\s*)X11Forwarding (yes|no)"
     line: "X11Forwarding no"
     state: present
 
 - name: disable ssh-agent forwarding
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^AllowAgentForwarding (yes|no)"
+    regexp: "^(#\\s*)AllowAgentForwarding (yes|no)"
     line: "AllowAgentForwarding no"
     state: present
 
 - name: disable unix-domain socket forwarding
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^AllowStreamLocalForwarding (yes|no|all|local|remote)"
+    regexp: "^(#\\s*)AllowStreamLocalForwarding (yes|no|all|local|remote)"
     line: "AllowStreamLocalForwarding no"
     state: present
 
 - name: set authentication methods to publickey
-  ansible.builtin.blockinfile:
+  ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    block: |
-      Match User "mm" 
-        AuthenticationMethods publickey
+    regexp: "^(#\\s*)AuthenticationMethods .*"
+    line: "AuthenticationMethods publickey"
     state: present
   notify: "restart sshd service"

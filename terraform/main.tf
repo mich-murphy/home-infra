@@ -19,7 +19,7 @@ resource "proxmox_vm_qemu" "cloudinit-docker-host" {
   automatic_reboot = true
 
   # Cloud-Init configuration
-  cicustom   = "vendor=local:snippets/qemu-guest-agent.yml" # /var/lib/vz/snippets/qemu-guest-agent.yml
+  cicustom   = "vendor=local:snippets/qemu-tailscale-agents.yml" # /var/lib/vz/snippets
   ciupgrade  = true
   ipconfig0  = "ip=dhcp,ip6=dhcp"
   skip_ipv6  = true
