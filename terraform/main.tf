@@ -37,9 +37,9 @@ resource "proxmox_vm_qemu" "cloudinit-docker-host" {
       scsi0 {
         # We have to specify the disk from our template, else Terraform will think it's not supposed to be there
         disk {
+          discard = true
           storage = "local-zfs"
-          # The size of the disk should be at least as big as the disk in the template. If it's smaller, the disk will be recreated
-          size = "128G"
+          size    = "128G"
         }
       }
     }
