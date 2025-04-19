@@ -1,31 +1,6 @@
-terraform {
-  required_version = ">= 1.6.0"
-  required_providers {
-    proxmox = {
-      source  = "telmate/proxmox"
-      version = "3.0.1-rc8"
-    }
-    onepassword = {
-      source  = "1password/onepassword"
-      version = "2.1.2"
-    }
-  }
-}
-
-provider "onepassword" {
-  account = "xportal.1password.com"
-}
-
 data "onepassword_item" "proxmox" {
   vault = "5v7zjyz2kanfxgsui2jx735vum"
   title = "proxmox_creds"
-}
-
-provider "proxmox" {
-  pm_api_url          = data.onepassword_item.proxmox.url
-  pm_api_token_id     = data.onepassword_item.proxmox.username
-  pm_api_token_secret = data.onepassword_item.proxmox.password
-  pm_tls_insecure     = true # Set to false in production
 }
 
 # create template prior to applying
