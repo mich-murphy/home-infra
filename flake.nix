@@ -4,7 +4,6 @@
   # Flake inputs
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2411.*.tar.gz";
-    # nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2411.716793.tar.gz";
   };
 
   # Flake outputs
@@ -34,9 +33,11 @@
     devShells = forAllSystems ({pkgs}: {
       default = pkgs.mkShell {
         # The Nix packages provided in the environment
-        packages = with pkgs; [
-          terraform
-          opentofu
+        packages = [
+          pkgs.terraform
+          pkgs.opentofu
+          pkgs.ansible
+          pkgs.alejandra
         ];
       };
     });
