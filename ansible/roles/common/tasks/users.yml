@@ -1,0 +1,24 @@
+---
+- name: ensure wheel group exists
+  ansible.builtin.group:
+    name: wheel
+    state: present
+
+- name: create management user
+  ansible.builtin.user:
+    name: "{{ username }}"
+    groups: wheel
+    append: true
+
+- name: add authorised ssh key to user
+  ansible.posix.authorized_key:
+    user: "{{ username }}"
+    key: "{{ ssh_public_key }}"
+
+- name: allow wheel group sudo without password
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: "^%wheel"
+    line: "%wheel ALL=(ALL) NOPASSWD: ALL"
+    validate: "visudo -cf %s"

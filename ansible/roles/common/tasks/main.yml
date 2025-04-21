@@ -1,0 +1,8 @@
+---
+- name: configure users
+  ansible.builtin.include_tasks:
+    file: users.yml
+
+- name: harden ssh
+  ansible.builtin.include_tasks:
+    file: ssh.yml
