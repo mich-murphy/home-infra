@@ -1,7 +1,10 @@
+# nix
 flake.lock
 .direnv
+
+# terraform
 .terraform.lock.hcl
 .terraform
 terraform.tfstate
 terraform.tfstate.backup
-hosts
+terraform/files

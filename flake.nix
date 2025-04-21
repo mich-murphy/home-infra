@@ -38,6 +38,7 @@
           pkgs.opentofu
           pkgs.ansible
           pkgs.alejandra
+          pkgs.just
         ];
       };
     });
