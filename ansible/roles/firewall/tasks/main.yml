@@ -2,3 +2,34 @@
 - name: install firewall
   ansible.builtin.apt:
     name: ufw
+    state: present
+
+- name: enable ufw
+  community.general.ufw:
+    state: enabled
+
+- name: deny incoming traffic
+  community.general.ufw:
+    default: deny
+    direction: incoming
+
+- name: allow outgoing traffic
+  community.general.ufw:
+    default: allow
+    direction: outgoing
+
+- name: allow traffic over tailscale
+  community.general.ufw:
+    rule: allow
+    interface_in: tailscale0
+
+- name: deny ssh traffic outside of tailscale
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+    delete: true
+
+- name: reload ufw
+  community.general.ufw:
+    state: reloaded

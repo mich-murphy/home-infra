@@ -13,5 +13,5 @@ destroy:
   cd terraform && terraform destroy
 
 ## ansible
-run HOST *TAGS:
-  cd ansible && ansible-playbook -b run.yaml --limit {{HOST}} {{TAGS}}
+run:
+  cd ansible && ansible-playbook run.yaml

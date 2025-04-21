@@ -5,5 +5,5 @@
     - "group_vars/users.yml"
   roles:
     - role: common
-    - role: firewall
     - role: docker
+    - role: firewall
