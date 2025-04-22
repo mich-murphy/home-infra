@@ -14,4 +14,7 @@ destroy:
 
 ## ansible
 run:
-  cd ansible && ansible-playbook run.yaml
+  cd ansible && ansible-playbook run.yml
+
+reqs:
+  cd ansible && ansible-galaxy install -r requirements.yml

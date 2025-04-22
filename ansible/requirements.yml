@@ -1,0 +1,6 @@
+---
+collections:
+  - community.general
+roles:
+  - IronicBadger.docker_compose_generator
+  - geerlingguy.docker
