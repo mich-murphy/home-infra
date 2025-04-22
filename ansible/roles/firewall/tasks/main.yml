@@ -22,6 +22,7 @@
   community.general.ufw:
     rule: allow
     interface_in: tailscale0
+  notify: reload ufw
 
 - name: deny ssh traffic outside of tailscale
   community.general.ufw:
@@ -29,7 +30,4 @@
     port: "22"
     proto: tcp
     delete: true
-
-- name: reload ufw
-  community.general.ufw:
-    state: reloaded
+  notify: reload ufw
