@@ -12,6 +12,11 @@ services:
     volumes:
       - ./config/traefik.yml:/etc/traefik/traefik.yml
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - --api.insecure=true
+      - --providers=docker
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
     restart: unless-stopped
 networks:
   homelab:
