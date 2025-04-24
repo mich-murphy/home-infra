@@ -10,8 +10,9 @@ services:
       - 9443:9443
     labels:
       - traefik.enable=true
-      - traefik.http.routers.portainer.rule=Host(`portainer.pve.elmurphy.com`)
       - traefik.http.routers.portainer.entrypoints=websecure
+      - traefik.http.routers.portainer.rule=Host(`docker-host.zonkey-goblin.ts.net`) && Path(`/portainer`)
+      - traefik.http.routers.portainer.tls.certresolver=tailscale
       - traefik.http.services.portainer.loadbalancer.server.port=9443
     volumes:
       - portainer-data:/data
