@@ -1,2 +1,4 @@
 ---
-docker_users: ["{{ username }}"]
+username: mm
+ssh_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF
+docker_users: "{{ username }}"

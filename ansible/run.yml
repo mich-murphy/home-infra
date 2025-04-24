@@ -2,8 +2,9 @@
 - hosts: docker
   become: true
   vars_files:
-    - "group_vars/users.yml"
+    - "group_vars/secrets.yml"
   roles:
     - common
-    - geerlingguy.docker
     - firewall
+    - mounts
+    - geerlingguy.docker

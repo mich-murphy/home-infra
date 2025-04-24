@@ -37,8 +37,8 @@
           pkgs.terraform
           pkgs.opentofu
           pkgs.ansible
-          pkgs.alejandra
           pkgs.just
+          pkgs._1password-cli
         ];
       };
     });

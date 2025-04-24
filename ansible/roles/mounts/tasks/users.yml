@@ -1,0 +1,15 @@
+---
+- name: ensure media group exists
+  ansible.builtin.group:
+    name: media
+    gid: 1215
+    state: present
+
+- name: create media user
+  ansible.builtin.user:
+    name: media
+    uid: 1215
+    groups: media
+    create_home: false
+    system: true
+    append: true

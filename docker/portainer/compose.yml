@@ -1,0 +1,21 @@
+---
+services:
+  portainer:
+    image: portainer/portainer-ce:lts
+    container_name: portainer
+    network_mode: host
+    volumes:
+      - portainer-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - 8000:8000
+      - 9443:9443
+    restart: unless-stopped
+volumes:
+  portainer-data:
+networks:
+  homelab:
+    name: homelab
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24

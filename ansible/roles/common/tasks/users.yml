@@ -7,6 +7,7 @@
 - name: create management user
   ansible.builtin.user:
     name: "{{ username }}"
+    shell: /bin/bash
     groups: wheel
     append: true
 
