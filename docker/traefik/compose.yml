@@ -21,7 +21,6 @@ services:
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
       - --providers.docker=true
       - --providers.docker.exposedByDefault=false
-      - --providers.docker.endpoint=unix:///var/run/docker.sock
     restart: unless-stopped
 networks:
   homelab:
