@@ -2,7 +2,7 @@
 - name: set clone directory
   ansible.builtin.set_fact:
     clone_dir: /tmp/home-infra
-    docker_dir: "/home/{{ username }}"
+    home_dir: "/home/{{ username }}"
 
 - name: clone docker repo
   ansible.builtin.git:
@@ -17,7 +17,7 @@
 
 - name: delete existing docker directory
   ansible.builtin.file:
-    path: "{{ docker_dir }}"
+    path: "{{ home_dir }}/docker"
     state: absent
   when: repo.stat.exists
 
@@ -25,7 +25,7 @@
   ansible.builtin.copy:
     remote_src: true
     src: "{{ clone_dir }}/docker"
-    dest: "{{ docker_dir }}"
+    dest: "{{ home_dir }}"
     owner: "{{ username }}"
     mode: "0775"
   when: repo.stat.exists
