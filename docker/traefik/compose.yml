@@ -1,0 +1,19 @@
+---
+services:
+  traefik:
+    image: traefik:v3.3.6
+    container_name: traefik
+    command: --api.insecure=true --providers=docker
+    networks:
+      - homelab
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - ./config/traefik.yml:/etc/traefik/traefik.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+networks:
+  homelab:
+    external: true
