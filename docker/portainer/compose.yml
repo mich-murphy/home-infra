@@ -3,7 +3,8 @@ services:
   portainer:
     image: portainer/portainer-ce:lts
     container_name: portainer
-    network_mode: host
+    networks:
+      - homelab
     volumes:
       - portainer-data:/data
       - /var/run/docker.sock:/var/run/docker.sock:ro

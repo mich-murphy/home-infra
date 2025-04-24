@@ -14,7 +14,7 @@ destroy:
 
 ## ansible
 run:
-  cd ansible && ansible-playbook run.yml
+  cd ansible && ansible-playbook run.yml --vault-password-file .vaultpass
 
 reqs:
   cd ansible && ansible-galaxy install -r requirements.yml
