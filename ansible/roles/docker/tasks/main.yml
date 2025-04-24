@@ -1,0 +1,37 @@
+---
+- name: set clone directory
+  ansible.builtin.set_fact:
+    clone_dir: /tmp/home-infra
+    docker_dir: "/home/{{ username }}"
+
+- name: clone docker repo
+  ansible.builtin.git:
+    repo: "https://github.com/mich-murphy/home-infra.git"
+    dest: "{{ clone_dir }}"
+    depth: 1
+
+- name: confirm clone directory exists
+  ansible.builtin.stat:
+    path: "{{ clone_dir }}"
+  register: repo
+
+- name: delete existing docker directory
+  ansible.builtin.file:
+    path: "{{ docker_dir }}"
+    state: absent
+  when: repo.stat.exists
+
+- name: copy docker directory
+  ansible.builtin.copy:
+    remote_src: true
+    src: "{{ clone_dir }}/docker"
+    dest: "{{ docker_dir }}"
+    owner: "{{ username }}"
+    mode: "0775"
+  when: repo.stat.exists
+
+- name: delete clone directory
+  ansible.builtin.file:
+    path: "{{ clone_dir }}"
+    state: absent
+  when: repo.stat.exists

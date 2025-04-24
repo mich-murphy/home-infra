@@ -8,3 +8,6 @@ flake.lock
 terraform.tfstate
 terraform.tfstate.backup
 terraform/files
+
+# ansible
+.vaultpass
