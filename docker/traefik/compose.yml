@@ -30,6 +30,7 @@ services:
       - "traefik.http.routers.traefik-secure.service=api@internal"
     command:
       - --log.level=DEBUG
+      - --api.dashboard=true
       - --entrypoints.web.address=:80
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
