@@ -4,24 +4,52 @@ services:
     image: traefik:v3.3.6
     container_name: traefik
     networks:
-      - homelab
+      - proxy
     ports:
       - 80:80
       - 443:443
-      - 8080:8080
     volumes:
+      - traefik-data:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
+      CF_API_EMAIL: ${CF_API_EMAIL}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=web"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.local.elmurphy.com`)"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=web"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=websecure"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.local.elmurphy.com`)"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=local.elmurphy.com"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.local.elmurphy.com"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
     command:
       - --log.level=DEBUG
       - --api.insecure=true
       - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.websecure.address=:443
       - --providers.docker=true
       - --providers.docker.endpoint=unix:///var/run/docker.sock
       - --providers.docker.exposedByDefault=false
+      - --certificatesresolvers.cloudflare.acme.dnschallenge=true
+      - --certificatesresolvers.cloudflare.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory # staging (default is prod)
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.resolvers=1.1.1.1:53,1.0.0.1:53
+      - --certificatesresolvers.cloudflare.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.propagation.delayBeforeChecks=60
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.propagation.disableChecks=true
+      - --serverstransport.insecureSkipVerify=true
     restart: unless-stopped
+volumes:
+  traefik-data:
+    name: traefik-data
 networks:
-  homelab:
+  proxy:
     external: true
