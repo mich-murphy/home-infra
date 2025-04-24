@@ -4,7 +4,7 @@ services:
     image: portainer/portainer-ce:lts
     container_name: portainer
     networks:
-      - homelab
+      - proxy
     ports:
       - 8000:8000
       - 9443:9443
@@ -21,8 +21,5 @@ volumes:
   portainer-data:
     name: portainer-data
 networks:
-  homelab:
-    name: homelab
-    ipam:
-      config:
-        - subnet: 192.168.1.0/24
+  proxy:
+    external: true
