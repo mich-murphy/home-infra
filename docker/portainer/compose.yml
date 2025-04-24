@@ -13,6 +13,7 @@ services:
     restart: unless-stopped
 volumes:
   portainer-data:
+    name: portainer-data
 networks:
   homelab:
     name: homelab
