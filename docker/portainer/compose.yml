@@ -8,6 +8,9 @@ services:
     ports:
       - 8000:8000
       - 9443:9443
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.portainer.rule=Host(`portainer.pve.elmurphy.com`)
     volumes:
       - portainer-data:/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
