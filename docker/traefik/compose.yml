@@ -17,6 +17,7 @@ services:
       - --entrypoints.websecure.address=:443
       - --providers.docker=true
       - --providers.docker.exposedByDefault=false
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
     restart: unless-stopped
 networks:
   homelab:
