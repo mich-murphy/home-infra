@@ -35,7 +35,9 @@ services:
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
       - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.asDefault=true
       - --providers.docker=true
+      - --providers.docker.network=proxy
       - --providers.docker.endpoint=unix:///var/run/docker.sock
       - --providers.docker.exposedByDefault=false
       - --certificatesresolvers.cloudflare.acme.dnschallenge=true
