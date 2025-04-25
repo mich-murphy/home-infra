@@ -3,28 +3,17 @@ services:
   plex:
     image: plexinc/pms-docker
     container_name: plex
-    hostname: docker-host
+    network_mode: host
     networks:
       - proxy
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ}
-      - ADVERTISE_IP=http://${HOST_IP}:32400/
-    ports:
-      - 32400:32400/tcp
-      - 8324:8324/tcp
-      - 32469:32469/tcp
-      - 1900:1900/udp
-      - 32410:32410/udp
-      - 32412:32412/udp
-      - 32413:32413/udp
-      - 32414:32414/udp
     volumes:
       - plex-data:/config
       - /mnt/data/media:/data/media:rw
-      # ram transcode
-      - /dev/shm:/transcode
+      - /dev/shm:/transcode # ram transcode
     labels:
       - traefik.enable=true
       - traefik.http.routers.plex.rule=Host(`plex.local.elmurphy.com`)
