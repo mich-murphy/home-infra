@@ -77,7 +77,6 @@ services:
     container_name: prowlarr
     networks:
       - proxy
-      - prowlarr-sync
     environment:
       - PUID=1215
       - PGID=1215
