@@ -3,23 +3,15 @@ services:
   plex:
     image: plexinc/pms-docker
     container_name: plex
-    hostname: plex
+    # hostname: plex
     networks:
       - proxy
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ}
-      - ADVERTISE_IP=http://127.0.0.1:32400/
-    # ports:
-    #   - 32400:32400/tcp
-    #   - 8324:8324/tcp
-    #   - 32469:32469/tcp
-    #   - 1900:1900/udp
-    #   - 32410:32410/udp
-    #   - 32412:32412/udp
-    #   - 32413:32413/udp
-    #   - 32414:32414/udp
+      - PLEX_CLAIM=${PLEX_CLAIM}
+      # - ADVERTISE_IP=http://127.0.0.1:32400/
     volumes:
       - plex-data:/config
       - /mnt/data/media:/data/media:rw
