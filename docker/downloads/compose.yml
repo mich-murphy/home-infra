@@ -42,8 +42,6 @@ services:
     volumes:
       - sabnzbd-data:/config
       - /mnt/data/usenet:/data/usenet:rw
-    ports:
-      - 8080:8080
     labels:
       - traefik.enable=true
       - traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.local.elmurphy.com`)

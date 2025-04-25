@@ -1,0 +1,86 @@
+---
+services:
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    networks:
+      - proxy
+    environment:
+      - PUID=1215
+      - PGID=1215
+      - TZ=${TZ}
+    volumes:
+      - radarr-data:/config
+      - /mnt/data:/data:rw
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.radarr.rule=Host(`radarr.local.elmurphy.com`)
+      - traefik.http.routers.radarr.tls=true
+      - traefik.http.services.radarr.loadbalancer.server.port=7878
+    restart: unless-stopped
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    networks:
+      - proxy
+    environment:
+      - PUID=1215
+      - PGID=1215
+      - TZ=${TZ}
+    volumes:
+      - sonarr-data:/config
+      - /mnt/data:/data:rw
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sonarr.rule=Host(`sonarr.local.elmurphy.com`)
+      - traefik.http.routers.sonarr.tls=true
+      - traefik.http.services.sonarr.loadbalancer.server.port=8989
+    restart: unless-stopped
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    networks:
+      - proxy
+    environment:
+      - PUID=1215
+      - PGID=1215
+      - TZ=${TZ}
+    volumes:
+      - lidarr-data:/config
+      - /mnt/data:/data:rw
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.lidarr.rule=Host(`lidarr.local.elmurphy.com`)
+      - traefik.http.routers.lidarr.tls=true
+      - traefik.http.services.lidarr.loadbalancer.server.port=8686
+    restart: unless-stopped
+  readarr:
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr
+    networks:
+      - proxy
+    environment:
+      - PUID=1215
+      - PGID=1215
+      - TZ=${TZ}
+    volumes:
+      - readarr-data:/config
+      - /mnt/data:/data:rw
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.readarr.rule=Host(`readarr.local.elmurphy.com`)
+      - traefik.http.routers.readarr.tls=true
+      - traefik.http.services.readarr.loadbalancer.server.port=8787
+    restart: unless-stopped
+volumes:
+  radarr-data:
+    name: radarr-data
+  sonarr-data:
+    name: sonarr-data
+  lidarr-data:
+    name: lidarr-data
+  readarr-data:
+    name: readarr-data
+networks:
+  proxy:
+    external: true
