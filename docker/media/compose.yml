@@ -1,0 +1,65 @@
+---
+services:
+  plex:
+    image: plexinc/pms-docker
+    container_name: plex
+    networks:
+      - proxy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - plex-data:/config
+      - /mnt/data/media:/data/media:rw
+      # ram transcode
+      - /dev/shm:/transcode
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.plex.rule=Host(`plex.local.elmurphy.com`)
+      - traefik.http.routers.plex.tls=true
+      - traefik.http.services.plex.loadbalancer.server.port=32400
+    restart: unless-stopped
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    networks:
+      - proxy
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - /mnt/data/media/audiobooks:/audiobooks:rw
+      - audiobookshelf-data:/config
+      - audiobookshelf-data:/metadata
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.local.elmurphy.com`)
+      - traefik.http.routers.audiobookshelf.tls=true
+      - traefik.http.services.audiobookshelf.loadbalancer.server.port=80
+    restart: unless-stopped
+  pinchflat:
+    image: ghcr.io/kieraneglin/pinchflat:latest 
+    container_name: pinchflat
+    networks:
+      - proxy
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - /mnt/data/media/youtube:/downloads:rw
+      - pinchflat-data:/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.pinchflat.rule=Host(`pinchflat.local.elmurphy.com`)
+      - traefik.http.routers.pinchflat.tls=true
+      - traefik.http.services.pinchflat.loadbalancer.server.port=8945
+    restart: unless-stopped
+volumes:
+  plex-data:
+    name: plex-data
+  audiobookshelf-data:
+    name: audiobookshelf-data
+  pinchflat-data:
+    name: pinchflat-data
+networks:
+  proxy:
+    external: true
