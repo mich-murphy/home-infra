@@ -1,9 +1,9 @@
 ---
 services:
+  # NOTE: visit https://<plex-fqdn>/web to setup new server
   plex:
     image: plexinc/pms-docker
     container_name: plex
-    # hostname: plex
     networks:
       - proxy
     environment:
@@ -11,7 +11,6 @@ services:
       - PGID=1000
       - TZ=${TZ}
       - PLEX_CLAIM=${PLEX_CLAIM}
-      # - ADVERTISE_IP=http://127.0.0.1:32400/
     volumes:
       - plex-data:/config
       - /mnt/data/media:/data/media:rw
