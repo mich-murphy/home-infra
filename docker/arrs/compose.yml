@@ -72,6 +72,23 @@ services:
       - traefik.http.routers.readarr.tls=true
       - traefik.http.services.readarr.loadbalancer.server.port=8787
     restart: unless-stopped
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    networks:
+      - proxy
+    environment:
+      - PUID=1215
+      - PGID=1215
+      - TZ=${TZ}
+    volumes:
+      - prowlarr-data:/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.prowlarr.rule=Host(`prowlarr.local.elmurphy.com`)
+      - traefik.http.routers.prowlarr.tls=true
+      - traefik.http.services.prowlarr.loadbalancer.server.port=9696
+    restart: unless-stopped
 volumes:
   radarr-data:
     name: radarr-data
@@ -81,6 +98,8 @@ volumes:
     name: lidarr-data
   readarr-data:
     name: readarr-data
+  prowlarr-data:
+    name: prowlarr-data
 networks:
   proxy:
     external: true
