@@ -4,8 +4,8 @@ services:
     image: plexinc/pms-docker
     container_name: plex
     network_mode: host
-    networks:
-      - proxy
+    # networks:
+    #   - proxy
     environment:
       - PUID=1000
       - PGID=1000
