@@ -3,12 +3,14 @@ services:
   plex:
     image: plexinc/pms-docker
     container_name: plex
+    hostname: localhost
     networks:
       - proxy
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ}
+      - ADVERTISE_IP=http://127.0.0.1:32400/
     ports:
       - 32400:32400/tcp
       - 8324:8324/tcp
