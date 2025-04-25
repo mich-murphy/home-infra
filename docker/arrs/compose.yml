@@ -12,6 +12,8 @@ services:
     volumes:
       - radarr-data:/config
       - /mnt/data:/data:rw
+    ports:
+      - 7878:7878
     labels:
       - traefik.enable=true
       - traefik.http.routers.radarr.rule=Host(`radarr.local.elmurphy.com`)
@@ -30,6 +32,8 @@ services:
     volumes:
       - sonarr-data:/config
       - /mnt/data:/data:rw
+    ports:
+      - 8989:8989
     labels:
       - traefik.enable=true
       - traefik.http.routers.sonarr.rule=Host(`sonarr.local.elmurphy.com`)
@@ -48,6 +52,8 @@ services:
     volumes:
       - lidarr-data:/config
       - /mnt/data:/data:rw
+    ports:
+      - 8686:8686
     labels:
       - traefik.enable=true
       - traefik.http.routers.lidarr.rule=Host(`lidarr.local.elmurphy.com`)
@@ -66,6 +72,8 @@ services:
     volumes:
       - readarr-data:/config
       - /mnt/data:/data:rw
+    ports:
+      - 8787:8787
     labels:
       - traefik.enable=true
       - traefik.http.routers.readarr.rule=Host(`readarr.local.elmurphy.com`)
@@ -77,12 +85,15 @@ services:
     container_name: prowlarr
     networks:
       - proxy
+      - prowlarr-sync
     environment:
       - PUID=1215
       - PGID=1215
       - TZ=${TZ}
     volumes:
       - prowlarr-data:/config
+    ports:
+      - 9696:9696
     labels:
       - traefik.enable=true
       - traefik.http.routers.prowlarr.rule=Host(`prowlarr.local.elmurphy.com`)
@@ -103,3 +114,6 @@ volumes:
 networks:
   proxy:
     external: true
+  prowlarr-sync:
+    name: prowlarr-sync
+    a
