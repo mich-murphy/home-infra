@@ -5,6 +5,9 @@ services:
     container_name: portainer
     networks:
       - proxy
+    volumes:
+      - portainer-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - 8000:8000
       - 9443:9443
@@ -13,9 +16,6 @@ services:
       - traefik.http.routers.portainer.rule=Host(`portainer.local.elmurphy.com`)
       - traefik.http.routers.portainer.tls=true
       - traefik.http.services.portainer.loadbalancer.server.port=9443
-    volumes:
-      - portainer-data:/data
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped
 volumes:
   portainer-data:

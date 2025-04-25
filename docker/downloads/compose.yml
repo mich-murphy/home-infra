@@ -1,0 +1,68 @@
+---
+services:
+  deluge:
+    image: lscr.io/linuxserver/deluge:latest
+    container_name: deluge
+    networks:
+      - proxy
+      - torrent
+    environment:
+      - PUID=1215
+      - PGID=1215
+      - TZ=${TZ}
+      - DELUGE_LOGLEVEL=error #optional
+    volumes:
+      - deluge-data:/config
+      - /mnt/data/torrents:/data/torrents:rw
+    ports:
+      - 8112:8112
+      - 25565:25565
+      - 25565:25565/udp
+      - 58846:58846 #optional
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.deluge.rule=Host(`deluge.local.elmurphy.com`)
+      - traefik.http.routers.deluge.tls=true
+      - traefik.http.services.deluge.loadbalancer.server.port=8112
+    restart: unless-stopped
+
+  # NOTE: initial setup is done via "http://<docker localhost ip>:8080"
+  # hostname must be added to host_whitelist in sabnzbd.ini
+  # reference: https://sabnzbd.org/wiki/extra/hostname-check.html
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    networks:
+      - proxy
+      - usenet
+    environment:
+      - PUID=1215
+      - PGID=1215
+      - TZ=${TZ}
+    volumes:
+      - sabnzbd-data:/config
+      - /mnt/data/usenet:/data/usenet:rw
+    ports:
+      - 8080:8080
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.local.elmurphy.com`)
+      - traefik.http.routers.sabnzbd.tls=true
+      - traefik.http.services.sabnzbd.loadbalancer.server.port=8080
+    restart: unless-stopped
+volumes:
+  deluge-data:
+    name: deluge-data
+  sabnzbd-data:
+    name: sabnzbd-data
+networks:
+  proxy:
+    external: true
+  torrent:
+    ipam:
+      config:
+        - subnet: 172.30.1.0/24
+  usenet:
+    ipam:
+      config:
+        - subnet: 172.40.1.0/24
