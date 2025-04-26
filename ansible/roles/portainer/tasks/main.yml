@@ -2,7 +2,7 @@
 - name: set clone directory
   ansible.builtin.set_fact:
     clone_dir: /tmp/home-infra
-    home_dir: "/home/{{ username }}"
+    srv_dir: "/srv/portainer"
 
 - name: clone docker repo
   ansible.builtin.git:
@@ -17,15 +17,15 @@
 
 - name: delete existing docker directory
   ansible.builtin.file:
-    path: "{{ home_dir }}/docker"
+    path: "{{ srv_dir }}"
     state: absent
   when: repo.stat.exists
 
-- name: copy docker directory
+- name: copy portainer compose file
   ansible.builtin.copy:
     remote_src: true
-    src: "{{ clone_dir }}/docker"
-    dest: "{{ home_dir }}"
+    src: "{{ clone_dir }}/docker/portainer/compose.yml"
+    dest: "{{ srv_dir }}/"
     owner: "{{ username }}"
     mode: "0775"
   when: repo.stat.exists
@@ -35,3 +35,8 @@
     path: "{{ clone_dir }}"
     state: absent
   when: repo.stat.exists
+
+- name: start portainer compose file
+  ansible.builtin.shell:
+    cmd: docker compose up -d --force-recreate
+    chdir: "{{ srv_dir }}"
