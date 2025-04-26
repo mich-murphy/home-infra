@@ -5,7 +5,6 @@ services:
     container_name: deluge
     networks:
       - proxy
-      - torrent
     environment:
       - PUID=1215
       - PGID=1215
@@ -32,7 +31,6 @@ services:
     container_name: sabnzbd
     networks:
       - proxy
-      - usenet
     environment:
       - PUID=1215
       - PGID=1215
@@ -54,13 +52,3 @@ volumes:
 networks:
   proxy:
     external: true
-  torrent:
-    name: torrent
-    ipam:
-      config:
-        - subnet: 172.30.1.0/24
-  usenet:
-    name: usenet
-    ipam:
-      config:
-        - subnet: 172.40.1.0/24

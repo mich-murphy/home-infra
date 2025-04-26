@@ -24,6 +24,13 @@
     interface_in: tailscale0
   notify: reload ufw
 
+- name: allow internal traffic to tailscale
+  community.general.ufw:
+    rule: allow
+    from_ip: 172.20.1.0/24
+    to_ip: 100.0.0.0/8
+  notify: reload ufw
+
 - name: deny ssh traffic outside of tailscale
   community.general.ufw:
     rule: allow
