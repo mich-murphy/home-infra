@@ -8,8 +8,6 @@ services:
     networks:
       - proxy
       - immich-backend
-    env_file:
-      - .env
     volumes:
       # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
       - /mnt/photos:/usr/src/app/upload
