@@ -20,8 +20,8 @@ services:
       - traefik.http.routers.immich.tls=true
       - traefik.http.services.immich.loadbalancer.server.port=2283
     depends_on:
-      - redis
-      - database
+      - immich-redis
+      - immich-postgres
     restart: unless-stopped
     healthcheck:
       disable: false
