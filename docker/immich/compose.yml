@@ -18,8 +18,8 @@ services:
       - traefik.http.routers.immich.tls=true
       - traefik.http.services.immich.loadbalancer.server.port=2283
     depends_on:
-      - immich-redis
-      - immich-postgres
+      - redis
+      - database
     restart: unless-stopped
     healthcheck:
       disable: false
@@ -40,7 +40,7 @@ services:
     healthcheck:
       disable: false
 
-  immich-redis:
+  redis:
     container_name: immich-redis
     image: docker.io/valkey/valkey:8-bookworm@sha256:42cba146593a5ea9a622002c1b7cba5da7be248650cbb64ecb9c6c33d29794b1
     networks:
@@ -49,7 +49,7 @@ services:
       test: redis-cli ping || exit 1
     restart: unless-stopped
 
-  immich-postgres:
+  database:
     image: docker.io/tensorchord/pgvecto-rs:pg14-v0.2.0@sha256:739cdd626151ff1f796dc95a6591b55a714f341c737e27f045019ceabf8e8c52
     container_name: immich-postgres
     networks:
