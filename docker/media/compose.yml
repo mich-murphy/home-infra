@@ -6,6 +6,8 @@ services:
     container_name: plex
     networks:
       - proxy
+    devices:
+      - /dev/dri:/dev/dri
     environment:
       - PUID=1000
       - PGID=1000
@@ -39,7 +41,7 @@ services:
       - traefik.http.services.audiobookshelf.loadbalancer.server.port=80
     restart: unless-stopped
   pinchflat:
-    image: ghcr.io/kieraneglin/pinchflat:latest 
+    image: ghcr.io/kieraneglin/pinchflat:latest
     container_name: pinchflat
     networks:
       - proxy
