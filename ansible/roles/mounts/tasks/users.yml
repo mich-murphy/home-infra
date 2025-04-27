@@ -13,3 +13,18 @@
     create_home: false
     system: true
     append: true
+
+- name: ensure photos group exists
+  ansible.builtin.group:
+    name: photos
+    gid: 1210
+    state: present
+
+- name: create photos user
+  ansible.builtin.user:
+    name: photos
+    uid: 1210
+    groups: photos
+    create_home: false
+    system: true
+    append: true

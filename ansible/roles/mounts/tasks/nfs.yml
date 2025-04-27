@@ -5,24 +5,47 @@
       - nfs-common
     state: present
 
-- name: check whether mount folder exists
+- name: check whether media mount folder exists
   ansible.builtin.stat:
     path: /mnt/data
-  register: st
+  register: data
 
-- name: create folder for mount
+- name: create folder for media mount
   ansible.builtin.file:
     path: /mnt/data
     state: directory
     mode: "0775"
     owner: media
     group: media
-  when: not st.stat.exists
+  when: not data.stat.exists
 
-- name: mount network share
+- name: mount network share for media
   ansible.posix.mount:
     src: "10.77.1.101:/mnt/slow/media"
     path: /mnt/data
     fstype: nfs
     opts: "rw,sync"
     state: mounted
+
+- name: check whether photos mount folder exists
+  ansible.builtin.stat:
+    path: /mnt/photos
+  register: photos
+
+- name: create folder for photos mount
+  ansible.builtin.file:
+    path: /mnt/photos
+    state: directory
+    mode: "0775"
+    owner: photos
+    group: photos
+  when: not photos.stat.exists
+
+- name: mount network share for photos
+  ansible.posix.mount:
+    src: "10.77.1.101:/mnt/slow/photos"
+    path: /mnt/photos
+    fstype: nfs
+    opts: "rw,sync"
+    state: mounted
+

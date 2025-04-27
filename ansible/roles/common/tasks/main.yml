@@ -1,4 +1,10 @@
 ---
+- name: update kernel drivers for gpu passthrough
+  ansible.builtin.apt:
+    name:
+      - linux-image-generic-hwe-24.04
+    state: present
+
 - name: configure users
   ansible.builtin.include_tasks:
     file: users.yml

@@ -1,8 +1,8 @@
 ---
-- name: create media user for mount
+- name: create users for nfs mount
   ansible.builtin.include_tasks:
     file: users.yml
 
-- name: setup nfs mount for media
+- name: setup nfs mounts
   ansible.builtin.include_tasks:
     file: nfs.yml
