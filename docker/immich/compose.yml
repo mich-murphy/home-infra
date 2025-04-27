@@ -36,8 +36,6 @@ services:
     #   service: cpu # set to one of [armnn, cuda, rocm, openvino, openvino-wsl, rknn] for accelerated inference - use the `-wsl` version for WSL2 where applicable
     networks:
       - immich-backend
-    env_file:
-      - .env
     volumes:
       - immich-ml-cache:/cache
     restart: unless-stopped
