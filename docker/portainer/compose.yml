@@ -14,9 +14,11 @@ services:
       - traefik.http.routers.portainer.tls=true
       - traefik.http.services.portainer.loadbalancer.server.port=9000
     restart: unless-stopped
+
 volumes:
   portainer-data:
     name: portainer-data
+
 networks:
   proxy:
     external: true

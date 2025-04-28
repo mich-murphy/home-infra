@@ -44,11 +44,13 @@ services:
       - traefik.http.routers.sabnzbd.tls=true
       - traefik.http.services.sabnzbd.loadbalancer.server.port=8080
     restart: unless-stopped
+
 volumes:
   deluge-data:
     name: deluge-data
   sabnzbd-data:
     name: sabnzbd-data
+
 networks:
   proxy:
     external: true

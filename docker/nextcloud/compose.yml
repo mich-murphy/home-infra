@@ -4,7 +4,8 @@ services:
     image: ghcr.io/nextcloud-releases/all-in-one:latest
     container_name: nextcloud-aio-mastercontainer
     init: true
-    network_mode: bridge
+    networks:
+      - proxy
     environment:
       AIO_DISABLE_BACKUP_SECTION: true
       APACHE_PORT: 11000
@@ -26,6 +27,11 @@ services:
       - traefik.http.routers.nextcloud.tls=true
       - traefik.http.services.nextcloud.loadbalancer.server.port=11000
     restart: unless-stopped
+
 volumes:
   nextcloud_aio_mastercontainer:
     name: nextcloud_aio_mastercontainer
+
+networks:
+  proxy:
+    external: true

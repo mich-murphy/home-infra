@@ -49,9 +49,11 @@ services:
       - --certificatesresolvers.cloudflare.acme.dnschallenge.propagation.disableChecks=true
       - --serverstransport.insecureSkipVerify=true
     restart: unless-stopped
+
 volumes:
   traefik-data:
     name: traefik-data
+
 networks:
   proxy:
     external: true
