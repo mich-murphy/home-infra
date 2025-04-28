@@ -1,30 +1,23 @@
 ---
-- name: ensure media group exists
+- name: ensure required groups exist
   ansible.builtin.group:
-    name: media
-    gid: 1215
+    name: "{{ item.name }}"
+    gid: "{{ item.gid }}"
     state: present
+  loop:
+    - { name: nextcloud, gid: 1205 }
+    - { name: photos, gid: 1210 }
+    - { name: media, gid: 1215 }
 
-- name: create media user
+- name: create required users
   ansible.builtin.user:
-    name: media
-    uid: 1215
-    groups: media
+    name: "{{ item.name }}"
+    uid: "{{ item.uid }}"
+    groups: "{{ item.name }}"
     create_home: false
     system: true
     append: true
-
-- name: ensure photos group exists
-  ansible.builtin.group:
-    name: photos
-    gid: 1210
-    state: present
-
-- name: create photos user
-  ansible.builtin.user:
-    name: photos
-    uid: 1210
-    groups: photos
-    create_home: false
-    system: true
-    append: true
+  loop:
+    - { name: nextcloud, uid: 1205 }
+    - { name: photos, uid: 1210 }
+    - { name: media, uid: 1215 }
