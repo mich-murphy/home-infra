@@ -4,8 +4,7 @@ services:
     image: ghcr.io/nextcloud-releases/all-in-one:latest
     container_name: nextcloud-aio-mastercontainer
     init: true
-    networks:
-      - proxy
+    network_mode: bridge
     environment:
       AIO_DISABLE_BACKUP_SECTION: true
       APACHE_PORT: 11000
@@ -25,7 +24,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.nextcloud.rule=Host(`nextcloud.local.elmurphy.com`)
       - traefik.http.routers.nextcloud.tls=true
-      - traefik.http.services.nextcloud.loadbalancer.server.port=11000
+      - traefik.http.services.nextcloud.loadbalancer.servers.url=http://nextcloud-aio-apache:$APACHE_PORT
     restart: unless-stopped
 
 volumes:
