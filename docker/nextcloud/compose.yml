@@ -4,6 +4,7 @@ services:
     image: ghcr.io/nextcloud-releases/all-in-one:latest
     container_name: nextcloud-aio-mastercontainer
     init: true
+    network_mode: bridge
     environment:
       AIO_DISABLE_BACKUP_SECTION: true
       APACHE_PORT: 11000
