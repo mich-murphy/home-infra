@@ -1,0 +1,92 @@
+---
+services:
+  # NOTE: visit https://<plex-fqdn>/web to setup new server
+  plex:
+    image: plexinc/pms-docker
+    container_name: plex
+    networks:
+      - proxy
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - PLEX_CLAIM=${PLEX_CLAIM}
+    volumes:
+      - plex-data:/config
+      - /mnt/data/media:/data/media:rw
+      - /dev/shm:/transcode # ram transcode
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.plex.rule=Host(`plex.local.elmurphy.com`)
+      - traefik.http.routers.plex.tls=true
+      - traefik.http.services.plex.loadbalancer.server.port=32400
+    restart: unless-stopped
+
+  tautulli:
+    image: lscr.io/linuxserver/tautulli:latest
+    container_name: tautulli
+    networks:
+      - proxy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - tautulli-data:/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.tautulli.rule=Host(`tautulli.local.elmurphy.com`)
+      - traefik.http.routers.tautulli.tls=true
+      - traefik.http.services.tautulli.loadbalancer.server.port=8181
+    restart: unless-stopped
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    networks:
+      - proxy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - overseerr-data:/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.overseerr.rule=Host(`overseerr.local.elmurphy.com`)
+      - traefik.http.routers.overseerr.tls=true
+      - traefik.http.services.overseerr.loadbalancer.server.port=5055
+    restart: unless-stopped
+
+  maintainerr:
+    image: ghcr.io/jorenn92/maintainerr:latest
+    container_name: maintainerr
+    user: 1000:1000
+    networks:
+      - proxy
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - maintainerr-data:/opt/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.maintainerr.rule=Host(`maintainerr.local.elmurphy.com`)
+      - traefik.http.routers.maintainerr.tls=true
+      - traefik.http.services.maintainerr.loadbalancer.server.port=6246
+    restart: unless-stopped
+
+volumes:
+  plex-data:
+    name: plex-data
+  tautulli-data:
+    name: tautulli-data
+  overseerr-data:
+    name: overseerr-data
+  maintainerr-data:
+    name: maintainerr-data
+
+networks:
+  proxy:
+    external: true

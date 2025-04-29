@@ -1,0 +1,26 @@
+---
+services:
+  pinchflat:
+    image: ghcr.io/kieraneglin/pinchflat:latest
+    container_name: pinchflat
+    networks:
+      - proxy
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - /mnt/data/media/youtube:/downloads:rw
+      - pinchflat-data:/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.pinchflat.rule=Host(`pinchflat.local.elmurphy.com`)
+      - traefik.http.routers.pinchflat.tls=true
+      - traefik.http.services.pinchflat.loadbalancer.server.port=8945
+    restart: unless-stopped
+
+volumes:
+  pinchflat-data:
+    name: pinchflat-data
+
+networks:
+  proxy:
+    external: true
