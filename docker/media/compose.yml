@@ -23,6 +23,25 @@ services:
       - traefik.http.routers.plex.tls=true
       - traefik.http.services.plex.loadbalancer.server.port=32400
     restart: unless-stopped
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    networks:
+      - proxy
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - overseerr-data:/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.overseerr.rule=Host(`overseerr.local.elmurphy.com`)
+      - traefik.http.routers.overseerr.tls=true
+      - traefik.http.services.overseerr.loadbalancer.server.port=5055
+    restart: unless-stopped  
+
   audiobookshelf:
     image: ghcr.io/advplyr/audiobookshelf:latest
     container_name: audiobookshelf
@@ -40,6 +59,7 @@ services:
       - traefik.http.routers.audiobookshelf.tls=true
       - traefik.http.services.audiobookshelf.loadbalancer.server.port=80
     restart: unless-stopped
+
   pinchflat:
     image: ghcr.io/kieraneglin/pinchflat:latest
     container_name: pinchflat
@@ -56,13 +76,17 @@ services:
       - traefik.http.routers.pinchflat.tls=true
       - traefik.http.services.pinchflat.loadbalancer.server.port=8945
     restart: unless-stopped
+
 volumes:
   plex-data:
     name: plex-data
+  overseerr-data:
+    name: overseerr-data
   audiobookshelf-data:
     name: audiobookshelf-data
   pinchflat-data:
     name: pinchflat-data
+
 networks:
   proxy:
     external: true
