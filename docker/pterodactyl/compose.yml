@@ -11,6 +11,7 @@ services:
       - APP_URL=http://example.com
       - APP_TIMEZONE=${TZ}
       - APP_SERVICE_AUTHOR=noreply@example.com
+      - TRUSTED_PROXIES="*"
       - MAIL_FROM=noreply@example.com
       - MAIL_DRIVER=smtp
       - MAIL_HOST=mail
