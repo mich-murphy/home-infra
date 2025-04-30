@@ -84,9 +84,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/containers/:/var/lib/docker/containers/
-      - ptero-wings-etc:/etc/pterodactyl/
+      - /etc/pterodactyl/:/etc/pterodactyl/
       - /var/lib/pterodactyl/:/var/lib/pterodactyl/
-      - ptero-wings-logs:/var/log/pterodactyl/
+      - /var/log/pterodactyl/:/var/log/pterodactyl/
       - type: tmpfs
         target: /tmp/pterodactyl/
       # - "/etc/ssl/certs:/etc/ssl/certs:ro"
@@ -109,10 +109,6 @@ volumes:
     name: ptero-logs
   ptero-db:
     name: ptero-db
-  ptero-wings-etc:
-    name: ptero-wings-etc
-  ptero-wings-logs:
-    name: ptero-wings-logs
 
 networks:
   proxy:
@@ -130,4 +126,3 @@ networks:
         - subnet: "172.41.1.0/24"
     driver_opts:
       com.docker.network.bridge.name: ptero-wings
-
