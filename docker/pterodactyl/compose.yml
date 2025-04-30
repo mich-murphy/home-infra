@@ -79,7 +79,7 @@ services:
       - TZ=${TZ}
       - WINGS_UID=988
       - WINGS_GID=988
-      - WINGS_USERNAME=pterodactyl
+      - WINGS_USERNAME=mich-murphy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/containers/:/var/lib/docker/containers/
