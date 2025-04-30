@@ -85,7 +85,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/containers/:/var/lib/docker/containers/
       - ptero-wings-etc:/etc/pterodactyl/
-      - ptero-wings-lib:/var/lib/pterodactyl/
+      - /var/lib/pterodactyl/:/var/lib/pterodactyl/
       - ptero-wings-logs:/var/log/pterodactyl/
       - type: tmpfs
         target: /tmp/pterodactyl/
@@ -111,8 +111,6 @@ volumes:
     name: ptero-db
   ptero-wings-etc:
     name: ptero-wings-etc
-  ptero-wings-lib:
-    name: ptero-wings-lib
   ptero-wings-logs:
     name: ptero-wings-logs
 
