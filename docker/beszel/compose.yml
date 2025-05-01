@@ -1,0 +1,23 @@
+---
+services:
+  beszel:
+    image: henrygd/beszel
+    container_name: beszel
+    networks:
+      - proxy
+    volumes:
+      - beszel-data:/beszel_data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.beszel.rule=Host(`beszel.local.elmurphy.com`)
+      - traefik.http.routers.beszel.tls=true
+      - traefik.http.services.beszel.loadbalancer.server.port=8090
+    restart: unless-stopped
+
+volumes:
+  beszel-data:
+    name: beszel-data
+
+networks:
+  proxy:
+    external: true
