@@ -37,6 +37,7 @@ services:
   nextcloud-postgres:
     image: postgres
     container_name: nextcloud-postgres
+    hostname: nextcloud-postgres
     networks:
       - nextcloud-backend
     environment:
