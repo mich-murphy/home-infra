@@ -9,7 +9,7 @@ services:
       - proxy
       - ptero
     environment:
-      - APP_URL=https://pterodactyl.local.elmurphy.com
+      - APP_URL=http://pterodactyl.local.elmurphy.com
       - APP_TIMEZONE=${TZ}
       - APP_SERVICE_AUTHOR=${APP_SERVICE_AUTHOR}
       - TRUSTED_PROXIES="*"
