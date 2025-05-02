@@ -9,9 +9,9 @@ services:
       - proxy
       - ptero
     environment:
-      - APP_URL=http://example.com
+      - APP_URL=https://pterodactyl.local.elmurphy.com
       - APP_TIMEZONE=${TZ}
-      - APP_SERVICE_AUTHOR=noreply@example.com
+      - APP_SERVICE_AUTHOR=${APP_SERVICE_AUTHOR}
       - TRUSTED_PROXIES="*"
       - MAIL_FROM=noreply@example.com
       - MAIL_DRIVER=smtp
@@ -32,14 +32,10 @@ services:
     volumes:
       - ptero-data:/app/var/
       - ptero-nginx:/etc/nginx/http.d/
-      # - "/srv/pterodactyl/certs/:/etc/letsencrypt/"
       - ptero-logs:/app/storage/logs
     links:
       - database
       - cache
-    # ports:
-    #   - "80:80"
-    #   - "443:443"
     labels:
       - traefik.enable=true
       - traefik.http.routers.pterodactyl.rule=Host(`pterodactyl.local.elmurphy.com`)
@@ -84,6 +80,4 @@ networks:
     external: true
   ptero:
     name: ptero
-    ipam:
-      config:
-        - subnet: 172.40.1.0/24
+    external: true
