@@ -8,6 +8,8 @@ services:
       - proxy
     devices:
       - /dev/dri:/dev/dri
+    group_add:
+      - 992 # render group 
     environment:
       - JELLYFIN_PublishedServerUrl=https://jellyfin.local.elmurphy.com
     volumes:
