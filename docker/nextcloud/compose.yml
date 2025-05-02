@@ -46,7 +46,7 @@ services:
       - POSTGRES_HOST=nextcloud-postgres
     volumes:
       - nextcloud-db:/var/lib/postgresql/data
-      - /mnt/usb/data/backup/postgresql:/backup
+      - /mnt/usb/data/backups/postgresql:/backup
     restart: unless-stopped
 
   nextcloud-redis:
