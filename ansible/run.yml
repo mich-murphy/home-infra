@@ -9,3 +9,12 @@
     - mounts
     - geerlingguy.docker
     - portainer
+
+- hosts: games
+  become: true
+  vars_files:
+    - "group_vars/secrets.yml"
+  roles:
+    - common
+    - geerlingguy.docker
+

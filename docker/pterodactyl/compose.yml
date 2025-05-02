@@ -1,6 +1,7 @@
 ---
 services:
   # NOTE: create initial user with `docker exec -it ptero-panel php artisan p:user:make`
+  # wings can be setup on host via docker-compose: https://github.com/pterodactyl/wings/blob/develop/docker-compose.example.yml
   panel:
     image: ghcr.io/pterodactyl/panel:latest
     container_name: ptero-panel
@@ -68,38 +69,6 @@ services:
       - ptero
     restart: unless-stopped
 
-  wings:
-    image: ghcr.io/pterodactyl/wings:latest
-    container_name: ptero-wings
-    tty: true
-    networks:
-      - proxy
-      - ptero
-      - ptero-wings
-    environment:
-      - TZ=${TZ}
-      - WINGS_UID=988
-      - WINGS_GID=988
-      - WINGS_USERNAME=mich-murphy
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/containers/:/var/lib/docker/containers/
-      - /etc/pterodactyl/:/etc/pterodactyl/
-      - /var/lib/pterodactyl/:/var/lib/pterodactyl/
-      - /var/log/pterodactyl/:/var/log/pterodactyl/
-      - type: tmpfs
-        target: /tmp/pterodactyl/
-      # - "/etc/ssl/certs:/etc/ssl/certs:ro"
-    ports:
-      # - "8080:8080"
-      - "2022:2022"
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.pterodactyl-wings.rule=Host(`pterodactyl-wings.local.elmurphy.com`)
-      - traefik.http.routers.pterodactyl-wings.tls=true
-      - traefik.http.services.pterodactyl-wings.loadbalancer.server.port=443
-    restart: unless-stopped
-
 volumes:
   ptero-data:
     name: ptero-data
@@ -118,11 +87,3 @@ networks:
     ipam:
       config:
         - subnet: 172.40.1.0/24
-  ptero-wings:
-    name: ptero-wings
-    driver: bridge
-    ipam:
-      config:
-        - subnet: "172.41.1.0/24"
-    driver_opts:
-      com.docker.network.bridge.name: ptero-wings

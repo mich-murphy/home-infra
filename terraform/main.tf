@@ -36,6 +36,7 @@ resource "terraform_data" "cloud_init_config" {
   }
 }
 
+
 # create template prior to applying
 # reference: https://registry.terraform.io/providers/Telmate/proxmox/latest/docs/guides/cloud-init%2520getting%2520started#creating-a-cloud-init-template
 resource "proxmox_vm_qemu" "cloud_init_docker_host" {
@@ -45,9 +46,13 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   vmid             = 102
   name             = "docker-host"
   target_node      = "proxmox"
+  tags             = null
   agent            = 1
   cores            = 4
-  memory           = 8192
+  memory           = 12288
+  onboot           = true
+  startup          = "order=2,up=30"
+  bios             = "seabios"
   boot             = "order=scsi0"        # has to be the same as the OS disk of the template
   clone            = "ubuntu-server-2404" # name of the template
   scsihw           = "virtio-scsi-single"
@@ -71,6 +76,61 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
           discard = true
           storage = "local-zfs"
           size    = "128G"
+        }
+      }
+    }
+    # attach cloud-init drive
+    ide {
+      ide1 {
+        cloudinit {
+          storage = "local-zfs"
+        }
+      }
+    }
+  }
+  network {
+    id     = 0
+    bridge = "vmbr0"
+    model  = "virtio"
+  }
+}
+
+resource "proxmox_vm_qemu" "cloud_init_game_server" {
+  depends_on = [
+    terraform_data.cloud_init_config,
+  ]
+  vmid             = 103
+  name             = "game-server"
+  target_node      = "proxmox"
+  tags             = null
+  agent            = 1
+  cores            = 4
+  memory           = 8192
+  onboot           = true
+  bios             = "seabios"
+  boot             = "order=scsi0"        # has to be the same as the OS disk of the template
+  clone            = "ubuntu-server-2404" # name of the template
+  scsihw           = "virtio-scsi-single"
+  vm_state         = "running"
+  automatic_reboot = true
+  # Cloud-Init configuration
+  cicustom  = "vendor=local:snippets/agents.yml" # /var/lib/vz/snippets
+  ciupgrade = true
+  ipconfig0 = "ip=dhcp,ip6=dhcp"
+  skip_ipv6 = true
+  ciuser    = "ansible"
+  sshkeys   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
+  # set serial device for display
+  serial {
+    id = 0
+  }
+  disks {
+    scsi {
+      scsi0 {
+        disk {
+          discard = true
+          storage = "local-zfs"
+          size    = "384G"
         }
       }
     }
