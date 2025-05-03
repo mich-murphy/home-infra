@@ -16,6 +16,7 @@ services:
       - jellyfin-data:/config
       - jellyfin-cache:/cache
       - /mnt/data/media:/data/media:rw
+      - /dev/shm:/transcode # ram transcode
     labels:
       - traefik.enable=true
       - traefik.http.routers.jellyfin.rule=Host(`jellyfin.local.elmurphy.com`)
