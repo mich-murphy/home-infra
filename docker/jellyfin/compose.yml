@@ -24,11 +24,29 @@ services:
       - traefik.http.services.jellyfin.loadbalancer.server.port=8096
     restart: unless-stopped
 
+  jellyseerr:
+    image: ghcr.io/fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    networks:
+      - proxy
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - jellyseerr-data:/app/config
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jellyseerr.rule=Host(`jellyseerr.local.elmurphy.com`)
+      - traefik.http.routers.jellyseerr.tls=true
+      - traefik.http.services.jellyseerr.loadbalancer.server.port=5055
+    restart: unless-stopped
+
 volumes:
   jellyfin-data:
     name: jellyfin-data
   jellyfin-cache:
     name: jellyfin-cache
+  jellyseerr-data:
+    name: jellyseerr-data
 
 networks:
   proxy:
