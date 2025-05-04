@@ -17,13 +17,13 @@ services:
       - jellyfin-cache:/cache
       - /mnt/data/media:/data/media:rw
       - /dev/shm:/transcode # ram transcode
-    ports:
-      - 8096
     labels:
       - traefik.enable=true
       - traefik.http.routers.jellyfin.rule=Host(`jellyfin.local.elmurphy.com`)
       - traefik.http.routers.jellyfin.tls=true
       - traefik.http.services.jellyfin.loadbalancer.server.port=8096
+      # https://github.com/streamyfin/streamyfin/issues/278#issuecomment-2603962941
+      - traefik.tls.options.intermediate.curvePreferences=CurveP256
     restart: unless-stopped
 
   jellyseerr:
