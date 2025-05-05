@@ -13,8 +13,11 @@ destroy:
   cd terraform && terraform destroy
 
 ## ansible
-run:
-  cd ansible && ansible-playbook run.yml --vault-password-file .vaultpass
+run HOST:
+  cd ansible && ansible-playbook run.yml --vault-password-file .vaultpass --limit {{HOST}}
+
+edit:
+  cd ansible && ansible-vault edit group_vars/secrets.yml --vault-password-file .vaultpass
 
 reqs:
   cd ansible && ansible-galaxy install -r requirements.yml

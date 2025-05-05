@@ -1,4 +1,10 @@
 ---
+- name: update kernel drivers for gpu passthrough
+  ansible.builtin.apt:
+    name:
+      - linux-image-generic-hwe-24.04
+    state: present
+
 - name: create users for nfs mount
   ansible.builtin.include_tasks:
     file: users.yml

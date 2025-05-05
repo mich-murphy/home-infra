@@ -1,5 +1,22 @@
 ---
 services:
+  portainer:
+    image: portainer/portainer-ce:lts
+    container_name: portainer
+    networks:
+      - proxy
+    volumes:
+      - portainer-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.portainer.rule=Host(`portainer.local.elmurphy.com`)
+      - traefik.http.routers.portainer.tls=true
+      - traefik.http.services.portainer.loadbalancer.server.port=9000
+    depends_on:
+      - traefik
+    restart: unless-stopped
+
   traefik:
     image: traefik:v3.3.6
     container_name: traefik
@@ -54,6 +71,8 @@ services:
 volumes:
   traefik-data:
     name: traefik-data
+  portainer-data:
+    name: portainer-data
 
 networks:
   proxy:

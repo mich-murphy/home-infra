@@ -6,7 +6,7 @@
   roles:
     - common
     - firewall
-    - mounts
+    - media
     - geerlingguy.docker
     - portainer
 

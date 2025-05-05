@@ -2,7 +2,7 @@
 - name: set clone directory
   ansible.builtin.set_fact:
     clone_dir: /tmp/home-infra
-    srv_dir: "/srv/portainer"
+    srv_dir: "/srv/init"
 
 - name: clone docker repo
   ansible.builtin.git:
@@ -21,10 +21,11 @@
     state: absent
   when: repo.stat.exists
 
-- name: copy portainer compose file
+# init compose file will start portainer along with traefik
+- name: copy init compose file
   ansible.builtin.copy:
     remote_src: true
-    src: "{{ clone_dir }}/docker/portainer/compose.yml"
+    src: "{{ clone_dir }}/docker/init/*"
     dest: "{{ srv_dir }}/"
     owner: "{{ username }}"
     mode: "0775"
@@ -36,7 +37,16 @@
     state: absent
   when: repo.stat.exists
 
-- name: start portainer compose file
+- name: setup .env file
+  ansible.builtin.copy:
+    content: |
+      CF_DNS_API_TOKEN={{ CF_DNS_API_TOKEN }}
+      CF_API_EMAIL={{ CF_API_EMAIL }}
+    dest: "{{ srv_dir }}/.env"
+    owner: "{{ username }}"
+    mode: "0775"
+
+- name: start init compose file
   ansible.builtin.shell:
     cmd: docker compose up -d --force-recreate
     chdir: "{{ srv_dir }}"
