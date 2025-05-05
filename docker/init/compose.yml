@@ -1,7 +1,7 @@
 ---
 services:
   portainer:
-    image: portainer/portainer-ce:lts
+    image: portainer/portainer-ee:lts
     container_name: portainer
     networks:
       - proxy
