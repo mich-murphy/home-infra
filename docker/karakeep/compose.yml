@@ -1,0 +1,60 @@
+---
+services:
+  karakeep:
+    image: ghcr.io/karakeep-app/karakeep:${KARAKEEP_VERSION:-release}
+    container_name: karakeep
+    networks:
+      - proxy
+      - karakeep-backend
+    environment:
+      - MEILI_ADDR=http://meilisearch:7700
+      - BROWSER_WEB_URL=http://karakeep-browser:9222
+      - DATA_DIR=/data
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=http://localhost:3000
+    volumes:
+      - karakeep-data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.karakeep.rule=Host(`karakeep.local.elmurphy.com`)
+      - traefik.http.routers.karakeep.tls=true
+      - traefik.http.services.karakeep.loadbalancer.server.port=3000
+    restart: unless-stopped
+
+  karakeep-browser:
+    image: gcr.io/zenika-hub/alpine-chrome:123
+    container_name: karakeep-browser
+    networks:
+      - karakeep-backend
+    command:
+      - --no-sandbox
+      - --disable-gpu
+      - --disable-dev-shm-usage
+      - --remote-debugging-address=0.0.0.0
+      - --remote-debugging-port=9222
+      - --hide-scrollbars
+    restart: unless-stopped
+
+  karakeep-search:
+    image: getmeili/meilisearch:v1.13.3
+    container_name: karakeep-search
+    networks:
+      - karakeep-backend
+    environment:
+      - MEILI_NO_ANALYTICS=true
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+    volumes:
+      - meilisearch-data:/meili_data
+    restart: unless-stopped
+
+volumes:
+  karakeep-data:
+    name: karakeep-data
+  meilisearch-data:
+    name: meilisearch-data
+
+networks:
+  proxy:
+    external: true
+  karakeep-backend:
+    external: true
