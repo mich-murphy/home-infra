@@ -5,7 +5,6 @@
     gid: "{{ item.gid }}"
     state: present
   loop:
-    - { name: nextcloud, gid: 1205 }
     - { name: photos, gid: 1210 }
     - { name: media, gid: 1215 }
 
@@ -18,6 +17,5 @@
     system: true
     append: true
   loop:
-    - { name: nextcloud, uid: 1205 }
     - { name: photos, uid: 1210 }
     - { name: media, uid: 1215 }

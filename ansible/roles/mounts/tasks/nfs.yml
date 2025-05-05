@@ -49,26 +49,3 @@
     fstype: nfs
     opts: "rw"
     state: mounted
-
-- name: check whether nextcloud mount folder exists
-  ansible.builtin.stat:
-    path: /mnt/nextcloud
-  register: nextcloud
-
-- name: create folder for nextcloud mount
-  ansible.builtin.file:
-    path: /mnt/nextcloud
-    state: directory
-    mode: "0775"
-    owner: nextcloud
-    group: nextcloud
-  when: not nextcloud.stat.exists
-
-- name: mount network share for nextcloud
-  ansible.posix.mount:
-    src: "10.77.1.101:/mnt/slow/nextcloud"
-    path: /mnt/nextcloud
-    fstype: nfs
-    opts: "rw,sync"
-    state: mounted
-
