@@ -31,7 +31,7 @@ services:
     volumes:
       - traefik-data:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik.yml:/traefik.yml:ro
+      # - ./traefik.yml:/traefik.yml:ro
     ports:
       - 80:80
       - 443:443
