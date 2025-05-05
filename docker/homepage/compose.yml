@@ -1,0 +1,28 @@
+---
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    networks:
+      - proxy
+    environment:
+      - HOMEPAGE_ALLOWED_HOSTS=homepage.local.elmurphy.com
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - homepage-data:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro # optional, for docker integrations
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.homepage.rule=Host(`homepage.local.elmurphy.com`)
+      - traefik.http.routers.homepage.tls=true
+      - traefik.http.services.homepage.loadbalancer.server.port=3000
+    restart: unless-stopped
+
+volumes:
+  homepage-data:
+    name: homepage-data
+
+networks:
+  proxy:
+    external: true
