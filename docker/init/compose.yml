@@ -71,6 +71,7 @@ services:
 volumes:
   traefik-data:
     name: traefik-data
+    external: true
   portainer-data:
     name: portainer-data
 

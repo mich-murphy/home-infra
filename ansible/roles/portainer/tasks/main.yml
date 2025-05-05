@@ -25,7 +25,7 @@
 - name: copy init compose file
   ansible.builtin.copy:
     remote_src: true
-    src: "{{ clone_dir }}/docker/init/*"
+    src: "{{ clone_dir }}/docker/init/"
     dest: "{{ srv_dir }}/"
     owner: "{{ username }}"
     mode: "0775"

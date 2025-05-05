@@ -4,10 +4,10 @@
   vars_files:
     - "group_vars/secrets.yml"
   roles:
-    - common
-    - firewall
-    - media
-    - geerlingguy.docker
+    # - common
+    # - firewall
+    # - media
+    # - geerlingguy.docker
     - portainer
 
 - hosts: games
