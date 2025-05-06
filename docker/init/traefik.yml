@@ -1,4 +1,4 @@
 ---
 providers:
   file:
-    filename: /config.yml
+    filename: /traefik-dynamic.yml
