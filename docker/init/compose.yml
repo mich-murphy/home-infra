@@ -23,8 +23,12 @@ services:
   traefik:
     image: traefik:v3.3.6
     container_name: traefik
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
+    env_file:
+      - .env
     environment:
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
       - CF_API_EMAIL=${CF_API_EMAIL}
