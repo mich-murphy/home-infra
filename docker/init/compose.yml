@@ -50,26 +50,6 @@ services:
       - "traefik.http.routers.traefik-secure.tls.domains[0].main=local.elmurphy.com"
       - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.local.elmurphy.com"
       - "traefik.http.routers.traefik-secure.service=api@internal"
-    command:
-      - --log.level=DEBUG
-      - --api.dashboard=true
-      - --entrypoints.web.address=:80
-      - --entrypoints.web.http.redirections.entryPoint.to=websecure
-      - --entrypoints.web.http.redirections.entryPoint.scheme=https
-      - --entrypoints.websecure.address=:443
-      - --entrypoints.websecure.asDefault=true
-      - --providers.docker=true
-      - --providers.docker.network=proxy
-      - --providers.docker.endpoint=unix:///var/run/docker.sock
-      - --providers.docker.exposedByDefault=false
-      - --certificatesresolvers.cloudflare.acme.dnschallenge=true
-      # - --certificatesresolvers.cloudflare.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory # staging (default is prod)
-      - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
-      - --certificatesresolvers.cloudflare.acme.dnschallenge.resolvers=1.1.1.1:53,1.0.0.1:53
-      - --certificatesresolvers.cloudflare.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.cloudflare.acme.dnschallenge.propagation.delayBeforeChecks=60
-      - --certificatesresolvers.cloudflare.acme.dnschallenge.propagation.disableChecks=true
-      - --serverstransport.insecureSkipVerify=true
     restart: unless-stopped
 
 volumes:
