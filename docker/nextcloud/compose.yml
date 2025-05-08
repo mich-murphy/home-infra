@@ -82,6 +82,7 @@ networks:
   proxy:
     external: true
   nextcloud-backend:
+    name: nextcloud-backend
     internal: true
     ipam:
       config:

@@ -81,6 +81,7 @@ networks:
   proxy:
     external: true
   immich-backend:
+    name: immich-backend
     internal: true
     ipam:
       config:
