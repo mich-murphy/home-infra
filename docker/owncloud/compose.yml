@@ -28,6 +28,8 @@ services:
       - traefik.http.routers.owncloud.rule=Host(`owncloud.local.elmurphy.com`)
       - traefik.http.routers.owncloud.tls=true
       - traefik.http.services.owncloud.loadbalancer.server.port=8080
+      - traefik.http.routers.owncloud.middlewares=owncloud-mw
+      - traefik.http.middlewares.owncloud-mw.headers.stsSeconds=15552000
     depends_on:
       - owncloud-mariadb
       - owncloud-redis
