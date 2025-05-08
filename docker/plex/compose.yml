@@ -2,8 +2,10 @@
 services:
   # NOTE: visit https://<plex-fqdn>/web to setup new server
   plex:
-    image: plexinc/pms-docker
+    image: plexinc/pms-docker:latest
     container_name: plex
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     devices:
@@ -27,6 +29,8 @@ services:
   tautulli:
     image: lscr.io/linuxserver/tautulli:latest
     container_name: tautulli
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:
@@ -45,6 +49,8 @@ services:
   overseerr:
     image: lscr.io/linuxserver/overseerr:latest
     container_name: overseerr
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:
@@ -63,6 +69,8 @@ services:
   maintainerr:
     image: ghcr.io/jorenn92/maintainerr:latest
     container_name: maintainerr
+    security_opt:
+      - no-new-privileges:true
     user: 1000:1000
     networks:
       - proxy

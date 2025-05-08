@@ -3,6 +3,8 @@ services:
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:
@@ -22,6 +24,8 @@ services:
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:
@@ -41,6 +45,8 @@ services:
   lidarr:
     image: lscr.io/linuxserver/lidarr:latest
     container_name: lidarr
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:
@@ -58,8 +64,10 @@ services:
     restart: unless-stopped
 
   readarr:
-    image: lscr.io/linuxserver/readarr:develop
+    image: lscr.io/linuxserver/readarr:latest
     container_name: readarr
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:
@@ -79,6 +87,8 @@ services:
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:

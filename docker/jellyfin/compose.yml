@@ -1,8 +1,10 @@
 ---
 services:
   jellyfin:
-    image: jellyfin/jellyfin
+    image: jellyfin/jellyfin:latest
     container_name: jellyfin
+    security_opt:
+      - no-new-privileges:true
     user: 1000:1000
     networks:
       - proxy
@@ -29,6 +31,9 @@ services:
   jellyseerr:
     image: ghcr.io/fallenbagel/jellyseerr:latest
     container_name: jellyseerr
+    security_opt:
+      - no-new-privileges:true
+    user: 1000:1000
     networks:
       - proxy
     environment:
