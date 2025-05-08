@@ -30,7 +30,7 @@ services:
       - traefik.http.services.owncloud.loadbalancer.server.port=8080
     depends_on:
       - owncloud-mariadb
-      - redis
+      - owncloud-redis
     healthcheck:
       test: ["CMD", "/usr/bin/healthcheck"]
       interval: 30s
