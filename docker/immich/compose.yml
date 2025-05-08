@@ -3,6 +3,8 @@ services:
   immich-server:
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
     container_name: immich
+    security_opt:
+      - no-new-privileges:true
     devices:
       - /dev/dri:/dev/dri
     networks:
@@ -25,13 +27,10 @@ services:
       disable: false
 
   immich-ml:
-    # For hardware acceleration, add one of -[armnn, cuda, rocm, openvino, rknn] to the image tag.
-    # Example tag: ${IMMICH_VERSION:-release}-cuda
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
     container_name: immich-ml
-    # extends: # uncomment this section for hardware acceleration - see https://immich.app/docs/features/ml-hardware-acceleration
-    #   file: hwaccel.ml.yml
-    #   service: cpu # set to one of [armnn, cuda, rocm, openvino, openvino-wsl, rknn] for accelerated inference - use the `-wsl` version for WSL2 where applicable
+    security_opt:
+      - no-new-privileges:true
     networks:
       - immich-backend
     volumes:
@@ -41,8 +40,10 @@ services:
       disable: false
 
   redis:
+    image: docker.io/valkey/valkey:8-bookworm@sha256:4a9f847af90037d59b34cd4d4ad14c6e055f46540cf4ff757aaafb266060fa28
     container_name: immich-redis
-    image: docker.io/valkey/valkey:8-bookworm@sha256:42cba146593a5ea9a622002c1b7cba5da7be248650cbb64ecb9c6c33d29794b1
+    security_opt:
+      - no-new-privileges:true
     networks:
       - immich-backend
     healthcheck:
@@ -52,6 +53,8 @@ services:
   database:
     image: docker.io/tensorchord/pgvecto-rs:pg14-v0.2.0@sha256:739cdd626151ff1f796dc95a6591b55a714f341c737e27f045019ceabf8e8c52
     container_name: immich-postgres
+    security_opt:
+      - no-new-privileges:true
     networks:
       - immich-backend
     environment:
@@ -78,4 +81,7 @@ networks:
   proxy:
     external: true
   immich-backend:
-    external: true
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.1.0/24
