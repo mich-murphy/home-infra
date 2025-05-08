@@ -3,6 +3,8 @@ services:
   karakeep:
     image: ghcr.io/karakeep-app/karakeep:${KARAKEEP_VERSION:-release}
     container_name: karakeep
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
       - karakeep-backend
@@ -24,6 +26,8 @@ services:
   karakeep-browser:
     image: gcr.io/zenika-hub/alpine-chrome:123
     container_name: karakeep-browser
+    security_opt:
+      - no-new-privileges:true
     networks:
       - karakeep-backend
     command:
@@ -38,6 +42,8 @@ services:
   karakeep-search:
     image: getmeili/meilisearch:v1.13.3
     container_name: karakeep-search
+    security_opt:
+      - no-new-privileges:true
     networks:
       - karakeep-backend
     environment:
@@ -57,4 +63,8 @@ networks:
   proxy:
     external: true
   karakeep-backend:
-    external: true
+    name: karakeep-backend
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.40.1.0/24
