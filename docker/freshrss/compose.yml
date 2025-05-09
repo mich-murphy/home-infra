@@ -3,6 +3,8 @@ services:
   freshrss:
     image: lscr.io/linuxserver/freshrss:latest
     container_name: freshrss
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:

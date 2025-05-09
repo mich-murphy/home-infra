@@ -3,6 +3,8 @@ services:
   beszel:
     image: henrygd/beszel
     container_name: beszel
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     volumes:

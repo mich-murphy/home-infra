@@ -3,6 +3,8 @@ services:
   pinchflat:
     image: ghcr.io/kieraneglin/pinchflat:latest
     container_name: pinchflat
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:

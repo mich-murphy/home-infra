@@ -3,6 +3,8 @@ services:
   audiobookshelf:
     image: ghcr.io/advplyr/audiobookshelf:latest
     container_name: audiobookshelf
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:

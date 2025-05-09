@@ -3,6 +3,8 @@ services:
   deluge:
     image: lscr.io/linuxserver/deluge:latest
     container_name: deluge
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:
@@ -29,6 +31,8 @@ services:
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:latest
     container_name: sabnzbd
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:
