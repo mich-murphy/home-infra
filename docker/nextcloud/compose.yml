@@ -5,7 +5,6 @@ services:
     container_name: nextcloud
     security_opt:
       - no-new-privileges:true
-    user: 1000:1000
     networks:
       - proxy
       - nextcloud-backend
@@ -40,7 +39,6 @@ services:
     container_name: nextcloud-cron
     security_opt:
       - no-new-privileges:true
-    user: 1000:1000
     networks:
       - nextcloud-backend
     volumes:
