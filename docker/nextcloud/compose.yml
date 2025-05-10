@@ -55,7 +55,6 @@ services:
     container_name: nextcloud-postgres
     security_opt:
       - no-new-privileges:true
-    user: 1000:1000
     networks:
       - nextcloud-backend
     environment:
@@ -71,7 +70,6 @@ services:
     container_name: nextcloud-redis
     security_opt:
       - no-new-privileges:true
-    user: 1000:1000
     networks:
       - nextcloud-backend
     restart: unless-stopped
