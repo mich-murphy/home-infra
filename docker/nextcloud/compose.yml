@@ -33,10 +33,13 @@ services:
       - traefik.http.middlewares.nextcloud_redirectregex.redirectregex.regex=https://(.*)/.well-known/(?:card|cal)dav
       - traefik.http.middlewares.nextcloud_redirectregex.redirectregex.replacement=https://$${1}/remote.php/dav
       # HSTS
-      - "traefik.http.middlewares.nextcloud_headers.headers.stsSeconds=15552000"
-      - "traefik.http.middlewares.nextcloud_headers.headers.stsIncludeSubdomains=true"
-      - "traefik.http.middlewares.nextcloud_headers.headers.stsPreload=true"
-      - "traefik.http.middlewares.nextcloud_headers.headers.forceSTSHeader=true"
+      - traefik.http.middlewares.nextcloud_headers.headers.referrerPolicy=no-referrer
+      - traefik.http.middlewares.nextcloud_headers.headers.stsSeconds=31536000
+      - traefik.http.middlewares.nextcloud_headers.headers.forceSTSHeader=true
+      - traefik.http.middlewares.nextcloud_headers.headers.stsPreload=true
+      - traefik.http.middlewares.nextcloud_headers.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.nextcloud_headers.headers.browserXssFilter=true
+      - traefik.http.middlewares.nextcloud_headers.headers.customRequestHeaders.X-Forwarded-Proto=https
     depends_on:
       - nextcloud-redis
       - nextcloud-postgres
