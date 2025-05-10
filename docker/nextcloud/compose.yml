@@ -12,8 +12,6 @@ services:
       - NEXTCLOUD_DATA_DIR=/data
       - NEXTCLOUD_TRUSTED_DOMAINS="https://nextcloud.local.elmurphy.com"
       - PHP_UPLOAD_LIMIT=1G
-      # - APACHE_DISABLE_REWRITE_IP=1
-      # - TRUSTED_PROXIES=172.20.1.0/24
       - POSTGRES_HOST=nextcloud-postgres
       - POSTGRES_DB=nextcloud
       - POSTGRES_USER=nextcloud
@@ -27,17 +25,15 @@ services:
       - traefik.http.routers.nextcloud.rule=Host(`nextcloud.local.elmurphy.com`)
       - traefik.http.routers.nextcloud.tls=true
       - traefik.http.services.nextcloud.loadbalancer.server.port=80
-      - traefik.http.services.nextcloud.loadbalancer.passhostheader=true
-      - traefik.http.middlewares.nextcloud-header.headers.customFrameOptionsValue=SAMEORIGIN
-      - traefik.http.middlewares.nextcloud-header.headers.framedeny=true
-      - traefik.http.middlewares.nextcloud-header.headers.sslredirect=true
-      - traefik.http.middlewares.nextcloud-header.headers.stsSeconds=15552000
-      - traefik.http.middlewares.nextcloud-header.headers.stsIncludeSubdomains=true
-      - traefik.http.middlewares.nextcloud-header.headers.stsPreload=true
-      - traefik.http.middlewares.nextcloud-header.headers.forceSTSHeader=true
-      - traefik.http.middlewares.nextcloud-header.headers.sslProxyHeaders.X-Forwarded-Proto=https
+      - traefik.http.middlewares.https-redirect.redirectscheme.schema=https
+      - traefik.http.middlewares.nextcloud-chain.chain.middlewares=nextcloud-secure-headers,https-redirect,nextcloud_redirectregex
+      - traefik.http.middlewares.nextcloud-secure-headers.headers.hostsProxyHeaders=X-Forwarded-Host
+      - traefik.http.middlewares.nextcloud-secure-headers.headers.referrerPolicy=same-origin
+      - traefik.http.middlewares.nextcloud-secure-headers.headers.stsSeconds=15552000
+      - traefik.http.middlewares.nextcloud-secure-headers.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.nextcloud-secure-headers.headers.stsPreload=true
+      - traefik.http.middlewares.nextcloud-secure-headers.headers.forceSTSHeader=true
       # reference: https://docs.nextcloud.com/server/31/admin_manual/configuration_server/reverse_proxy_configuration.html#traefik-2
-      - "traefik.http.routers.nextcloud.middlewares=nextcloud_redirectregex@docker,nextcloud-header@docker"
       - traefik.http.middlewares.nextcloud_redirectregex.redirectregex.permanent=true
       - traefik.http.middlewares.nextcloud_redirectregex.redirectregex.regex=https://(.*)/.well-known/(?:card|cal)dav
       - traefik.http.middlewares.nextcloud_redirectregex.redirectregex.replacement=https://$${1}/remote.php/dav
