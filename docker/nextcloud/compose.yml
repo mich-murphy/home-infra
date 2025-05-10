@@ -27,6 +27,7 @@ services:
       - traefik.http.routers.nextcloud.rule=Host(`nextcloud.local.elmurphy.com`)
       - traefik.http.routers.nextcloud.tls=true
       - traefik.http.services.nextcloud.loadbalancer.server.port=80
+      - traefik.http.services.nextcloud.loadbalancer.passhostheader=true
       - traefik.http.middlewares.nextcloud-header.headers.customFrameOptionsValue=SAMEORIGIN
       - traefik.http.middlewares.nextcloud-header.headers.framedeny=true
       - traefik.http.middlewares.nextcloud-header.headers.sslredirect=true
