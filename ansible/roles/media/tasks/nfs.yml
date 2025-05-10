@@ -25,7 +25,7 @@
     src: "10.77.1.101:/mnt/slow/media"
     path: /mnt/data
     fstype: nfs
-    opts: "rw"
+    opts: "rw,proto=tcp,nofail"
     state: mounted
 
 - name: check whether photos mount folder exists
@@ -47,5 +47,27 @@
     src: "10.77.1.101:/mnt/slow/photos"
     path: /mnt/photos
     fstype: nfs
-    opts: "rw"
+    opts: "rw,proto=tcp,nofail"
+    state: mounted
+
+- name: check whether nextcloud mount folder exists
+  ansible.builtin.stat:
+    path: /mnt/nextcloud
+  register: nextcloud
+
+- name: create folder for nextcloud mount
+  ansible.builtin.file:
+    path: /mnt/nextcloud
+    state: directory
+    mode: "0775"
+    owner: nextcloud
+    group: nextcloud
+  when: not photos.stat.exists
+
+- name: mount network share for nextcloud
+  ansible.posix.mount:
+    src: "10.77.1.101:/mnt/slow/nextcloud"
+    path: /mnt/nextcloud
+    fstype: nfs
+    opts: "rw,proto=tcp,nofail"
     state: mounted
