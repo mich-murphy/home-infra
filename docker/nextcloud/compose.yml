@@ -28,17 +28,10 @@ services:
       - traefik.http.routers.nextcloud.tls=true
       - traefik.http.services.nextcloud.loadbalancer.server.port=80
       - traefik.http.routers.nextcloud.entrypoints=websecure
-      - traefik.http.middlewares.nextcloud-secure-headers.headers.hostsProxyHeaders=X-Forwarded-Host
-      - traefik.http.middlewares.nextcloud-secure-headers.headers.referrerPolicy=same-origin
-      - traefik.http.middlewares.nextcloud-secure-headers.headers.framedeny=true
-      - traefik.http.middlewares.nextcloud-secure-headers.headers.sslredirect=true
-      - traefik.http.middlewares.nextcloud-secure-headers.headers.stsSeconds=15552000
-      - traefik.http.middlewares.nextcloud-secure-headers.headers.stsIncludeSubdomains=true
-      - traefik.http.middlewares.nextcloud-secure-headers.headers.stsPreload=true
-      - traefik.http.middlewares.nextcloud-secure-headers.headers.forceSTSHeader=true
-      - traefik.http.middlewares.nextcloud-secure-headers.headers.sslProxyHeaders.X-Forwarded-Proto=https
+      - "traefik.http.middlewares.nextcloud_headers.headers.customFrameOptionsValue=SAMEORIGIN"
+      - "traefik.http.middlewares.nextcloud_headers.headers.customResponseHeaders.Strict-Transport-Security=15552000"
       # reference: https://docs.nextcloud.com/server/31/admin_manual/configuration_server/reverse_proxy_configuration.html#traefik-2
-      - traefik.http.routers.nextcloud.middlewares=nextcloud_redirectregex@docker,nextcloud-secure-headers@docker
+      - traefik.http.routers.nextcloud.middlewares=nextcloud_redirectregex@docker,nextcloud_headers@docker
       - traefik.http.middlewares.nextcloud_redirectregex.redirectregex.permanent=true
       - traefik.http.middlewares.nextcloud_redirectregex.redirectregex.regex=https://(.*)/.well-known/(?:card|cal)dav
       - traefik.http.middlewares.nextcloud_redirectregex.redirectregex.replacement=https://$${1}/remote.php/dav
