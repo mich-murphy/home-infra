@@ -65,6 +65,8 @@ services:
       - no-new-privileges:true
     networks:
       - proxy
+    env_file:
+      - .env
     environment:
      - PUBLIC_APP_URL=https://pocket-id.local.elmurphy.com
      - TRUST_PROXY=true
