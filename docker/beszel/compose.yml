@@ -7,6 +7,8 @@ services:
       - no-new-privileges:true
     networks:
       - proxy
+    environment:
+      - DISABLE_PASSWORD_AUTH=true # use pocket-id
     volumes:
       - beszel-data:/beszel_data
     labels:
