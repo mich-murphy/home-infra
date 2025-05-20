@@ -28,7 +28,7 @@ http:
   routers:
     proxmox:
       entryPoints:
-        - "https"
+        - "websecure"
       rule: "Host(`proxmox.local.elmurphy.com`)"
       middlewares:
         - default-headers
