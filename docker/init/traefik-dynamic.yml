@@ -23,3 +23,54 @@ tls:
         - X25519
         - CurveP256
         - CurveP384
+http:
+ #region routers 
+  routers:
+    proxmox:
+      entryPoints:
+        - "https"
+      rule: "Host(`proxmox.local.elmurphy.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: proxmox
+    pihole:
+  
+#endregion
+#region services
+  services:
+    proxmox:
+      loadBalancer:
+        servers:
+          - url: "https://10.77.1.100:8006"
+        passHostHeader: true
+#endregion
+  middlewares:
+    https-redirectscheme:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    default-headers:
+      headers:
+        frameDeny: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 15552000
+        customFrameOptionsValue: SAMEORIGIN
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+    default-whitelist:
+      ipAllowList:
+        sourceRange:
+        - "100.0.0.0/8"
+        - "10.77.1.0/24"
+        - "172.20.1.0/24"
+    secured:
+      chain:
+        middlewares:
+        - default-whitelist
+        - default-headers
