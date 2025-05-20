@@ -8,7 +8,6 @@ tls:
         - X25519
         - CurveP256
         - CurveP384
-
     intermediate:
       cipherSuites:
         - "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
@@ -24,7 +23,6 @@ tls:
         - CurveP256
         - CurveP384
 http:
- #region routers 
   routers:
     proxmox:
       entryPoints:
@@ -35,17 +33,26 @@ http:
         - https-redirectscheme
       tls: {}
       service: proxmox
-    pihole:
-  
-#endregion
-#region services
+    truenas:
+      entryPoints:
+        - "websecure"
+      rule: "Host(`truenas.local.elmurphy.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: truenas
   services:
     proxmox:
       loadBalancer:
         servers:
           - url: "https://10.77.1.100:8006"
         passHostHeader: true
-#endregion
+    truenas:
+      loadBalancer:
+        servers:
+          - url: "https://10.77.1.101"
+        passHostHeader: true
   middlewares:
     https-redirectscheme:
       redirectScheme:
