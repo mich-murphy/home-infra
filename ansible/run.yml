@@ -7,7 +7,6 @@
     # - common
     # - firewall
     # - media
-    # - geerlingguy.docker
     - portainer
 
 - hosts: games
@@ -16,5 +15,4 @@
     - "group_vars/secrets.yml"
   roles:
     - common
-    - geerlingguy.docker
 
