@@ -48,7 +48,7 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   target_node      = "proxmox"
   tags             = null
   agent            = 1
-  cores            = 4
+  cores            = 2
   memory           = 12288
   onboot           = true
   startup          = "order=2,up=30"
@@ -97,9 +97,10 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
 }
 
 resource "proxmox_vm_qemu" "talos_control_plane" {
-  count            = 1
+  count            = 3
   vmid             = "20${count.index + 1}"
   name             = "talos-control-plane-${count.index + 1}"
+  desc             = "Talos image: factory.talos.dev/metal-installer/0a077242b1a6fbcfbcf6721b383af8633624716b5780522bc5575002aec73921:v1.10.2"
   target_node      = "proxmox"
   tags             = "kubernetes"
   agent            = 1
@@ -146,8 +147,9 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
 
 resource "proxmox_vm_qemu" "talos_worker" {
   count            = 3
-  vmid             = "30${count.index + 1}"
+  vmid             = "21${count.index + 1}"
   name             = "talos-worker-${count.index + 1}"
+  desc             = "Talos image: factory.talos.dev/metal-installer/0a077242b1a6fbcfbcf6721b383af8633624716b5780522bc5575002aec73921:v1.10.2"
   target_node      = "proxmox"
   tags             = "kubernetes"
   agent            = 1

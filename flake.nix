@@ -3,7 +3,7 @@
 
   # Flake inputs
   inputs = {
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2411.718112.tar.gz";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 
   # Flake outputs
