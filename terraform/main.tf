@@ -8,10 +8,10 @@ data "onepassword_item" "proxmox" {
 }
 
 provider "proxmox" {
-  pm_api_url          = data.onepassword_item.proxmox.url
+  pm_api_url          = "https://proxmox.local.elmurphy.com/api2/json"
   pm_api_token_id     = data.onepassword_item.proxmox.username
   pm_api_token_secret = data.onepassword_item.proxmox.password
-  pm_tls_insecure     = true # Set to false in production
+  pm_tls_insecure     = false # Set to false in production
 }
 
 # create cloud-init configuration
@@ -76,6 +76,7 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
           discard = true
           storage = "local-zfs"
           size    = "128G"
+          iothread = true
         }
       }
     }
@@ -95,31 +96,23 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   }
 }
 
-resource "proxmox_vm_qemu" "cloud_init_game_server" {
-  depends_on = [
-    terraform_data.cloud_init_config,
-  ]
-  vmid             = 103
-  name             = "game-server"
+resource "proxmox_vm_qemu" "talos_control_plane" {
+  count            = 1
+  vmid             = "20${count.index + 1}"
+  name             = "talos-control-plane-${count.index + 1}"
   target_node      = "proxmox"
-  tags             = null
+  tags             = "kubernetes"
   agent            = 1
   cores            = 4
-  memory           = 8192
+  memory           = 4096
   onboot           = true
   bios             = "seabios"
-  boot             = "order=scsi0"        # has to be the same as the OS disk of the template
-  clone            = "ubuntu-server-2404" # name of the template
+  boot             = "order=scsi0;ide1"
   scsihw           = "virtio-scsi-single"
   vm_state         = "running"
   automatic_reboot = true
-  # Cloud-Init configuration
-  cicustom  = "vendor=local:snippets/agents.yml" # /var/lib/vz/snippets
-  ciupgrade = true
   ipconfig0 = "ip=dhcp,ip6=dhcp"
   skip_ipv6 = true
-  ciuser    = "ansible"
-  sshkeys   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
   # set serial device for display
   serial {
     id = 0
@@ -130,15 +123,64 @@ resource "proxmox_vm_qemu" "cloud_init_game_server" {
         disk {
           discard = true
           storage = "local-zfs"
-          size    = "384G"
+          size    = "100G"
+          iothread = true
         }
       }
     }
-    # attach cloud-init drive
+    # install media
     ide {
       ide1 {
-        cloudinit {
+        cdrom {
+          iso = "local:iso/metal-amd64.iso"
+        }
+      }
+    }
+  }
+  network {
+    id     = 0
+    bridge = "vmbr0"
+    model  = "virtio"
+  }
+}
+
+resource "proxmox_vm_qemu" "talos_worker" {
+  count            = 3
+  vmid             = "30${count.index + 1}"
+  name             = "talos-worker-${count.index + 1}"
+  target_node      = "proxmox"
+  tags             = "kubernetes"
+  agent            = 1
+  cores            = 2
+  memory           = 2048
+  onboot           = true
+  bios             = "seabios"
+  boot             = "order=scsi0;ide1"
+  scsihw           = "virtio-scsi-single"
+  vm_state         = "running"
+  automatic_reboot = true
+  ipconfig0 = "ip=dhcp,ip6=dhcp"
+  skip_ipv6 = true
+  # set serial device for display
+  serial {
+    id = 0
+  }
+  disks {
+    scsi {
+      scsi0 {
+        disk {
+          discard = true
           storage = "local-zfs"
+          size    = "100G"
+          iothread = true
+        }
+      }
+    }
+    # install media
+    ide {
+      ide1 {
+        cdrom {
+          iso = "local:iso/metal-amd64.iso"
         }
       }
     }

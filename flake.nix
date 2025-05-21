@@ -35,14 +35,13 @@
         # The Nix packages provided in the environment
         packages = [
           pkgs.terraform
-          pkgs.opentofu
           pkgs.ansible
           pkgs.just
           pkgs._1password-cli
-          # pkgs.talosctl
-          # pkgs.kubectl
-          # pkgs.k9s
-          # pkgs.kubernetes-helm
+          pkgs.talosctl
+          pkgs.kubectl
+          pkgs.k9s
+          pkgs.kubernetes-helm
         ];
       };
     });
