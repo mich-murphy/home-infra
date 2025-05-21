@@ -3,7 +3,7 @@
 
   # Flake inputs
   inputs = {
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2411.*.tar.gz";
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2411.718112.tar.gz";
   };
 
   # Flake outputs
@@ -39,6 +39,10 @@
           pkgs.ansible
           pkgs.just
           pkgs._1password-cli
+          # pkgs.talosctl
+          # pkgs.kubectl
+          # pkgs.k9s
+          # pkgs.kubernetes-helm
         ];
       };
     });
