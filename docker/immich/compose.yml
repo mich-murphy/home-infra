@@ -11,8 +11,7 @@ services:
       - proxy
       - immich-backend
     volumes:
-      # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
-      - /mnt/photos:/usr/src/app/upload
+      - ${UPLOAD_LOCATION}:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
     labels:
       - traefik.enable=true
@@ -63,7 +62,7 @@ services:
       - POSTGRES_DB=immich
       - POSTGRES_INITDB_ARGS='--data-checksums'
     volumes:
-      - /var/lib/immich-postgres:/var/lib/postgresql/data
+      - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
     restart: unless-stopped
 
 volumes:
