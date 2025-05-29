@@ -1,0 +1,78 @@
+---
+services:
+  wallabag:
+    image: wallabag/wallabag:2.6.12
+    container_name: wallabag
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+      - wallabag-backend
+    environment:
+      - MYSQL_ROOT_PASSWORD=wallaroot
+      - SYMFONY__ENV__DATABASE_DRIVER=pdo_mysql
+      - SYMFONY__ENV__DATABASE_HOST=db
+      - SYMFONY__ENV__DATABASE_PORT=3306
+      - SYMFONY__ENV__DATABASE_NAME=wallabag
+      - SYMFONY__ENV__DATABASE_USER=wallabag
+      - SYMFONY__ENV__DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - SYMFONY__ENV__DATABASE_CHARSET=utf8mb4
+      - SYMFONY__ENV__DOMAIN_NAME=https://wallabag.local.elmurphy.com
+      - SYMFONY__ENV__SERVER_NAME="Wallabag"
+    volumes:
+      - wallabag-data:/var/www/wallabag/web/assets/images
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.wallabag.rule=Host(`wallabag.local.elmurphy.com`)
+      - traefik.http.routers.wallabag.tls=true
+      - traefik.http.services.wallabag.loadbalancer.server.port=80
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  db:
+    image: mariadb
+    container_name: wallabag-mariadb
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - wallabag-backend
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DATABASE_PASSWORD}
+    volumes:
+      - wallabag-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 20s
+      timeout: 3s
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: wallabag-redis
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - wallabag-backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 20s
+      timeout: 3s
+    restart: unless-stopped    
+
+volumes:
+  wallabag-data:
+    name: wallabag-data
+  wallabag-db:
+    name: wallabag-db
+
+networks:
+  proxy:
+    external: true
+  wallabag-backend:
+    name: wallabag-backend
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.60.1.0/24
