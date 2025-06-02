@@ -1,5 +1,6 @@
 ---
 services:
+  # initial login: wallabag, wallabag
   wallabag:
     image: wallabag/wallabag:2.6.12
     container_name: wallabag
