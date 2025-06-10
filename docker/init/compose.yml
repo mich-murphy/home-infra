@@ -88,6 +88,36 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  op-connect-api:
+    image: 1password/connect-api:latest
+    container_name: op-connect-api
+    networks:
+      - op-connect
+    volumes:
+      - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
+      - onepassword-data:/home/opuser/.op/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.op-connect-api.rule=Host(`op-connect-api.local.elmurphy.com`)
+      - traefik.http.routers.op-connect-api.tls=true
+      - traefik.http.services.op-connect-api.loadbalancer.server.port=8080
+    restart: unless-stopped
+
+  op-connect-sync:
+    image: 1password/connect-sync:latest
+    container_name: op-connect-sync
+    networks:
+      - op-connect
+    volumes:
+      - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
+      - onepassword-data:/home/opuser/.op/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.op-connect-sync.rule=Host(`op-connect-sync.local.elmurphy.com`)
+      - traefik.http.routers.op-connect-sync.tls=true
+      - traefik.http.services.op-connect-sync.loadbalancer.server.port=8080
+    restart: unless-stopped
+
 volumes:
   portainer-data:
     name: portainer-data
@@ -95,6 +125,8 @@ volumes:
     name: traefik-data
   pocketid-data:
     name: pocketid-data
+  onepassword-data:
+    name: onepassword-data
 
 networks:
   proxy:
@@ -102,3 +134,8 @@ networks:
     ipam:
       config:
         - subnet: 172.20.1.0/24
+  op-connect:
+    name: op-connect
+    ipam:
+      config:
+        - subnet: 172.70.1.0/24
