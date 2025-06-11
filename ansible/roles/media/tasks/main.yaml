@@ -7,8 +7,8 @@
 
 - name: create users for nfs mount
   ansible.builtin.include_tasks:
-    file: users.yml
+    file: users.yaml
 
 - name: setup nfs mounts
   ansible.builtin.include_tasks:
-    file: nfs.yml
+    file: nfs.yaml

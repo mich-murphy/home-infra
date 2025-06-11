@@ -1,0 +1,10 @@
+---
+- hosts: docker
+  become: true
+  vars_files:
+    - "group_vars/secrets.yaml"
+  roles:
+    # - common
+    # - firewall
+    # - media
+    - docker
