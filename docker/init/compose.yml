@@ -96,11 +96,8 @@ services:
     volumes:
       - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
       - onepassword-data:/home/opuser/.op/data
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.op-connect-api.rule=Host(`op-connect-api.local.elmurphy.com`)
-      - traefik.http.routers.op-connect-api.tls=true
-      - traefik.http.services.op-connect-api.loadbalancer.server.port=8080
+    ports:
+      - 8001:8080
     restart: unless-stopped
 
   op-connect-sync:
@@ -111,11 +108,8 @@ services:
     volumes:
       - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
       - onepassword-data:/home/opuser/.op/data
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.op-connect-sync.rule=Host(`op-connect-sync.local.elmurphy.com`)
-      - traefik.http.routers.op-connect-sync.tls=true
-      - traefik.http.services.op-connect-sync.loadbalancer.server.port=8080
+    ports:
+      - 8002:8080
     restart: unless-stopped
 
 volumes:
