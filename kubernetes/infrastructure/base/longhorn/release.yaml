@@ -13,9 +13,6 @@ spec:
         kind: HelmRepository
         name: longhorn
         namespace: longhorn-system
-  values:
-    defaultSettings:
-      defaultReplicaCount: 2
-    service:
-      ui:
-        type: LoadBalancer
+  valuesFrom:
+    - kind: ConfigMap
+      name: longhorn-values

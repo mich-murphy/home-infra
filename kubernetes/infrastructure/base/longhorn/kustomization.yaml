@@ -5,3 +5,9 @@ resources:
   - namespace.yaml
   - release.yaml
   - repository.yaml
+configMapGenerator:
+  - name: longhorn-values
+    files:
+      - values.yaml=my-values.yaml
+configurations:
+  - kustomizeconfig.yaml

@@ -1,0 +1,5 @@
+defaultSettings:
+  defaultReplicaCount: 2
+service:
+  ui:
+    type: LoadBalancer
