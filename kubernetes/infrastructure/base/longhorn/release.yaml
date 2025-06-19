@@ -14,7 +14,8 @@ spec:
         name: longhorn
         namespace: longhorn-system
   values:
-    defaultClassReplicaCount: 2
+    defaultSettings:
+      defaultReplicaCount: 2
     service:
       ui:
         type: LoadBalancer
