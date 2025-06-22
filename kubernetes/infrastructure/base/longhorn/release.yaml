@@ -4,17 +4,22 @@ metadata:
   name: longhorn-release
   namespace: longhorn-system
 spec:
+  interval: 12h
   chart:
     spec:
       chart: longhorn
+      version: "1.9.*"
       reconcileStrategy: ChartVersion
       sourceRef:
         kind: HelmRepository
         name: longhorn-repo
-      version: "1.9.*"
-  interval: 12h
+      interval: 12h
+  releaseName: longhorn
   driftDetection:
     mode: enabled
-  valuesFrom:
-    - kind: ConfigMap
-      name: longhorn-values
+  values:
+    defaultSettings:
+      defaultReplicaCount: 2
+    service:
+      ui:
+        type: LoadBalancer
