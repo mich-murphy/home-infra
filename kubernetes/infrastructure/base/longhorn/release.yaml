@@ -12,7 +12,7 @@ spec:
       reconcileStrategy: ChartVersion
       sourceRef:
         kind: HelmRepository
-        name: longhorn-repo
+        name: longhorn
       interval: 12h
   releaseName: longhorn
   driftDetection:
