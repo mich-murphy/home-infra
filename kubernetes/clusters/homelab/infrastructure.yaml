@@ -12,6 +12,7 @@ spec:
     name: flux-system
   path: ./kubernetes/infrastructure/controllers
   prune: true
+  wait: true
 # ---
 # apiVersion: kustomize.toolkit.fluxcd.io/v1
 # kind: Kustomization
