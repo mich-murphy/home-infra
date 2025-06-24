@@ -15,6 +15,10 @@ spec:
         name: longhorn
       interval: 12h
   releaseName: longhorn
+  install:
+    crds: Create
+  upgrade:
+    crds: CreateReplace
   driftDetection:
     mode: enabled
   values:

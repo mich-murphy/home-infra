@@ -1,8 +1,0 @@
-apiVersion: "cilium.io/v2alpha1"
-kind: CiliumLoadBalancerIPPool
-metadata:
-  name: homelab-pool
-spec:
-  blocks:
-  # https://account.arin.net/public/cidrCalculator
-  - cidr: "10.77.1.210/31"
