@@ -12,6 +12,8 @@ spec:
       labels:
         app: linkding
     spec:
+      strategy:
+        type: Recreate
       securityContext:
         runAsUser: 33
         runAsGroup: 33
