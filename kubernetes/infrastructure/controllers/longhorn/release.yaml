@@ -23,3 +23,5 @@ spec:
     service:
       ui:
         type: LoadBalancer
+    preUpgradeChecker:
+      jobEnabled: false
