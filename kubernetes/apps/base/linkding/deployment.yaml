@@ -23,14 +23,22 @@ spec:
           image: sissbruecker/linkding:1.40.0
           ports:
             - containerPort: 9090
+          env:
+            - name: LD_SUPERUSER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: linkding-credentials
+                  key: linkding-username
+            - name: LD_SUPERUSER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: linkding-credentials
+                  key: linkding-password
           securityContext:
             allowPriviligeEscalation: false
           volumeMounts:
             - name: linkding-data
               mountPath: /etc/linkding/data
-          envFrom:
-            - secretRef:
-                name: linkding-credentials
       volumes:
         - name: linkding-data
           persistentVolumeClaim:
