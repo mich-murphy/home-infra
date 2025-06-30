@@ -63,9 +63,9 @@ services:
       - traefik.http.services.lidarr.loadbalancer.server.port=8686
     restart: unless-stopped
 
-  readarr:
-    image: lscr.io/linuxserver/readarr:develop
-    container_name: readarr
+  lazylibrarian:
+    image: lscr.io/linuxserver/lazylibrarian:latest
+    container_name: lazylibrarian
     security_opt:
       - no-new-privileges:true
     networks:
@@ -74,14 +74,15 @@ services:
       - PUID=1215
       - PGID=1215
       - TZ=${TZ}
+      - DOCKER_MODS=linuxserver/mods:lazylibrarian-ffmpeg
     volumes:
-      - readarr-data:/config
+      - lazylibrarian-data:/config
       - /mnt/data:/data:rw
     labels:
       - traefik.enable=true
-      - traefik.http.routers.readarr.rule=Host(`readarr.local.elmurphy.com`)
-      - traefik.http.routers.readarr.tls=true
-      - traefik.http.services.readarr.loadbalancer.server.port=8787
+      - traefik.http.routers.lazylibrarian.rule=Host(`lazylibrarian.local.elmurphy.com`)
+      - traefik.http.routers.lazylibrarian.tls=true
+      - traefik.http.services.lazylibrarian.loadbalancer.server.port=5299
     restart: unless-stopped
 
   prowlarr:
@@ -111,8 +112,8 @@ volumes:
     name: sonarr-data
   lidarr-data:
     name: lidarr-data
-  readarr-data:
-    name: readarr-data
+  lazylibrarian-data:
+    name: lazylibrarian-data 
   prowlarr-data:
     name: prowlarr-data
 
