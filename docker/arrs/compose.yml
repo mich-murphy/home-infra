@@ -77,7 +77,8 @@ services:
       - DOCKER_MODS=linuxserver/mods:lazylibrarian-ffmpeg
     volumes:
       - lazylibrarian-data:/config
-      - /mnt/data:/data:rw
+      - /mnt/data/torrents:/downloads:ro
+      - /mnt/data/media/audiobooks:/books:rw #optional
     labels:
       - traefik.enable=true
       - traefik.http.routers.lazylibrarian.rule=Host(`lazylibrarian.local.elmurphy.com`)
