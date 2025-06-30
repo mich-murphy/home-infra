@@ -78,7 +78,8 @@ services:
     volumes:
       - lazylibrarian-data:/config
       - /mnt/data/torrents:/downloads:ro
-      - /mnt/data/media/audiobooks:/books:rw #optional
+      - /mnt/data/media/books:/books:rw
+      - /mnt/data/media/audiobooks:/audiobooks:rw
     labels:
       - traefik.enable=true
       - traefik.http.routers.lazylibrarian.rule=Host(`lazylibrarian.local.elmurphy.com`)
