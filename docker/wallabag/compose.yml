@@ -2,7 +2,7 @@
 services:
   # initial login: wallabag, wallabag
   wallabag:
-    image: wallabag/wallabag:2.6.12
+    image: wallabag/wallabag:2.6.13
     container_name: wallabag
     security_opt:
       - no-new-privileges:true
