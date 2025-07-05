@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
   karakeep-browser:
-    image: gcr.io/zenika-hub/alpine-chrome:123
+    image: gcr.io/zenika-hub/alpine-chrome:124
     container_name: karakeep-browser
     security_opt:
       - no-new-privileges:true
