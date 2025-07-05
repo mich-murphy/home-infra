@@ -40,7 +40,7 @@ services:
     restart: unless-stopped
 
   karakeep-search:
-    image: getmeili/meilisearch:v1.13.3
+    image: getmeili/meilisearch:v1.15.2
     container_name: karakeep-search
     security_opt:
       - no-new-privileges:true
