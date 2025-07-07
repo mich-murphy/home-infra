@@ -3,7 +3,8 @@
   "extends": [
     "config:recommended",       
     ":rebaseStalePrs",
-    ":dependencyDashboard"
+    ":dependencyDashboard",
+    ":semanticCommits"
   ],
   "major": {
     "dependencyDashboardApproval": true
