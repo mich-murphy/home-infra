@@ -9,13 +9,6 @@
   "major": {
     "dependencyDashboardApproval": true
   },
-  "enabledManagers": [
-    "kubernetes",
-    "helm",
-    "ansible",
-    "docker",
-    "terraform"
-  ],
   "ignorePaths": [
     "**/docker/immich/**",
     "**/docker/karakeep/**"
