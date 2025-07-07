@@ -64,7 +64,7 @@ services:
     restart: unless-stopped
 
   lazylibrarian:
-    image: lscr.io/linuxserver/lazylibrarian:latest@sha256:3e56236f3921b78b2244db16f916e098d9c59e608087a00add9b888f9ce94e2b
+    image: lscr.io/linuxserver/lazylibrarian:latest@sha256:9026d146bc19baeaec20f9bda7105d0bda4f0d3f59eadb67df9224d3747ad149
     container_name: lazylibrarian
     security_opt:
       - no-new-privileges:true
