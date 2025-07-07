@@ -3,13 +3,20 @@
   "extends": [
     "config:recommended",       
     ":rebaseStalePrs",
+    ":dependencyDashboard"
   ],
+  "major": {
+    "dependencyDashboardApproval": true
+  },
   "enabledManagers": [
     "kubernetes",
     "helm",
     "ansible",
     "docker",
-    "terraform",
+    "terraform"
+  ],
+  "ignorePaths": [
+    "**/docker/immich/**"
   ],
   "kubernetes": {
     "managerFilePatterns": ["/kubernetes/.+\\.ya?ml$/"]
