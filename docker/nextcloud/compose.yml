@@ -59,7 +59,7 @@ services:
     restart: unless-stopped
 
   nextcloud-postgres:
-    image: postgres:alpine
+    image: postgres:alpine@sha256:fbe21607052bb5c298674f2fd8cf044a63aa3ddf50b81627f894f91f40f50bcb
     container_name: nextcloud-postgres
     security_opt:
       - no-new-privileges:true
@@ -74,7 +74,7 @@ services:
     restart: unless-stopped
 
   nextcloud-redis:
-    image: redis:alpine
+    image: redis:alpine@sha256:48501c5ad00d5563bc30c075c7bcef41d7d98de3e9a1e6c752068c66f0a8463b
     container_name: nextcloud-redis
     security_opt:
       - no-new-privileges:true

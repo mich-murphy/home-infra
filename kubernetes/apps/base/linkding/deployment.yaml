@@ -21,7 +21,7 @@ spec:
         fsGroup: 33
       containers:
         - name: linkding
-          image: sissbruecker/linkding:1.41.0
+          image: sissbruecker/linkding:1.41.0@sha256:49346ebe531db7034a4347b83bef82838af76b39695f096c50a3dc3064d5ac1f
           ports:
             - containerPort: 9090
           env:
