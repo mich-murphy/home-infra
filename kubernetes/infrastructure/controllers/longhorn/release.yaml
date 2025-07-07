@@ -4,6 +4,7 @@ metadata:
   name: longhorn
   namespace: longhorn-system
 spec:
+  releaseName: longhorn
   interval: 12h
   chart:
     spec:
@@ -13,8 +14,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: longhorn
-      interval: 12h
-  releaseName: longhorn
+        namespace: longhorn-system
   driftDetection:
     mode: enabled
   values:
