@@ -17,7 +17,8 @@
     "terraform"
   ],
   "ignorePaths": [
-    "**/docker/immich/**"
+    "**/docker/immich/**",
+    "**/docker/karakeep/**"
   ],
   "kubernetes": {
     "managerFilePatterns": ["/kubernetes/.+\\.ya?ml$/"]
