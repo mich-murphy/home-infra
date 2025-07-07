@@ -1,7 +1,7 @@
 ---
 services:
   pinchflat:
-    image: ghcr.io/kieraneglin/pinchflat:latest
+    image: ghcr.io/kieraneglin/pinchflat:latest@sha256:4e975edf58f0861a5cbfe8fc6aac4851ff5a02dfc3f05ffeea4982e3084a5a4a
     container_name: pinchflat
     security_opt:
       - no-new-privileges:true

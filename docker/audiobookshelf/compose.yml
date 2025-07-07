@@ -1,7 +1,7 @@
 ---
 services:
   audiobookshelf:
-    image: ghcr.io/advplyr/audiobookshelf:latest
+    image: ghcr.io/advplyr/audiobookshelf:latest@sha256:5154518d8215f8e795fde1c1561080b450af8a6bc0c0bd60c2a920084bf930d6
     container_name: audiobookshelf
     security_opt:
       - no-new-privileges:true
