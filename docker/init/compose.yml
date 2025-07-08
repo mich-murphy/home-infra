@@ -67,6 +67,7 @@ services:
       - proxy
     environment:
       - APP_URL=https://pocket-id.local.elmurphy.com
+      - HOST=127.0.0.1
       - PORT=1411
       - TRUST_PROXY=true
       - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
@@ -86,6 +87,8 @@ services:
       timeout: 5s
       retries: 2
       start_period: 10s
+    depends_on:
+      - traefik
     restart: unless-stopped
 
   op-connect-api:
