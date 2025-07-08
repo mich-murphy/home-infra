@@ -65,10 +65,9 @@ services:
       - no-new-privileges:true
     networks:
       - proxy
-    env_file:
-      - .env
     environment:
       - APP_URL=https://pocket-id.local.elmurphy.com
+      - PORT=1411
       - TRUST_PROXY=true
       - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
       - PUID=1000
