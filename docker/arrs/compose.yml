@@ -63,30 +63,6 @@ services:
       - traefik.http.services.lidarr.loadbalancer.server.port=8686
     restart: unless-stopped
 
-  lazylibrarian:
-    image: lscr.io/linuxserver/lazylibrarian:latest@sha256:9026d146bc19baeaec20f9bda7105d0bda4f0d3f59eadb67df9224d3747ad149
-    container_name: lazylibrarian
-    security_opt:
-      - no-new-privileges:true
-    networks:
-      - proxy
-    environment:
-      - PUID=1215
-      - PGID=1215
-      - TZ=${TZ}
-      - DOCKER_MODS=linuxserver/mods:lazylibrarian-ffmpeg
-    volumes:
-      - lazylibrarian-data:/config
-      - /mnt/data/torrents:/downloads:ro
-      - /mnt/data/media/books:/books:rw
-      - /mnt/data/media/audiobooks:/audiobooks:rw
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.lazylibrarian.rule=Host(`lazylibrarian.local.elmurphy.com`)
-      - traefik.http.routers.lazylibrarian.tls=true
-      - traefik.http.services.lazylibrarian.loadbalancer.server.port=5299
-    restart: unless-stopped
-
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest@sha256:b6583aeaa0fe637da09b5d8e498a3f6dcb9eef96aa59d4c455bf021c9f914119
     container_name: prowlarr
@@ -114,8 +90,6 @@ volumes:
     name: sonarr-data
   lidarr-data:
     name: lidarr-data
-  lazylibrarian-data:
-    name: lazylibrarian-data 
   prowlarr-data:
     name: prowlarr-data
 
