@@ -4,7 +4,15 @@ metadata:
   name: l2-policy
 spec:
   loadBalancerIPs: true
-  # nodeSelector:
-  #   matchExpressions:
-  #     - key: node-role.kubernetes.io/control-plane
-  #       operator: DoesNotExist
+  nodeSelector:
+    matchExpressions:
+      - key: node-role.kubernetes.io/control-plane
+        operator: DoesNotExist
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: homelab-pool
+spec:
+  blocks:
+  - cidr: "10.96.0.0/12"
