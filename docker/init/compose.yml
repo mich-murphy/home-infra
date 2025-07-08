@@ -68,7 +68,7 @@ services:
     env_file:
       - .env
     environment:
-      - PUBLIC_APP_URL=https://pocket-id.local.elmurphy.com
+      - APP_URL=https://pocket-id.local.elmurphy.com
       - TRUST_PROXY=true
       - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
       - PUID=1000
