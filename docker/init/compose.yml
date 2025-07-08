@@ -73,6 +73,7 @@ services:
       - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
       - PUID=1000
       - PGID=1000
+      - ANALYTICS_DISABLED=true
     volumes:
       - pocketid-data:/app/backend/data
     labels:
