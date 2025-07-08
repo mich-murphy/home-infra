@@ -10,11 +10,15 @@
   "major": {
     "dependencyDashboardApproval": true
   },
-  "ignorePaths": [
-    "**/docker/immich/**",
-    "**/docker/karakeep/**"
-  ],
+  "ignorePaths": ["**/docker/immich/**", "**/docker/karakeep/**"],
   "kubernetes": {
     "managerFilePatterns": ["/kubernetes/.+\\.ya?ml$/"]
-  }
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
+    }
+  ]
 }
