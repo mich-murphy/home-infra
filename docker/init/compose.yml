@@ -65,9 +65,11 @@ services:
       - no-new-privileges:true
     networks:
       - proxy
+    ports:
+      - 1411
     environment:
       - APP_URL=https://pocket-id.local.elmurphy.com
-      - HOST=127.0.0.1
+      - HOST=0.0.0.0
       - PORT=1411
       - TRUST_PROXY=true
       - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
