@@ -59,32 +59,28 @@ services:
     restart: unless-stopped
 
   pocket-id:
-    image: ghcr.io/pocket-id/pocket-id:v1.6@sha256:501ba371c6305272af0d8feed2b46f2db55d9b074737a71f72d75b313f40afd0
+    image: ghcr.io/pocket-id/pocket-id:v1
     container_name: pocket-id
     security_opt:
       - no-new-privileges:true
     networks:
       - proxy
-    ports:
-      - 1411
     environment:
       - APP_URL=https://pocket-id.local.elmurphy.com
-      - HOST=0.0.0.0
-      - PORT=1411
       - TRUST_PROXY=true
       - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY}
       - PUID=1000
       - PGID=1000
       - ANALYTICS_DISABLED=true
     volumes:
-      - pocketid-data:/app/backend/data
+      - pocketid-data:/app/data
     labels:
       - traefik.enable=true
       - traefik.http.routers.pocket-id.rule=Host(`pocket-id.local.elmurphy.com`)
       - traefik.http.routers.pocket-id.tls=true
       - traefik.http.services.pocket-id.loadbalancer.server.port=1411
     healthcheck:
-      test: "curl -f http://localhost/healthz"
+      test: "curl -f http://localhost:1411/healthz"
       interval: 1m30s
       timeout: 5s
       retries: 2
