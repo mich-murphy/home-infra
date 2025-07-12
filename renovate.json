@@ -5,7 +5,6 @@
     ":rebaseStalePrs",
     ":dependencyDashboard",
     ":semanticCommits",
-    ":automergeBranch",
     "docker:enableMajor"
   ],
   "dependencyDashboardTitle": "Renovate Dashboard 🤖",
