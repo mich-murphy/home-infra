@@ -90,7 +90,7 @@ services:
     restart: unless-stopped
 
   op-connect-api:
-    image: 1password/connect-api:1.7
+    image: 1password/connect-api:1.7@sha256:0601c7614e102eada268dbda6ba4b5886ce77713be2c332ec6a2fd0f028484ba
     container_name: op-connect-api
     networks:
       - op-connect
@@ -102,7 +102,7 @@ services:
     restart: unless-stopped
 
   op-connect-sync:
-    image: 1password/connect-sync:1.7
+    image: 1password/connect-sync:1.7@sha256:2f17621c7eb27bbcb1f86bbc5e5a5198bf54ac3b9c2ffac38064d03c932b07d5
     container_name: op-connect-sync
     networks:
       - op-connect
