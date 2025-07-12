@@ -90,27 +90,31 @@ services:
     restart: unless-stopped
 
   op-connect-api:
-    image: 1password/connect-api:latest@sha256:0601c7614e102eada268dbda6ba4b5886ce77713be2c332ec6a2fd0f028484ba
+    image: 1password/connect-api:1.7@sha256:0601c7614e102eada268dbda6ba4b5886ce77713be2c332ec6a2fd0f028484ba
     container_name: op-connect-api
     networks:
+      - proxy
       - op-connect
     volumes:
       - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
       - onepassword-data:/home/opuser/.op/data
-    ports:
-      - 8001:8080
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.op-connect.rule=Host(`op-connect.local.elmurphy.com`)
+      - traefik.http.routers.op-connect.tls=true
+      - traefik.http.services.op-connect.loadbalancer.server.port=8080
+    depends_on:
+      - traefik
     restart: unless-stopped
 
   op-connect-sync:
-    image: 1password/connect-sync:latest@sha256:2f17621c7eb27bbcb1f86bbc5e5a5198bf54ac3b9c2ffac38064d03c932b07d5
+    image: 1password/connect-sync:1.7@sha256:2f17621c7eb27bbcb1f86bbc5e5a5198bf54ac3b9c2ffac38064d03c932b07d5
     container_name: op-connect-sync
     networks:
       - op-connect
     volumes:
       - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json:ro
       - onepassword-data:/home/opuser/.op/data
-    ports:
-      - 8002:8080
     restart: unless-stopped
 
 volumes:
