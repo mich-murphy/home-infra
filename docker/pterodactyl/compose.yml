@@ -130,7 +130,7 @@ networks:
     name: pterodactyl-backend
     ipam:
       config:
-        - subnet: 172.40.1.0/16
+        - subnet: 172.40.0.0/16
   wings0:
     name: wings0
     driver: bridge
