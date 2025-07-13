@@ -2,7 +2,7 @@
 services:
   # NOTE: visit https://<plex-fqdn>/web to setup new server
   plex:
-    image: plexinc/pms-docker:latest@sha256:3ec0e4ea00cb2d964da92a5b3dd06e882e0a91d38f9a326fb54b8f229a3a6e89
+    image: plexinc/pms-docker:1.41.8.9834-071366d65
     container_name: plex
     security_opt:
       - no-new-privileges:true
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
 
   tautulli:
-    image: lscr.io/linuxserver/tautulli:latest@sha256:73540c967731d36692cea9b8e8881c45e2734f47d5eac1ed6e5e1821f4801737
+    image: lscr.io/linuxserver/tautulli:2.15.2
     container_name: tautulli
     security_opt:
       - no-new-privileges:true
@@ -47,7 +47,7 @@ services:
     restart: unless-stopped
 
   overseerr:
-    image: lscr.io/linuxserver/overseerr:latest@sha256:803605154196acec5861f6024310f095a5b3393c1e80a30271193510909b3f54
+    image: lscr.io/linuxserver/overseerr:1.34.0
     container_name: overseerr
     security_opt:
       - no-new-privileges:true
@@ -67,7 +67,7 @@ services:
     restart: unless-stopped
 
   maintainerr:
-    image: ghcr.io/jorenn92/maintainerr:latest@sha256:f0ad693314830eade8df47df348bae50e1639002cf9158f54f6d149772fb0f53
+    image: ghcr.io/jorenn92/maintainerr:2.18
     container_name: maintainerr
     security_opt:
       - no-new-privileges:true

@@ -1,7 +1,7 @@
 ---
 services:
   nextcloud:
-    image: nextcloud:${NEXTCLOUD_VERSION:-production}
+    image: nextcloud:31.0
     container_name: nextcloud
     security_opt:
       - no-new-privileges:true
@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   nextcloud-cron:
-    image: nextcloud:${NEXTCLOUD_VERSION:-production}
+    image: nextcloud:31.0
     container_name: nextcloud-cron
     security_opt:
       - no-new-privileges:true
