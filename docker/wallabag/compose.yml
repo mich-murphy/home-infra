@@ -6,8 +6,6 @@ services:
     container_name: wallabag
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
     networks:
       - proxy
       - wallabag-backend
@@ -39,8 +37,6 @@ services:
     container_name: wallabag-mariadb
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
     networks:
       - wallabag-backend
     environment:
@@ -58,8 +54,6 @@ services:
     container_name: wallabag-redis
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
     networks:
       - wallabag-backend
     healthcheck:

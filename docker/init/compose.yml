@@ -63,19 +63,6 @@ services:
     container_name: pocket-id
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - AUDIT_WRITE
-      - CHOWN
-      - DAC_OVERRIDE
-      - FOWNER
-      - FSETID
-      - KILL
-      - MKNOD
-      - NET_BIND_SERVICE
-      - NET_RAW
-      - SETFCAP
-      - SETPCAP
-      - SYS_CHROOT
     networks:
       - proxy
     environment:

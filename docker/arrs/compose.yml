@@ -5,18 +5,6 @@ services:
     container_name: radarr
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - AUDIT_WRITE
-      - CHOWN
-      - DAC_OVERRIDE
-      - FOWNER
-      - FSETID
-      - KILL
-      - MKNOD
-      - NET_BIND_SERVICE
-      - SETFCAP
-      - SETPCAP
-      - SYS_CHROOT
     networks:
       - proxy
     environment:
@@ -38,18 +26,6 @@ services:
     container_name: sonarr
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - AUDIT_WRITE
-      - CHOWN
-      - DAC_OVERRIDE
-      - FOWNER
-      - FSETID
-      - KILL
-      - MKNOD
-      - NET_BIND_SERVICE
-      - SETFCAP
-      - SETPCAP
-      - SYS_CHROOT
     networks:
       - proxy
     environment:
@@ -71,18 +47,6 @@ services:
     container_name: lidarr
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - AUDIT_WRITE
-      - CHOWN
-      - DAC_OVERRIDE
-      - FOWNER
-      - FSETID
-      - KILL
-      - MKNOD
-      - NET_BIND_SERVICE
-      - SETFCAP
-      - SETPCAP
-      - SYS_CHROOT
     networks:
       - proxy
     environment:
@@ -104,18 +68,6 @@ services:
     container_name: prowlarr
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - AUDIT_WRITE
-      - CHOWN
-      - DAC_OVERRIDE
-      - FOWNER
-      - FSETID
-      - KILL
-      - MKNOD
-      - NET_BIND_SERVICE
-      - SETFCAP
-      - SETPCAP
-      - SYS_CHROOT
     networks:
       - proxy
     environment:
