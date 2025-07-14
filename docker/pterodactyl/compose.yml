@@ -132,8 +132,8 @@ networks:
     ipam:
       config:
         - subnet: 172.40.0.0/16
-  wings0:
-    name: wings0
+  pterodactyl-wings:
+    name: pterodactyl-wings
     ipam:
       config:
         - subnet: "172.41.0.0/16"
