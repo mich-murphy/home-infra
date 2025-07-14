@@ -118,4 +118,4 @@ kind: ExtensionServiceConfig
 name: tailscale
 environment:
   - op://kubernetes/tailscale/environment-TS_AUTHKEY
-  - TS_ROUTES=10.96.0.0/12
+  - TS_ROUTES=10.96.0.0/12,10.77.1.200/32
