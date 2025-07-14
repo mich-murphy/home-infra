@@ -38,7 +38,7 @@ services:
       MYSQL_USER: "pterodactyl"
 
   cache:
-    image: redis:alpine
+    image: redis:alpine@sha256:73734b014e53b3067916918b70718ca188c16895511a272a020c9a71084eecda
     container_name: pterodactyl-cache
     networks:
       - pterodactyl-backend
@@ -46,7 +46,7 @@ services:
 
   # NOTE: create initial user with `docker exec -it ptero-panel php artisan p:user:make`
   panel:
-    image: ghcr.io/pterodactyl/panel:latest
+    image: ghcr.io/pterodactyl/panel:latest@sha256:3ad185c83818944cfd4dba4dcefbca5ffb64655aaa63363f8f76ce41cd19873f
     container_name: pterodactyl-panel
     networks:
       - proxy
@@ -78,7 +78,7 @@ services:
       - traefik.http.services.pterodactyl-panel.loadbalancer.server.port=80
 
   wings:
-    image: ghcr.io/pterodactyl/wings:latest
+    image: ghcr.io/pterodactyl/wings:latest@sha256:98a5b9622cd152c43f1795fbc443934a25828cb1b3f7b5979cd5efb58175e869
     container_name: pterodactyl-wings
     restart: unless-stopped
     networks:
