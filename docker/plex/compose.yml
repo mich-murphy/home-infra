@@ -47,7 +47,7 @@ services:
     restart: unless-stopped
 
   overseerr:
-    image: lscr.io/linuxserver/overseerr:1.34.0@sha256:803605154196acec5861f6024310f095a5b3393c1e80a30271193510909b3f54
+    image: lscr.io/linuxserver/overseerr:2021.12.12@sha256:6c3f4115d2ec1fe661de971ac6bc8405a606ac56c5f834d9de290e6df52fe79d
     container_name: overseerr
     security_opt:
       - no-new-privileges:true
