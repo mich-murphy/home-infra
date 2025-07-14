@@ -83,7 +83,7 @@ services:
     restart: unless-stopped
     networks:
       - proxy
-      - wings0
+      - pterodactyl-wings
     ports:
       # - "8080:8080"
       - 2022:2022
