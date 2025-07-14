@@ -6,6 +6,8 @@ services:
     container_name: plex
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     devices:
@@ -31,6 +33,8 @@ services:
     container_name: tautulli
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     environment:
@@ -51,6 +55,8 @@ services:
     container_name: overseerr
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     environment:
@@ -71,6 +77,8 @@ services:
     container_name: maintainerr
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     user: 1000:1000
     networks:
       - proxy

@@ -5,6 +5,8 @@ services:
     container_name: immich
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     devices:
       - /dev/dri:/dev/dri
     networks:
@@ -30,6 +32,8 @@ services:
     container_name: immich-ml
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - immich-backend
     volumes:
@@ -43,6 +47,8 @@ services:
     container_name: immich-redis
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - immich-backend
     healthcheck:
@@ -54,6 +60,8 @@ services:
     container_name: immich-postgres
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - immich-backend
     environment:

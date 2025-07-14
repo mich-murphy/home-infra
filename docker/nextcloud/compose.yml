@@ -5,6 +5,8 @@ services:
     container_name: nextcloud
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
       - nextcloud-backend
@@ -47,6 +49,8 @@ services:
     container_name: nextcloud-cron
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - nextcloud-backend
     volumes:
@@ -63,6 +67,8 @@ services:
     container_name: nextcloud-postgres
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - nextcloud-backend
     environment:
@@ -78,6 +84,8 @@ services:
     container_name: nextcloud-redis
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - nextcloud-backend
     restart: unless-stopped

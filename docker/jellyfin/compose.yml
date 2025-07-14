@@ -5,6 +5,8 @@ services:
     container_name: jellyfin
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     user: 1000:1000
     networks:
       - proxy
@@ -34,6 +36,9 @@ services:
     container_name: jellyseerr
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    user: 1000:1000
     networks:
       - proxy
     environment:

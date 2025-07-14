@@ -5,6 +5,8 @@ services:
     container_name: radarr
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     environment:
@@ -26,6 +28,8 @@ services:
     container_name: sonarr
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     environment:
@@ -47,6 +51,8 @@ services:
     container_name: lidarr
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     environment:
@@ -68,6 +74,8 @@ services:
     container_name: prowlarr
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     environment:

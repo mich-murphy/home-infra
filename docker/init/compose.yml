@@ -63,6 +63,8 @@ services:
     container_name: pocket-id
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     environment:
