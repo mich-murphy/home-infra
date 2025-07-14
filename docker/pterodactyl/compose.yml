@@ -93,6 +93,7 @@ services:
       WINGS_UID: 988
       WINGS_GID: 988
       WINGS_USERNAME: pterodactyl
+      WINGS_DOMAIN: pterodactyl-wings.local.elmurphy.com
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/containers/:/var/lib/docker/containers/
