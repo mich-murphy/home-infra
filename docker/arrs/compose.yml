@@ -6,7 +6,18 @@ services:
     security_opt:
       - no-new-privileges:true
     cap_drop:
-      - ALL
+      - AUDIT_WRITE
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - FSETID
+      - KILL
+      - MKNOD
+      - NET_BIND_SERVICE
+      - NET_RAW
+      - SETFCAP
+      - SETPCAP
+      - SYS_CHROOT
     networks:
       - proxy
     environment:
@@ -29,7 +40,18 @@ services:
     security_opt:
       - no-new-privileges:true
     cap_drop:
-      - ALL
+      - AUDIT_WRITE
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - FSETID
+      - KILL
+      - MKNOD
+      - NET_BIND_SERVICE
+      - NET_RAW
+      - SETFCAP
+      - SETPCAP
+      - SYS_CHROOT
     networks:
       - proxy
     environment:
@@ -52,7 +74,18 @@ services:
     security_opt:
       - no-new-privileges:true
     cap_drop:
-      - ALL
+      - AUDIT_WRITE
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - FSETID
+      - KILL
+      - MKNOD
+      - NET_BIND_SERVICE
+      - NET_RAW
+      - SETFCAP
+      - SETPCAP
+      - SYS_CHROOT
     networks:
       - proxy
     environment:
@@ -75,7 +108,18 @@ services:
     security_opt:
       - no-new-privileges:true
     cap_drop:
-      - ALL
+      - AUDIT_WRITE
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - FSETID
+      - KILL
+      - MKNOD
+      - NET_BIND_SERVICE
+      - NET_RAW
+      - SETFCAP
+      - SETPCAP
+      - SYS_CHROOT
     networks:
       - proxy
     environment:
