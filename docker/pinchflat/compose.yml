@@ -5,7 +5,6 @@ services:
     container_name: pinchflat
     security_opt:
       - no-new-privileges:true
-    user: 1000:1000
     networks:
       - proxy
     environment:
