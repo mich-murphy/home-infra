@@ -13,4 +13,4 @@ terraform/files
 .vaultpass
 
 # kubernetes
-talos
+talos/auth
