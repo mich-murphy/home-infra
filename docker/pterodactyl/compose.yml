@@ -133,9 +133,4 @@ networks:
       config:
         - subnet: 172.40.0.0/16
   pterodactyl-wings:
-    name: pterodactyl-wings 
-    ipam:
-      config:
-        - subnet: "172.80.0.0/16"
-    driver_opts:
-      com.docker.network.bridge.name: pterodactyl-wings
+    external: true
