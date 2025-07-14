@@ -1,7 +1,7 @@
 ---
 services:
   deluge:
-    image: lscr.io/linuxserver/deluge:2.2.0@sha256:d7834cd002967715eaa0ae0da41f7f632ab81408bd7c3877a8ed24316cd4318f
+    image: lscr.io/linuxserver/deluge:18.04.1@sha256:0ac8716243944d28890565f759c7cedfc9e36a3fd5a827c9d0927abc0c8f97c9
     container_name: deluge
     security_opt:
       - no-new-privileges:true
