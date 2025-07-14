@@ -10,6 +10,14 @@ machine:
   certSANs: []
   kubelet:
     image: ghcr.io/siderolabs/kubelet:v1.33.0
+    extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/lib/longhorn
+          options:
+            - bind
+            - rshared
+            - rw
     defaultRuntimeSeccompProfileEnabled: true
     disableManifestsDirectory: true
   network:
