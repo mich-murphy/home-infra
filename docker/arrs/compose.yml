@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   lidarr:
-    image: lscr.io/linuxserver/lidarr:2.12.4@sha256:b1daebbda8ee180e509bb726378b0dd7816ac29eef43a8e85f6071be4d4e6904
+    image: lscr.io/linuxserver/lidarr:8.1.2135@sha256:8455e2c2f3a7e0fb56ab4de6be924d81aa441bfe9a740cf110d46b25a39b42ba
     container_name: lidarr
     security_opt:
       - no-new-privileges:true
