@@ -6,7 +6,8 @@
     ":dependencyDashboard",
     ":semanticCommits",
     "docker:enableMajor",
-    "default:automergeDigest"
+    "default:automergeDigest",
+    ":disableRateLimiting"
   ],
   "dependencyDashboardTitle": "Renovate Dashboard 🤖",
   "major": {
