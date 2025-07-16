@@ -11,6 +11,3 @@ terraform/files
 
 # ansible
 .vaultpass
-
-# kubernetes
-talos/auth
