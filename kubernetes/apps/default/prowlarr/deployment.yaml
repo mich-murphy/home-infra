@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prowlarr
+  template:
+    metadata:
+      labels:
+        app: prowlarr
+    spec:
+      strategy:
+        type: Recreate
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: prowlarr
+          image: lscr.io/linuxserver/prowlarr:1.37.0
+          ports:
+            - containerPort: 9696
+          env:
+            - name: TZ
+              value: Australia/Melbourne
+          securityContext:
+            allowPriviligeEscalation: false
+          volumeMounts:
+            - name: prowlarr-data
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 100m
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: prowlarr-data
+          persistentVolumeClaim:
+            claimName: prowlarr-data-pvc

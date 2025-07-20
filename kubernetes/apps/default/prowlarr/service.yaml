@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowlarr
+  namespace: default
+spec:
+  ports:
+    - port: 9696
+  selector:
+    app: prowlarr
+  type: LoadBalancer
