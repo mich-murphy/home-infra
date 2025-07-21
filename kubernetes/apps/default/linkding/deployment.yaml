@@ -35,6 +35,22 @@ spec:
                 secretKeyRef:
                   name: linkding-credentials
                   key: linkding-password
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9090
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9090
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
           securityContext:
             allowPriviligeEscalation: false
           volumeMounts:
