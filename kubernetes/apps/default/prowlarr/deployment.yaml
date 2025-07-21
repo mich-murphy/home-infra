@@ -28,6 +28,22 @@ spec:
           env:
             - name: TZ
               value: Australia/Melbourne
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 9696
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 9696
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
           securityContext:
             allowPriviligeEscalation: false
           volumeMounts:
