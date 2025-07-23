@@ -47,7 +47,6 @@ spec:
             failureThreshold: 3
           securityContext:
             allowPriviligeEscalation: false
-            # readOnlyRootFilesystem: true
           volumeMounts:
             - name: prowlarr-data
               mountPath: /config
