@@ -19,8 +19,8 @@ spec:
         # runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: "OnRootMismatch"
+        # fsGroup: 1000
+        # fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: prowlarr
           image: lscr.io/linuxserver/prowlarr:1.37.0@sha256:89eac63d2099477094df8c2329a6a750b8b5e382f8975dd18e7861678b55cca4
