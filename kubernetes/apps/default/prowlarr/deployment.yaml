@@ -49,12 +49,10 @@ spec:
             allowPriviligeEscalation: false
             capabilities:
               drop:
-              # - DAC_OVERRIDE
-              # - FOWNER
               - NET_RAW
-              # - SYS_CHROOT
-              # - MKNOD
-              # - AUDIT_WRITE
+              - SYS_CHROOT
+              - MKNOD
+              - AUDIT_WRITE
           volumeMounts:
             - name: prowlarr-data
               mountPath: /config
