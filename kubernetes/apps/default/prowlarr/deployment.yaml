@@ -51,23 +51,20 @@ spec:
               drop:
               - DAC_OVERRIDE
               - FOWNER
-              - FSETID
-              - KILL
               - SETPCAP
               - NET_RAW
               - SYS_CHROOT
               - MKNOD
               - AUDIT_WRITE
-              - SETFCAP
-          volumeMounts:
-            - name: prowlarr-data
-              mountPath: /config
+          # volumeMounts:
+          #   - name: prowlarr-data
+          #     mountPath: /config
           resources:
             requests:
               cpu: 100m
             limits:
               memory: 1Gi
-      volumes:
-        - name: prowlarr-data
-          persistentVolumeClaim:
-            claimName: prowlarr-data-pvc
+      # volumes:
+      #   - name: prowlarr-data
+      #     persistentVolumeClaim:
+      #       claimName: prowlarr-data-pvc
