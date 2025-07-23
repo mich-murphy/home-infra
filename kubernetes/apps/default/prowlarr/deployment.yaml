@@ -49,7 +49,7 @@ spec:
             allowPriviligeEscalation: false
             capabilities:
               drop:
-              - DAC_OVERRIDE
+              # - DAC_OVERRIDE
               # - FOWNER
               - NET_RAW
               # - SYS_CHROOT
