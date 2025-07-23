@@ -51,3 +51,6 @@ spec:
     k8sClientRateLimit:
       qps: 15
       burst: 20
+    ingressController:
+      enabled: true
+      loadbalancerMode: dedicated

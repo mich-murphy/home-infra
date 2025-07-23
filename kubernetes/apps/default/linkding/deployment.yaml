@@ -19,6 +19,7 @@ spec:
         runAsUser: 33
         runAsGroup: 33
         fsGroup: 33
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: linkding
           image: sissbruecker/linkding:1.41.0@sha256:49346ebe531db7034a4347b83bef82838af76b39695f096c50a3dc3064d5ac1f
@@ -53,6 +54,9 @@ spec:
             failureThreshold: 3
           securityContext:
             allowPriviligeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
             - name: linkding-data
               mountPath: /etc/linkding/data
