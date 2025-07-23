@@ -16,11 +16,11 @@ spec:
       strategy:
         type: Recreate
       securityContext:
-        # runAsNonRoot: true
+        runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
-        # fsGroup: 1000
-        # fsGroupChangePolicy: "OnRootMismatch"
+        fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: prowlarr
           image: lscr.io/linuxserver/prowlarr:1.37.0@sha256:89eac63d2099477094df8c2329a6a750b8b5e382f8975dd18e7861678b55cca4
@@ -47,23 +47,23 @@ spec:
             failureThreshold: 3
           securityContext:
             allowPriviligeEscalation: false
-            # capabilities:
-              # drop:
-              # - DAC_OVERRIDE
+            capabilities:
+              drop:
+              - DAC_OVERRIDE
               # - FOWNER
-              # - NET_RAW
+              - NET_RAW
               # - SYS_CHROOT
               # - MKNOD
               # - AUDIT_WRITE
-          # volumeMounts:
-          #   - name: prowlarr-data
-          #     mountPath: /config
+          volumeMounts:
+            - name: prowlarr-data
+              mountPath: /config
           resources:
             requests:
               cpu: 100m
             limits:
               memory: 1Gi
-      # volumes:
-      #   - name: prowlarr-data
-      #     persistentVolumeClaim:
-      #       claimName: prowlarr-data-pvc
+      volumes:
+        - name: prowlarr-data
+          persistentVolumeClaim:
+            claimName: prowlarr-data-pvc
