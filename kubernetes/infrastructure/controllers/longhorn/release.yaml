@@ -22,3 +22,6 @@ spec:
       defaultReplicaCount: 2
     preUpgradeChecker:
       jobEnabled: false
+    service:
+      ui:
+        type: LoadBalancer
