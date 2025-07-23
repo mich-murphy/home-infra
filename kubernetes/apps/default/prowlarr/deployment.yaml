@@ -49,7 +49,6 @@ spec:
             allowPriviligeEscalation: false
             capabilities:
               drop:
-              - CHOWN
               - DAC_OVERRIDE
               - FOWNER
               - FSETID
