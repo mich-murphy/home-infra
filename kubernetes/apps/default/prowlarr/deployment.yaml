@@ -47,11 +47,11 @@ spec:
             failureThreshold: 3
           securityContext:
             allowPriviligeEscalation: false
-            capabilities:
-              drop:
-              - DAC_OVERRIDE
+            # capabilities:
+              # drop:
+              # - DAC_OVERRIDE
               # - FOWNER
-              - NET_RAW
+              # - NET_RAW
               # - SYS_CHROOT
               # - MKNOD
               # - AUDIT_WRITE
