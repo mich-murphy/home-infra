@@ -50,14 +50,10 @@ spec:
             capabilities:
               drop:
               - DAC_OVERRIDE
-              - FSETID
-              - KILL
-              - SETPCAP
               - NET_RAW
               - SYS_CHROOT
               - MKNOD
               - AUDIT_WRITE
-              - SETFCAP
           # volumeMounts:
           #   - name: prowlarr-data
           #     mountPath: /config
