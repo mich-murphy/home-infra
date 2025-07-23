@@ -51,7 +51,6 @@ spec:
               drop:
               - DAC_OVERRIDE
               - NET_RAW
-              - SYS_CHROOT
               - MKNOD
               - AUDIT_WRITE
           # volumeMounts:
