@@ -2,7 +2,3 @@ machine:
   type: controlplane
   network:
     hostname: talos-prod-2
-  disks:
-    - device: /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1
-      partitions:
-        - mountpoint: /var/mnt/storage
