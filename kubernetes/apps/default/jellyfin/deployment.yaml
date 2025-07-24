@@ -56,6 +56,7 @@ spec:
               mountPath: /transcode
             - name: media
               mountPath: /data/media
+              subPath: media
           resources:
             requests:
               cpu: 100m
@@ -76,5 +77,5 @@ spec:
         - name: media
           nfs:
             server: 10.77.1.101
-            path: /mnt/slow/media/data/media
+            path: /mnt/slow/media
             readOnly: true
