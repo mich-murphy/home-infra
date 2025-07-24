@@ -15,6 +15,9 @@ spec:
               image: renovate/renovate:latest@sha256:aba4892ec62ab5f972304cf24d7ddc517ef80288ab23d3e7868546eee3a3a10c
               args:
                 - mich-murphy/home-infra 
+              env:
+                - name: LOG_LEVEL
+                  value: debug
               envFrom:
                 - secretRef:
                     name: renovate-credentials
