@@ -76,5 +76,5 @@ spec:
         - name: media
           nfs:
             server: 10.77.1.101
-            path: /mnt/slow/media
+            path: /mnt/slow/media/data/media
             readOnly: true
