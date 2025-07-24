@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
 
   tautulli:
-    image: ghcr.io/linuxserver/tautulli:2.15.2@sha256:73540c967731d36692cea9b8e8881c45e2734f47d5eac1ed6e5e1821f4801737
+    image: ghcr.io/linuxserver/tautulli:v2.15.2-ls196
     container_name: tautulli
     security_opt:
       - no-new-privileges:true
@@ -47,7 +47,7 @@ services:
     restart: unless-stopped
 
   overseerr:
-    image: ghcr.io/linuxserver/overseerr:1.34.0@sha256:e894c2e4676d2bece1ca3589c9840eb17f717e08abeb4306855b79d0535c2c12
+    image: ghcr.io/linuxserver/overseerr:v1.34.0-ls145
     container_name: overseerr
     security_opt:
       - no-new-privileges:true
