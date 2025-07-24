@@ -19,6 +19,10 @@ machine:
             - rw
     defaultRuntimeSeccompProfileEnabled: true
     disableManifestsDirectory: true
+  disks:
+    - device: /dev/sdb
+      partitions:
+        - mountpoint: /var/lib/longhorn
   network:
     interfaces:
       - deviceSelector:
@@ -80,7 +84,7 @@ cluster:
           defaults:
             audit: restricted
             audit-version: latest
-            enforce: baseline
+            enforce: privileged
             enforce-version: latest
             warn: restricted
             warn-version: latest
