@@ -18,6 +18,8 @@ spec:
   values:
     provider:
       name: cloudflare
+    domainFilters:
+      - mich-murphy.com
     env:
       - name: CF_API_TOKEN
         valueFrom:
