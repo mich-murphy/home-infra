@@ -23,7 +23,7 @@ spec:
         # supplementalGroups: [992] # render group
       containers:
         - name: jellyfin
-          image: jellyfin/jellyfin:10.10.7@sha256:7ae36aab93ef9b6aaff02b37f8bb23df84bb2d7a3f6054ec8fc466072a648ce2 
+          image: jellyfin/jellyfin:10.10.7@sha256:7ae36aab93ef9b6aaff02b37f8bb23df84bb2d7a3f6054ec8fc466072a648ce2
           ports:
             - containerPort: 8096
           livenessProbe:
@@ -45,7 +45,7 @@ spec:
           securityContext:
             allowPriviligeEscalation: false
             capabilities:
-              drop: 
+              drop:
                 - ALL
           volumeMounts:
             - name: jellyfin-data
@@ -60,8 +60,8 @@ spec:
           resources:
             requests:
               cpu: 100m
-            #   gpu.intel.com/i915: 1 
-            limits: 
+            #   gpu.intel.com/i915: 1
+            limits:
               memory: 6Gi
             #   gpu.intel.com/i915: 1
       volumes:

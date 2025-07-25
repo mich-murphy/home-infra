@@ -5,4 +5,4 @@ metadata:
   namespace: external-dns
 spec:
   interval: 24h
-  url: https://kubernetes-sigs.github.io/external-dns/ 
+  url: https://kubernetes-sigs.github.io/external-dns/
