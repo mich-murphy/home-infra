@@ -1,0 +1,11 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkding-cert
+  namespace: default
+spec:
+  secretName: linkding-tls-secret
+  issuerRef:
+    name: letsencrypt-staging
+  dnsNames:
+  - linkding.mich-murphy.com
