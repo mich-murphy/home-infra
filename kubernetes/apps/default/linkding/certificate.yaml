@@ -6,6 +6,6 @@ metadata:
 spec:
   secretName: linkding-tls-secret
   issuerRef:
-    name: letsencrypt-staging
+    name: letsencrypt-production
   dnsNames:
   - linkding.mich-murphy.com
