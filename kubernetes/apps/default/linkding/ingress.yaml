@@ -1,3 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: linkding-cert
+  namespace: default
+spec:
+  secretName: linkding-tls-secret
+  issuerRef:
+    name: letsencrypt-production
+  dnsNames:
+  - linkding.mich-murphy.com
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
