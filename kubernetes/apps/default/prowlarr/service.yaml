@@ -8,4 +8,3 @@ spec:
     - port: 9696
   selector:
     app: prowlarr
-  type: LoadBalancer
