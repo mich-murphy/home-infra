@@ -13,6 +13,15 @@ spec:
       labels:
         app: sonarr
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - talos-prod-3
       strategy:
         type: Recreate
       securityContext:

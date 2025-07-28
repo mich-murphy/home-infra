@@ -13,6 +13,15 @@ spec:
       labels:
         app: linkding
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - talos-prod-2
       strategy:
         type: Recreate
       securityContext:
