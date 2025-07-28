@@ -48,10 +48,12 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   target_node      = "proxmox"
   tags             = null
   agent            = 1
-  cores            = 2
-  memory           = 12288
+  cpu {
+    cores = 2
+  }
+  memory           = 8192
   onboot           = true
-  startup          = "order=2,up=30"
+  startup          = "order=2,up=60"
   bios             = "seabios"
   boot             = "order=scsi0"        # has to be the same as the OS disk of the template
   clone            = "ubuntu-server-2404" # name of the template
@@ -73,9 +75,9 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
     scsi {
       scsi0 {
         disk {
-          discard = true
-          storage = "local-zfs"
-          size    = "128G"
+          discard  = true
+          storage  = "local-zfs"
+          size     = "128G"
           iothread = true
         }
       }
@@ -97,23 +99,25 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
 }
 
 resource "proxmox_vm_qemu" "talos_control_plane" {
-  count            = 3
-  vmid             = "20${count.index + 1}"
-  name             = "talos-control-plane-${count.index + 1}"
-  desc             = "Talos image: factory.talos.dev/metal-installer/0a077242b1a6fbcfbcf6721b383af8633624716b5780522bc5575002aec73921:v1.10.2"
-  target_node      = "proxmox"
-  tags             = "kubernetes"
-  agent            = 1
-  cores            = 4
-  memory           = 4096
+  count       = 3
+  vmid        = "20${count.index + 1}"
+  name        = "talos-prod-${count.index + 1}"
+  desc        = "Talos image: factory.talos.dev/installer/3db570bedf4342804e5b4a418ec1dc4ac61ed0338f36ce4778e02dd8320b8457:v1.10.5"
+  target_node = "proxmox"
+  tags        = "kubernetes"
+  agent       = 1
+  cpu {
+    cores = 6
+  }
+  memory           = 10240
   onboot           = true
   bios             = "seabios"
   boot             = "order=scsi0;ide1"
   scsihw           = "virtio-scsi-single"
   vm_state         = "running"
   automatic_reboot = true
-  ipconfig0 = "ip=dhcp,ip6=dhcp"
-  skip_ipv6 = true
+  ipconfig0        = "ip=dhcp,ip6=dhcp"
+  skip_ipv6        = true
   # set serial device for display
   serial {
     id = 0
@@ -122,9 +126,9 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
     scsi {
       scsi0 {
         disk {
-          discard = true
-          storage = "local-zfs"
-          size    = "100G"
+          discard  = true
+          storage  = "local-zfs"
+          size     = "100G"
           iothread = true
         }
       }
