@@ -5,69 +5,62 @@
       - nfs-common
     state: present
 
-# TODO: update below tasks to utilise a loop
-- name: check whether media mount folder exists
-  ansible.builtin.stat:
-    path: /mnt/data
-  register: data
+- name: define nfs configurations
+  ansible.builtin.set_fact:
+    nfs_mounts:
+      - name: "media"
+        local_path: "/mnt/data"
+        nfs_share: "10.77.1.101:/mnt/slow/media"
+        owner: "media"
+        group: "media"
+      - name: "photos"
+        local_path: "/mnt/photos"
+        nfs_share: "10.77.1.101:/mnt/slow/photos"
+        owner: "photos"
+        group: "photos"
+      - name: "nextcloud"
+        local_path: "/mnt/nextcloud"
+        nfs_share: "10.77.1.101:/mnt/slow/nextcloud"
+        owner: "nextcloud"
+        group: "nextcloud"
+      - name: "music"
+        local_path: "/mnt/music"
+        nfs_share: "10.77.1.101:/mnt/slow/media/music"
+        owner: "media"
+        group: "media"
+      - name: "audiobooks"
+        local_path: "/mnt/audiobooks"
+        nfs_share: "10.77.1.101:/mnt/slow/media/audiobooks"
+        owner: "media"
+        group: "media"
 
-- name: create folder for media mount
+- name: check whether mount folders exist
+  ansible.builtin.stat:
+    path: "{{ item.local_path }}"
+  register: mount_folders_stat
+  loop: "{{ nfs_mounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: create missing folders for nfs mounts
   ansible.builtin.file:
-    path: /mnt/data
+    path: "{{ item.item.local_path }}"
     state: directory
     mode: "0775"
-    owner: media
-    group: media
-  when: not data.stat.exists
+    owner: "{{ item.item.owner }}"
+    group: "{{ item.item.group }}"
+  when: not item.stat.exists
+  loop: "{{ mount_folders_stat.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
 
-- name: mount network share for media
+- name: mount nfs shares
   ansible.posix.mount:
-    src: "10.77.1.101:/mnt/slow/media"
-    path: /mnt/data
+    src: "{{ item.nfs_share }}"
+    path: "{{ item.local_path }}"
     fstype: nfs
     opts: "rw,proto=tcp,nofail"
     state: mounted
-
-- name: check whether photos mount folder exists
-  ansible.builtin.stat:
-    path: /mnt/photos
-  register: photos
-
-- name: create folder for photos mount
-  ansible.builtin.file:
-    path: /mnt/photos
-    state: directory
-    mode: "0775"
-    owner: photos
-    group: photos
-  when: not photos.stat.exists
-
-- name: mount network share for photos
-  ansible.posix.mount:
-    src: "10.77.1.101:/mnt/slow/photos"
-    path: /mnt/photos
-    fstype: nfs
-    opts: "rw,proto=tcp,nofail"
-    state: mounted
-
-- name: check whether nextcloud mount folder exists
-  ansible.builtin.stat:
-    path: /mnt/nextcloud
-  register: nextcloud
-
-- name: create folder for nextcloud mount
-  ansible.builtin.file:
-    path: /mnt/nextcloud
-    state: directory
-    mode: "0775"
-    owner: nextcloud
-    group: nextcloud
-  when: not photos.stat.exists
-
-- name: mount network share for nextcloud
-  ansible.posix.mount:
-    src: "10.77.1.101:/mnt/slow/nextcloud"
-    path: /mnt/nextcloud
-    fstype: nfs
-    opts: "rw,proto=tcp,nofail"
-    state: mounted
+  loop: "{{ nfs_mounts }}"
+  loop_control:
+    label: "{{ item.name }}"

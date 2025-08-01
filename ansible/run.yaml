@@ -4,7 +4,7 @@
   vars_files:
     - "group_vars/secrets.yaml"
   roles:
-    # - common
-    # - firewall
-    # - media
+    - common
+    - firewall
+    - media
     - docker
