@@ -18,6 +18,7 @@ services:
     volumes:
       - plex-data:/config
       - /mnt/data/media:/data/media:rw
+      - /mnt/music:/data/media/music:rw
       - /dev/shm:/transcode # ram transcode
     labels:
       - traefik.enable=true

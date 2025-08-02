@@ -18,6 +18,7 @@ services:
       - jellyfin-data:/config
       - jellyfin-cache:/cache
       - /mnt/data/media:/data/media:ro
+      - /mnt/music:/data/media/music:ro
       - /dev/shm:/transcode # ram transcode
     ports:
       - 8096:8096 
