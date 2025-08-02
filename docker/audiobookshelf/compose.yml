@@ -10,7 +10,7 @@ services:
     environment:
       - TZ=${TZ}
     volumes:
-      - /mnt/data/media/audiobooks:/audiobooks:rw
+      - /mnt/audiobooks:/audiobooks:rw
       - audiobookshelf-data:/config
       - audiobookshelf-data:/metadata
     labels:
