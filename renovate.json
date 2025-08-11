@@ -50,6 +50,13 @@
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-ls(?<revision>\\d+)$"
     },
     {
+      "description": "Plex Media Server",
+      "matchPackageNames": [
+        "/^plexinc\\/pms-docker/"
+      ],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-(?<revision>\\d+)$"
+    },
+    {
       "description": "Manual Approval for Immich Server and Machine Learning",
       "matchPackageNames": [
         "/^ghcr\\.io\\/immich-app\\/(immich-server|immich-machine-learning)/"
