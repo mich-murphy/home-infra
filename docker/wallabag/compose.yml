@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: mariadb@sha256:bf734b11b2528561f00093ee7ee1dccef5d2b6e7467c27a7d89d9d798d3ab21e
+    image: mariadb@sha256:60b671c551e2edbc7826fabe6c3b153c37b508ef4f8be111b297644126fc17b4
     container_name: wallabag-mariadb
     security_opt:
       - no-new-privileges:true
