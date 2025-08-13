@@ -13,12 +13,12 @@ spec:
         kind: HelmRepository
         name: gha-runner-scale-set-controller 
         namespace: actions-runner-system 
-  # install:
-  #   crds: CreateReplace
-  # upgrade:
-  #   cleanupOnFail: true
-  #   crds: CreateReplace
+  install:
+    crds: CreateReplace
+  upgrade:
+    cleanupOnFail: true
+    crds: CreateReplace
   driftDetection:
     mode: enabled
-  values:
-    fullnameOverride: gha-runner-scale-set-controller
+  # values:
+  #   fullnameOverride: gha-runner-scale-set-controller
