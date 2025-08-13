@@ -26,7 +26,26 @@ spec:
       type: kubernetes
       kubernetesModeWorkVolumeClaim:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: longhorn
+        storageClassName: openebs-hostpath
         resources:
           requests:
-            storage: 2Gi
+            storage: 25Gi
+    # template:
+    #   spec:
+    #     containers:
+    #       - name: runner
+    #         image: ghcr.io/actions/actions-runner:latest
+    #         command: ["/home/runner/run.sh"]
+    #         volumeMounts:
+    #           - name: work
+    #             mountPath: /home/runner/_work
+    #     volumes:
+    #       - name: work
+    #         ephemeral:
+    #           volumeClaimTemplate:
+    #             spec:
+    #               accessModes: ["ReadWriteOnce"]
+    #               storageClassName: "local-path"
+    #               resources:
+    #                 requests:
+    #                   storage: 1Gi
