@@ -24,6 +24,8 @@ spec:
     maxRunners: 3
     template:
       spec:
+        securityContext:
+          fsGroup: 123
         containers:
           - name: runner
             image: ghcr.io/actions/actions-runner:latest
