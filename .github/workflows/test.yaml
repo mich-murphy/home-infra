@@ -5,7 +5,5 @@ on:
 jobs:
   test-actions-runner:
     runs-on: home-infra-runner
-    container:
-      image: ubuntu:latest
     steps:
     - run: echo "🎉 This job uses runner scale set runners!"
