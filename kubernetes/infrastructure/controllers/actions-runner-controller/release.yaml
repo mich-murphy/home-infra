@@ -11,7 +11,8 @@ spec:
       version: "0.12.*"
       sourceRef:
         kind: GitRepository
-        name: gha-runner-scale-set-controller 
+        name: actions-runner-controller
+        namespace: actions-runner-system
   install:
     crds: CreateReplace
   upgrade:

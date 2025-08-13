@@ -1,7 +1,7 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
-  name: gha-runner-scale-set-controller 
+  name: actions-runner-controller
   namespace: actions-runner-system
 spec:
   interval: 24h
