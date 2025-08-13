@@ -1,0 +1,9 @@
+name: Actions Runner Controller Test
+on:
+  workflow_dispatch:
+
+jobs:
+  test-actions-runner:
+    runs-on: home-infra-runner
+    steps:
+    - run: echo "🎉 This job uses runner scale set runners!"
