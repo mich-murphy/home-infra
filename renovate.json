@@ -26,35 +26,35 @@
     {
       "description": "Linuxserver.io Deluge",
       "matchPackageNames": ["/^(gh|ls)cr\\.io\\/linuxserver\\/deluge/"],
-      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d+)-ls(?<revision>\\d+)$"
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d+)-ls(?<revision>.+)$"
     },
     {
       "description": "Linuxserver.io Sabnzbd and FreshRSS",
       "matchPackageNames": [
         "/^(gh|ls)cr\\.io\\/linuxserver\\/(sabnzbd|freshrss)/"
       ],
-      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<revision>\\d+)$"
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>.+)$"
     },
     {
       "description": "Linuxserver.io Tautulli and Overseerr",
       "matchPackageNames": [
         "/^(gh|ls)cr\\.io\\/linuxserver\\/(tautulli|overseerr)/"
       ],
-      "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<revision>\\d+)$"
+      "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>.+)$"
     },
     {
       "description": "Linuxserver.io Arrs",
       "matchPackageNames": [
         "/^(gh|ls)cr\\.io\\/linuxserver\\/(radarr|sonarr|lidarr|prowlarr)/"
       ],
-      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-ls(?<revision>\\d+)$"
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-ls(?<revision>.+)$"
     },
     {
       "description": "Plex Media Server",
       "matchPackageNames": [
         "/^plexinc\\/pms-docker/"
       ],
-      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-(?<revision>\\d+)$"
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-(?<revision>.+)$"
     },
     {
       "description": "Manual Approval for Immich Server and Machine Learning",
