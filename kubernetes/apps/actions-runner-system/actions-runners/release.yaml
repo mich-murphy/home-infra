@@ -22,14 +22,6 @@ spec:
     githubConfigSecret: home-infra-runner-secret
     minRunners: 1
     maxRunners: 3
-    containerMode:
-      type: kubernetes
-      kubernetesModeWorkVolumeClaim:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: "longhorn"
-        resources:
-          requests:
-            storage: 25Gi
     template:
       spec:
         securityContext:
