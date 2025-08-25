@@ -1,7 +1,7 @@
 ---
 services:
   immich-server:
-    image: ghcr.io/immich-app/immich-server:v1.137.3@sha256:e517f806457057d44695152a0af2dfa094225a7d85eb37f518925e68864c658d
+    image: ghcr.io/immich-app/immich-server:v1.139.3@sha256:9cea00524e723d8aa28b2a807b449aee1ebcb6f0052b7cd7e43b905a1c9f87df
     container_name: immich
     security_opt:
       - no-new-privileges:true
