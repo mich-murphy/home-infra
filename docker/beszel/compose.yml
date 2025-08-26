@@ -1,7 +1,7 @@
 ---
 services:
   beszel:
-    image: henrygd/beszel:0.12.4@sha256:8a322b409b84e1e11bc6c0e426ec2b85b145766d2ef1af01b7f87e6563d81076
+    image: henrygd/beszel:0.12.4@sha256:4812bcfd943849bc61f2dc94e0b8077e83cfd3e8cc5abad639d3192e03fad03d
     container_name: beszel
     security_opt:
       - no-new-privileges:true
