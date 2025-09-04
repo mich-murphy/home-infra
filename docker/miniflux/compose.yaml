@@ -8,7 +8,7 @@ services:
       - proxy
       - miniflux-backend
     environment:
-      - DATABASE_URL=postgres://miniflux:secret@miniflux-db/miniflux?sslmode=disable
+      - DATABASE_URL=postgres://miniflux:${DB_PASSWORD}@miniflux-db/miniflux?sslmode=disable
       - RUN_MIGRATIONS=1
       - CREATE_ADMIN=1
       - ADMIN_USERNAME=admin
