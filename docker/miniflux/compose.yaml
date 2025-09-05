@@ -13,6 +13,7 @@ services:
       - CREATE_ADMIN=1
       - ADMIN_USERNAME=admin
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - BASE_URL=https://miniflux.local.elmurphy.com
     labels:
       - traefik.enable=true
       - traefik.http.routers.miniflux.rule=Host(`miniflux.local.elmurphy.com`)
