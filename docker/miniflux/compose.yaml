@@ -1,6 +1,6 @@
 services:
   miniflux:
-    image: miniflux/miniflux:2.2.12
+    image: miniflux/miniflux:2.2.12@sha256:b435a1ea2408f996c8d4c00c4f46523fa9203971ee1e85b1fe7ad3f0e7ae617f
     container_name: miniflux
     security_opt:
       - no-new-privileges:true
@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
   miniflux-db:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:3406990b6e4c7192317b6fdc5680498744f6142f01f0287f4ee0420d8c74063c
     container_name: miniflux-db
     security_opt:
       - no-new-privileges:true
