@@ -17,7 +17,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.miniflux.rule=Host(`miniflux.local.elmurphy.com`)
       - traefik.http.routers.miniflux.tls=true
-      - traefik.http.services.miniflux.loadbalancer.server.port=80
+      - traefik.http.services.miniflux.loadbalancer.server.port=8080
     depends_on:
       miniflux-db:
         condition: service_healthy
