@@ -32,7 +32,7 @@ machine:
           ip: 10.77.1.200
   install:
     disk: /dev/sda
-    image: factory.talos.dev/installer/3db570bedf4342804e5b4a418ec1dc4ac61ed0338f36ce4778e02dd8320b8457:v1.10.5
+    image: factory.talos.dev/installer/3db570bedf4342804e5b4a418ec1dc4ac61ed0338f36ce4778e02dd8320b8457:v1.11.0
     wipe: false
   features:
     rbac: true
