@@ -9,9 +9,3 @@ spec:
   selector:
     app: linkding
   type: LoadBalancer
-status:
-  loadBalancer:
-    ingress:
-      - ip: 10.96.0.5
-
-
