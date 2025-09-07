@@ -24,7 +24,6 @@ services:
       - traefik.http.routers.crafty.rule=Host(`crafty.local.elmurphy.com`)
       - traefik.http.routers.crafty.tls=true
       - traefik.http.services.crafty.loadbalancer.server.port=8443
-      - traefik.http.routers.listgartenphotography.tls.certresolver=cloudflare
     restart: unless-stopped
 
 volumes:
