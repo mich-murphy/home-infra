@@ -9,6 +9,7 @@ services:
     environment:
       - TZ=${TZ}
     ports:
+      - "8443:8443" # HTTPS
       - "8123:8123" # DYNMAP
       - "19132:19132/udp" # BEDROCK
       - "25566-25600:25566-25600" # MC SERV PORT RANGE
@@ -23,6 +24,7 @@ services:
       - traefik.http.routers.crafty.rule=Host(`crafty.local.elmurphy.com`)
       - traefik.http.routers.crafty.tls=true
       - traefik.http.services.crafty.loadbalancer.server.port=8443
+      - traefik.http.routers.listgartenphotography.tls.certresolver=cloudflare
     restart: unless-stopped
 
 volumes:
