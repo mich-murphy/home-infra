@@ -26,3 +26,19 @@ spec:
       - paths: ["/metadata/annotations/prometheus-operator-validated"]
         target:
           kind: PrometheusRule
+  values:
+    grafana:
+      service:
+        type: LoadBalancer
+      # ingress:
+      #   enabled: true
+      #   ingressClassName: cilium
+      #   annotations:
+      #     - cert-manager.io/cluster-issuer: letsencrypt-production
+      #     - external-dns.alpha.kubernetes.io/hostname: grafana.mich-murphy.com
+      #   hosts:
+      #     - grafana.mich-murphy.com
+      #   tls:
+      #     - hosts:
+      #         - grafana.mich-murphy.com
+      #       secretName: grafana-tls-secret
