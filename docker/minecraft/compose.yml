@@ -9,7 +9,6 @@ services:
     environment:
       - TZ=${TZ}
     ports:
-      - "8000:8000" #HTTP
       - "8443:8443" # HTTPS
       - "8123:8123" # DYNMAP
       - "19132:19132/udp" # BEDROCK
@@ -25,7 +24,7 @@ services:
       - traefik.http.routers.crafty.tls.certresolver=cloudflare
       - traefik.http.routers.crafty.rule=Host(`crafty.local.elmurphy.com`)
       - traefik.http.routers.crafty.tls=true
-      - traefik.http.services.crafty.loadbalancer.server.port=8000
+      - traefik.http.services.crafty.loadbalancer.server.port=8443
     restart: unless-stopped
 
 volumes:
