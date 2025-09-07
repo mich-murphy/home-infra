@@ -11,7 +11,7 @@ services:
     ports:
       - "8123:8123" # DYNMAP
       - "19132:19132/udp" # BEDROCK
-      - "25500-25600:25500-25600" # MC SERV PORT RANGE
+      - "25566-25600:25566-25600" # MC SERV PORT RANGE
     volumes:
       - /mnt/data/minecraft/backups:/crafty/backups
       - crafty-logs:/crafty/logs
