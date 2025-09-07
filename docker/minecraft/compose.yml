@@ -1,0 +1,40 @@
+services:
+  crafty:
+    image: registry.gitlab.com/crafty-controller/crafty-4:latest
+    container_name: crafty
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    environment:
+      - TZ=${TZ}
+    ports:
+      - "8123:8123" # DYNMAP
+      - "19132:19132/udp" # BEDROCK
+      - "25500-25600:25500-25600" # MC SERV PORT RANGE
+    volumes:
+      - /mnt/data/minecraft/backups:/crafty/backups
+      - crafty-logs:/crafty/logs
+      - crafty-servers:/crafty/servers
+      - crafty-data:/crafty/app/config
+      - crafty-import:/crafty/import
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.crafty.rule=Host(`crafty.local.elmurphy.com`)
+      - traefik.http.routers.crafty.tls=true
+      - traefik.http.services.crafty.loadbalancer.server.port=8443
+    restart: unless-stopped
+
+volumes:
+  crafty-logs:
+    name: crafty-logs
+  crafty-servers:
+    name: crafty-servers
+  crafty-data:
+    name: crafty-data
+  crafty-import:
+    name: crafty-import
+
+networks:
+  proxy:
+    external: true
