@@ -1,11 +1,12 @@
+
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: linkding-cert
-  namespace: default
+  name: grafana-cert
+  namespace: monitoring
 spec:
-  secretName: linkding-tls-secret
+  secretName: grafana-tls-secret
   issuerRef:
     name: letsencrypt-production
   dnsNames:
-  - linkding.mich-murphy.com
+  - grafana.mich-murphy.com
