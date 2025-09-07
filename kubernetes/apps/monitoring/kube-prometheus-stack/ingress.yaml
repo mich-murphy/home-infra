@@ -1,0 +1,37 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grafana-cert
+  namespace: monitoring
+spec:
+  secretName: grafana-tls-secret
+  issuerRef:
+    name: letsencrypt-production
+  dnsNames:
+  - grafana.mich-murphy.com
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    external-dns.alpha.kubernetes.io/hostname: grafana.mich-murphy.com
+spec:
+  ingressClassName: cilium
+  rules:
+    - host: grafana.mich-murphy.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: kube-prometheus-stack-grafana 
+                port:
+                  number: 3000
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - grafana.mich-murphy.com
+      secretName: grafana-tls-secret
