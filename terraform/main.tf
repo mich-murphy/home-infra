@@ -43,11 +43,11 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   depends_on = [
     terraform_data.cloud_init_config,
   ]
-  vmid             = 102
-  name             = "docker-host"
-  target_node      = "proxmox"
-  tags             = null
-  agent            = 1
+  vmid        = 102
+  name        = "docker-host"
+  target_node = "proxmox"
+  tags        = "ubuntu"
+  agent       = 1
   cpu {
     cores = 2
   }
@@ -94,6 +94,65 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   network {
     id     = 0
     bridge = "vmbr0"
+    model  = "virtio"
+  }
+}
+
+resource "proxmox_vm_qemu" "cloud_init_minecraft" {
+  depends_on = [
+    terraform_data.cloud_init_config,
+  ]
+  vmid        = 103
+  name        = "minecraft"
+  target_node = "proxmox"
+  tags        = "ubuntu"
+  agent       = 1
+  cpu {
+    cores = 2
+  }
+  memory           = 8192
+  onboot           = false
+  bios             = "seabios"
+  boot             = "order=scsi0"         # has to be the same as the OS disk of the template
+  clone            = "ubuntu-server-24-04" # name of the template
+  scsihw           = "virtio-scsi-single"
+  vm_state         = "running"
+  automatic_reboot = true
+  # Cloud-Init configuration
+  cicustom   = "vendor=local:snippets/agents.yml" # /var/lib/vz/snippets
+  ciupgrade  = true
+  ipconfig0  = "ip=dhcp,ip6=dhcp"
+  skip_ipv6  = true
+  ciuser     = "mm"
+  cipassword = data.onepassword_item.proxmox.section[0].field[1].value
+  sshkeys    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
+  # set serial device for display
+  serial {
+    id = 0
+  }
+  disks {
+    scsi {
+      scsi0 {
+        disk {
+          discard  = true
+          storage  = "local-zfs"
+          size     = "256G"
+          iothread = true
+        }
+      }
+    }
+    # attach cloud-init drive
+    ide {
+      ide1 {
+        cloudinit {
+          storage = "local-zfs"
+        }
+      }
+    }
+  }
+  network {
+    id     = 0
+    bridge = "vmbr1"
     model  = "virtio"
   }
 }
