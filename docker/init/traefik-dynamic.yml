@@ -42,6 +42,15 @@ http:
         - https-redirectscheme
       tls: {}
       service: truenas
+    crafty:
+      entryPoints:
+        - "websecure"
+      rule: "Host(`crafty.local.elmurphy.com`)"
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+      tls: {}
+      service: crafty
   services:
     proxmox:
       loadBalancer:
@@ -52,6 +61,11 @@ http:
       loadBalancer:
         servers:
           - url: "https://10.77.1.101"
+        passHostHeader: true
+    crafty:
+      loadBalancer:
+        servers:
+          - url: "https://10.77.4.134:8443"
         passHostHeader: true
   middlewares:
     https-redirectscheme:
