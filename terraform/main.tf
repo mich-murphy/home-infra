@@ -124,7 +124,6 @@ resource "proxmox_vm_qemu" "cloud_init_minecraft" {
   ipconfig0  = "ip=dhcp,ip6=dhcp"
   skip_ipv6  = true
   ciuser     = "mm"
-  cipassword = data.onepassword_item.proxmox.section[0].field[1].value
   sshkeys    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
   # set serial device for display
   serial {
