@@ -1,6 +1,6 @@
 ---
 services:
-  # NOTE: visit https://<plex-fqdn>/web to setup new server
+  # NOTE: visit https://<server-ip>:32400/web to setup new server
   plex:
     image: plexinc/pms-docker:1.42.1.10060-4e8b05daf@sha256:4e704a2172129d8a6bc5b05ea201945b329bb6512f48a4e92ed4a4a787c35462
     container_name: plex
@@ -8,8 +8,6 @@ services:
       - no-new-privileges:true
     networks:
       - proxy
-    ports:
-      - 32400:32400/tcp
     devices:
       - /dev/dri:/dev/dri
     environment:
