@@ -8,6 +8,8 @@ services:
       - no-new-privileges:true
     networks:
       - proxy
+    ports:
+      - 32400:32400/tcp
     devices:
       - /dev/dri:/dev/dri
     environment:
