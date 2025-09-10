@@ -69,6 +69,13 @@
         "/^(ghcr|docker)\\.io\\/(immich-app|valkey)\\/(postgres|valkey)/"
       ],
       "enabled": false
+    },
+    {
+      "description": "Disable Crafty Controller Updates",
+      "matchPackageNames": [
+        "/^registry\\.gitlab\\.com\\/crafty-controller\\/crafty-4/"
+      ],
+      "enabled": false
     }
   ]
 }
