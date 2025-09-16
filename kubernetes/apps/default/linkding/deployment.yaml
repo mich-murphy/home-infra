@@ -72,8 +72,8 @@ spec:
           resources:
             requests:
               cpu: 100m
-            limits:
-              memory: 1Gi
+            # limits:
+            #   memory: 1Gi
       volumes:
         - name: linkding-data
           persistentVolumeClaim:

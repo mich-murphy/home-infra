@@ -70,8 +70,8 @@ spec:
             requests:
               cpu: 100m
             #   gpu.intel.com/i915: 1
-            limits:
-              memory: 4Gi
+            # limits:
+            #   memory: 4Gi
             #   gpu.intel.com/i915: 1
       volumes:
         - name: jellyfin-data
