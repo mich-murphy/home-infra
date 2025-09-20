@@ -1,7 +1,7 @@
 ---
 services:
   immich-server:
-    image: ghcr.io/immich-app/immich-server:v1.140.1@sha256:d97aea4b3f59989a79c6adffb39a1a8b95dd27c90a7f79280b1176a6220cf17b
+    image: ghcr.io/immich-app/immich-server:v1.142.1
     container_name: immich
     security_opt:
       - no-new-privileges:true
@@ -26,7 +26,7 @@ services:
       disable: false
 
   immich-ml:
-    image: ghcr.io/immich-app/immich-machine-learning:v1.140.1@sha256:6239f9852f2ccd8bef52b161629a8fc62bac7636750c06e5fe021e994bab4781
+    image: ghcr.io/immich-app/immich-machine-learning:v1.142.1
     container_name: immich-ml
     security_opt:
       - no-new-privileges:true
@@ -39,7 +39,7 @@ services:
       disable: false
 
   redis:
-    image: docker.io/valkey/valkey:8-bookworm@sha256:a137a2b60aca1a75130022d6bb96af423fefae4eb55faf395732db3544803280
+    image: docker.io/valkey/valkey:8-bookworm@sha256:fea8b3e67b15729d4bb70589eb03367bab9ad1ee89c876f54327fc7c6e618571
     container_name: immich-redis
     security_opt:
       - no-new-privileges:true
@@ -50,7 +50,7 @@ services:
     restart: unless-stopped
 
   database:
-    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:32324a2f41df5de9efe1af166b7008c3f55646f8d0e00d9550c16c9822366b4a
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:8d292bdb796aa58bbbaa47fe971c8516f6f57d6a47e7172e62754feb6ed4e7b0
     container_name: immich-postgres
     security_opt:
       - no-new-privileges:true
