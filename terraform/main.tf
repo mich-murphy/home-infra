@@ -56,7 +56,7 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   startup          = "order=2,up=60"
   bios             = "seabios"
   boot             = "order=scsi0"        # has to be the same as the OS disk of the template
-  clone            = "ubuntu-server-2404" # name of the template
+  clone            = "ubuntu-server-24-04" # name of the template
   scsihw           = "virtio-scsi-single"
   vm_state         = "running"
   automatic_reboot = true
@@ -157,10 +157,10 @@ resource "proxmox_vm_qemu" "cloud_init_minecraft" {
 }
 
 resource "proxmox_vm_qemu" "talos_control_plane" {
-  count       = 3
+  count       = 1
   vmid        = "20${count.index + 1}"
   name        = "talos-prod-${count.index + 1}"
-  desc        = "Talos image: factory.talos.dev/installer/3db570bedf4342804e5b4a418ec1dc4ac61ed0338f36ce4778e02dd8320b8457:v1.10.5"
+  desc        = "Talos image: factory.talos.dev/installer/3db570bedf4342804e5b4a418ec1dc4ac61ed0338f36ce4778e02dd8320b8457:v1.11.1"
   target_node = "proxmox"
   tags        = "kubernetes"
   agent       = 1
@@ -187,6 +187,14 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
           discard  = true
           storage  = "local-zfs"
           size     = "100G"
+          iothread = true
+        }
+      }
+      scsi1 {
+        disk {
+          discard  = true
+          storage  = "local-zfs"
+          size     = "128G"
           iothread = true
         }
       }
