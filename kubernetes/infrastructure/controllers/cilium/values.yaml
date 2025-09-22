@@ -25,11 +25,6 @@ cgroup:
   hostRoot: /sys/fs/cgroup
 k8sServiceHost: localhost
 k8sServicePort: 7445
-hubble:
-  relay:
-    enabled: true
-  ui:
-    enabled: true
 l2announcements:
   enabled: true
 # Calculated based on 30 services
