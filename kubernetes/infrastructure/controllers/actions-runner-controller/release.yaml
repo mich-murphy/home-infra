@@ -15,8 +15,12 @@ spec:
         namespace: actions-runner-system
   install:
     crds: CreateReplace
+    remediation:
+      retries: 3
   upgrade:
     cleanupOnFail: true
     crds: CreateReplace
+    remediation:
+      retries: 3
   driftDetection:
     mode: enabled

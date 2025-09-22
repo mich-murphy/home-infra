@@ -14,6 +14,12 @@ spec:
         kind: HelmRepository
         name: cilium
         namespace: kube-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   driftDetection:
     mode: enabled
   valuesFrom:
