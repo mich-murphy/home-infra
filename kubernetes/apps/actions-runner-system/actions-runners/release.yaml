@@ -24,6 +24,10 @@ spec:
     maxRunners: 3
     template:
       spec:
+        install:
+          disableWait: true
+        upgrade:
+          disableWait: true
         securityContext:
           fsGroup: 123
         containers:
