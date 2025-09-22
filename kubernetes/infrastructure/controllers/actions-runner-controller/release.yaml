@@ -20,5 +20,3 @@ spec:
     crds: CreateReplace
   driftDetection:
     mode: enabled
-  # values:
-  #   fullnameOverride: gha-runner-scale-set-controller
