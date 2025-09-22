@@ -24,7 +24,14 @@ spec:
   driftDetection:
     mode: enabled
   values:
+    analytics:
+      enabled: false
     engines:
+      local:
+        lvm:
+          enabled: false
+        zfs:
+          enabled: false
       replicated:
         mayastor:
           enabled: false
