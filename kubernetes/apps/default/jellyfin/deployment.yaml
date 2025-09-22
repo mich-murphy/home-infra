@@ -13,15 +13,6 @@ spec:
       labels:
         app: jellyfin
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - talos-prod-1
       strategy:
         type: Recreate
       securityContext:
