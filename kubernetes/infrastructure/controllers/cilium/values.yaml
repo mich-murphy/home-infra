@@ -35,3 +35,5 @@ k8sClientRateLimit:
 ingressController:
   enabled: true
   loadbalancerMode: dedicated
+operator:
+  replicas: 1
