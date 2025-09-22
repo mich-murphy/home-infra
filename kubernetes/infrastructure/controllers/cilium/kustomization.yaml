@@ -4,6 +4,7 @@ namespace: kube-system
 resources:
   - repository.yaml
   - release.yaml
+  - networks.yaml
 
 configMapGenerator:
   - name: cilium-values
