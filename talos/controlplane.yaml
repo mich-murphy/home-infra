@@ -68,7 +68,6 @@ cluster:
   apiServer:
     image: registry.k8s.io/kube-apiserver:v1.33.2
     certSANs:
-      - 127.0.0.1
       - 10.77.1.200
     disablePodSecurityPolicy: true
     admissionControl:
