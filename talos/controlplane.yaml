@@ -10,9 +10,9 @@ machine:
   kubelet:
     image: ghcr.io/siderolabs/kubelet:v1.33.2
     extraMounts:
-        - destination: /var/lib/longhorn
+        - destination: /var/openebs/local
           type: bind
-          source: /var/lib/longhorn
+          source: /var/openebs/local 
           options:
             - bind
             - rshared
@@ -22,17 +22,15 @@ machine:
   disks:
     - device: /dev/sdb
       partitions:
-        - mountpoint: /var/lib/longhorn
+        - mountpoint: /var/openebs/local
   network:
     interfaces:
       - deviceSelector:
           physical: true
         dhcp: true
-        vip:
-          ip: 10.77.1.200
   install:
     disk: /dev/sda
-    image: factory.talos.dev/installer/3db570bedf4342804e5b4a418ec1dc4ac61ed0338f36ce4778e02dd8320b8457:v1.11.0
+    image: factory.talos.dev/installer/3db570bedf4342804e5b4a418ec1dc4ac61ed0338f36ce4778e02dd8320b8457:v1.11.1
     wipe: false
   features:
     rbac: true
@@ -51,7 +49,7 @@ cluster:
   id: op://kubernetes/talos/cluster-id
   secret: op://kubernetes/talos/cluster-secret
   controlPlane:
-    endpoint: https://10.77.1.200:6443
+    endpoint: https://10.77.1.201:6443
   clusterName: talos-prod
   network:
     cni:
@@ -75,7 +73,7 @@ cluster:
     image: registry.k8s.io/kube-apiserver:v1.33.2
     certSANs:
       - 127.0.0.1
-      - 10.77.1.200
+      - 10.77.1.201
     disablePodSecurityPolicy: true
     admissionControl:
       - name: PodSecurity
@@ -91,7 +89,7 @@ cluster:
           exemptions:
             namespaces:
               - kube-system
-              - longhorn-system
+              - openebs
             runtimeClasses: []
             usernames: []
           kind: PodSecurityConfiguration
@@ -217,4 +215,4 @@ kind: ExtensionServiceConfig
 name: tailscale
 environment:
   - op://kubernetes/tailscale/environment-TS_AUTHKEY
-  - TS_ROUTES=10.96.0.0/12,10.77.1.200/32
+  - TS_ROUTES=10.96.0.0/12,10.77.1.201/32
