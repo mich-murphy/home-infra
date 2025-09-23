@@ -55,7 +55,7 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   onboot           = true
   startup          = "order=2,up=60"
   bios             = "seabios"
-  boot             = "order=scsi0"        # has to be the same as the OS disk of the template
+  boot             = "order=scsi0"         # has to be the same as the OS disk of the template
   clone            = "ubuntu-server-24-04" # name of the template
   scsihw           = "virtio-scsi-single"
   vm_state         = "running"
@@ -119,12 +119,12 @@ resource "proxmox_vm_qemu" "cloud_init_minecraft" {
   vm_state         = "running"
   automatic_reboot = true
   # Cloud-Init configuration
-  cicustom   = "vendor=local:snippets/agents.yml" # /var/lib/vz/snippets
-  ciupgrade  = true
-  ipconfig0  = "ip=dhcp,ip6=dhcp"
-  skip_ipv6  = true
-  ciuser     = "mm"
-  sshkeys    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
+  cicustom  = "vendor=local:snippets/agents.yml" # /var/lib/vz/snippets
+  ciupgrade = true
+  ipconfig0 = "ip=dhcp,ip6=dhcp"
+  skip_ipv6 = true
+  ciuser    = "mm"
+  sshkeys   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
   # set serial device for display
   serial {
     id = 0
@@ -158,7 +158,7 @@ resource "proxmox_vm_qemu" "cloud_init_minecraft" {
 
 resource "proxmox_vm_qemu" "talos_control_plane" {
   count       = 1
-  vmid        = "20${count.index + 1}"
+  vmid        = "20${count.index}"
   name        = "talos-prod-${count.index + 1}"
   desc        = "Talos image: factory.talos.dev/installer/3db570bedf4342804e5b4a418ec1dc4ac61ed0338f36ce4778e02dd8320b8457:v1.11.1"
   target_node = "proxmox"
@@ -167,15 +167,15 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
   cpu {
     cores = 6
   }
-  memory           = 10240
-  onboot           = true
-  bios             = "seabios"
-  boot             = "order=scsi0;ide1"
-  scsihw           = "virtio-scsi-single"
-  vm_state         = "running"
-  automatic_reboot = true
-  ipconfig0        = "ip=dhcp,ip6=dhcp"
-  skip_ipv6        = true
+  memory               = 10240
+  onboot               = true
+  bios                 = "seabios"
+  boot                 = "order=scsi0;ide1"
+  scsihw               = "virtio-scsi-single"
+  vm_state             = "running"
+  automatic_reboot     = true
+  ipconfig0            = "ip=dhcp,ip6=dhcp"
+  skip_ipv6            = true
   # set serial device for display
   serial {
     id = 0
