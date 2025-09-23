@@ -1,7 +1,7 @@
 ---
 services:
   freshrss:
-    image: ghcr.io/linuxserver/freshrss:1.27.0-ls279@sha256:45dad71857da47a3e589dd0f66746c8ef4c845c5b3ec96fee4e130d1568ea7db
+    image: ghcr.io/linuxserver/freshrss:1.27.0-ls280@sha256:3c48add07f0b7cae80d0b26a2d57741cef62dfcc646011fc93dfd00a03d9ef30
     container_name: freshrss
     security_opt:
       - no-new-privileges:true
