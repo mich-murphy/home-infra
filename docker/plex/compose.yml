@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
 
   tautulli:
-    image: ghcr.io/linuxserver/tautulli:v2.15.3-ls200@sha256:63a8298420139c27aede66e61a1b2f3c4ac56486f2a06ab4776ec47dfdcf312a
+    image: ghcr.io/linuxserver/tautulli:v2.16.0-ls203@sha256:ec6714a372e869967bab7411f4ef87683d782c527ded241e8c84779d6b7c4f9f
     container_name: tautulli
     security_opt:
       - no-new-privileges:true
