@@ -26,7 +26,7 @@ services:
       disable: false
 
   immich-ml:
-    image: ghcr.io/immich-app/immich-machine-learning:v1.142.1
+    image: ghcr.io/immich-app/immich-machine-learning:v1.143.1@sha256:cc94659771d7e394d6406ebb0664069f2523062fda4f934def31648e903c4de2
     container_name: immich-ml
     security_opt:
       - no-new-privileges:true
