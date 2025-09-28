@@ -59,7 +59,7 @@ services:
     restart: unless-stopped
 
   pocket-id:
-    image: ghcr.io/pocket-id/pocket-id:v1.10.0@sha256:e0d48de48b9a2c030429a0f6566f94e009d228492506924ddd949d0bef26c955
+    image: ghcr.io/pocket-id/pocket-id:v1.11.2@sha256:6abfd8d9875aa7996aeeb016057bdee0c66a6c509225a0aeb241c3f87785c62c
     container_name: pocket-id
     security_opt:
       - no-new-privileges:true
