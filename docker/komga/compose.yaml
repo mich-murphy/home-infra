@@ -1,0 +1,28 @@
+---
+services:
+  komga:
+    image: gotson/komga:1.23.4
+    container_name: komga
+    user: 1000:1000
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    volumes:
+      - komga-data:/config:rw
+      - /mnt/data/media/manga:/data:rw
+      - /etc/timezone:/etc/timezone:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.komga.rule=Host(`komga.local.elmurphy.com`)
+      - traefik.http.routers.komga.tls=true
+      - traefik.http.services.komga.loadbalancer.server.port=25600
+    restart: unless-stopped
+
+volumes:
+  komga-data:
+    name: komga-data
+
+networks:
+  proxy:
+    external: true
