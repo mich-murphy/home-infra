@@ -20,7 +20,7 @@ services:
       - OWNCLOUD_ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - OWNCLOUD_MYSQL_UTF8MB4=true
       - OWNCLOUD_REDIS_ENABLED=true
-      - OWNCLOUD_REDIS_HOST=redis
+      - OWNCLOUD_REDIS_HOST=owncloud-redis
     volumes:
       - owncloud-data:/mnt/data
     labels:
