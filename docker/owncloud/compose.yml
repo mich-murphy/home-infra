@@ -94,4 +94,4 @@ networks:
     internal: true
     ipam:
       config:
-        - subnet: 172.60.1.0/24
+        - subnet: 172.40.1.0/24
