@@ -70,7 +70,7 @@ services:
       - POSTGRES_USER=nextcloud
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - nextcloud-db:/var/lib/postgresql/data:Z
+      - nextcloud-postgres-db:/var/lib/postgresql/data:Z
     restart: unless-stopped
 
   nextcloud-redis:
@@ -85,8 +85,8 @@ services:
 volumes:
   nextcloud-data:
     name: nextcloud-data
-  nextcloud-db:
-    name: nextcloud-db
+  nextcloud-postgres-db:
+    name: nextcloud-postgres-db
 
 networks:
   proxy:
