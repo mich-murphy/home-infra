@@ -62,7 +62,7 @@ services:
     restart: unless-stopped
 
   owncloud-redis:
-    image: redis:6
+    image: redis:8@sha256:5fa2edb1e408fa8235e6db8fab01d1afaaae96c9403ba67b70feceb8661e8621
     container_name: owncloud-redis
     security_opt:
       - no-new-privileges:true
