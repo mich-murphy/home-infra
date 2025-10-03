@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
   owncloud-mariadb:
-    image: mariadb:10.11.14 # minimum required ownCloud version is 10.9
+    image: mariadb:12.0.2@sha256:03a03a6817bb9eaa21e5aed1b734d432ec3f80021f5a2de1795475f158217545 # minimum required ownCloud version is 10.9
     container_name: owncloud-mariadb
     security_opt:
       - no-new-privileges:true
