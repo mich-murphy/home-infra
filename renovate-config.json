@@ -1,13 +1,11 @@
 {
   "baseBranchPatterns": ["main"],
-  "repositories": ["mich-murphy/home-infra"],
   "rebaseWhen": "conflicted",
   "automergeStrategy": "rebase",
   "semanticCommits": "enabled",
   "branchPrefix": "actions-renovate/",
   "username": "renovate-release",
   "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
-  "onboarding": false,
   "platform": "github",
   "packageRules": [
     {
