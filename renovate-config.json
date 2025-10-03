@@ -1,5 +1,6 @@
 {
   "baseBranchPatterns": ["main"],
+  "repositories": ["mich-murphy/home-infra"],
   "rebaseWhen": "conflicted",
   "automergeStrategy": "rebase",
   "semanticCommits": "enabled",
@@ -43,9 +44,7 @@
     },
     {
       "description": "Plex Media Server",
-      "matchPackageNames": [
-        "/^plexinc\\/pms-docker/"
-      ],
+      "matchPackageNames": ["/^plexinc\\/pms-docker/"],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-(?<revision>.+)$"
     },
     {
