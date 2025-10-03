@@ -2,6 +2,7 @@
   "baseBranchPatterns": ["main"],
   "rebaseWhen": "conflicted",
   "automergeStrategy": "rebase",
+  "prHourlyLimit": 15,
   "semanticCommits": "enabled",
   "branchPrefix": "actions-renovate/",
   "username": "renovate-release",

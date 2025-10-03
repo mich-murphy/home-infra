@@ -2,15 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:best-practices",
-    ":rebaseStalePrs",
-    ":dependencyDashboard",
-    ":semanticCommits",
     "docker:enableMajor",
-    "default:automergeDigest",
-    ":disableRateLimiting"
-  ],
-  "dependencyDashboardTitle": "Renovate Dashboard 🤖",
-  "major": {
-    "dependencyDashboardApproval": true
-  }
+    "default:automergeDigest"
+  ]
 }
