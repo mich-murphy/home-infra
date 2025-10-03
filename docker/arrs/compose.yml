@@ -48,7 +48,6 @@ services:
     container_name: lidarr
     security_opt:
       - no-new-privileges:true
-    user: 1215:1215
     networks:
       - proxy
     environment:
