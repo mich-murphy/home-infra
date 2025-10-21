@@ -49,11 +49,11 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   tags        = "ubuntu"
   agent       = 1
   cpu {
-    cores = 2
+    cores = 4
   }
-  memory           = 8192
+  memory           = 12288
   onboot           = true
-  startup          = "order=2,up=60"
+  startup          = "order=2"
   bios             = "seabios"
   boot             = "order=scsi0"         # has to be the same as the OS disk of the template
   clone            = "ubuntu-server-24-04" # name of the template
@@ -112,6 +112,7 @@ resource "proxmox_vm_qemu" "cloud_init_minecraft" {
   }
   memory           = 8192
   onboot           = false
+  startup          = "order=4"
   bios             = "seabios"
   boot             = "order=scsi0"         # has to be the same as the OS disk of the template
   clone            = "ubuntu-server-24-04" # name of the template
@@ -156,26 +157,85 @@ resource "proxmox_vm_qemu" "cloud_init_minecraft" {
   }
 }
 
+resource "proxmox_vm_qemu" "cloud_init_omni" {
+  depends_on = [
+    terraform_data.cloud_init_config,
+  ]
+  vmid        = 104
+  name        = "omni"
+  target_node = "proxmox"
+  tags        = "ubuntu"
+  agent       = 1
+  cpu {
+    cores = 1
+  }
+  memory           = 1024
+  onboot           = false
+  startup          = "order=3"
+  bios             = "seabios"
+  boot             = "order=scsi0"         # has to be the same as the OS disk of the template
+  clone            = "ubuntu-server-24-04" # name of the template
+  scsihw           = "virtio-scsi-single"
+  vm_state         = "running"
+  automatic_reboot = true
+  # Cloud-Init configuration
+  cicustom  = "vendor=local:snippets/agents.yml" # /var/lib/vz/snippets
+  ciupgrade = true
+  ipconfig0 = "ip=dhcp,ip6=dhcp"
+  skip_ipv6 = true
+  ciuser    = "mm"
+  sshkeys   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
+  # set serial device for display
+  serial {
+    id = 0
+  }
+  disks {
+    scsi {
+      scsi0 {
+        disk {
+          discard  = true
+          storage  = "local-zfs"
+          size     = "128G"
+          iothread = true
+        }
+      }
+    }
+    # attach cloud-init drive
+    ide {
+      ide1 {
+        cloudinit {
+          storage = "local-zfs"
+        }
+      }
+    }
+  }
+  network {
+    id     = 0
+    bridge = "vmbr1"
+    model  = "virtio"
+  }
+}
+
 resource "proxmox_vm_qemu" "talos_control_plane" {
   count       = 1
   vmid        = "20${count.index}"
   name        = "talos-prod-${count.index + 1}"
-  desc        = "Talos image: factory.talos.dev/installer/3db570bedf4342804e5b4a418ec1dc4ac61ed0338f36ce4778e02dd8320b8457:v1.11.1"
+  description = "Siderolabs Omni managed install image v1.11.2"
   target_node = "proxmox"
   tags        = "kubernetes"
   agent       = 1
   cpu {
     cores = 6
   }
-  memory               = 10240
-  onboot               = true
-  bios                 = "seabios"
-  boot                 = "order=scsi0;ide1"
-  scsihw               = "virtio-scsi-single"
-  vm_state             = "running"
-  automatic_reboot     = true
-  ipconfig0            = "ip=dhcp,ip6=dhcp"
-  skip_ipv6            = true
+  memory           = 10240
+  onboot           = true
+  bios             = "seabios"
+  boot             = "order=scsi0;ide1"
+  scsihw           = "virtio-scsi-single"
+  vm_state         = "running"
+  automatic_reboot = true
+  ipconfig0        = "ip=dhcp,ip6=dhcp"
+  skip_ipv6        = true
   # set serial device for display
   serial {
     id = 0
@@ -203,7 +263,7 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
     ide {
       ide1 {
         cdrom {
-          iso = "local:iso/metal-amd64.iso"
+          iso = "local:iso/metal-amd64-v1.11.2.iso"
         }
       }
     }

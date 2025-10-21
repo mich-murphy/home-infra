@@ -12,4 +12,5 @@ terraform/files
 # ansible
 .vaultpass
 
-talos/controlplane.secret.yaml
+talos/*.secret.yaml
+talos/controlplane.yaml
