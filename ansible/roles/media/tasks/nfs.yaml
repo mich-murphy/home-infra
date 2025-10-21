@@ -28,6 +28,11 @@
         nfs_share: "10.77.1.101:/mnt/slow/media/audiobooks"
         owner: "media"
         group: "media"
+      - name: "emulators"
+        local_path: "/mnt/emulators"
+        nfs_share: "10.77.1.101:/mnt/slow/media/emulators"
+        owner: "media"
+        group: "media"
 
 - name: check whether mount folders exist
   ansible.builtin.stat:
