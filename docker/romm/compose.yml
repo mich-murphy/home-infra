@@ -2,6 +2,8 @@ services:
   romm:
     image: rommapp/romm:4.3.2
     container_name: romm
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
       - romm-backend
@@ -19,7 +21,7 @@ services:
     volumes:
       - romm_resources:/romm/resources # Resources fetched from IGDB (covers, screenshots, etc.)
       - romm_redis_data:/redis-data
-      - /mnt/emulators/roms:/romm/library # Your game library. Check https://docs.romm.app/latest/Getting-Started/Folder-Structure/ for more details.
+      - /mnt/emulators/roms:/romm/library/roms # Your game library. Check https://docs.romm.app/latest/Getting-Started/Folder-Structure/ for more details.
       - /mnt/emulators/saves:/romm/assets # Uploaded saves, states, etc.
       - romm_config:/romm/config
     labels:
@@ -36,6 +38,8 @@ services:
   romm-db:
     image: mariadb:12.0.2
     container_name: romm-db
+    security_opt:
+      - no-new-privileges:true
     networks:
       - romm-backend
     environment:
