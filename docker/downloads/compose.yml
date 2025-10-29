@@ -2,7 +2,7 @@
 services:
   deluge:
 
-    image: ghcr.io/linuxserver/deluge:2.2.0-r1-ls351@sha256:c31bcf9266522cc9d00f0238fa2153181ad6ead11a87cd42eb09bf4a02395661
+    image: ghcr.io/linuxserver/deluge:2.2.0-r1-ls352@sha256:6d601d4ce4559196a6a5b3e7921cc3c90e52f37501488ab18da146927776500d
     container_name: deluge
     security_opt:
       - no-new-privileges:true
@@ -30,7 +30,7 @@ services:
   # hostname must be added to host_whitelist in sabnzbd.ini
   # reference: https://sabnzbd.org/wiki/extra/hostname-check.html
   sabnzbd:
-    image: ghcr.io/linuxserver/sabnzbd:4.5.4-ls235@sha256:3e3678945b3a977ad5da67c29e9516b186a0fcadca22fab44267ddf5c0d1d33b
+    image: ghcr.io/linuxserver/sabnzbd:4.5.5-ls235@sha256:37fc318dc632106eac00f096661f43ca513793bf51913bcbd989ba921b3409c8
     container_name: sabnzbd
     security_opt:
       - no-new-privileges:true
