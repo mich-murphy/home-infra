@@ -2,7 +2,7 @@
 services:
   deluge:
 
-    image: ghcr.io/linuxserver/deluge:2.2.0-r1-ls352@sha256:6d601d4ce4559196a6a5b3e7921cc3c90e52f37501488ab18da146927776500d
+    image: ghcr.io/linuxserver/deluge:2.2.0-r1-ls353@sha256:7321389e618acb03e3abd70147b44a2d8f5d8b7396050a966e5bc7105fd8cf87
     container_name: deluge
     security_opt:
       - no-new-privileges:true
