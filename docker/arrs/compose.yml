@@ -1,7 +1,7 @@
 ---
 services:
   radarr:
-    image: ghcr.io/linuxserver/radarr:5.28.0.10274-ls286@sha256:c984533510abe0219a70e80d15bd0d212b7df21baa0913759c4ce6cc9092240b
+    image: ghcr.io/linuxserver/radarr:6.0.4.10291-ls287@sha256:e26fbfd3782520c0bb820666f041ca056acfe187a8b95214ee1f47512cc05a29
     container_name: radarr
     security_opt:
       - no-new-privileges:true
@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   lidarr:
-    image: ghcr.io/linuxserver/lidarr:2.14.5.4836-ls9@sha256:5e1235d00b5d1c1f60ca0d472e554a6611aef41aa7b5b6d88260214bf4809af0
+    image: ghcr.io/linuxserver/lidarr:3.0.1.4866-ls11@sha256:be5501c386d0d2d1c4076a23d5db0aa07f784ef10ac3c42b0c9fe47bd7d9ce53
     container_name: lidarr
     security_opt:
       - no-new-privileges:true
@@ -65,7 +65,7 @@ services:
     restart: unless-stopped
 
   prowlarr:
-    image: ghcr.io/linuxserver/prowlarr:2.1.5.5216-ls131@sha256:643220338204525524db787ff38a607261597f49d1f550694acdb3e908e2b43e
+    image: ghcr.io/linuxserver/prowlarr:2.3.0.5236-ls132@sha256:3dd3a316f60ea4e6714863286549a6ccaf0b8cf4efe5578ce3fe0e85475cb1cf
     container_name: prowlarr
     security_opt:
       - no-new-privileges:true
