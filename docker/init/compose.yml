@@ -1,7 +1,7 @@
 ---
 services:
   portainer:
-    image: portainer/portainer-ee:lts@sha256:3d9951ce9b3c1d2a83b9f5cb951e0c9bd196406c42e91040b30c44be443231a1
+    image: portainer/portainer-ee:lts@sha256:be7190735ec9427399053c7bda0a922a981d54c1e76f0f3841ab3b80a380ecc5
     container_name: portainer
     security_opt:
       - no-new-privileges:true
@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
 
   traefik:
-    image: traefik:v3.6.1@sha256:fd5932c796f7e2db9fd6bff485ef693d53797f0ee8ad03dc68aa424ea6f21958
+    image: traefik:v3.6.2@sha256:c025135278d10f0fb6e54cb2b2dbadb3c3f0381a2c508cd74c06a74cb5a0e828
     container_name: traefik
     security_opt:
       - no-new-privileges:true
@@ -89,30 +89,6 @@ services:
       - traefik
     restart: unless-stopped
 
-  op-connect-api:
-    image: 1password/connect-api:1.8.1@sha256:8fe7bcd50c9e73899e0a1aa5aa43421ca75fbceacb33dd07f6418c4116e637a1
-    container_name: op-connect-api
-    networks:
-      - op-connect
-    volumes:
-      - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json
-      - onepassword-data:/home/opuser/.op/data
-    ports:
-      - 8001:8080
-    restart: unless-stopped
-
-  op-connect-sync:
-    image: 1password/connect-sync:1.8.1@sha256:d5e937b2b7e314dbbaffacf469dc8f30376b5954a3ad836c8d96e6cb579d7fab
-    container_name: op-connect-sync
-    networks:
-      - op-connect
-    volumes:
-      - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json
-      - onepassword-data:/home/opuser/.op/data
-    ports:
-      - 8002:8080
-    restart: unless-stopped
-
 volumes:
   portainer-data:
     name: portainer-data
@@ -120,8 +96,6 @@ volumes:
     name: traefik-data
   pocketid-data:
     name: pocketid-data
-  onepassword-data:
-    name: onepassword-data
 
 networks:
   proxy:
@@ -129,8 +103,3 @@ networks:
     ipam:
       config:
         - subnet: 172.20.1.0/24
-  op-connect:
-    name: op-connect
-    ipam:
-      config:
-        - subnet: 172.70.1.0/24

@@ -50,7 +50,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:alpine@sha256:59b6e694653476de2c992937ebe1c64182af4728e54bb49e9b7a6c26614d8933
+    image: redis:alpine@sha256:5013e94192ef18a5d8368179c7522e5300f9265cc339cadac76c7b93303a2752
     container_name: wallabag-redis
     security_opt:
       - no-new-privileges:true
