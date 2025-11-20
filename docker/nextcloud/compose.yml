@@ -1,7 +1,7 @@
 ---
 services:
   nextcloud:
-    image: nextcloud:32.0.1@sha256:5b043f7ea2f609d5ff5635f475c30d303bec17775a5c3f7fa435e3818e669120
+    image: nextcloud:32.0.1@sha256:d572839eeb693026d72a0c6aa48076df0bb8930797ea321e604936ef7189d06e
     container_name: nextcloud
     security_opt:
       - no-new-privileges:true
@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   nextcloud-cron:
-    image: nextcloud:32.0.1@sha256:5b043f7ea2f609d5ff5635f475c30d303bec17775a5c3f7fa435e3818e669120
+    image: nextcloud:32.0.1@sha256:d572839eeb693026d72a0c6aa48076df0bb8930797ea321e604936ef7189d06e
     container_name: nextcloud-cron
     security_opt:
       - no-new-privileges:true
@@ -74,7 +74,7 @@ services:
     restart: unless-stopped
 
   nextcloud-redis:
-    image: redis:alpine@sha256:59b6e694653476de2c992937ebe1c64182af4728e54bb49e9b7a6c26614d8933
+    image: redis:alpine@sha256:5013e94192ef18a5d8368179c7522e5300f9265cc339cadac76c7b93303a2752
     container_name: nextcloud-redis
     security_opt:
       - no-new-privileges:true

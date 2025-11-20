@@ -47,14 +47,6 @@
     owner: "{{ username }}"
     mode: "0775"
 
-- name: setup 1password connect
-  ansible.builtin.copy:
-    content: |
-      {{ OP_CONNECT }}
-    dest: "{{ srv_dir }}/1password-credentials.json"
-    owner: "{{ username }}"
-    mode: "0664"
-
 - name: start init compose file
   ansible.builtin.shell:
     cmd: docker compose up -d --force-recreate
