@@ -1,7 +1,7 @@
 ---
 services:
   nextcloud:
-    image: nextcloud:32.0.1@sha256:d572839eeb693026d72a0c6aa48076df0bb8930797ea321e604936ef7189d06e
+    image: nextcloud:32.0.2@sha256:ac08482d73ffd85d94069ba291bbd5fb39a70ff21502030a2e3e2d89a7246a48
     container_name: nextcloud
     security_opt:
       - no-new-privileges:true
@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   nextcloud-cron:
-    image: nextcloud:32.0.1@sha256:d572839eeb693026d72a0c6aa48076df0bb8930797ea321e604936ef7189d06e
+    image: nextcloud:32.0.2@sha256:ac08482d73ffd85d94069ba291bbd5fb39a70ff21502030a2e3e2d89a7246a48
     container_name: nextcloud-cron
     security_opt:
       - no-new-privileges:true
