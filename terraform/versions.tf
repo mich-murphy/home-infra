@@ -7,7 +7,7 @@ terraform {
     }
     onepassword = {
       source  = "1password/onepassword"
-      version = "2.2.1"
+      version = "3.0.0"
     }
     local = {
       source  = "hashicorp/local"
