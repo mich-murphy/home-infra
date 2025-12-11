@@ -1,13 +1,29 @@
 {
-  "baseBranchPatterns": ["main"],
-  "rebaseWhen": "conflicted",
-  "automergeStrategy": "rebase",
-  "prHourlyLimit": 15,
-  "semanticCommits": "enabled",
-  "branchPrefix": "actions-renovate/",
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "username": "renovate-release",
   "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
+  "baseBranchPatterns": ["main"],
+  "branchPrefix": "actions-renovate/",
   "platform": "github",
+  "onboarding": true,
+  "onboardingBranch": "actions-renovate/configure",
+  "semanticCommits": "enabled",
+  "prHourlyLimit": 15,
+  "rebaseWhen": "conflicted",
+  "automergeStrategy": "rebase",
+  "repositories": ["mich-murphy/home-infra"],
+  "dependencyDashboardTitle": "Renovate Dashboard 🤖",
+  "major": {
+    "dependencyDashboardApproval": true
+  },
+  "kubernetes": {
+    "managerFilePatterns": ["/kubernetes/.+\\.ya?ml$/"]
+  },
+  "extends": [
+    "config:best-practices",
+    "docker:enableMajor",
+    "default:automergeDigest"
+  ],
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch"],
