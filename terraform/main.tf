@@ -1,5 +1,5 @@
 provider "onepassword" {
-  account = "xportal.1password.com"
+  account = "XPortal"
 }
 
 data "onepassword_item" "proxmox" {
