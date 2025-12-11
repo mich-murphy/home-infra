@@ -22,7 +22,8 @@
   "extends": [
     "config:best-practices",
     "docker:enableMajor",
-    "default:automergeDigest"
+    "default:automergeDigest",
+    ":rebaseStalePrs"
   ],
   "packageRules": [
     {
