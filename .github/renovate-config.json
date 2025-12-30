@@ -12,9 +12,9 @@
   "rebaseWhen": "conflicted",
   "automergeStrategy": "rebase",
   "repositories": ["mich-murphy/home-infra"],
-  "dependencyDashboardTitle": "Renovate Dashboard 🤖",
+  "dependencyDashboard": false,
   "major": {
-    "dependencyDashboardApproval": true
+    "automerge": false
   },
   "kubernetes": {
     "managerFilePatterns": ["/kubernetes/.+\\.ya?ml$/"]
