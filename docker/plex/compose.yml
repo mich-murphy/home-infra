@@ -2,7 +2,7 @@
 services:
   # NOTE: visit https://<server-ip>:32400/web to setup new server
   plex:
-    image: plexinc/pms-docker:1.43.0.10467-2b1ba6e69@sha256:f42deee6fad8c0d3e40ac52163ca8f6acf520bafda617f845ad7970dc35fe128
+    image: plexinc/pms-docker:1.43.0.10467-2b1ba6e69@sha256:d38767ec3b948e860bcf1abfe16512bd638e6ac01230f5b65b64e2ef09052267
     container_name: plex
     security_opt:
       - no-new-privileges:true
