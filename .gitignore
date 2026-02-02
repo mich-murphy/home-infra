@@ -12,4 +12,7 @@ terraform/files
 .vaultpass
 
 talos/*.secret.yaml
+talos/secrets.yaml
 talos/controlplane.yaml
+talos/worker.yaml
+talos/talosconfig

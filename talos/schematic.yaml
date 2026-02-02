@@ -1,9 +1,8 @@
-# image: 3db570bedf4342804e5b4a418ec1dc4ac61ed0338f36ce4778e02dd8320b8457
+# image: 583560d413df7502f15f3c274c36fc23ce1af48cef89e98b1e563fb49127606e
 customization:
   systemExtensions:
     officialExtensions:
       - siderolabs/i915
       - siderolabs/iscsi-tools
       - siderolabs/qemu-guest-agent
-      - siderolabs/tailscale
       - siderolabs/util-linux-tools
