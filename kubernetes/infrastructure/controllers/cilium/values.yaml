@@ -37,3 +37,5 @@ ingressController:
   loadbalancerMode: dedicated
 operator:
   replicas: 1
+socketLB:
+  hostNameSpaceOnly: true
