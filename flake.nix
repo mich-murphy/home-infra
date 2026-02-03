@@ -29,10 +29,10 @@
           pkgs.terraform
           pkgs.ansible
           pkgs.just
-          pkgs._1password-cli
           pkgs.talosctl
           pkgs.kubectl
           pkgs.k9s
+          pkgs.fluxcd
           pkgs.kubernetes-helm
           pkgs.alejandra
         ];
