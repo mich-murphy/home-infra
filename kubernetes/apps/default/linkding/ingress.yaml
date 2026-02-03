@@ -20,8 +20,12 @@ metadata:
   #   external-dns.alpha.kubernetes.io/hostname: linkding.mich-murphy.com
 spec:
   ingressClassName: tailscale
+  rules:
   defaultBackend:
     service:
       name: linkding
       port:
-        name: https
+        number: 9090
+  tls:
+    - hosts:
+        - linkding
