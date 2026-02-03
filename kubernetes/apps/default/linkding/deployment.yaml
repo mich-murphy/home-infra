@@ -22,7 +22,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: linkding
-          image: sissbruecker/linkding:1.44.2
+          image: sissbruecker/linkding:1.44.1
           ports:
             - containerPort: 9090
           env:
