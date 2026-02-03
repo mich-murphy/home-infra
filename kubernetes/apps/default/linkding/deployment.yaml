@@ -22,7 +22,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: linkding
-          image: sissbruecker/linkding:1.45.0@sha256:61b2eb9eed8e5772a473fb7f1f8923e046cb8cbbeb50e88150afd5ff287d4060
+          image: sissbruecker/linkding:latest
           ports:
             - containerPort: 9090
           env:
@@ -54,9 +54,9 @@ spec:
             failureThreshold: 3
           securityContext:
             allowPriviligeEscalation: false
-            # capabilities:
-            #   drop:
-            #     - ALL
+            capabilities:
+              drop:
+                - ALL
           volumeMounts:
             - name: linkding-data
               mountPath: /etc/linkding/data
