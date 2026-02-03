@@ -1,5 +1,18 @@
 machine:
   type: controlplane
+  kubelet:
+    extraMounts:
+      - destination: /var/openebs/local
+        type: bind
+        source: /var/openebs/local
+        options:
+          - bind
+          - rshared
+          - rw
+  disks:
+    - device: /dev/sdb
+      partitions:
+        - mountpoint: /var/openebs/local
   network:
     hostname: talos-prod-1
     interfaces:
@@ -8,6 +21,15 @@ machine:
   install:
     disk: /dev/sda
 cluster:
+  apiServer:
+    admissionControl:
+      - name: PodSecurity
+        configuration:
+          apiVersion: pod-security.admission.config.k8s.io/v1beta1
+          kind: PodSecurityConfiguration
+          exemptions:
+            namespaces:
+              - openebs
   network:
     cni:
       name: none
