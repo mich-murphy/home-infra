@@ -54,9 +54,9 @@ spec:
             failureThreshold: 3
           securityContext:
             allowPriviligeEscalation: false
-            capabilities:
-              drop:
-                - ALL
+            # capabilities:
+            #   drop:
+            #     - ALL
           volumeMounts:
             - name: linkding-data
               mountPath: /etc/linkding/data
