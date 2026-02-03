@@ -5,8 +5,9 @@ metadata:
   namespace: default
 spec:
   ports:
-    - port: 9090
+    - name: https
+      port: 443
+      targetPort: 9090
   selector:
     app: linkding
-  type: LoadBalancer
-  loadBalancerClass: tailscale
+  type: ClusterIP
