@@ -3,11 +3,9 @@ kind: Service
 metadata:
   name: linkding
   namespace: default
-  annotations: 
-    tailscale.com/expose: "true"
 spec:
   ports:
     - port: 9090
   selector:
     app: linkding
-  type: ClusterIP
+  type: LoadBalancer
