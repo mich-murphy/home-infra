@@ -9,3 +9,4 @@ spec:
   selector:
     app: linkding
   type: LoadBalancer
+  loadBalancerClass: tailscale
