@@ -21,6 +21,6 @@ spec:
       retries: 3
   driftDetection:
     mode: enabled
-values:
-  apiServerProxyConfig:
-    mode: true
+  values:
+    apiServerProxyConfig:
+      mode: true
