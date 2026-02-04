@@ -24,3 +24,6 @@ spec:
   values:
     livenessProbe:
       enabled: true
+    webhook:
+      service:
+        enabled: false
