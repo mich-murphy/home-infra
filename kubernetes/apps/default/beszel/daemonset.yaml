@@ -21,7 +21,7 @@ spec:
               hostPort: 45876
           env:
             - name: LISTEN
-              value: 45876
+              value: "45876"
             - name: KEY
               valueFrom:
                 secretKeyRef:
