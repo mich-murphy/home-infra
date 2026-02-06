@@ -106,12 +106,13 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
   agent       = 1
   cpu {
     cores = 6
+    type  = "host"
   }
   memory             = 10240
   start_at_node_boot = true
-  bios               = "seabios"
+  bios               = "ovmf"
   boot               = "order=scsi0;ide1"
-  scsihw             = "virtio-scsi-single"
+  scsihw             = "virtio-scsi-pci"
   vm_state           = "running"
   automatic_reboot   = true
   ipconfig0          = "ip=dhcp,ip6=dhcp"
@@ -124,7 +125,9 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
     scsi {
       scsi0 {
         disk {
+          cache    = "writethrough"
           discard  = true
+          format   = "raw"
           storage  = "local-zfs"
           size     = "100G"
           iothread = true
@@ -132,7 +135,9 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
       }
       scsi1 {
         disk {
+          cache    = "writethrough"
           discard  = true
+          format   = "raw"
           storage  = "local-zfs"
           size     = "128G"
           iothread = true

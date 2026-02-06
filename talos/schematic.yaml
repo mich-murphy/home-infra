@@ -1,4 +1,4 @@
-# image: 583560d413df7502f15f3c274c36fc23ce1af48cef89e98b1e563fb49127606e
+# image: 0685fbf237a9f8e6ccd14602f15c2e4f62350de4311aaea61b5d4ae223557002
 customization:
   systemExtensions:
     officialExtensions:
@@ -6,3 +6,4 @@ customization:
       - siderolabs/iscsi-tools
       - siderolabs/qemu-guest-agent
       - siderolabs/util-linux-tools
+  bootloader: grub
