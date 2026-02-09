@@ -97,7 +97,7 @@ services:
     networks:
       - proxy
     volumes:
-      - kometa-data:/config
+      - kometa-data:/config:rw
     restart: unless-stopped
 
 volumes:
