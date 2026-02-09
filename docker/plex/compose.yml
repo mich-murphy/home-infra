@@ -115,6 +115,8 @@ volumes:
     name: overseerr-data
   maintainerr-data:
     name: maintainerr-data
+  kometa-data:
+    name: kometa-data
 
 networks:
   proxy:
