@@ -48,18 +48,24 @@ services:
     restart: unless-stopped
 
   overseerr:
-    image: ghcr.io/linuxserver/overseerr:v1.34.0-ls156@sha256:987a6bd200a88501a5fa0cfa0c3179acd83e5b0af986da1537b70f44cfe059b8
-    container_name: overseerr
+    image: ghcr.io/seerr-team/seerr:latest
+    container_name: seerr
     security_opt:
       - no-new-privileges:true
+    user: 1000:1000
     networks:
       - proxy
     environment:
-      - PUID=1000
-      - PGID=1000
+      - LOG_LEVEL=debug
       - TZ=${TZ}
     volumes:
       - overseerr-data:/config
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
     labels:
       - traefik.enable=true
       - traefik.http.routers.overseerr.rule=Host(`overseerr.local.elmurphy.com`)
@@ -84,6 +90,20 @@ services:
       - traefik.http.routers.maintainerr.rule=Host(`maintainerr.local.elmurphy.com`)
       - traefik.http.routers.maintainerr.tls=true
       - traefik.http.services.maintainerr.loadbalancer.server.port=6246
+    restart: unless-stopped
+
+  # Manually setup initial config
+  # Reference: https://kometa.wiki/en/latest/kometa/install/walkthroughs/docker/#setting-up-the-initial-config-file
+  kometa:
+    image: kometateam/kometa:v2.3.0
+    container_name: kometa
+    security_opt:
+      - no-new-privileges:true
+    user: 1000:1000
+    networks:
+      - proxy
+    volumes:
+      - kometa-data:/config
     restart: unless-stopped
 
 volumes:
