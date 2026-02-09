@@ -93,7 +93,6 @@ services:
     container_name: kometa
     security_opt:
       - no-new-privileges:true
-    user: 1000:1000
     networks:
       - proxy
     volumes:
