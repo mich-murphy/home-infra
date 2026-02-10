@@ -1,0 +1,29 @@
+---
+services:
+  couchdb:
+    image: couchdb:3.5.1@sha256:c311385c44e9708952c3b9ada25eb538f2b5a57d0cf89bfd07f4a4dbf962697c
+    container_name: couchdb
+    security_opt:
+      - no-new-privileges:true
+    user: 5984:5984
+    networks:
+      - proxy
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.couchdb.rule=Host(`couchdb.local.elmurphy.com`)
+      - traefik.http.routers.couchdb.tls=true
+      - traefik.http.services.couchdb.loadbalancer.server.port=5984
+    restart: unless-stopped
+
+volumes:
+  couchdb-data:
+    name: couchdb-data
+
+networks:
+  proxy:
+    external: true
