@@ -11,6 +11,7 @@
   }: let
     allSystems = [
       "x86_64-linux"
+      "aarch64-darwin"
     ];
 
     # Helper to provide system-specific attributes

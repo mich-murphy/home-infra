@@ -1,9 +1,11 @@
 ---
 services:
-  deluge:
-
-    image: ghcr.io/linuxserver/deluge:2.2.0-r1-ls364@sha256:5149ae326b3c291d4d30d540bce4658f2f815b19ff43b01bb1f6c5a593ec6b5e
-    container_name: deluge
+  # NOTE: Default user is admin and password printed in container log
+  # need to update the user/password from webui otherwise password will be regenerated
+  # reference: https://docs.linuxserver.io/images/docker-qbittorrent/#application-setup
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
     security_opt:
       - no-new-privileges:true
     networks:
@@ -12,19 +14,65 @@ services:
       - PUID=1215
       - PGID=1215
       - TZ=${TZ}
-      - DELUGE_LOGLEVEL=error #optional
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=25565
     volumes:
-      - deluge-data:/config
-      - /mnt/data/torrents:/data/torrents:rw
+      - qbittorrent-data:/config
+      - /mnt/data/torrents:/downloads:rw
     ports:
       - 25565:25565
       - 25565:25565/udp
     labels:
       - traefik.enable=true
-      - traefik.http.routers.deluge.rule=Host(`deluge.local.elmurphy.com`)
-      - traefik.http.routers.deluge.tls=true
-      - traefik.http.services.deluge.loadbalancer.server.port=8112
+      - traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.local.elmurphy.com`)
+      - traefik.http.routers.qbittorrent.tls=true
+      - traefik.http.services.qbittorrent.loadbalancer.server.port=8080
     restart: unless-stopped
+
+  qbitwebui:
+    image: ghcr.io/maciejonos/qbitwebui:latest
+    container_name: qbitwebui
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    environment:
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - DOWNLOADS_PATH=/downloads
+    volumes:
+      - qbitwebui-data:/data
+      - /mnt/data/torrents:/downloads:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.qbitwebui.rule=Host(`qbitwebui.local.elmurphy.com`)
+      - traefik.http.routers.qbitwebui.tls=true
+      - traefik.http.services.qbitwebui.loadbalancer.server.port=3000
+    restart: unless-stopped
+
+  # deluge:
+  #   image: ghcr.io/linuxserver/deluge:2.2.0-r1-ls364@sha256:5149ae326b3c291d4d30d540bce4658f2f815b19ff43b01bb1f6c5a593ec6b5e
+  #   container_name: deluge
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   networks:
+  #     - proxy
+  #   environment:
+  #     - PUID=1215
+  #     - PGID=1215
+  #     - TZ=${TZ}
+  #     - DELUGE_LOGLEVEL=error #optional
+  #   volumes:
+  #     - deluge-data:/config
+  #     - /mnt/data/torrents:/data/torrents:rw
+  #   ports:
+  #     - 25565:25565
+  #     - 25565:25565/udp
+  #   labels:
+  #     - traefik.enable=true
+  #     - traefik.http.routers.deluge.rule=Host(`deluge.local.elmurphy.com`)
+  #     - traefik.http.routers.deluge.tls=true
+  #     - traefik.http.services.deluge.loadbalancer.server.port=8112
+  #   restart: unless-stopped
 
   # NOTE: initial setup is done via "http://<docker localhost ip>:8080"
   # hostname must be added to host_whitelist in sabnzbd.ini
@@ -51,6 +99,10 @@ services:
     restart: unless-stopped
 
 volumes:
+  qbittorrent-data:
+    name: qbittorrent-data
+  qbitwebui-data:
+    name: qbitwebui-data
   deluge-data:
     name: deluge-data
   sabnzbd-data:
