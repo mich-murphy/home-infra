@@ -39,6 +39,7 @@ services:
     environment:
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - DOWNLOADS_PATH=/downloads
+      - DISABLE_REGISTRATION=true # NOTE: prints initial password to logs on first start
     volumes:
       - qbitwebui-data:/data
       - /mnt/data/torrents:/downloads:ro
