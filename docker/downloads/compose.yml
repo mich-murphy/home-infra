@@ -18,7 +18,7 @@ services:
       - TORRENTING_PORT=25565
     volumes:
       - qbittorrent-data:/config
-      - /mnt/data/torrents:/downloads:rw
+      - /mnt/data/torrents:/data/torrents:rw
     ports:
       - 25565:25565
       - 25565:25565/udp
@@ -38,11 +38,11 @@ services:
       - proxy
     environment:
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - DOWNLOADS_PATH=/downloads
+      - DOWNLOADS_PATH=/data/torrents
       - DISABLE_REGISTRATION=true # NOTE: prints initial password to logs on first start
     volumes:
       - qbitwebui-data:/data
-      - /mnt/data/torrents:/downloads:rw
+      - /mnt/data/torrents:/data/torrents:rw
     labels:
       - traefik.enable=true
       - traefik.http.routers.qbitwebui.rule=Host(`qbitwebui.local.elmurphy.com`)
