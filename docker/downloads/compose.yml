@@ -4,7 +4,7 @@ services:
   # need to update the user/password from webui otherwise password will be regenerated
   # reference: https://docs.linuxserver.io/images/docker-qbittorrent/#application-setup
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:latest
+    image: lscr.io/linuxserver/qbittorrent:5.1.4-r2-ls440@sha256:dfa75bc534ad4f36262f75b5c1d4c4f0ddd5e7ed5711ebc581c70920cce204ee
     container_name: qbittorrent
     security_opt:
       - no-new-privileges:true
@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
 
   qbitwebui:
-    image: ghcr.io/maciejonos/qbitwebui:latest
+    image: ghcr.io/maciejonos/qbitwebui:2.42.1@sha256:bbca4777160c1977201fc7017164cfdd0abce97247d411dbe63219d5321fcdce
     container_name: qbitwebui
     security_opt:
       - no-new-privileges:true

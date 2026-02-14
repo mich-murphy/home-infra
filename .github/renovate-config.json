@@ -33,8 +33,8 @@
       "ignoreTests": true
     },
     {
-      "description": "Linuxserver.io Deluge",
-      "matchPackageNames": ["/^(gh|ls)cr\\.io\\/linuxserver\\/deluge/"],
+      "description": "Linuxserver.io Qbittorrent",
+      "matchPackageNames": ["/^(gh|ls)cr\\.io\\/linuxserver\\/qbittorrent/"],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d+)-ls(?<revision>.+)$"
     },
     {
