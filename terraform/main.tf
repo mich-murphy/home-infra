@@ -7,21 +7,31 @@ provider "proxmox" {
   pm_api_url          = "https://proxmox.local.elmurphy.com/api2/json"
   pm_api_token_id     = data.onepassword_item.proxmox.username
   pm_api_token_secret = data.onepassword_item.proxmox.password
-  pm_tls_insecure     = false # Set to false in production
+  pm_tls_insecure     = false
+}
+
+locals {
+  proxmox_creds = {
+    username       = data.onepassword_item.proxmox.section[0].field[0].value
+    password       = data.onepassword_item.proxmox.section[0].field[1].value
+    host           = data.onepassword_item.proxmox.section[0].field[2].value
+    tailscale_auth_key  = data.onepassword_item.proxmox.section[0].field[3].value
+  }
 }
 
 # create cloud-init configuration
 resource "local_file" "cloud_init_agents" {
-  content  = templatefile("cloud_init.tftpl", { tailscale_auth_key = data.onepassword_item.proxmox.section[0].field[3].value })
+  content  = templatefile("cloud_init.tftpl", { tailscale_auth_key = local.proxmox_creds.tailscale_auth_key })
   filename = "${path.module}/files/agents.cfg"
 }
 
 resource "terraform_data" "cloud_init_config" {
+  triggers_replace = [local_file.cloud_init_agents.content]
   connection {
     type     = "ssh"
-    user     = data.onepassword_item.proxmox.section[0].field[0].value
-    password = data.onepassword_item.proxmox.section[0].field[1].value
-    host     = data.onepassword_item.proxmox.section[0].field[2].value
+    user     = local.proxmox_creds.username
+    password = local.proxmox_creds.password
+    host     = local.proxmox_creds.host
   }
   provisioner "remote-exec" {
     inline = ["mkdir -p /var/lib/vz/snippets"]
@@ -97,7 +107,7 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
 
 resource "proxmox_vm_qemu" "talos_control_plane" {
   count       = 1
-  vmid        = "20${count.index}"
+  vmid        = "20${count.index}" # scale control plane nodes with increasing count
   name        = "talos-prod-${count.index + 1}"
   description = "Siderolabs install image v1.12.2"
   target_node = "proxmox"
@@ -105,11 +115,12 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
   agent       = 1
   cpu {
     cores = 8
-    type  = "host"
+    type  = "kvm64"
   }
-  memory             = 12288 
+  memory             = 12288
   start_at_node_boot = true
-  bios               = "seabios"
+  bios               = "ovmf"
+  machine            = "q35"
   boot               = "order=scsi0;ide1"
   scsihw             = "virtio-scsi-pci"
   vm_state           = "running"
@@ -140,7 +151,6 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
         }
       }
     }
-    # install media
     ide {
       ide1 {
         cdrom {

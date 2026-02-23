@@ -2,7 +2,6 @@
 customization:
   systemExtensions:
     officialExtensions:
-      - siderolabs/i915
       - siderolabs/iscsi-tools
       - siderolabs/qemu-guest-agent
       - siderolabs/util-linux-tools
