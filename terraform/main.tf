@@ -12,16 +12,19 @@ provider "proxmox" {
 
 locals {
   proxmox_creds = {
-    username       = data.onepassword_item.proxmox.section[0].field[0].value
-    password       = data.onepassword_item.proxmox.section[0].field[1].value
-    host           = data.onepassword_item.proxmox.section[0].field[2].value
-    tailscale_auth_key  = data.onepassword_item.proxmox.section[0].field[3].value
+    username           = data.onepassword_item.proxmox.section[0].field[0].value
+    password           = data.onepassword_item.proxmox.section[0].field[1].value
+    host               = data.onepassword_item.proxmox.section[0].field[2].value
+    tailscale_auth_key = data.onepassword_item.proxmox.section[0].field[3].value
   }
 }
 
 # create cloud-init configuration
 resource "local_file" "cloud_init_agents" {
-  content  = templatefile("cloud_init.tftpl", { tailscale_auth_key = local.proxmox_creds.tailscale_auth_key })
+  content = templatefile("cloud_init.tftpl", {
+    tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
+    ssh_public_key     = var.docker_host_ssh_public_key
+  })
   filename = "${path.module}/files/agents.cfg"
 }
 
@@ -74,7 +77,7 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   ipconfig0 = "ip=dhcp,ip6=dhcp"
   skip_ipv6 = true
   ciuser    = "ansible"
-  sshkeys   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
+  sshkeys   = var.docker_host_ssh_public_key
   serial {
     id = 0
   }
@@ -115,7 +118,7 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
   agent       = 1
   cpu {
     cores = 8
-    type  = "kvm64"
+    type  = "host"
   }
   memory             = 12288
   start_at_node_boot = true
@@ -134,20 +137,20 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
     scsi {
       scsi0 {
         disk {
-          cache    = "writethrough"
-          discard  = true
-          format   = "raw"
-          storage  = "local-zfs"
-          size     = "100G"
+          cache   = "writethrough"
+          discard = true
+          format  = "raw"
+          storage = "local-zfs"
+          size    = "100G"
         }
       }
       scsi1 {
         disk {
-          cache    = "writethrough"
-          discard  = true
-          format   = "raw"
-          storage  = "local-zfs"
-          size     = "128G"
+          cache   = "writethrough"
+          discard = true
+          format  = "raw"
+          storage = "local-zfs"
+          size    = "128G"
         }
       }
     }

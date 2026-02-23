@@ -1,4 +1,13 @@
 #cloud-config
+# When using cicustom (vendor snippet), Proxmox may not inject ciuser/sshkeys into
+# user-data; define the user here so cloud-init always creates it (SSH key only).
+users:
+  - name: ansible
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
 runcmd:
   - apt update
   - apt install -y qemu-guest-agent
