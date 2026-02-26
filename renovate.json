@@ -1,3 +1,71 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json"
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    "docker:enableMajor",
+    "default:automergeDigest",
+    ":rebaseStalePrs"
+  ],
+  "semanticCommits": "enabled",
+  "branchPrefix": "actions-renovate/",
+  "prHourlyLimit": 15,
+  "rebaseWhen": "conflicted",
+  "automergeStrategy": "rebase",
+  "major": {
+    "automerge": false
+  },
+  "kubernetes": {
+    "managerFilePatterns": ["/kubernetes/.+\\.ya?ml$/"]
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true,
+      "ignoreTests": true
+    },
+    {
+      "description": "Linuxserver.io Qbittorrent",
+      "matchPackageNames": ["/^(gh|ls)cr\\.io\\/linuxserver\\/qbittorrent/"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-r(?<build>\\d+)-ls(?<revision>.+)$"
+    },
+    {
+      "description": "Linuxserver.io Sabnzbd",
+      "matchPackageNames": [
+        "/^(gh|ls)cr\\.io\\/linuxserver\\/(sabnzbd|freshrss)/"
+      ],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>.+)$"
+    },
+    {
+      "description": "Linuxserver.io Tautulli",
+      "matchPackageNames": ["/^(gh|ls)cr\\.io\\/linuxserver\\/tautulli/"],
+      "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>.+)$"
+    },
+    {
+      "description": "Linuxserver.io Arrs",
+      "matchPackageNames": [
+        "/^(gh|ls)cr\\.io\\/linuxserver\\/(radarr|sonarr|lidarr|prowlarr)/"
+      ],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-ls(?<revision>.+)$"
+    },
+    {
+      "description": "Plex Media Server",
+      "matchPackageNames": ["/^plexinc\\/pms-docker/"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-(?<revision>.+)$"
+    },
+    {
+      "description": "Manual Approval for Immich Server and Machine Learning",
+      "matchPackageNames": [
+        "/^ghcr\\.io\\/immich-app\\/(immich-server|immich-machine-learning)/"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Disable Immich Database and Cache Updates",
+      "matchPackageNames": [
+        "/^(ghcr|docker)\\.io\\/(immich-app|valkey)\\/(postgres|valkey)/"
+      ],
+      "enabled": false
+    }
+  ]
 }

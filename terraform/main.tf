@@ -137,20 +137,20 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
     scsi {
       scsi0 {
         disk {
-          cache   = "writethrough"
-          discard = true
-          format  = "raw"
-          storage = "local-zfs"
-          size    = "100G"
+          cache    = "none"
+          discard  = true
+          format   = "raw"
+          storage  = "local-zfs"
+          size     = "100G"
         }
       }
       scsi1 {
         disk {
-          cache   = "writethrough"
-          discard = true
-          format  = "raw"
-          storage = "local-zfs"
-          size    = "128G"
+          cache    = "none"
+          discard  = true
+          format   = "raw"
+          storage  = "local-zfs"
+          size     = "128G"
         }
       }
     }

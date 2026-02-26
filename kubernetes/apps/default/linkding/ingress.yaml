@@ -1,23 +1,8 @@
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: linkding-cert
-  namespace: default
-spec:
-  secretName: linkding-tls-secret
-  issuerRef:
-    name: letsencrypt-production
-  dnsNames:
-  - linkding.mich-murphy.com
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: linkding-ingress
   namespace: default
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-production
-    external-dns.alpha.kubernetes.io/hostname: linkding.mich-murphy.com
 spec:
   ingressClassName: cilium
   rules:
@@ -31,7 +16,3 @@ spec:
                   number: 9090
             path: /
             pathType: Prefix
-  tls:
-    - hosts:
-        - linkding.mich-murphy.com
-      secretName: linkding-tls-secret
