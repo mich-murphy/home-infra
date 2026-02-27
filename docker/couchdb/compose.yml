@@ -18,6 +18,7 @@ services:
       - traefik.http.routers.couchdb.rule=Host(`couchdb.local.elmurphy.com`)
       - traefik.http.routers.couchdb.tls=true
       - traefik.http.services.couchdb.loadbalancer.server.port=5984
+      - traefik.http.routers.couchdb.middlewares=obsidiancors
       - traefik.http.middlewares.obsidiancors.headers.accesscontrolallowmethods=GET,PUT,POST,HEAD,DELETE
       - traefik.http.middlewares.obsidiancors.headers.accesscontrolallowheaders=accept,authorization,content-type,origin,referer
       - traefik.http.middlewares.obsidiancors.headers.accesscontrolalloworiginlist=app://obsidian.md,capacitor://localhost,http://localhost
