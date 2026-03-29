@@ -28,7 +28,7 @@ spec:
           fsGroup: 123
         containers:
           - name: runner
-            image: ghcr.io/actions/actions-runner:latest@sha256:8c3f5970b8ceb90cbd3e89b80c6806bb74d9c31686e9177c743323a4539d12f5
+            image: ghcr.io/actions/actions-runner:latest@sha256:b57864c9fcda15ea4a270446aa9cfb108b819a26f6e71fc515f6caf6c27989c6
             command: ["/home/runner/run.sh"]
             env:
               - name: ACTIONS_RUNNER_CONTAINER_HOOKS
