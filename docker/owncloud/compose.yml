@@ -1,7 +1,7 @@
 ---
 services:
   owncloud:
-    image: owncloud/server:10.16.1@sha256:cadda53da3d972f0aff975e2ace99633f265ab9c445aa19ce9283f1db807c6ab
+    image: owncloud/server:10.16.1@sha256:7406fde631bd039cae59fdf2c9b06fe8c866d7ea09570558b5011f2d58737e98
     container_name: owncloud
     security_opt:
       - no-new-privileges:true
@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
   owncloud-mariadb:
-    image: mariadb:12.2.2@sha256:b1cb255a9939d28a1856815f0de6046c20c28c21b92a9f2696bc782b247a47ee # minimum required ownCloud version is 10.9
+    image: mariadb:12.2.2@sha256:e16f61b8f6ed25111adbb1c5c19bbc2904efc8ed14029999af0cbe1c7ae18bf1 # minimum required ownCloud version is 10.9
     container_name: owncloud-mariadb
     security_opt:
       - no-new-privileges:true
@@ -62,7 +62,7 @@ services:
     restart: unless-stopped
 
   owncloud-redis:
-    image: redis:8@sha256:1c054d54ecd1597bba52f4304bca5afbc5565ebe614c5b3d7dc5b7f8a0cd768d
+    image: redis:8@sha256:315270d166080f537bbdf1b489b603aaaa213cb55a544acfa51feb7481abb1c0
     container_name: owncloud-redis
     security_opt:
       - no-new-privileges:true
