@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
 
   traefik:
-    image: traefik:v3.6.13@sha256:abb4f51887319c9b9d9cfe1d3cdf9379a771138003bf683f10e97697e148f95f
+    image: traefik:v3.6.13@sha256:5e113a222e0a43c112bd8caeb0dfb42685be2c2eb190c79176c99c1259e4fa10
     container_name: traefik
     security_opt:
       - no-new-privileges:true
