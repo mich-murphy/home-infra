@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
 
   qbitwebui:
-    image: ghcr.io/maciejonos/qbitwebui:2.42.3@sha256:dba8430446947e052b1f4fcd4467b3820026b3ecd2185c9e82c79b1c9a4c68e6
+    image: ghcr.io/maciejonos/qbitwebui:2.43.0@sha256:df3239041cecabc3f41a730366ffb605d149b0f8a16ef6b81bceffbd8130a8e2
     container_name: qbitwebui
     security_opt:
       - no-new-privileges:true
