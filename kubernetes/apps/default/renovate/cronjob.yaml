@@ -12,7 +12,7 @@ spec:
         spec:
           containers:
             - name: renovate
-              image: renovate/renovate:43.127.2@sha256:9a717d0ee471653a3898a6c25a47057c6f06120923be9b3059616525e59fb391
+              image: renovate/renovate:43.129.0@sha256:e4abd88d1d6326fe8a702b38c5ee76487d94b455ba4f305bd904521aba9f5a08
               args:
                 - mich-murphy/home-infra
               env:
