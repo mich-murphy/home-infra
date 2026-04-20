@@ -2,7 +2,7 @@
 services:
   # NOTE: visit https://<server-ip>:32400/web to setup new server
   plex:
-    image: plexinc/pms-docker:1.43.1.10576-06378bdcd@sha256:80c1c9080352613e77fc2f49bcfee67a0a72cd60b9cf4bbc1b601e55c0160859
+    image: plexinc/pms-docker:1.43.1.10611-1e34174b1@sha256:8b5bcdf7b506fe051aa1a0a0d464efdb3ad8c0fb1f8a4dfb27a8c489b609920c
     container_name: plex
     security_opt:
       - no-new-privileges:true
@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
 
   tautulli:
-    image: ghcr.io/linuxserver/tautulli:v2.17.0-ls223@sha256:a07c64f6203c6726cd295f09e36b67436c3f3c3b3fa36f303a3c594b4148f38f
+    image: ghcr.io/linuxserver/tautulli:v2.17.0-ls225@sha256:f8a0c2069bf4393f13731e9f98835f32b0a21659686f88223836c1693036f2be
     container_name: tautulli
     security_opt:
       - no-new-privileges:true
@@ -68,7 +68,7 @@ services:
     restart: unless-stopped
 
   maintainerr:
-    image: ghcr.io/maintainerr/maintainerr:3.4.1@sha256:6d454b8a5dc5eaeec869d60d0e6da4d1e9fca13f102aa6914421a714a158f2c0
+    image: ghcr.io/maintainerr/maintainerr:3.7.0@sha256:bfc9d16c3f752e17432e5a66df5bbeb4c115698f9dd496ee03fd0aa9ef3dca52
     container_name: maintainerr
     security_opt:
       - no-new-privileges:true

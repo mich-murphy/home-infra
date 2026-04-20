@@ -4,7 +4,7 @@ services:
   # need to update the user/password from webui otherwise password will be regenerated
   # reference: https://docs.linuxserver.io/images/docker-qbittorrent/#application-setup
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:5.1.4-r2-ls448@sha256:a89108b1bf43de072a35a59a3ee41b97b564538faae5cbb3f6c803aa7f5fd9f7
+    image: lscr.io/linuxserver/qbittorrent:5.1.4-r3-ls451@sha256:8f7a1da9644340c737e3211ecc910a416d4295076e6b2824a4afcd1f4e3576e2
     container_name: qbittorrent
     security_opt:
       - no-new-privileges:true
@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
 
   qbitwebui:
-    image: ghcr.io/maciejonos/qbitwebui:2.42.3@sha256:dba8430446947e052b1f4fcd4467b3820026b3ecd2185c9e82c79b1c9a4c68e6
+    image: ghcr.io/maciejonos/qbitwebui:2.43.0@sha256:df3239041cecabc3f41a730366ffb605d149b0f8a16ef6b81bceffbd8130a8e2
     container_name: qbitwebui
     security_opt:
       - no-new-privileges:true
@@ -54,7 +54,7 @@ services:
   # hostname must be added to host_whitelist in sabnzbd.ini
   # reference: https://sabnzbd.org/wiki/extra/hostname-check.html
   sabnzbd:
-    image: ghcr.io/linuxserver/sabnzbd:4.5.5-ls248@sha256:e4573bab787c2ba9a9e6bbf5535da0bd9d4de8e247ac7fad6428319fadd2331d
+    image: ghcr.io/linuxserver/sabnzbd:4.5.5-ls249@sha256:7ac6fe8a521c7099e1768af90529dfee5976b87c7dccffdcc9ced00149e1aedb
     container_name: sabnzbd
     security_opt:
       - no-new-privileges:true

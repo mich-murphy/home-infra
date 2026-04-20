@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: mariadb@sha256:b3af559fc38e013c50dd5b5993bfbbb21125c1a62d976b3b0a14d9c4acaae578
+    image: mariadb@sha256:e0236fc6386e7eacd9359e59d0a078bd7aa0d18280d36d13061121bedeaee903
     container_name: wallabag-mariadb
     security_opt:
       - no-new-privileges:true
@@ -50,7 +50,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:alpine@sha256:81b6f81d6a6c5b9019231a2e8eb10085e3a139a34f833dcc965a8a959b040b72
+    image: redis:alpine@sha256:c5e375abb885e6b2021c0377879e4890bf76f9065b8922ffc113f2b226b9fc17
     container_name: wallabag-redis
     security_opt:
       - no-new-privileges:true
