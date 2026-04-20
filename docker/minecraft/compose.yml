@@ -1,6 +1,6 @@
 services:
   crafty:
-    image: registry.gitlab.com/crafty-controller/crafty-4:latest@sha256:914ccf8232ba591db3d9c3f97bac368ae1e6dd8218f4618e2b4699e05018acfd
+    image: registry.gitlab.com/crafty-controller/crafty-4:latest@sha256:062a39c9fc11f993995d977c810fd83c84fc155fd13b13117985e555d55e0ab9
     container_name: crafty
     security_opt:
       - no-new-privileges:true
