@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
 
   traefik:
-    image: traefik:v3.6.13@sha256:34d5089d0b414945342848518b383f11f5b3a645504ed87b77ffeb9d683d0e48
+    image: traefik:v3.6.14@sha256:1c1be62608b6a484c585a917203b01a8226cff13df6a2a78705eeb66b52e667e
     container_name: traefik
     security_opt:
       - no-new-privileges:true
@@ -59,7 +59,7 @@ services:
     restart: unless-stopped
 
   pocket-id:
-    image: ghcr.io/pocket-id/pocket-id:v2.6.0@sha256:6f030eabf082365109bc71376523399d17f1fdbb4d3cd7db852e23767d5a5eb3
+    image: ghcr.io/pocket-id/pocket-id:v2.6.2@sha256:1cc51e5b36fa7ec31368d3efb24ba362be6dce20f3cc0a2852843527bd5110f0
     container_name: pocket-id
     security_opt:
       - no-new-privileges:true

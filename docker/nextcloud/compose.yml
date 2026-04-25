@@ -1,7 +1,7 @@
 ---
 services:
   nextcloud:
-    image: nextcloud:33.0.2@sha256:3e676af625884f4e228ac6655f51a4ea65f3a1e68f320ad23d17fccfa00d5b54
+    image: nextcloud:33.0.2@sha256:633cf022db2cb1eb274c4a092d5e682886c2f9121fa6a2184a3084daa10e462b
     container_name: nextcloud
     security_opt:
       - no-new-privileges:true
@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   nextcloud-cron:
-    image: nextcloud:33.0.2@sha256:3e676af625884f4e228ac6655f51a4ea65f3a1e68f320ad23d17fccfa00d5b54
+    image: nextcloud:33.0.2@sha256:633cf022db2cb1eb274c4a092d5e682886c2f9121fa6a2184a3084daa10e462b
     container_name: nextcloud-cron
     security_opt:
       - no-new-privileges:true
@@ -59,7 +59,7 @@ services:
     restart: unless-stopped
 
   nextcloud-postgres:
-    image: postgres:alpine@sha256:52098013b4b64a746626437d38afc03cabff6cdeb4d3d92e2342aa95f0ce56ea
+    image: postgres:alpine@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7
     container_name: nextcloud-postgres
     security_opt:
       - no-new-privileges:true
