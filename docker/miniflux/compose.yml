@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
   miniflux-db:
-    image: postgres:18@sha256:8da22df20409c62981f57682595ef617ee365ac905c48ab61d0ff8aafa83891d
+    image: postgres:18@sha256:78481659c47e862334611ccdaf7c369c986b3046da9857112f3b309114a65fb4
     container_name: miniflux-db
     security_opt:
       - no-new-privileges:true
