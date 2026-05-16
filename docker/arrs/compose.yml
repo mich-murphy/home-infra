@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   lidarr:
-    image: ghcr.io/linuxserver/lidarr:3.1.0.4875-ls27@sha256:d2f944115de2ca6754ad142ee92f9db481b1574c7bc030974d624584106b78d7
+    image: ghcr.io/linuxserver/lidarr:3.1.0.4875-ls28@sha256:7f34e2a907c7bcfc5cd49a1685db21a1e5055c96e8ad5e0d77ee94e1d50d84e5
     container_name: lidarr
     security_opt:
       - no-new-privileges:true
@@ -65,7 +65,7 @@ services:
     restart: unless-stopped
 
   prowlarr:
-    image: ghcr.io/linuxserver/prowlarr:2.3.5.5327-ls145@sha256:4b52038b7b6452a20c145239fa07d8218d1541d736a96c43aa0a5f60141cab28
+    image: ghcr.io/linuxserver/prowlarr:2.3.5.5327-ls146@sha256:a89f252d6a22bd25af14a5380aec0adcc3c3af2e3282164f981680e6844070f3
     container_name: prowlarr
     security_opt:
       - no-new-privileges:true
