@@ -44,7 +44,7 @@ services:
     volumes:
       - wallabag-db:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 20s
       timeout: 3s
     restart: unless-stopped
