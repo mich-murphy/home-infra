@@ -8,3 +8,10 @@
     - firewall
     - media
     - docker
+
+- hosts: ai-dev
+  become: true
+  remote_user: michael
+  roles:
+    - common
+    - ai-dev
