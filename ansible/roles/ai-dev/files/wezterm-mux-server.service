@@ -1,0 +1,13 @@
+[Unit]
+Description=WezTerm Multiplexer Server
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/wezterm-mux-server --daemonize=false
+Restart=on-failure
+RestartSec=2s
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target
