@@ -1,0 +1,17 @@
+---
+- name: Ensure .config directory exists
+  ansible.builtin.file:
+    path: /home/michael/.config
+    state: directory
+    owner: michael
+    group: michael
+    mode: '0755'
+
+- name: Clone neovim config
+  ansible.builtin.git:
+    repo: https://github.com/mich-murphy/neovim.git
+    dest: /home/michael/.config/nvim
+    version: HEAD
+    update: false
+  become: true
+  become_user: michael
