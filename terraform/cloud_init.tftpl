@@ -1,18 +1,32 @@
 #cloud-config
-# When using cicustom (vendor snippet), Proxmox may not inject ciuser/sshkeys into
-# user-data; define the user here so cloud-init always creates it (SSH key only).
+hostname: ${hostname}
+fqdn: ${hostname}
+manage_etc_hosts: true
+
 users:
-  - name: ansible
+  - name: michael
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: true
+    shell: /usr/bin/bash
+    groups: [wheel]
     ssh_authorized_keys:
       - ${ssh_public_key}
 
+%{ if os_family == "debian" ~}
+package_update: true
+packages:
+  - qemu-guest-agent
 runcmd:
-  - apt update
-  - apt install -y qemu-guest-agent
-  - systemctl start qemu-guest-agent
+  - systemctl enable --now qemu-guest-agent
   - curl -fsSL https://tailscale.com/install.sh | sh
-  - ['sh', '-c', "echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf && echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf && sudo sysctl -p /etc/sysctl.d/99-tailscale.conf" ]
-  - tailscale up --ssh --authkey=${tailscale_auth_key}
-  - curl -fsSL https://get.docker.com | sh
+  - tailscale up --ssh --hostname=${hostname} --authkey=${tailscale_auth_key}
+%{ endif ~}
+%{ if os_family == "arch" ~}
+packages:
+  - qemu-guest-agent
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+  - pacman -Sy --noconfirm archlinux-keyring
+  - curl -fsSL https://tailscale.com/install.sh | sh
+  - tailscale up --ssh --hostname=${hostname} --advertise-tags=tag:ai-dev --authkey=${tailscale_auth_key}
+%{ endif ~}
