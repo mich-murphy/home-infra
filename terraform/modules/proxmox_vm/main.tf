@@ -89,4 +89,8 @@ resource "proxmox_vm_qemu" "this" {
     bridge = var.bridge
     model  = "virtio"
   }
+
+  lifecycle {
+    ignore_changes = [clone, full_clone]
+  }
 }

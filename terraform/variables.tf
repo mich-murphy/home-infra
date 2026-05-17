@@ -16,5 +16,6 @@ variable "ai_devs" {
   }))
   default = {
     "ai-dev-bgd" = { vmid = 110 }
+    "ai-dev-bc"  = { vmid = 111 }
   }
 }
