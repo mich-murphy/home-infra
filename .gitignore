@@ -1,6 +1,9 @@
 # nix
 .direnv
 
+# direnv (contains OP_SERVICE_ACCOUNT_TOKEN)
+.envrc
+
 # terraform
 .terraform.lock.hcl
 .terraform

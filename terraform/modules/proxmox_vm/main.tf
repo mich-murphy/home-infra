@@ -44,8 +44,12 @@ resource "proxmox_vm_qemu" "this" {
   automatic_reboot   = true
   start_at_node_boot = true
 
-  # Cloud-Init configuration. User creation lives entirely in the cloud-init
-  # `users:` block in the snippet — no built-in user fields on the resource.
+  # Cloud-Init configuration. ciuser/sshkeys are required (not duplicative)
+  # because Proxmox's auto-generated user-data carries `users: - default`,
+  # which would otherwise shadow any `users:` block in the vendor snippet and
+  # create the distro's default user (e.g. `arch` on the Arch cloud image).
+  ciuser    = var.ciuser
+  sshkeys   = var.ssh_public_key
   cicustom  = "vendor=local:snippets/${var.name}.yml"
   ciupgrade = true
   ipconfig0 = "ip=dhcp,ip6=dhcp"
@@ -59,10 +63,15 @@ resource "proxmox_vm_qemu" "this" {
     scsi {
       scsi0 {
         disk {
-          discard  = true
-          storage  = "local-zfs"
-          size     = var.disk_size
-          iothread = true
+          discard = true
+          storage = "local-zfs"
+          size    = var.disk_size
+          # iothread is intentionally disabled: iothread on a virtio-scsi disk
+          # backed by a local-zfs zvol has been observed to silently hang the
+          # Proxmox host under bursty guest I/O (e.g. `pacman -Syu` extracting
+          # many packages). Without iothread, I/O runs on the main QEMU thread
+          # and the ZFS reclaim/ARC path stays stable.
+          iothread = false
         }
       }
     }

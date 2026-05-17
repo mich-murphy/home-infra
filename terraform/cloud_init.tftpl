@@ -1,16 +1,11 @@
 #cloud-config
+# This snippet is consumed as Proxmox vendor-data. The primary user is created
+# by Proxmox's auto-generated user-data via `ciuser` + `sshkeys` on the VM
+# resource (which renames the distro's default cloud-init user), so we do NOT
+# define a `users:` block here — it would be shadowed by user-data anyway.
 hostname: ${hostname}
 fqdn: ${hostname}
 manage_etc_hosts: true
-
-users:
-  - name: michael
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    lock_passwd: true
-    shell: /usr/bin/bash
-    groups: [wheel]
-    ssh_authorized_keys:
-      - ${ssh_public_key}
 
 %{ if os_family == "debian" ~}
 package_update: true

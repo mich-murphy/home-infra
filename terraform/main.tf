@@ -184,6 +184,8 @@ module "ai_dev" {
   memory_mib     = 8192
   disk_size      = "150G"
   bridge         = "vmbr1"
+  ciuser         = "michael"
+  ssh_public_key = var.ai_dev_ssh_public_key
   cloud_init_content = templatefile("cloud_init.tftpl", {
     hostname           = each.key
     os_family          = "arch"
