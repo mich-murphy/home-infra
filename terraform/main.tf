@@ -22,6 +22,8 @@ locals {
 # create cloud-init configuration
 resource "local_file" "cloud_init_agents" {
   content = templatefile("cloud_init.tftpl", {
+    hostname           = "docker-host"
+    os_family          = "debian"
     tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
     ssh_public_key     = var.docker_host_ssh_public_key
   })
@@ -76,8 +78,6 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   ciupgrade = true
   ipconfig0 = "ip=dhcp,ip6=dhcp"
   skip_ipv6 = true
-  ciuser    = "ansible"
-  sshkeys   = var.docker_host_ssh_public_key
   serial {
     id = 0
   }
@@ -137,20 +137,20 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
     scsi {
       scsi0 {
         disk {
-          cache    = "none"
-          discard  = true
-          format   = "raw"
-          storage  = "local-zfs"
-          size     = "100G"
+          cache   = "none"
+          discard = true
+          format  = "raw"
+          storage = "local-zfs"
+          size    = "100G"
         }
       }
       scsi1 {
         disk {
-          cache    = "none"
-          discard  = true
-          format   = "raw"
-          storage  = "local-zfs"
-          size     = "128G"
+          cache   = "none"
+          discard = true
+          format  = "raw"
+          storage = "local-zfs"
+          size    = "128G"
         }
       }
     }
@@ -171,4 +171,26 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
     bridge = "vmbr0"
     model  = "virtio"
   }
+}
+
+module "ai_dev" {
+  for_each       = var.ai_devs
+  source         = "./modules/proxmox_vm"
+  name           = each.key
+  vmid           = each.value.vmid
+  clone_template = "arch-cloud"
+  tags           = "arch;ai-dev"
+  cores          = 8
+  memory_mib     = 8192
+  disk_size      = "150G"
+  bridge         = "vmbr1"
+  cloud_init_content = templatefile("cloud_init.tftpl", {
+    hostname           = each.key
+    os_family          = "arch"
+    ssh_public_key     = var.ai_dev_ssh_public_key
+    tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
+  })
+  proxmox_host     = local.proxmox_creds.host
+  proxmox_user     = local.proxmox_creds.username
+  proxmox_password = local.proxmox_creds.password
 }
