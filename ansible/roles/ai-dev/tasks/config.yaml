@@ -1,0 +1,39 @@
+---
+- name: Ensure config directories exist
+  ansible.builtin.file:
+    path: "/home/michael/.config/{{ item }}"
+    state: directory
+    owner: michael
+    group: michael
+    mode: '0755'
+  become_user: michael
+  loop:
+    - fish
+    - wezterm
+
+- name: Deploy fish config
+  ansible.builtin.template:
+    src: fish/config.fish.j2
+    dest: /home/michael/.config/fish/config.fish
+    owner: michael
+    group: michael
+    mode: '0644'
+  become_user: michael
+
+- name: Deploy starship config
+  ansible.builtin.template:
+    src: starship.toml.j2
+    dest: /home/michael/.config/starship.toml
+    owner: michael
+    group: michael
+    mode: '0644'
+  become_user: michael
+
+- name: Deploy wezterm config
+  ansible.builtin.copy:
+    src: wezterm.lua
+    dest: /home/michael/.config/wezterm/wezterm.lua
+    owner: michael
+    group: michael
+    mode: '0644'
+  become_user: michael
