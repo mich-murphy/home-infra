@@ -81,6 +81,9 @@ if status is-interactive
     alias lt='eza --icons=auto --group-directories-first --tree'
 
     # --- Tool initialisation -------------------------------------------------
+    if type -q starship
+        starship init fish | source
+    end
     if type -q fzf
         fzf --fish | source
     end

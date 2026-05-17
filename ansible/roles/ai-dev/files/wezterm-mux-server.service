@@ -4,7 +4,7 @@ After=default.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/wezterm-mux-server --daemonize=false
+ExecStart=/usr/bin/wezterm-mux-server
 Restart=on-failure
 RestartSec=2s
 NoNewPrivileges=true
