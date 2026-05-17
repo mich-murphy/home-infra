@@ -1,0 +1,74 @@
+---
+- name: Refresh pacman and upgrade system
+  community.general.pacman:
+    update_cache: true
+    upgrade: true
+
+- name: Install official-repo packages and LSPs/formatters
+  community.general.pacman:
+    state: present
+    name:
+      - base-devel
+      - git
+      - fish
+      - starship
+      - neovim
+      - wezterm
+      - github-cli
+      - lazygit
+      - ripgrep
+      - fd
+      - bat
+      - eza
+      - zoxide
+      - direnv
+      - just
+      - fzf
+      - tmux
+      - nodejs
+      - npm
+      - go
+      - openssh
+      - btop
+      - sd
+      - jq
+      - tree
+      - procs
+      - rsync
+      - curl
+      - wget
+      - stylua
+      - gopls
+      - delve
+      - ruff
+      - markdownlint-cli
+
+- name: Bootstrap paru AUR helper
+  kewlfft.aur.aur:
+    use: makepkg
+    name: paru
+    state: present
+  become: true
+  become_user: michael
+
+- name: Install AUR packages
+  kewlfft.aur.aur:
+    use: paru
+    name:
+      - ouch
+      - tflint
+      - marksman
+    state: present
+  become: true
+  become_user: michael
+
+- name: Install Claude Code CLI globally
+  community.general.npm:
+    name: "@anthropic-ai/claude-code"
+    global: true
+    state: present
+
+- name: Set login shell to fish for michael
+  ansible.builtin.user:
+    name: michael
+    shell: /usr/bin/fish
