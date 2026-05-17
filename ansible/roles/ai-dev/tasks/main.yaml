@@ -1,0 +1,15 @@
+---
+- name: Configure host firewall
+  ansible.builtin.import_tasks: firewall.yaml
+
+- name: System bootstrap (packages, paru, AUR, claude-code, LSPs)
+  ansible.builtin.import_tasks: bootstrap.yaml
+
+- name: Deploy shell/terminal configuration
+  ansible.builtin.import_tasks: config.yaml
+
+- name: Install Neovim configuration
+  ansible.builtin.import_tasks: neovim.yaml
+
+- name: WezTerm multiplexer user service
+  ansible.builtin.import_tasks: mux.yaml
