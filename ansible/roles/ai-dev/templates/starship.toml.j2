@@ -1,0 +1,50 @@
+# Managed by Ansible — ai-dev role.
+# Ported from /home/michael/nixos/modules/home/shell/starship.nix.
+# Palette interpolation pulls from ansible/roles/ai-dev/vars/main.yaml.
+
+scan_timeout = 10000
+palette = "tokyonight"
+
+[palettes.tokyonight]
+red = "{{ tokyonight.red }}"
+orange = "{{ tokyonight.orange }}"
+yellow = "{{ tokyonight.yellow }}"
+green = "{{ tokyonight.green }}"
+aqua = "{{ tokyonight.aqua }}"
+teal = "{{ tokyonight.teal }}"
+cyan = "{{ tokyonight.cyan }}"
+blue = "{{ tokyonight.blue }}"
+purple = "{{ tokyonight.purple }}"
+magenta = "{{ tokyonight.magenta }}"
+fg = "{{ tokyonight.fg }}"
+bg = "{{ tokyonight.bg }}"
+comment = "{{ tokyonight.comment }}"
+
+[git_status]
+deleted = ""
+
+[battery]
+full_symbol = "󰁹 "
+charging_symbol = "󰂄 "
+discharging_symbol = "󰂃 "
+unknown_symbol = "󰂑 "
+empty_symbol = "󰂎 "
+format = "[$symbol$percentage]($style) "
+
+[[battery.display]]
+threshold = 20
+style = "bold red"
+
+[[battery.display]]
+threshold = 30
+style = "bold orange"
+
+[nix_shell]
+symbol = "󱄅 "
+style = "bold blue"
+heuristic = true
+format = "via [$symbol$state( \\($name\\))]($style) "
+
+[direnv]
+disabled = false
+style = "bold orange"
