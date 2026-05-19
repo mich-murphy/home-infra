@@ -91,3 +91,11 @@
   ansible.builtin.command:
     cmd: locale-gen
   when: locale_gen_entry.changed
+
+- name: Set system locale to en_AU.UTF-8
+  ansible.builtin.copy:
+    dest: /etc/locale.conf
+    content: "LANG=en_AU.UTF-8\n"
+    owner: root
+    group: root
+    mode: '0644'
