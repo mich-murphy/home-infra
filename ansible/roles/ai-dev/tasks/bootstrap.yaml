@@ -87,6 +87,25 @@
   args:
     creates: /var/lib/systemd/linger/michael
 
+- name: Ensure systemd-logind drop-in dir exists
+  ansible.builtin.file:
+    path: /etc/systemd/logind.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Keep user processes alive after ssh logout (mosh-server survival)
+  ansible.builtin.copy:
+    dest: /etc/systemd/logind.conf.d/ai-dev.conf
+    content: |
+      [Login]
+      KillUserProcesses=no
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart systemd-logind
+
 - name: Ensure en_AU.UTF-8 locale entry in /etc/locale.gen
   ansible.builtin.lineinfile:
     path: /etc/locale.gen
