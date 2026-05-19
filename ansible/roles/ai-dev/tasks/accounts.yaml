@@ -1,0 +1,84 @@
+---
+- name: Configure global git identity
+  community.general.git_config:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    scope: global
+  become_user: "{{ username }}"
+  loop:
+    - { name: "user.name", value: "{{ git_user_name }}" }
+    - { name: "user.email", value: "{{ git_user_email }}" }
+    - { name: "init.defaultBranch", value: "main" }
+    - { name: "pull.rebase", value: "true" }
+  when:
+    - git_user_name is defined
+    - git_user_email is defined
+
+- name: Ensure gh config directory exists
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.config/gh"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0700"
+  when: gh_token is defined
+
+- name: Check current gh auth status
+  ansible.builtin.command: gh auth status -h github.com
+  become_user: "{{ username }}"
+  register: gh_auth_status
+  changed_when: false
+  failed_when: false
+  when: gh_token is defined
+
+- name: Authenticate gh CLI with token
+  ansible.builtin.shell: >
+    set -o pipefail &&
+    echo '{{ gh_token }}' | gh auth login --hostname github.com --git-protocol ssh --with-token
+  args:
+    executable: /bin/bash
+  become_user: "{{ username }}"
+  when:
+    - gh_token is defined
+    - gh_auth_status.rc != 0
+  no_log: true
+
+- name: Set gh git-protocol to ssh
+  ansible.builtin.command: gh config set git_protocol ssh -h github.com
+  become_user: "{{ username }}"
+  changed_when: false
+  when: gh_token is defined
+
+- name: Ensure ~/.claude directory exists
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.claude"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0700"
+  when:
+    - (claude_credentials_json is defined) or (anthropic_api_key is defined)
+
+- name: Deploy Claude OAuth credentials
+  ansible.builtin.copy:
+    content: "{{ claude_credentials_json }}"
+    dest: "/home/{{ username }}/.claude/.credentials.json"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0600"
+  when: claude_credentials_json is defined
+  no_log: true
+
+- name: Export ANTHROPIC_API_KEY for fish (fallback to API key auth)
+  ansible.builtin.copy:
+    content: |
+      # Managed by Ansible
+      set -gx ANTHROPIC_API_KEY {{ anthropic_api_key }}
+    dest: "/home/{{ username }}/.config/fish/conf.d/anthropic.fish"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0600"
+  when:
+    - anthropic_api_key is defined
+    - claude_credentials_json is not defined
+  no_log: true
