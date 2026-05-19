@@ -62,11 +62,19 @@
   become: true
   become_user: michael
 
-- name: Install Claude Code CLI globally
+- name: Remove npm-global Claude Code (migrated to native installer)
   community.general.npm:
     name: "@anthropic-ai/claude-code"
     global: true
-    state: present
+    state: absent
+
+- name: Install Claude Code via native installer (per-user, self-updating)
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://claude.ai/install.sh | bash
+  args:
+    creates: /home/michael/.local/bin/claude
+  become: true
+  become_user: michael
 
 - name: Set login shell to fish for michael
   ansible.builtin.user:
