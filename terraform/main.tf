@@ -60,9 +60,9 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   tags        = "ubuntu"
   agent       = 1
   cpu {
-    cores = 4
+    cores = 6
   }
-  memory             = 12288
+  memory             = 10240
   start_at_node_boot = true
   startup_shutdown {
     order = 2
@@ -88,7 +88,7 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
           discard  = true
           storage  = "local-zfs"
           size     = "128G"
-          iothread = true
+          iothread = false
         }
       }
     }
@@ -117,10 +117,10 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
   tags        = "kubernetes"
   agent       = 1
   cpu {
-    cores = 8
+    cores = 6
     type  = "host"
   }
-  memory             = 12288
+  memory             = 10240
   start_at_node_boot = true
   bios               = "ovmf"
   machine            = "q35"
@@ -137,7 +137,7 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
     scsi {
       scsi0 {
         disk {
-          cache   = "none"
+          cache   = "writethrough"
           discard = true
           format  = "raw"
           storage = "local-zfs"
@@ -146,7 +146,7 @@ resource "proxmox_vm_qemu" "talos_control_plane" {
       }
       scsi1 {
         disk {
-          cache   = "none"
+          cache   = "writethrough"
           discard = true
           format  = "raw"
           storage = "local-zfs"
@@ -180,8 +180,8 @@ module "ai_dev" {
   vmid           = each.value.vmid
   clone_template = "arch-cloud"
   tags           = "arch;ai-dev"
-  cores          = 8
-  memory_mib     = 8192
+  cores          = 2
+  memory_mib     = 2048
   disk_size      = "150G"
   bridge         = "vmbr1"
   ciuser         = "michael"
