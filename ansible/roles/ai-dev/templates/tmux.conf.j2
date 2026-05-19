@@ -1,0 +1,76 @@
+{# Managed by Ansible — ai-dev role.
+   Mirrors leader/keybinds from the prior wezterm.lua so muscle memory carries
+   over. TokyoNight palette interpolated from vars/main.yaml. #}
+
+# --- Server / general ---------------------------------------------------------
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",xterm-256color:RGB,alacritty:RGB,wezterm:RGB"
+set -g history-limit 50000
+set -g escape-time 10
+set -g focus-events on
+set -g mouse on
+setw -g mode-keys vi
+
+# --- Prefix: Ctrl-a (matches old wezterm leader) -----------------------------
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# --- Windows / panes ----------------------------------------------------------
+# Open splits in the current pane's CWD.
+bind '\' split-window -h -c "#{pane_current_path}"
+bind '-' split-window -v -c "#{pane_current_path}"
+bind c   new-window   -c "#{pane_current_path}"
+
+# Window navigation: prefix p/n (default), plus prefix 1..8 (default).
+bind x confirm-before -p "kill pane? (y/n)" kill-pane
+bind z resize-pane -Z
+bind w choose-tree -Zw
+bind , command-prompt -I "#W" "rename-window '%%'"
+bind r switch-client -T resize_pane
+
+# Resize-pane table (LEADER r → h/j/k/l, Escape to exit).
+bind -T resize_pane h resize-pane -L 1 \; switch-client -T resize_pane
+bind -T resize_pane j resize-pane -D 1 \; switch-client -T resize_pane
+bind -T resize_pane k resize-pane -U 1 \; switch-client -T resize_pane
+bind -T resize_pane l resize-pane -R 1 \; switch-client -T resize_pane
+bind -T resize_pane Escape switch-client -T root
+
+# --- smart-splits: Ctrl-h/j/k/l pane navigation, vim-aware -------------------
+is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'"
+bind -n C-h if-shell "$is_vim" "send-keys C-h" "select-pane -L"
+bind -n C-j if-shell "$is_vim" "send-keys C-j" "select-pane -D"
+bind -n C-k if-shell "$is_vim" "send-keys C-k" "select-pane -U"
+bind -n C-l if-shell "$is_vim" "send-keys C-l" "select-pane -R"
+bind -T copy-mode-vi C-h select-pane -L
+bind -T copy-mode-vi C-j select-pane -D
+bind -T copy-mode-vi C-k select-pane -U
+bind -T copy-mode-vi C-l select-pane -R
+
+# --- Copy mode (vi) -----------------------------------------------------------
+bind -T copy-mode-vi v   send -X begin-selection
+bind -T copy-mode-vi y   send -X copy-selection-and-cancel
+bind -T copy-mode-vi C-v send -X rectangle-toggle
+
+# --- TokyoNight Night theme ---------------------------------------------------
+set -g status-position bottom
+set -g status-justify left
+set -g status-interval 5
+
+set -g status-style              "bg={{ tokyonight.bg_dark }},fg={{ tokyonight.fg }}"
+set -g window-status-style       "bg={{ tokyonight.bg_dark }},fg={{ tokyonight.comment }}"
+set -g window-status-current-style "bg={{ tokyonight.bg2 }},fg={{ tokyonight.aqua }},bold"
+set -g window-status-activity-style "bg={{ tokyonight.bg_dark }},fg={{ tokyonight.orange }}"
+set -g pane-border-style         "fg={{ tokyonight.bg3 }}"
+set -g pane-active-border-style  "fg={{ tokyonight.aqua }}"
+set -g message-style             "bg={{ tokyonight.bg2 }},fg={{ tokyonight.fg }}"
+set -g mode-style                "bg={{ tokyonight.bg2 }},fg={{ tokyonight.fg }}"
+set -g clock-mode-colour         "{{ tokyonight.aqua }}"
+
+set -g status-left-length  40
+set -g status-right-length 80
+set -g status-left  " #[fg={{ tokyonight.purple }},bold]#S #[fg={{ tokyonight.bg3 }}]│ "
+set -g status-right "#[fg={{ tokyonight.comment }}]#h #[fg={{ tokyonight.bg3 }}]│ #[fg={{ tokyonight.aqua }}]%Y-%m-%d %H:%M "
+
+setw -g window-status-format         " #I:#W "
+setw -g window-status-current-format " #I:#W "

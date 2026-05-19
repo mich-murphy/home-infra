@@ -11,5 +11,5 @@
 - name: Install Neovim configuration
   ansible.builtin.import_tasks: neovim.yaml
 
-- name: WezTerm multiplexer user service
-  ansible.builtin.import_tasks: mux.yaml
+- name: Per-host accounts (git, gh, claude)
+  ansible.builtin.import_tasks: accounts.yaml

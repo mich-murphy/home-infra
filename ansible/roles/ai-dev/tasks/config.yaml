@@ -9,7 +9,6 @@
   become_user: michael
   loop:
     - fish
-    - wezterm
 
 - name: Deploy fish config
   ansible.builtin.template:
@@ -29,10 +28,10 @@
     mode: '0644'
   become_user: michael
 
-- name: Deploy wezterm config
-  ansible.builtin.copy:
-    src: wezterm.lua
-    dest: /home/michael/.config/wezterm/wezterm.lua
+- name: Deploy tmux config
+  ansible.builtin.template:
+    src: tmux.conf.j2
+    dest: /home/michael/.tmux.conf
     owner: michael
     group: michael
     mode: '0644'

@@ -13,7 +13,6 @@
       - fish
       - starship
       - neovim
-      - wezterm
       - github-cli
       - lazygit
       - ripgrep
@@ -29,6 +28,7 @@
       - npm
       - go
       - openssh
+      - mosh
       - btop
       - sd
       - jq
@@ -72,3 +72,22 @@
   ansible.builtin.user:
     name: michael
     shell: /usr/bin/fish
+
+- name: Enable linger for michael (keeps tmux sessions alive across ssh logout)
+  ansible.builtin.command:
+    cmd: loginctl enable-linger michael
+  args:
+    creates: /var/lib/systemd/linger/michael
+
+- name: Ensure en_AU.UTF-8 locale entry in /etc/locale.gen
+  ansible.builtin.lineinfile:
+    path: /etc/locale.gen
+    regexp: '^#?\s*en_AU\.UTF-8 UTF-8'
+    line: 'en_AU.UTF-8 UTF-8'
+    state: present
+  register: locale_gen_entry
+
+- name: Regenerate locales when locale.gen changed
+  ansible.builtin.command:
+    cmd: locale-gen
+  when: locale_gen_entry.changed
