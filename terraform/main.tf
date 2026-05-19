@@ -181,7 +181,7 @@ module "ai_dev" {
   clone_template = "arch-cloud"
   tags           = "arch;ai-dev"
   cores          = 2
-  memory_mib     = 2048
+  memory_mib     = 3072
   disk_size      = "150G"
   bridge         = "vmbr1"
   ciuser         = "michael"
