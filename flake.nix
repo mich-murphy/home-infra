@@ -53,17 +53,14 @@
           pkgs.alejandra
         ];
         # Source terraform/.envrc (gitignored — holds OP_SERVICE_ACCOUNT_TOKEN
-        # for the 1password Terraform provider) on shell entry so the env var
-        # is present regardless of how the shell was launched (direnv, raw
-        # `nix develop`, CI, etc.). Looked up relative to $PWD so it works
-        # whether entered from the repo root or terraform/.
+        # for the 1password Terraform provider) on shell entry. Resolved via
+        # git toplevel so we never accidentally source the repo-root .envrc
+        # (which contains `use flake` and would recurse under direnv).
         shellHook = ''
-          for candidate in "$PWD/terraform/.envrc" "$PWD/.envrc" "$PWD/../terraform/.envrc"; do
-            if [ -f "$candidate" ]; then
-              . "$candidate"
-              break
-            fi
-          done
+          root="$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null)"
+          if [ -n "$root" ] && [ -f "$root/terraform/.envrc" ]; then
+            . "$root/terraform/.envrc"
+          fi
         '';
       };
     });
