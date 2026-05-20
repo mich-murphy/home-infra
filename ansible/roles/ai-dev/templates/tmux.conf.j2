@@ -11,6 +11,10 @@ set -g focus-events on
 set -g mouse on
 setw -g mode-keys vi
 
+# OSC 52 clipboard: tmux emits, mosh forwards, ghostty/wezterm write to macOS pasteboard.
+set -g set-clipboard on
+set -as terminal-features ',*:clipboard'
+
 # --- Prefix: Ctrl-a (matches old wezterm leader) -----------------------------
 unbind C-b
 set -g prefix C-a
@@ -49,7 +53,7 @@ bind -T copy-mode-vi C-l select-pane -R
 
 # --- Copy mode (vi) -----------------------------------------------------------
 bind -T copy-mode-vi v   send -X begin-selection
-bind -T copy-mode-vi y   send -X copy-selection-and-cancel
+bind -T copy-mode-vi y   send -X copy-pipe-and-cancel "osc52-copy #{pane_tty}"
 bind -T copy-mode-vi C-v send -X rectangle-toggle
 
 # --- TokyoNight Night theme ---------------------------------------------------

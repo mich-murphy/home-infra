@@ -28,6 +28,14 @@
     mode: '0644'
   become_user: michael
 
+- name: Deploy OSC 52 clipboard helper
+  ansible.builtin.copy:
+    src: osc52-copy
+    dest: /usr/local/bin/osc52-copy
+    owner: root
+    group: root
+    mode: '0755'
+
 - name: Deploy tmux config
   ansible.builtin.template:
     src: tmux.conf.j2
