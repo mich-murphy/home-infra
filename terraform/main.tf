@@ -19,6 +19,66 @@ locals {
   }
 }
 
+# TrueNAS VM. Provisioned manually (no cloud-init); the HBA at PCI 0000:02:00
+# is passed through for ZFS pool access. `ignore_changes = all` keeps Terraform
+# from mutating this VM — the block exists so the full spec is captured if it
+# ever needs to be rebuilt from scratch.
+resource "proxmox_vm_qemu" "truenas" {
+  vmid        = 101
+  name        = "truenas"
+  target_node = "proxmox"
+  tags        = "truenas"
+  bios        = "seabios"
+  machine     = "q35"
+  boot        = "order=scsi0;net0"
+  scsihw      = "virtio-scsi-single"
+  agent       = 0
+
+  start_at_node_boot = true
+  startup_shutdown {
+    order = 1
+  }
+
+  cpu {
+    cores   = 2
+    sockets = 1
+    type    = "host"
+  }
+  memory = 12288
+
+  disks {
+    scsi {
+      scsi0 {
+        disk {
+          storage = "local-zfs"
+          size    = "32G"
+          discard = true
+        }
+      }
+    }
+  }
+
+  network {
+    id       = 0
+    bridge   = "vmbr0"
+    model    = "virtio"
+    macaddr  = "BC:24:11:AF:30:C0"
+    firewall = true
+  }
+
+  # LSI/Broadcom HBA passed through to TrueNAS so it owns the disks directly.
+  pci {
+    id     = 1
+    raw_id = "0000:02:00"
+    pcie   = true
+    rombar = false
+  }
+
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
 # create cloud-init configuration
 resource "local_file" "cloud_init_agents" {
   content = templatefile("cloud_init.tftpl", {
@@ -60,7 +120,9 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   tags        = "ubuntu"
   agent       = 1
   cpu {
-    cores = 6
+    cores   = 6
+    sockets = 1
+    type    = "host"
   }
   memory             = 10240
   start_at_node_boot = true
@@ -76,6 +138,8 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   # Cloud-Init configuration
   cicustom  = "vendor=local:snippets/agents.yml" # /var/lib/vz/snippets
   ciupgrade = true
+  ciuser    = "ansible"
+  sshkeys   = var.docker_host_ssh_public_key
   ipconfig0 = "ip=dhcp,ip6=dhcp"
   skip_ipv6 = true
   serial {
@@ -85,10 +149,11 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
     scsi {
       scsi0 {
         disk {
-          discard  = true
-          storage  = "local-zfs"
-          size     = "128G"
-          iothread = false
+          discard   = true
+          storage   = "local-zfs"
+          size      = "128G"
+          iothread  = false
+          replicate = false
         }
       }
     }
@@ -102,14 +167,39 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
     }
   }
   network {
+    id      = 0
+    bridge  = "vmbr0"
+    model   = "virtio"
+    macaddr = "BC:24:11:13:C4:53"
+  }
+
+  # Intel iGPU (0000:00:02.0) passed through for Plex/Jellyfin hardware
+  # transcoding inside Docker.
+  pci {
     id     = 0
-    bridge = "vmbr0"
-    model  = "virtio"
+    raw_id = "0000:00:02.0"
+  }
+
+  # USB device pinned to host port 1-3 (e.g. Zigbee/Z-Wave dongle for
+  # Home Assistant). Pinning by port survives reboots better than vendor id.
+  # Provider exposes a `port` / `device` / `mapping` block in newer versions;
+  # 3.0.2-rc07 only ships the deprecated string form, so use it for now.
+  usb {
+    id   = 0
+    host = "1-3"
+    usb3 = true
+  }
+
+  lifecycle {
+    ignore_changes = all
   }
 }
 
+# Talos control plane spec kept as a blueprint for the planned K8s migration
+# (see docs/PRD.md). Gated behind `enable_talos` so it stays inert until the
+# migration actually starts — flip the variable to provision.
 resource "proxmox_vm_qemu" "talos_control_plane" {
-  count       = 1
+  count       = var.enable_talos ? 1 : 0
   vmid        = "20${count.index}" # scale control plane nodes with increasing count
   name        = "talos-prod-${count.index + 1}"
   description = "Siderolabs install image v1.12.2"

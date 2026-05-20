@@ -19,3 +19,9 @@ variable "ai_devs" {
     "ai-dev-bc"  = { vmid = 111 }
   }
 }
+
+variable "enable_talos" {
+  type        = bool
+  description = "Provision the Talos control plane VM(s). Off until the K8s migration starts; the resource block is kept as a blueprint."
+  default     = false
+}
