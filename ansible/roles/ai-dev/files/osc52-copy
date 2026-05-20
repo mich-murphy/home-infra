@@ -1,0 +1,8 @@
+#!/bin/sh
+# Managed by Ansible — ai-dev role.
+# Read stdin, base64-encode, emit OSC 52 to target tty so the outer
+# terminal (ghostty/wezterm via mosh) writes it to the macOS pasteboard.
+# tmux's copy-pipe spawns without a controlling tty, so the pane tty must
+# be passed as $1 (use #{pane_tty} in tmux bindings).
+tty="${1:-/dev/tty}"
+printf '\033]52;c;%s\a' "$(base64 -w0)" > "$tty"
