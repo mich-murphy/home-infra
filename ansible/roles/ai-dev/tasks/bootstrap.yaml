@@ -106,18 +106,18 @@
     mode: '0644'
   notify: restart systemd-logind
 
-- name: Ensure en_AU.UTF-8 locale entry in /etc/locale.gen
+- name: Ensure en_AU.UTF-8 line uncommented in /etc/locale.gen
   ansible.builtin.lineinfile:
     path: /etc/locale.gen
-    regexp: '^#?\s*en_AU\.UTF-8 UTF-8'
+    regexp: '^\s*#?\s*en_AU\.UTF-8\s+UTF-8\s*$'
     line: 'en_AU.UTF-8 UTF-8'
     state: present
-  register: locale_gen_entry
+  register: locale_gen_line
 
-- name: Regenerate locales when locale.gen changed
+- name: Regenerate locales
   ansible.builtin.command:
     cmd: locale-gen
-  when: locale_gen_entry.changed
+  when: locale_gen_line.changed
 
 - name: Set system locale to en_AU.UTF-8
   ansible.builtin.copy:
