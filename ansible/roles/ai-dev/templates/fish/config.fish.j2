@@ -2,6 +2,11 @@
    plus the fish-relevant bits of modules/home/shell/cli.nix (eza/fzf/zoxide) and direnv.nix.
    Palette interpolation pulls from ansible/roles/ai-dev/vars/main.yaml. #}
 
+# --- PATH ---------------------------------------------------------------------
+# Native Claude Code installer drops launcher at ~/.local/bin/claude but only
+# wires bash/zsh rc files — add it for fish too.
+fish_add_path -g $HOME/.local/bin
+
 # --- Login shell environment --------------------------------------------------
 if status is-login
     set -x BROWSER firefox
