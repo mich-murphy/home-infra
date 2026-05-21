@@ -1,0 +1,86 @@
+---
+- name: stat target swapfile
+  ansible.builtin.stat:
+    path: /swapfile
+  register: target_swap
+
+- name: detect root filesystem type
+  ansible.builtin.set_fact:
+    root_fstype: "{{ (ansible_mounts | selectattr('mount', 'eq', '/') | list | first).fstype }}"
+
+- name: list active swap devices
+  ansible.builtin.command:
+    cmd: swapon --show=NAME --noheadings
+  register: active_swaps
+  changed_when: false
+
+- name: compute swap state
+  ansible.builtin.set_fact:
+    swap_rebuild: "{{ (not target_swap.stat.exists) or (target_swap.stat.size | int != (swap_size_gb | int) * 1024 * 1024 * 1024) or ('/swapfile' not in active_swaps.stdout_lines) }}"
+
+- name: disable existing swap devices
+  ansible.builtin.command:
+    cmd: "swapoff {{ item }}"
+  loop: "{{ active_swaps.stdout_lines | default([]) }}"
+  when: swap_rebuild and active_swaps.stdout_lines | default([]) | length > 0
+
+- name: remove stale fstab swap entries
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '^\S+\s+\S+\s+swap\s'
+    state: absent
+  when: swap_rebuild
+
+- name: remove old swapfile paths
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /swap.img
+    - /swap/swapfile
+    - /swapfile
+  when: swap_rebuild
+
+- name: allocate swapfile (btrfs)
+  ansible.builtin.command:
+    cmd: "btrfs filesystem mkswapfile --size {{ swap_size_gb }}g /swapfile"
+  when: swap_rebuild and root_fstype == 'btrfs'
+
+- name: allocate swapfile (generic)
+  ansible.builtin.command:
+    cmd: "fallocate -l {{ swap_size_gb }}G /swapfile"
+  when: swap_rebuild and root_fstype != 'btrfs'
+
+- name: secure swapfile perms
+  ansible.builtin.file:
+    path: /swapfile
+    owner: root
+    group: root
+    mode: "0600"
+  when: swap_rebuild
+
+- name: format swapfile (generic)
+  ansible.builtin.command:
+    cmd: mkswap /swapfile
+  when: swap_rebuild and root_fstype != 'btrfs'
+
+- name: enable swapfile
+  ansible.builtin.command:
+    cmd: swapon /swapfile
+  when: swap_rebuild
+
+- name: persist swapfile in fstab
+  ansible.posix.mount:
+    path: none
+    src: /swapfile
+    fstype: swap
+    opts: sw
+    state: present
+
+- name: tune swappiness
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: "10"
+    state: present
+    sysctl_set: true
+    reload: true

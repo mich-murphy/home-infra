@@ -6,3 +6,10 @@
 - name: harden ssh
   ansible.builtin.include_tasks:
     file: ssh.yaml
+
+- name: configure swap
+  ansible.builtin.include_tasks:
+    file: swap.yaml
+    apply:
+      tags: swap
+  tags: swap
