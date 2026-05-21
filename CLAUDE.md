@@ -32,8 +32,8 @@ Homelab infrastructure-as-code repository. All services currently run on Docker 
 - Working directory: `ansible/`
 - Secrets stored in `ansible/group_vars/secrets.yaml` (ansible-vault encrypted)
 - Vault password file: `ansible/.vaultpass` (gitignored)
-- Roles: common, firewall, media, docker
-- Target hosts: docker-host, game-server
+- Roles: common, firewall, media, docker, ai-dev
+- Target hosts: docker-host, ai-dev-bgd, ai-dev-bc
 
 ### Docker Compose
 
