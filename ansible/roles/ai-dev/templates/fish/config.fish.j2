@@ -97,15 +97,4 @@ if status is-interactive
     if type -q direnv
         direnv hook fish | source
     end
-
-    # --- Plugins (autopair, sponge) -----------------------------------------
-    # On non-Nix targets these are expected to be installed via fisher in
-    # bootstrap.yaml; source their entry points when present.
-    for plugin_dir in ~/.config/fish/plugins/autopair ~/.config/fish/plugins/sponge
-        if test -d $plugin_dir
-            for f in $plugin_dir/conf.d/*.fish
-                source $f
-            end
-        end
-    end
 end

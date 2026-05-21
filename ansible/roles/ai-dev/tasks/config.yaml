@@ -19,6 +19,26 @@
     mode: '0644'
   become_user: michael
 
+- name: Deploy fisher plugin manifest
+  ansible.builtin.copy:
+    dest: /home/michael/.config/fish/fish_plugins
+    content: |
+      jorgebucaran/fisher
+      jorgebucaran/autopair.fish
+      meaningful-ooo/sponge
+    owner: michael
+    group: michael
+    mode: '0644'
+  become_user: michael
+  register: fish_plugins_manifest
+
+- name: Sync fisher plugins from manifest
+  ansible.builtin.command:
+    cmd: fish -c 'fisher update'
+  become_user: michael
+  when: fish_plugins_manifest.changed
+  changed_when: true
+
 - name: Deploy starship config
   ansible.builtin.template:
     src: starship.toml.j2

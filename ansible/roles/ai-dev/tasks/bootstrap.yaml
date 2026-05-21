@@ -58,6 +58,7 @@
       - ouch
       - tflint
       - marksman
+      - fisher
     state: present
   become: true
   become_user: michael
