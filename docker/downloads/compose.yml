@@ -8,6 +8,8 @@ services:
     container_name: qbittorrent
     security_opt:
       - no-new-privileges:true
+    mem_limit: 1g
+    memswap_limit: 1g
     networks:
       - proxy
     environment:
