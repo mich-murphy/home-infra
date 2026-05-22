@@ -17,9 +17,9 @@ services:
       - PLEX_CLAIM=${PLEX_CLAIM}
     volumes:
       - plex-data:/config
+      - plex-transcode:/transcode
       - /mnt/data/media:/data/media:rw
       - /mnt/music:/data/music:rw
-      - /dev/shm:/transcode # ram transcode
     labels:
       - traefik.enable=true
       - traefik.http.routers.plex.rule=Host(`plex.local.elmurphy.com`)
@@ -102,6 +102,8 @@ services:
 volumes:
   plex-data:
     name: plex-data
+  plex-transcode:
+    name: plex-transcode
   tautulli-data:
     name: tautulli-data
   overseerr-data:
