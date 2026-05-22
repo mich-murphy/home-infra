@@ -47,24 +47,24 @@ services:
       - traefik.http.services.tautulli.loadbalancer.server.port=8181
     restart: unless-stopped
 
-  overseerr:
-    image: ghcr.io/linuxserver/overseerr:v1.34.0-ls156@sha256:987a6bd200a88501a5fa0cfa0c3179acd83e5b0af986da1537b70f44cfe059b8
-    container_name: overseerr
+  seerr:
+    image: ghcr.io/seerr-team/seerr:v3.2.0@sha256:c4cbd5121236ac2f70a843a0b920b68a27976be57917555f1c45b08a1e6b2aad
+    container_name: seerr
+    init: true
     security_opt:
       - no-new-privileges:true
     networks:
       - proxy
     environment:
-      - PUID=1000
-      - PGID=1000
       - TZ=${TZ}
+      - LOG_LEVEL=info
     volumes:
-      - overseerr-data:/config
+      - seerr-data:/app/config
     labels:
       - traefik.enable=true
-      - traefik.http.routers.overseerr.rule=Host(`overseerr.local.elmurphy.com`)
-      - traefik.http.routers.overseerr.tls=true
-      - traefik.http.services.overseerr.loadbalancer.server.port=5055
+      - traefik.http.routers.seerr.rule=Host(`seerr.local.elmurphy.com`)
+      - traefik.http.routers.seerr.tls=true
+      - traefik.http.services.seerr.loadbalancer.server.port=5055
     restart: unless-stopped
 
   maintainerr:
@@ -104,8 +104,8 @@ volumes:
     name: plex-data
   tautulli-data:
     name: tautulli-data
-  overseerr-data:
-    name: overseerr-data
+  seerr-data:
+    name: seerr-data
   maintainerr-data:
     name: maintainerr-data
   kometa-data:
