@@ -67,25 +67,6 @@ services:
       - traefik.http.services.seerr.loadbalancer.server.port=5055
     restart: unless-stopped
 
-  maintainerr:
-    image: ghcr.io/maintainerr/maintainerr:3.11.2@sha256:bd71ca33bc1133437adf4bc4f4c074e1fc2905c5a6c640aa237cfe14d0f249db
-    container_name: maintainerr
-    security_opt:
-      - no-new-privileges:true
-    user: 1000:1000
-    networks:
-      - proxy
-    environment:
-      - TZ=${TZ}
-    volumes:
-      - maintainerr-data:/opt/data
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.maintainerr.rule=Host(`maintainerr.local.elmurphy.com`)
-      - traefik.http.routers.maintainerr.tls=true
-      - traefik.http.services.maintainerr.loadbalancer.server.port=6246
-    restart: unless-stopped
-
   # Manually setup initial config
   # Reference: https://kometa.wiki/en/latest/kometa/install/walkthroughs/docker/#setting-up-the-initial-config-file
   kometa:
@@ -106,8 +87,6 @@ volumes:
     name: tautulli-data
   seerr-data:
     name: seerr-data
-  maintainerr-data:
-    name: maintainerr-data
   kometa-data:
     name: kometa-data
 
