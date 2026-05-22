@@ -1,0 +1,74 @@
+---
+# Remove file swap if previously configured (mode flip cleanup)
+- name: list active swap devices
+  ansible.builtin.command:
+    cmd: swapon --show=NAME --noheadings
+  register: active_swaps
+  changed_when: false
+
+- name: swapoff non-zram devices
+  ansible.builtin.command:
+    cmd: "swapoff {{ item }}"
+  loop: "{{ active_swaps.stdout_lines | default([]) | reject('match', '^/dev/zram') | list }}"
+  when: (active_swaps.stdout_lines | default([]) | reject('match', '^/dev/zram') | list) | length > 0
+
+- name: remove swapfile fstab entries
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '^\S+\s+\S+\s+swap\s'
+    state: absent
+
+- name: delete stale swapfiles
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /swap.img
+    - /swap/swapfile
+    - /swapfile
+
+# Install zram-generator (package name differs per distro)
+- name: install zram-generator (Arch)
+  community.general.pacman:
+    name: zram-generator
+    state: present
+  when: ansible_os_family == 'Archlinux'
+
+- name: install systemd-zram-generator (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name: systemd-zram-generator
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_os_family == 'Debian'
+
+# Configure and (re)start zram
+- name: write zram-generator config
+  ansible.builtin.copy:
+    dest: /etc/systemd/zram-generator.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [zram0]
+      zram-size = {{ zram_size }}
+      compression-algorithm = {{ zram_compression }}
+  register: zram_conf
+
+- name: daemon-reload after config change
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: zram_conf.changed
+
+- name: stop zram device for resize
+  ansible.builtin.systemd:
+    name: systemd-zram-setup@zram0.service
+    state: stopped
+  when: zram_conf.changed
+  failed_when: false
+
+- name: start zram swap
+  ansible.builtin.systemd:
+    name: systemd-zram-setup@zram0.service
+    state: started
+    enabled: true
