@@ -1,2 +1,9 @@
 ---
+# Swap mode: file | zram | none
+swap_mode: file
 swap_size_gb: 4
+swap_swappiness: 60
+
+# zram-generator options (used when swap_mode == zram)
+zram_size: ram
+zram_compression: zstd

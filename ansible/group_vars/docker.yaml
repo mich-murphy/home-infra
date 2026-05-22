@@ -2,3 +2,7 @@
 username: mm
 ssh_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF
 docker_users: "{{ username }}"
+
+swap_mode: file
+swap_size_gb: 4
+swap_swappiness: 60
