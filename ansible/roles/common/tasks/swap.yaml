@@ -16,6 +16,7 @@
   ansible.builtin.include_tasks: swap-none.yaml
   when: swap_mode == 'none'
 
+# skipped when there's no swap (also unprivileged LXCs can't write kernel sysctls)
 - name: tune swappiness
   ansible.posix.sysctl:
     name: vm.swappiness
@@ -23,3 +24,4 @@
     state: present
     sysctl_set: true
     reload: true
+  when: swap_mode != 'none'
