@@ -20,6 +20,24 @@
         state: present
         update_cache: true
 
+    # Unprivileged LXC has no /dev/net/tun (device passthrough is root@pam-only),
+    # so run the daemon in userspace-networking mode. Tailscale SSH still works.
+    - name: run tailscaled in userspace-networking mode
+      ansible.builtin.lineinfile:
+        path: /etc/default/tailscaled
+        regexp: '^FLAGS='
+        line: 'FLAGS="--tun=userspace-networking"'
+        create: true
+        mode: "0644"
+      register: tailscaled_flags
+
+    - name: restart tailscaled to apply flags
+      ansible.builtin.systemd:
+        name: tailscaled
+        state: restarted
+        enabled: true
+      when: tailscaled_flags is changed
+
     # `tailscale status` exits non-zero when stopped / needs login, zero when up.
     - name: read tailscale state
       ansible.builtin.command: tailscale status
@@ -50,7 +68,31 @@
       - curl
       - gnupg
       - apt-transport-https
-      - openjdk-17-jre-headless
+    state: present
+    update_cache: true
+
+# UniFi Network 10.x requires Java 25, which Debian 12 doesn't ship. Pull
+# Eclipse Temurin from Adoptium.
+- name: download adoptium signing key
+  ansible.builtin.get_url:
+    url: https://packages.adoptium.net/artifactory/api/gpg/key/public
+    dest: /etc/apt/keyrings/adoptium.asc
+    mode: "0644"
+
+- name: dearmor adoptium signing key
+  ansible.builtin.command:
+    cmd: gpg --batch --yes --dearmor -o /etc/apt/keyrings/adoptium.gpg /etc/apt/keyrings/adoptium.asc
+    creates: /etc/apt/keyrings/adoptium.gpg
+
+- name: add adoptium repo
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb bookworm main"
+    filename: adoptium
+    state: present
+
+- name: install temurin jre
+  ansible.builtin.apt:
+    name: "temurin-{{ unifi_java_version }}-jre"
     state: present
     update_cache: true
 
