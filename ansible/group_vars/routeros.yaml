@@ -10,9 +10,7 @@ routeros_api_host: 10.77.1.1
 # which has librouteros) instead of letting interpreter discovery pick another python.
 ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
-# L2 topology — verified 2026-06-01 via /ip/neighbor + bridge/host MAC matching.
-# Port map: ether1=WAN, ether2=Proxmox eno1/vmbr1 (DMZ), ether3=Proxmox eno2/vmbr0 (trunk),
-# ether4=UniFi U6-Pro AP, ether5=Proxmox IPMI/BMC (10.77.1.99). ether6/7/8/sfp unused.
+# L2 topology — verify names with `/interface print`.
 routeros_bridge: bridge
 routeros_trunk_ports: # tagged production VLANs (native/untagged = MGMT VLAN 1)
   - ether3 # Proxmox eno2 (vmbr0 trunk)
