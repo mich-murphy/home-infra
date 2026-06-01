@@ -12,6 +12,13 @@ apply:
 destroy:
   cd terraform && terraform destroy
 
+# UniFi controller LXC lives in its own root (bpg provider; see terraform/unifi/versions.tf)
+unifi-init:
+  cd terraform/unifi && terraform init
+
+unifi-apply:
+  cd terraform/unifi && terraform apply
+
 ## ansible
 run HOST:
   cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit {{HOST}}

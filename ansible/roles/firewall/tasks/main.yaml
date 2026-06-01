@@ -24,11 +24,23 @@
     interface_in: tailscale0
   notify: reload ufw
 
-- name: allow internal traffic to tailscale
+- name: allow configured inbound ports
   community.general.ufw:
     rule: allow
-    from_ip: 172.20.1.0/24
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    from_ip: "{{ item.from | default('any') }}"
+  loop: "{{ firewall_allow_ports | default([]) }}"
+  notify: reload ufw
+
+# docker-host only: lets the internal compose bridge reach the Tailscale CGNAT range.
+# Set firewall_docker_bridge_subnet in that group's vars to enable it.
+- name: allow internal docker bridge to tailscale
+  community.general.ufw:
+    rule: allow
+    from_ip: "{{ firewall_docker_bridge_subnet }}"
     to_ip: 100.0.0.0/8
+  when: firewall_docker_bridge_subnet is defined
   notify: reload ufw
 
 - name: deny ssh traffic outside of tailscale
