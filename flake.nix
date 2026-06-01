@@ -43,7 +43,11 @@
       default = pkgs.mkShell {
         packages = [
           (terraformFor pkgs)
-          pkgs.ansible
+          # Ansible + librouteros on one interpreter: the community.routeros API
+          # modules import librouteros from the controller's python (this shell).
+          # ansible-core supplies the ansible-playbook CLI (the ansible bundle
+          # alone doesn't expose it through withPackages).
+          (pkgs.python3.withPackages (ps: [ps.ansible ps.ansible-core ps.librouteros]))
           pkgs.just
           pkgs.talosctl
           pkgs.kubectl
@@ -52,16 +56,6 @@
           pkgs.kubernetes-helm
           pkgs.alejandra
         ];
-        # Source terraform/.envrc (gitignored — holds OP_SERVICE_ACCOUNT_TOKEN
-        # for the 1password Terraform provider) on shell entry. Resolved via
-        # git toplevel so we never accidentally source the repo-root .envrc
-        # (which contains `use flake` and would recurse under direnv).
-        shellHook = ''
-          root="$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null)"
-          if [ -n "$root" ] && [ -f "$root/terraform/.envrc" ]; then
-            . "$root/terraform/.envrc"
-          fi
-        '';
       };
     });
   };

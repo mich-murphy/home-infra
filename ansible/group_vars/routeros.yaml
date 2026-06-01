@@ -6,6 +6,10 @@
 #   /user add name=ansible group=ansible password=<vaulted>
 routeros_api_host: 10.77.1.1
 
+# Run the API modules on the same interpreter as ansible-playbook (this nix shell,
+# which has librouteros) instead of letting interpreter discovery pick another python.
+ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
 # L2 topology — verify names with `/interface print`.
 routeros_bridge: bridge
 routeros_trunk_ports: # tagged production VLANs

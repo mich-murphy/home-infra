@@ -4,6 +4,18 @@ variable "unifi_api_url" {
   default     = "https://10.77.1.10:8443"
 }
 
+# Controller defaults the SSIDs attach to. Override if your controller labels them
+# differently (Settings -> WiFi -> AP Groups, and the user group / QoS rate name).
+variable "unifi_ap_group_name" {
+  type    = string
+  default = "Default"
+}
+
+variable "unifi_user_group_name" {
+  type    = string
+  default = "Default"
+}
+
 # Wireless VLANs only (MGMT/SRV/DMZ are wired — see the routeros role). `subnet` is
 # the router-side gateway CIDR; required by the schema but not served by the controller.
 variable "wireless_vlans" {
