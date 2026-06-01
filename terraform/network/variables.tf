@@ -4,8 +4,7 @@ variable "unifi_api_url" {
   default     = "https://10.77.1.10:8443"
 }
 
-# Controller defaults the SSIDs attach to. Override if your controller labels them
-# differently (Settings -> WiFi -> AP Groups, and the user group / QoS rate name).
+# Controller defaults the SSIDs attach to; override if labelled differently (Settings -> WiFi).
 variable "unifi_ap_group_name" {
   type    = string
   default = "Default"
@@ -16,12 +15,18 @@ variable "unifi_user_group_name" {
   default = "Default"
 }
 
-# Wireless VLANs only (MGMT/SRV/DMZ are wired — see the routeros role). `subnet` is
-# the router-side gateway CIDR; required by the schema but not served by the controller.
+# Native LAN (VLAN 1) the MGMT SSID attaches to; a second untagged network is rejected. Override if renamed.
+variable "unifi_default_network_name" {
+  type    = string
+  default = "Default"
+}
+
+# Wireless VLANs only (MGMT/SRV/DMZ are wired — see the routeros role). `subnet` (gateway
+# CIDR on the RB5009) is required by the schema but not served by the controller.
 variable "wireless_vlans" {
   type = map(object({
     vlan   = number
-    subnet = string # gateway CIDR on the RB5009
+    subnet = string
   }))
   default = {
     dflt = { vlan = 30, subnet = "10.77.30.1/24" }
