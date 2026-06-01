@@ -1,5 +1,28 @@
 ---
-# DMZ on its own physical port (Proxmox NIC2), untagged + off the trunk = physical isolation.
+# DMZ on its own physical port (Proxmox eno1/vmbr1 -> ether2), untagged + OFF the
+# production bridge = physical isolation. The port ships as a defconf bridge member,
+# so it must be pulled out of the bridge before the gateway IP means anything.
+#
+# ⚠️ DISRUPTIVE: removing ether2 from the bridge drops the ai-dev VMs on vmbr1 off
+# MGMT; they re-DHCP into 10.77.99.0/24 (renumber). Gated (routeros_enable_dmz +
+# --tags dmz) so a normal run never touches it. Enable deliberately.
+- name: Find the DMZ port's bridge-port entry
+  community.routeros.api:
+    path: interface bridge port
+    query: ".id interface WHERE interface == {{ routeros_dmz_port }}"
+  register: _dmz_bridge_port
+  check_mode: false # read-only query; must run even in --check so the loop below resolves
+
+- name: Remove the DMZ port from the production bridge (physical isolation)
+  community.routeros.api:
+    path: interface bridge port
+    remove: "{{ item['.id'] }}"
+  # api query returns a list holding a "no results" string when the port is already
+  # de-bridged — keep only real (dict) entries so that case is a no-op.
+  loop: "{{ _dmz_bridge_port.msg | select('mapping') | list }}"
+  loop_control:
+    label: "{{ routeros_dmz_port }}"
+
 - name: Assign the DMZ gateway IP to the dedicated port
   community.routeros.api_modify:
     path: ip address
