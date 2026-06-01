@@ -1,0 +1,26 @@
+---
+# One tagged VLAN interface per production VLAN, riding the trunk bridge. MGMT (VLAN 1)
+# is the existing untagged network and is not (re)created here.
+- name: Create VLAN interfaces on the trunk bridge
+  community.routeros.api_modify:
+    path: interface vlan
+    handle_absent_entries: ignore
+    data:
+      - interface: "{{ routeros_bridge }}"
+        name: "vlan{{ item.id }}-{{ item.name }}"
+        vlan-id: "{{ item.id }}"
+  loop: "{{ routeros_vlans }}"
+  loop_control:
+    label: "{{ item.name }} ({{ item.id }})"
+
+- name: Assign gateway IPs to the VLAN interfaces
+  community.routeros.api_modify:
+    path: ip address
+    handle_absent_entries: ignore
+    data:
+      - address: "{{ item.gateway }}/{{ item.subnet.split('/')[1] }}"
+        interface: "vlan{{ item.id }}-{{ item.name }}"
+        comment: "{{ item.name }} gateway (managed: routeros role)"
+  loop: "{{ routeros_vlans }}"
+  loop_control:
+    label: "{{ item.name }}"

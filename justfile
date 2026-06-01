@@ -19,6 +19,16 @@ unifi-init:
 unifi-apply:
   cd terraform/unifi && terraform apply
 
+# UniFi network objects (VLAN-only networks + WLANs) via ubiquiti-community/unifi
+network-init:
+  cd terraform/network && terraform init
+
+network-plan:
+  cd terraform/network && terraform plan
+
+network-apply:
+  cd terraform/network && terraform apply
+
 ## ansible
 run HOST:
   cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit {{HOST}}

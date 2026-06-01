@@ -24,3 +24,20 @@
     - common
     - firewall
     - unifi
+
+# Mikrotik RB5009: pushed over the RouterOS API from localhost (no SSH, no become).
+# API connection params are injected once here via module_defaults so individual
+# tasks stay clean. routeros_api_user/password come from the vault.
+- hosts: routeros
+  gather_facts: false
+  vars_files:
+    - "group_vars/secrets.yaml"
+  module_defaults:
+    group/community.routeros.api:
+      hostname: "{{ routeros_api_host }}"
+      username: "{{ routeros_api_user }}"
+      password: "{{ routeros_api_password }}"
+      tls: true
+      validate_certs: false
+  roles:
+    - routeros

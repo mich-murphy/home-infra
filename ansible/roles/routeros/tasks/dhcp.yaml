@@ -1,0 +1,40 @@
+---
+# DHCP for every VLAN + the DMZ. The DMZ uses its physical port as the server
+# interface; the VLANs use their tagged interface. MGMT keeps its existing DHCP
+# server, untouched.
+- name: Address pools
+  community.routeros.api_modify:
+    path: ip pool
+    handle_absent_entries: ignore
+    data:
+      - name: "{{ item.name }}-pool"
+        ranges: "{{ item.pool_start }}-{{ item.pool_end }}"
+  loop: "{{ routeros_vlans + [routeros_dmz] }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: DHCP servers (per VLAN interface; DMZ on its physical port)
+  community.routeros.api_modify:
+    path: ip dhcp-server
+    handle_absent_entries: ignore
+    data:
+      - name: "{{ item.name }}-dhcp"
+        interface: "{{ ('vlan' ~ item.id ~ '-' ~ item.name) if item.name != 'dmz' else routeros_dmz_port }}"
+        address-pool: "{{ item.name }}-pool"
+        lease-time: 1d
+  loop: "{{ routeros_vlans + [routeros_dmz] }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: DHCP networks (gateway + DNS handed to clients)
+  community.routeros.api_modify:
+    path: ip dhcp-server network
+    handle_absent_entries: ignore
+    data:
+      - address: "{{ item.subnet }}"
+        gateway: "{{ item.gateway }}"
+        dns-server: "{{ item.dns | default(routeros_default_dns) }}"
+        comment: "{{ item.name }} (managed: routeros role)"
+  loop: "{{ routeros_vlans + [routeros_dmz] }}"
+  loop_control:
+    label: "{{ item.name }}"
