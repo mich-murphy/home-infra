@@ -1,7 +1,11 @@
-# WLANs require an AP group + user group id; these expose the defaults.
-data "unifi_ap_group" "default" {}
+# WLANs require an AP group + user group id; look up the controller defaults by name.
+data "unifi_ap_group" "default" {
+  name = var.unifi_ap_group_name
+}
 
-data "unifi_client_qos_rate" "default" {}
+data "unifi_client_qos_rate" "default" {
+  name = var.unifi_user_group_name
+}
 
 # third_party_gateway = the RB5009 owns L3/DHCP; the controller only tags the VLAN.
 resource "unifi_network" "vlan" {
