@@ -19,10 +19,8 @@ locals {
   }
 }
 
-# TrueNAS VM. Provisioned manually (no cloud-init); the HBA at PCI 0000:02:00
-# is passed through for ZFS pool access. `ignore_changes = all` keeps Terraform
-# from mutating this VM — the block exists so the full spec is captured if it
-# ever needs to be rebuilt from scratch.
+# Manually provisioned (no cloud-init); HBA passed through for ZFS. ignore_changes=all
+# keeps Terraform from mutating it — block exists only to capture the spec for rebuilds.
 resource "proxmox_vm_qemu" "truenas" {
   vmid        = 101
   name        = "truenas"
@@ -66,7 +64,6 @@ resource "proxmox_vm_qemu" "truenas" {
     firewall = true
   }
 
-  # LSI/Broadcom HBA passed through to TrueNAS so it owns the disks directly.
   pci {
     id     = 1
     raw_id = "0000:02:00"
@@ -79,7 +76,6 @@ resource "proxmox_vm_qemu" "truenas" {
   }
 }
 
-# create cloud-init configuration
 resource "local_file" "cloud_init_agents" {
   content = templatefile("cloud_init.tftpl", {
     hostname           = "docker-host"
@@ -108,8 +104,7 @@ resource "terraform_data" "cloud_init_config" {
 }
 
 
-# create template prior to applying
-# reference: https://registry.terraform.io/providers/Telmate/proxmox/latest/docs/guides/cloud-init%2520getting%2520started#creating-a-cloud-init-template
+# Cloud-init template setup: https://registry.terraform.io/providers/Telmate/proxmox/latest/docs/guides/cloud-init%2520getting%2520started#creating-a-cloud-init-template
 resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   depends_on = [
     terraform_data.cloud_init_config,
@@ -135,13 +130,12 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   scsihw           = "virtio-scsi-single"
   vm_state         = "running"
   automatic_reboot = true
-  # Cloud-Init configuration
-  cicustom  = "vendor=local:snippets/agents.yml" # /var/lib/vz/snippets
-  ciupgrade = true
-  ciuser    = "ansible"
-  sshkeys   = var.docker_host_ssh_public_key
-  ipconfig0 = "ip=dhcp,ip6=dhcp"
-  skip_ipv6 = true
+  cicustom         = "vendor=local:snippets/agents.yml" # path under /var/lib/vz/snippets
+  ciupgrade        = true
+  ciuser           = "ansible"
+  sshkeys          = var.docker_host_ssh_public_key
+  ipconfig0        = "ip=dhcp,ip6=dhcp"
+  skip_ipv6        = true
   serial {
     id = 0
   }
@@ -157,7 +151,6 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
         }
       }
     }
-    # attach cloud-init drive
     ide {
       ide1 {
         cloudinit {
@@ -173,17 +166,14 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
     macaddr = "BC:24:11:13:C4:53"
   }
 
-  # Intel iGPU (0000:00:02.0) passed through for Plex/Jellyfin hardware
-  # transcoding inside Docker.
+  # Intel iGPU passed through for Plex/Jellyfin hardware transcoding.
   pci {
     id     = 0
     raw_id = "0000:00:02.0"
   }
 
-  # USB device pinned to host port 1-3 (e.g. Zigbee/Z-Wave dongle for
-  # Home Assistant). Pinning by port survives reboots better than vendor id.
-  # Provider exposes a `port` / `device` / `mapping` block in newer versions;
-  # 3.0.2-rc07 only ships the deprecated string form, so use it for now.
+  # Zigbee/Z-Wave dongle pinned by host port (survives reboots better than vendor id).
+  # 3.0.2-rc07 only ships the deprecated string form; newer providers have port/mapping blocks.
   usb {
     id   = 0
     host = "1-3"
@@ -195,12 +185,10 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   }
 }
 
-# Talos control plane spec kept as a blueprint for the planned K8s migration
-# (see docs/PRD.md). Gated behind `enable_talos` so it stays inert until the
-# migration actually starts — flip the variable to provision.
+# Blueprint for the planned K8s migration (docs/PRD.md); gated by enable_talos until then.
 resource "proxmox_vm_qemu" "talos_control_plane" {
   count       = var.enable_talos ? 1 : 0
-  vmid        = "20${count.index}" # scale control plane nodes with increasing count
+  vmid        = "20${count.index}"
   name        = "talos-prod-${count.index + 1}"
   description = "Siderolabs install image v1.12.2"
   target_node = "proxmox"

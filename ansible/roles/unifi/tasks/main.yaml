@@ -15,8 +15,7 @@
     state: present
     update_cache: true
 
-# UniFi Network 10.x requires Java 25, which Debian 12 doesn't ship. Pull
-# Eclipse Temurin from Adoptium.
+# Debian 12 doesn't ship Java 25; pull Eclipse Temurin from Adoptium.
 - name: download adoptium signing key
   ansible.builtin.get_url:
     url: https://packages.adoptium.net/artifactory/api/gpg/key/public
@@ -40,7 +39,7 @@
     state: present
     update_cache: true
 
-# --- MongoDB (binary only; UniFi runs its own mongod instance on :27117) ---
+# MongoDB binary only; UniFi runs its own mongod on :27117.
 - name: download mongodb signing key
   ansible.builtin.get_url:
     url: "https://pgp.mongodb.com/server-{{ mongodb_version }}.asc"
@@ -69,8 +68,7 @@
     state: present
     update_cache: true
 
-# UniFi spawns + manages its own mongod on :27117; the packaged systemd instance
-# (:27017) is redundant and wastes RAM on a memory-constrained host.
+# UniFi manages its own mongod on :27117; the packaged instance (:27017) is redundant.
 - name: disable redundant system mongod instance
   ansible.builtin.systemd:
     name: mongod
@@ -78,7 +76,6 @@
     state: stopped
   failed_when: false
 
-# --- UniFi Network controller ---
 - name: download unifi signing key
   ansible.builtin.get_url:
     url: https://dl.ui.com/unifi/unifi-repo.gpg

@@ -21,7 +21,6 @@
     state: absent
   when: repo.stat.exists
 
-# init compose file will start portainer along with traefik
 - name: copy init compose file
   ansible.builtin.copy:
     remote_src: true

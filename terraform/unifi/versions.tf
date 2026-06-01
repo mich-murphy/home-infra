@@ -1,11 +1,6 @@
-# Separate Terraform root for the UniFi controller LXC.
-#
-# Why its own root (and state) rather than living in ../: the existing config
-# uses telmate/proxmox and bpg/proxmox BOTH register provider type `proxmox`.
-# Terraform rejects two different source addresses for the same provider type
-# anywhere in a module tree, so the only clean way to run bpg alongside the
-# telmate VMs is an isolated root. When the telmate->bpg migration happens, this
-# folds back into ../ and this directory goes away.
+# Separate root (and state): bpg/proxmox and telmate/proxmox both register provider type
+# `proxmox`, which Terraform forbids in one module tree. Folds back into ../ after the
+# telmate->bpg migration.
 terraform {
   required_version = ">= 1.6.0"
   required_providers {

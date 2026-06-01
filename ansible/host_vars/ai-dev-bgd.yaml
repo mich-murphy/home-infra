@@ -1,18 +1,9 @@
 ---
-# Per-host identity for ai-dev-bgd
 git_user_name: "Michael Murphy"
 git_user_email: "michael@example.com"
 
 # Encrypt secrets below with: ansible-vault encrypt_string --name '<key>' '<value>'
-# gh_token: !vault |
-#   $ANSIBLE_VAULT;1.1;AES256
-#   ...
-#
+# gh_token: !vault | ...
 # Choose ONE Claude auth method:
-# claude_credentials_json: !vault |
-#   $ANSIBLE_VAULT;1.1;AES256
-#   ... (contents of ~/.claude/.credentials.json from a logged-in machine)
-#
-# anthropic_api_key: !vault |
-#   $ANSIBLE_VAULT;1.1;AES256
-#   ...
+# claude_credentials_json: !vault | ...   (contents of a logged-in ~/.claude/.credentials.json)
+# anthropic_api_key: !vault | ...

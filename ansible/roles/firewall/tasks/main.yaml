@@ -33,8 +33,8 @@
   loop: "{{ firewall_allow_ports | default([]) }}"
   notify: reload ufw
 
-# docker-host only: lets the internal compose bridge reach the Tailscale CGNAT range.
-# Set firewall_docker_bridge_subnet in that group's vars to enable it.
+# docker-host only: lets the compose bridge reach the Tailscale CGNAT range.
+# Enabled by setting firewall_docker_bridge_subnet in group vars.
 - name: allow internal docker bridge to tailscale
   community.general.ufw:
     rule: allow
