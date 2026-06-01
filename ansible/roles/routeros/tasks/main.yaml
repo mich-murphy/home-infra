@@ -1,13 +1,18 @@
 ---
 # RouterOS network config over the API. Lockout-safe order (see README); the two
 # dangerous steps (vlan-filtering, default-drop) are var+tag gated and skipped by default.
+- name: Harden the management plane (disable telnet/cleartext, pin services to MGMT)
+  ansible.builtin.import_tasks: services.yaml
+  tags: [services]
+
 - name: VLAN interfaces + gateway IPs
   ansible.builtin.import_tasks: vlans.yaml
   tags: [vlans]
 
-- name: DMZ physical interface (dedicated NIC, untagged)
+- name: DMZ physical interface (de-bridge + gateway; disruptive, gated)
   ansible.builtin.import_tasks: dmz.yaml
-  tags: [dmz]
+  when: routeros_enable_dmz | bool
+  tags: [never, dmz]
 
 - name: DHCP servers, pools and networks
   ansible.builtin.import_tasks: dhcp.yaml

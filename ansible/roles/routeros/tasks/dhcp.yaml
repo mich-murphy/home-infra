@@ -7,7 +7,7 @@
     data:
       - name: "{{ item.name }}-pool"
         ranges: "{{ item.pool_start }}-{{ item.pool_end }}"
-  loop: "{{ routeros_vlans + [routeros_dmz] }}"
+  loop: "{{ routeros_vlans + ([routeros_dmz] if routeros_enable_dmz | bool else []) }}"
   loop_control:
     label: "{{ item.name }}"
 
@@ -20,7 +20,7 @@
         interface: "{{ ('vlan' ~ item.id ~ '-' ~ item.name) if item.name != 'dmz' else routeros_dmz_port }}"
         address-pool: "{{ item.name }}-pool"
         lease-time: 1d
-  loop: "{{ routeros_vlans + [routeros_dmz] }}"
+  loop: "{{ routeros_vlans + ([routeros_dmz] if routeros_enable_dmz | bool else []) }}"
   loop_control:
     label: "{{ item.name }}"
 
@@ -33,6 +33,6 @@
         gateway: "{{ item.gateway }}"
         dns-server: "{{ item.dns | default(routeros_default_dns) }}"
         comment: "{{ item.name }} (managed: routeros role)"
-  loop: "{{ routeros_vlans + [routeros_dmz] }}"
+  loop: "{{ routeros_vlans + ([routeros_dmz] if routeros_enable_dmz | bool else []) }}"
   loop_control:
     label: "{{ item.name }}"
