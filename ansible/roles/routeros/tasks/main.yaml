@@ -22,6 +22,12 @@
   ansible.builtin.import_tasks: firewall.yaml
   tags: [firewall]
 
+# Created right before the flip so an auto-revert is armed if MGMT drops. Gated like the flip.
+- name: vlan-filtering failsafe scheduler (auto-revert; armed with the flip)
+  ansible.builtin.import_tasks: scheduler.yaml
+  when: routeros_enable_vlan_filtering | bool
+  tags: [never, vlan-filtering]
+
 # Membership applies now; the vlan-filtering flip inside is gated. Verify, then enable.
 - name: Bridge VLAN membership + filtering (lockout-risk flip is gated)
   ansible.builtin.import_tasks: bridge.yaml

@@ -1,0 +1,21 @@
+---
+# Failsafe auto-revert for the vlan-filtering flip. Created together with (and just
+# before) the flip. Fires once ~5 min after creation, turns vlan-filtering back OFF,
+# and deletes itself.
+#
+# PROCEDURE: run the gated flip -> confirm MGMT to 10.77.1.1 still works -> REMOVE this
+# scheduler within 5 min to keep filtering on. If the flip locks you out, do nothing:
+# it self-reverts and access returns. Manual cancel:
+#   /system scheduler remove [find name=vlan-filter-failsafe]
+- name: Create the vlan-filtering failsafe (auto-revert after 5 min)
+  community.routeros.api_modify:
+    path: system scheduler
+    handle_absent_entries: ignore
+    data:
+      - name: vlan-filter-failsafe
+        interval: 5m
+        on-event: >-
+          /interface bridge set [find name={{ routeros_bridge }}] vlan-filtering=no;
+          /system scheduler remove [find name=vlan-filter-failsafe];
+          /log warning "FAILSAFE: vlan-filtering auto-reverted (flip left MGMT unreachable)"
+        comment: "managed: routeros role"
