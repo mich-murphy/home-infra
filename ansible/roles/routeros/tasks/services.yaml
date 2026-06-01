@@ -1,0 +1,34 @@
+---
+# Management-plane hardening. Telnet was being brute-forced from the WAN
+# (login-failure floods in the router log). Disable the cleartext/unused services
+# outright; pin the encrypted ones to the MGMT subnet so they're never WAN-facing.
+- name: Disable insecure / unused management services
+  community.routeros.api_modify:
+    path: ip service
+    handle_absent_entries: ignore
+    data:
+      - name: telnet
+        disabled: true
+      - name: ftp
+        disabled: true
+      - name: www # plain HTTP
+        disabled: true
+      - name: api # plain (cleartext) API; we use api-ssl only
+        disabled: true
+
+# LOCKOUT NOTE: the admin station + Ansible controller live on MGMT
+# ({{ routeros_mgmt_subnet }}), so pinning here keeps current access. Widen
+# routeros_mgmt_admin_sources if you manage the router from elsewhere (e.g. Tailscale).
+- name: Restrict encrypted management services to MGMT
+  community.routeros.api_modify:
+    path: ip service
+    handle_absent_entries: ignore
+    data:
+      - name: ssh
+        address: "{{ routeros_mgmt_admin_sources }}"
+      - name: winbox
+        address: "{{ routeros_mgmt_admin_sources }}"
+      - name: api-ssl
+        address: "{{ routeros_mgmt_admin_sources }}"
+      - name: www-ssl
+        address: "{{ routeros_mgmt_admin_sources }}"
