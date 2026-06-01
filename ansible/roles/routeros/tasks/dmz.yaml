@@ -1,8 +1,5 @@
 ---
-# DMZ lives on its own physical port (-> Proxmox NIC2 / vmbr1), untagged and NOT a
-# member of the trunk bridge. That gives physical-layer isolation: a VLAN-hop or
-# bridge misconfig on the trunk cannot reach DMZ. The RB5009 routes/firewalls this
-# port as its own interface.
+# DMZ on its own physical port (Proxmox NIC2), untagged + off the trunk = physical isolation.
 - name: Assign the DMZ gateway IP to the dedicated port
   community.routeros.api_modify:
     path: ip address

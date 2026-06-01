@@ -1,16 +1,8 @@
 ---
-# Inter-VLAN firewall matrix. ALL tasks here are non-destructive (handle_absent_entries:
-# ignore) so the RB5009's existing WAN-protection rules are preserved. Rules are tagged
-# with `managed: routeros role` comments for idempotency.
-#
-# ⚠️ ORDER MATTERS in RouterOS firewall chains, and api_modify does not perfectly
-# interleave with pre-existing unmanaged rules. After applying, ALWAYS verify with
-# `/ip firewall filter print` and adjust placement so the managed allows sit above the
-# default-drop and the established/related accept sits at the very top. The default-drop
-# itself is double-gated (routeros_enable_default_drop + `--tags default-drop`).
-#
-# Assumes the default interface-list `WAN` exists (RB5009 default). Verify with
-# `/interface list print`.
+# Inter-VLAN firewall matrix. Non-destructive (existing WAN rules preserved); managed
+# rules carry a `managed: routeros role` comment.
+# ⚠️ Order matters — after applying, verify with `/ip firewall filter print` that the
+# allows sit above the default-drop. Assumes the default `WAN` interface-list exists.
 
 # --- Address lists -----------------------------------------------------------
 - name: Address-list of all internal subnets ("internal")
@@ -149,9 +141,7 @@
         action: masquerade
         comment: "masquerade (managed: routeros role)"
 
-# --- DEFAULT DROP (the second lockout-risk step) -----------------------------
-# Drops any forward traffic not explicitly accepted above. Apply LAST, after every
-# allow is verified in `/ip firewall filter print`. Double-gated.
+# Default drop — apply LAST, after allows are verified. Double-gated (var + tag).
 - name: Forward — default drop (LOCKOUT RISK if allows aren't in place/order)
   community.routeros.api_modify:
     path: ip firewall filter

@@ -1,6 +1,5 @@
 ---
-# Bridge VLAN table: tag every production VLAN on the trunk ports + the bridge itself.
-# This is safe to apply BEFORE vlan-filtering is on (it just populates the table).
+# Populate the bridge VLAN table (safe before vlan-filtering is on).
 - name: Tag production VLANs on the trunk ports
   community.routeros.api_modify:
     path: interface bridge vlan
@@ -14,8 +13,7 @@
   loop_control:
     label: "{{ item.name }} ({{ item.id }})"
 
-# Set the untagged VLAN (PVID) on the MGMT access ports so the management network
-# stays reachable as the native VLAN once filtering is enabled.
+# Keep MGMT reachable as the native VLAN once filtering is enabled.
 - name: Set PVID=1 (MGMT native) on the untagged access ports
   community.routeros.api_modify:
     path: interface bridge port
@@ -26,10 +24,8 @@
         pvid: 1
   loop: "{{ routeros_mgmt_untagged_ports }}"
 
-# ⚠️ LOCKOUT RISK. Enabling vlan-filtering changes how every frame on the bridge is
-# handled. Run ONLY after the VLAN table above is verified, with console/serial access
-# to the RB5009 ready. Double-gated: set routeros_enable_vlan_filtering=true AND pass
-# `--tags vlan-filtering`.
+# ⚠️ LOCKOUT RISK. Run only after the VLAN table is verified, with console access ready.
+# Double-gated: routeros_enable_vlan_filtering=true AND `--tags vlan-filtering`.
 - name: Enable bridge VLAN filtering (LOCKOUT RISK)
   community.routeros.api_modify:
     path: interface bridge
