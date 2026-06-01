@@ -1,7 +1,5 @@
 ---
-# DHCP for every VLAN + the DMZ. The DMZ uses its physical port as the server
-# interface; the VLANs use their tagged interface. MGMT keeps its existing DHCP
-# server, untouched.
+# DHCP per VLAN + DMZ (DMZ on its physical port). MGMT keeps its existing server.
 - name: Address pools
   community.routeros.api_modify:
     path: ip pool

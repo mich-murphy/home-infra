@@ -4,11 +4,8 @@ variable "unifi_api_url" {
   default     = "https://10.77.1.10:8443"
 }
 
-# Wireless VLANs only. MGMT (1), SRV (20), and DMZ (physical NIC2) carry no SSID, so
-# they are not declared here — they live in the RouterOS Ansible role. The router owns
-# L3/DHCP for every VLAN; these UniFi networks exist purely to tag the SSID traffic
-# (third_party_gateway = true). `subnet` is the router-side gateway CIDR, required by
-# the schema but not served by the controller.
+# Wireless VLANs only (MGMT/SRV/DMZ are wired — see the routeros role). `subnet` is
+# the router-side gateway CIDR; required by the schema but not served by the controller.
 variable "wireless_vlans" {
   type = map(object({
     vlan   = number

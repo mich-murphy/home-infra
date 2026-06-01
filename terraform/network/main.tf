@@ -1,11 +1,6 @@
-# Auth mirrors terraform/unifi/: the OP_SERVICE_ACCOUNT_TOKEN from terraform/.envrc
-# is inherited here via direnv. Create these 1Password items in the same vault before
-# `terraform apply`:
-#
-#   unifi_controller   - username/password of a controller "Limited Admin, Local Access
-#                        Only" user (NOT your personal account; 2FA is unsupported).
-#   unifi_wlan_psks    - a section "WLAN" with one field per SSID PSK: dflt, kids, guest
-#                        (and `sonos` if the fallback SSID is needed).
+# Required 1Password items (auth inherited via direnv, like terraform/unifi/):
+#   unifi_controller - controller Limited Admin (local-only) username/password
+#   unifi_wlan_psks  - section "WLAN" with PSK fields: dflt, kids, guest
 data "onepassword_item" "unifi_controller" {
   vault = "5v7zjyz2kanfxgsui2jx735vum"
   title = "unifi_controller"
@@ -17,7 +12,6 @@ data "onepassword_item" "unifi_wlan_psks" {
 }
 
 locals {
-  # 3.x exposes custom fields via section_map (section label -> field label -> value).
   psk = data.onepassword_item.unifi_wlan_psks.section_map["WLAN"].field_map
 }
 
