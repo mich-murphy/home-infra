@@ -1,0 +1,7 @@
+---
+# Join Tailscale during provisioning (LXC has no cloud-init bootstrap like the VMs).
+manage_tailscale: false
+tailscale_hostname: unifi-controller
+
+# MongoDB major version. UniFi Network 8.x supports up to 7.0 (not 8.x).
+mongodb_version: "7.0"

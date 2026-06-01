@@ -15,3 +15,12 @@
   roles:
     - common
     - ai-dev
+
+- hosts: unifi
+  become: true
+  vars_files:
+    - "group_vars/secrets.yaml"
+  roles:
+    - common
+    - firewall
+    - unifi
