@@ -6,27 +6,26 @@ data "onepassword_item" "proxmox" {
 }
 
 locals {
-  # section fields = node SSH user/password/host (bpg needs node SSH for some
-  # container ops); top-level username/password = the Proxmox API token id/secret.
-  proxmox_creds = {
-    username = data.onepassword_item.proxmox.section[0].field[0].value
-    password = data.onepassword_item.proxmox.section[0].field[1].value
-    host     = data.onepassword_item.proxmox.section[0].field[2].value
-  }
+  # 3.x exposes custom fields via section_map (section label -> field label ->
+  # value); the nested section[].field[] blocks come back empty. Top-level
+  # .username/.password are the API token id/secret.
+  scp = data.onepassword_item.proxmox.section_map["Terraform SCP"].field_map
 }
 
 provider "proxmox" {
-  endpoint  = "https://proxmox.local.elmurphy.com:8006/"
+  # Hit the node API on 443 (the reverse-proxied path the telmate root uses);
+  # :8006 directly resolves to a Tailscale addr that refuses the connection.
+  endpoint  = "https://proxmox.local.elmurphy.com"
   api_token = "${data.onepassword_item.proxmox.username}=${data.onepassword_item.proxmox.password}"
   insecure  = false
 
   ssh {
     agent    = false
-    username = local.proxmox_creds.username
-    password = local.proxmox_creds.password
+    username = local.scp["scp username"].value
+    password = local.scp["scp password"].value
     node {
       name    = "proxmox"
-      address = local.proxmox_creds.host
+      address = local.scp["hostname"].value
     }
   }
 }
@@ -93,12 +92,9 @@ resource "proxmox_virtual_environment_container" "unifi" {
     bridge = "vmbr0"
   }
 
-  # Tailscale needs /dev/net/tun inside the unprivileged container. If the host
-  # does not expose tun to the container via passthrough, fall back to either a
-  # privileged container or `tailscale up --tun=userspace-networking`.
-  device_passthrough {
-    path = "/dev/net/tun"
-  }
+  # No /dev/net/tun passthrough: device passthrough is root@pam-only over the API,
+  # and we authenticate with an API token. Tailscale runs in userspace-networking
+  # mode instead (see roles/unifi), which needs no tun device.
 
   startup {
     order = 3
