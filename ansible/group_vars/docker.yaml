@@ -6,3 +6,6 @@ docker_users: "{{ username }}"
 swap_mode: file
 swap_size_gb: 4
 swap_swappiness: 60
+
+# enables the firewall rule letting the compose proxy bridge reach Tailscale
+firewall_docker_bridge_subnet: 172.20.1.0/24
