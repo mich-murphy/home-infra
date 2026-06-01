@@ -16,8 +16,7 @@
     update_cache: true
     cache_valid_time: 3600
 
-# UniFi Network 10.x requires Java 25, which Debian 12 doesn't ship. Pull
-# Eclipse Temurin from Adoptium.
+# Debian 12 doesn't ship Java 25; pull Eclipse Temurin from Adoptium.
 - name: download adoptium signing key
   ansible.builtin.get_url:
     url: https://packages.adoptium.net/artifactory/api/gpg/key/public

@@ -1,7 +1,6 @@
 ---
-# TokyoNight palette — mirrored verbatim from /home/michael/nixos/theme/tokyonight.nix
-# Consumed by templates/fish/config.fish.j2 and templates/starship.toml.j2 via
-# Jinja interpolation (e.g. {{ tokyonight.fg }}).
+# TokyoNight palette mirrored from nixos/theme/tokyonight.nix; consumed by the
+# fish/starship templates via Jinja (e.g. {{ tokyonight.fg }}).
 tokyonight:
   bg: "#1a1b26"
   bg_dark: "#16161e"

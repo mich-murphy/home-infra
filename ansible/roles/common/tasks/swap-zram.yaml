@@ -42,7 +42,6 @@
     cache_valid_time: 3600
   when: ansible_os_family == 'Debian'
 
-# Configure and (re)start zram
 - name: write zram-generator config
   ansible.builtin.copy:
     dest: /etc/systemd/zram-generator.conf

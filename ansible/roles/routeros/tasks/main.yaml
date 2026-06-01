@@ -1,6 +1,5 @@
 ---
-# RouterOS network config over the API. Lockout-safe order (see README); the two
-# dangerous steps (vlan-filtering, default-drop) are var+tag gated and skipped by default.
+# Lockout-safe ordering matters (see README); vlan-filtering and default-drop are var+tag gated.
 - name: Harden the management plane (disable telnet/cleartext, pin services to MGMT)
   ansible.builtin.import_tasks: services.yaml
   tags: [services]
@@ -22,7 +21,6 @@
   ansible.builtin.import_tasks: firewall.yaml
   tags: [firewall]
 
-# Membership applies now; the vlan-filtering flip inside is gated. Verify, then enable.
 - name: Bridge VLAN membership + filtering (lockout-risk flip is gated)
   ansible.builtin.import_tasks: bridge.yaml
   tags: [bridge]
