@@ -1,8 +1,5 @@
 #cloud-config
-# This snippet is consumed as Proxmox vendor-data. The primary user is created
-# by Proxmox's auto-generated user-data via `ciuser` + `sshkeys` on the VM
-# resource (which renames the distro's default cloud-init user), so we do NOT
-# define a `users:` block here — it would be shadowed by user-data anyway.
+# Proxmox vendor-data. No `users:` block: Proxmox user-data (ciuser+sshkeys) would shadow it.
 hostname: ${hostname}
 fqdn: ${hostname}
 manage_etc_hosts: true

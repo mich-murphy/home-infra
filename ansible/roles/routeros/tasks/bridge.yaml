@@ -1,5 +1,4 @@
 ---
-# Populate the bridge VLAN table (safe before vlan-filtering is on).
 - name: Tag production VLANs on the trunk ports
   community.routeros.api_modify:
     path: interface bridge vlan
@@ -13,9 +12,7 @@
   loop_control:
     label: "{{ item.name }} ({{ item.id }})"
 
-# MGMT native VLAN. Without an explicit VLAN 1 entry the router's IP on the bridge
-# can drop when vlan-filtering flips (classic RouterOS lockout). Applied while
-# filtering is still OFF (the table is inert until the flip), so it's in place first.
+# Explicit VLAN 1 entry first: without it the router's bridge IP drops when vlan-filtering flips (lockout).
 - name: VLAN 1 (native MGMT) membership — bridge tagged, MGMT ports untagged
   community.routeros.api_modify:
     path: interface bridge vlan
@@ -27,7 +24,6 @@
         untagged: "{{ routeros_vlan1_untagged_ports | join(',') }}"
         comment: "mgmt native (managed: routeros role)"
 
-# Keep MGMT reachable as the native VLAN once filtering is enabled.
 - name: Set PVID=1 (MGMT native) on the untagged access ports
   community.routeros.api_modify:
     path: interface bridge port
@@ -38,8 +34,7 @@
         pvid: 1
   loop: "{{ routeros_mgmt_untagged_ports }}"
 
-# ⚠️ LOCKOUT RISK. Run only after the VLAN table is verified, with console access ready.
-# Double-gated: routeros_enable_vlan_filtering=true AND `--tags vlan-filtering`.
+# LOCKOUT RISK: run only after VLAN table verified, with console access ready. Double-gated (var + tag).
 - name: Enable bridge VLAN filtering (LOCKOUT RISK)
   community.routeros.api_modify:
     path: interface bridge

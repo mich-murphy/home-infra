@@ -1,13 +1,11 @@
 ---
-# Network data for the `routeros` role (tasks are non-destructive; see role README).
-# OPEN ITEMS to verify on the live router: interface/bridge names, admin + IPMI IPs,
-# KDS DNS choice. Create a restricted API user first (creds in vaulted secrets.yaml):
+# OPEN ITEMS to verify on the live router: interface/bridge names, admin + IPMI IPs, KDS DNS choice.
+# Required: create a restricted API user first (creds in vaulted secrets.yaml):
 #   /user group add name=ansible policy=api,read,write,policy,test,sensitive
 #   /user add name=ansible group=ansible password=<vaulted>
 routeros_api_host: 10.77.1.1
 
-# Run the API modules on the same interpreter as ansible-playbook (this nix shell,
-# which has librouteros) instead of letting interpreter discovery pick another python.
+# Use the ansible-playbook interpreter (this nix shell has librouteros); don't let discovery pick another python.
 ansible_python_interpreter: "{{ ansible_playbook_python }}"
 
 # L2 topology — verified 2026-06-01 via /ip/neighbor + bridge/host MAC matching.
@@ -21,9 +19,7 @@ routeros_mgmt_untagged_ports:
   - ether5 # Proxmox IPMI/BMC — untagged MGMT access (already a bridge member)
 routeros_dmz_port: ether2 # Proxmox eno1 (vmbr1); MUST be removed from the bridge for isolation
 
-# Ports that carry untagged native MGMT (VLAN 1) once vlan-filtering is on. The trunks
-# (native) + IPMI access + the free ether6/ether7 (wired console-fallback during the flip).
-# The bridge itself is the tagged member so the router's 10.77.1.1 stays reachable.
+# Ports carrying untagged native MGMT (VLAN 1) once filtering is on. ether6/7 are the wired console fallback during the flip.
 routeros_vlan1_untagged_ports:
   - ether3 # Proxmox trunk (native MGMT)
   - ether4 # UniFi AP trunk (native MGMT)
@@ -40,7 +36,7 @@ routeros_admin_station: 10.77.1.241 # this Mac (MGMT) — see note: DHCP, reserv
 routeros_ipmi_host: 10.77.1.99 # Proxmox IPMI/BMC
 routeros_unifi_ctrl: 10.77.1.10
 
-# Production VLANs (tagged on the trunk bridge). MGMT/VLAN 1 is the untagged net.
+# Tagged on the trunk bridge; MGMT/VLAN 1 is the untagged net.
 routeros_vlans:
   - { id: 20, name: srv, subnet: 10.77.20.0/24, gateway: 10.77.20.1, pool_start: 10.77.20.50, pool_end: 10.77.20.250 }
   - { id: 30, name: dflt, subnet: 10.77.30.0/24, gateway: 10.77.30.1, pool_start: 10.77.30.50, pool_end: 10.77.30.250 }

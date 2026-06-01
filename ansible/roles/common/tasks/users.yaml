@@ -1,6 +1,5 @@
 ---
-# Debian LXC templates ship without sudo (unlike the cloud-image VMs); the
-# sudoers task below needs it. Gated so the Arch ai-dev hosts skip it.
+# Debian LXC templates ship without sudo (needed by the sudoers task); Arch hosts skip it.
 - name: ensure sudo is installed
   ansible.builtin.apt:
     name: sudo

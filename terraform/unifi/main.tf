@@ -1,20 +1,17 @@
-# Pull the same Proxmox credentials the root config uses. The OP_SERVICE_ACCOUNT_TOKEN
-# from terraform/.envrc is inherited here via direnv (parent .envrc applies to subdirs).
+# OP_SERVICE_ACCOUNT_TOKEN inherited from terraform/.envrc via direnv (parent applies to subdirs).
 data "onepassword_item" "proxmox" {
   vault = "5v7zjyz2kanfxgsui2jx735vum"
   title = "proxmox_creds"
 }
 
 locals {
-  # 3.x exposes custom fields via section_map (section label -> field label ->
-  # value); the nested section[].field[] blocks come back empty. Top-level
-  # .username/.password are the API token id/secret.
+  # 3.x exposes custom fields via section_map; nested section[].field[] come back empty.
+  # Top-level .username/.password are the API token id/secret.
   scp = data.onepassword_item.proxmox.section_map["Terraform SCP"].field_map
 }
 
 provider "proxmox" {
-  # Hit the node API on 443 (the reverse-proxied path the telmate root uses);
-  # :8006 directly resolves to a Tailscale addr that refuses the connection.
+  # 443 via the reverse proxy; :8006 resolves to a Tailscale addr that refuses the connection.
   endpoint  = "https://proxmox.local.elmurphy.com"
   api_token = "${data.onepassword_item.proxmox.username}=${data.onepassword_item.proxmox.password}"
   insecure  = false
@@ -30,8 +27,7 @@ provider "proxmox" {
   }
 }
 
-# Debian 12 LXC template, fetched to the `local` datastore so the container build
-# is self-contained (no manual `pveam download` needed).
+# Fetched to `local` so the build is self-contained (no manual `pveam download`).
 resource "proxmox_download_file" "debian12" {
   content_type = "vztmpl"
   datastore_id = "local"
@@ -39,7 +35,7 @@ resource "proxmox_download_file" "debian12" {
   url          = var.template_url
 }
 
-# Isolated UniFi Network controller. Network management plane kept off docker-host.
+# Isolated controller LXC: keeps the network management plane off docker-host.
 resource "proxmox_virtual_environment_container" "unifi" {
   node_name     = "proxmox"
   vm_id         = 103
@@ -66,8 +62,7 @@ resource "proxmox_virtual_environment_container" "unifi" {
     type             = "debian"
   }
 
-  # Flat LAN for now (10.77.1.0/24). Static IP below the DHCP pool (.150-.250) so
-  # the controller's inform URL is stable. Add `vlan_id` here once VLANs land.
+  # Static IP below the DHCP pool (.150-.250) for a stable inform URL. Add `vlan_id` once VLANs land.
   initialization {
     hostname = "unifi-controller"
 

@@ -19,7 +19,6 @@
     state: absent
   when: zram_conf.stat.exists
 
-# Build / rebuild file swap
 - name: stat target swapfile
   ansible.builtin.stat:
     path: /swapfile
