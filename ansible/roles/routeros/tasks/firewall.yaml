@@ -1,0 +1,164 @@
+---
+# Inter-VLAN firewall matrix. ALL tasks here are non-destructive (handle_absent_entries:
+# ignore) so the RB5009's existing WAN-protection rules are preserved. Rules are tagged
+# with `managed: routeros role` comments for idempotency.
+#
+# ⚠️ ORDER MATTERS in RouterOS firewall chains, and api_modify does not perfectly
+# interleave with pre-existing unmanaged rules. After applying, ALWAYS verify with
+# `/ip firewall filter print` and adjust placement so the managed allows sit above the
+# default-drop and the established/related accept sits at the very top. The default-drop
+# itself is double-gated (routeros_enable_default_drop + `--tags default-drop`).
+#
+# Assumes the default interface-list `WAN` exists (RB5009 default). Verify with
+# `/interface list print`.
+
+# --- Address lists -----------------------------------------------------------
+- name: Address-list of all internal subnets ("internal")
+  community.routeros.api_modify:
+    path: ip firewall address-list
+    handle_absent_entries: ignore
+    data:
+      - list: internal
+        address: "{{ item }}"
+        comment: "managed: routeros role"
+  loop: "{{ [routeros_mgmt_subnet, routeros_dmz.subnet] + (routeros_vlans | map(attribute='subnet') | list) }}"
+
+- name: Address-list for the admin station
+  community.routeros.api_modify:
+    path: ip firewall address-list
+    handle_absent_entries: ignore
+    data:
+      - list: admin
+        address: "{{ routeros_admin_station }}"
+        comment: "managed: routeros role"
+
+# --- INPUT chain (traffic TO the router) -------------------------------------
+- name: Input — allow admin station to manage the router + IPMI host
+  community.routeros.api_modify:
+    path: ip firewall filter
+    handle_absent_entries: ignore
+    data:
+      - chain: input
+        src-address-list: admin
+        action: accept
+        comment: "admin -> router (managed: routeros role)"
+      - chain: input
+        connection-state: established,related
+        action: accept
+        comment: "input est/rel (managed: routeros role)"
+      - chain: input
+        connection-state: invalid
+        action: drop
+        comment: "input drop invalid (managed: routeros role)"
+
+# --- FORWARD chain (inter-VLAN + egress) -------------------------------------
+- name: Forward — stateful baseline
+  community.routeros.api_modify:
+    path: ip firewall filter
+    handle_absent_entries: ignore
+    data:
+      - chain: forward
+        connection-state: established,related
+        action: accept
+        comment: "fwd est/rel (managed: routeros role)"
+      - chain: forward
+        connection-state: invalid
+        action: drop
+        comment: "fwd drop invalid (managed: routeros role)"
+      # MGMT -> anywhere (admin plane)
+      - chain: forward
+        src-address: "{{ routeros_mgmt_subnet }}"
+        action: accept
+        comment: "MGMT -> any (managed: routeros role)"
+      # Service access: DFLT + KDS -> SRV
+      - chain: forward
+        src-address: "{{ _net.dflt }}"
+        dst-address: "{{ _net.srv }}"
+        action: accept
+        comment: "DFLT -> SRV services (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ _net.kds }}"
+        dst-address: "{{ _net.srv }}"
+        action: accept
+        comment: "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)"
+      # SRV -> UniFi controller (inform/adoption across to MGMT)
+      - chain: forward
+        src-address: "{{ _net.srv }}"
+        dst-address: "{{ routeros_unifi_ctrl }}"
+        action: accept
+        comment: "SRV -> UniFi controller (managed: routeros role)"
+  vars:
+    _net: "{{ routeros_vlans | items2dict(key_name='name', value_name='subnet') }}"
+
+- name: Forward — per-VLAN egress to WAN
+  community.routeros.api_modify:
+    path: ip firewall filter
+    handle_absent_entries: ignore
+    data:
+      - chain: forward
+        src-address: "{{ item.subnet }}"
+        out-interface-list: WAN
+        action: accept
+        comment: "{{ item.name }} -> WAN (managed: routeros role)"
+  loop: "{{ routeros_vlans + [routeros_dmz] }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+# --- KDS DoH/DoT bypass prevention ------------------------------------------
+- name: KDS — block encrypted-DNS bypass (force the filtered resolver)
+  community.routeros.api_modify:
+    path: ip firewall filter
+    handle_absent_entries: ignore
+    data:
+      - chain: forward
+        src-address: "{{ _kds }}"
+        protocol: tcp
+        dst-port: 853
+        action: drop
+        comment: "KDS drop DoT (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ _kds }}"
+        protocol: udp
+        dst-port: 853
+        action: drop
+        comment: "KDS drop DoQ (managed: routeros role)"
+  vars:
+    _kds: "{{ (routeros_vlans | selectattr('name', 'eq', 'kds') | first).subnet }}"
+
+- name: KDS — redirect plain DNS (53) to the router so the filtered upstream is used
+  community.routeros.api_modify:
+    path: ip firewall nat
+    handle_absent_entries: ignore
+    data:
+      - chain: dstnat
+        src-address: "{{ (routeros_vlans | selectattr('name', 'eq', 'kds') | first).subnet }}"
+        protocol: udp
+        dst-port: 53
+        action: redirect
+        to-ports: 53
+        comment: "KDS DNS redirect (managed: routeros role)"
+
+# --- NAT ---------------------------------------------------------------------
+- name: Masquerade all internal sources out the WAN
+  community.routeros.api_modify:
+    path: ip firewall nat
+    handle_absent_entries: ignore
+    data:
+      - chain: srcnat
+        out-interface-list: WAN
+        action: masquerade
+        comment: "masquerade (managed: routeros role)"
+
+# --- DEFAULT DROP (the second lockout-risk step) -----------------------------
+# Drops any forward traffic not explicitly accepted above. Apply LAST, after every
+# allow is verified in `/ip firewall filter print`. Double-gated.
+- name: Forward — default drop (LOCKOUT RISK if allows aren't in place/order)
+  community.routeros.api_modify:
+    path: ip firewall filter
+    handle_absent_entries: ignore
+    data:
+      - chain: forward
+        action: drop
+        comment: "DEFAULT DROP (managed: routeros role)"
+  when: routeros_enable_default_drop | bool
+  tags: [never, default-drop]

@@ -2,3 +2,5 @@
 collections:
   - community.general
   - kewlfft.aur
+  - name: community.routeros # MikroTik RouterOS API (routeros role)
+    version: ">=3.20.0"

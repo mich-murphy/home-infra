@@ -1,0 +1,13 @@
+---
+# DMZ lives on its own physical port (-> Proxmox NIC2 / vmbr1), untagged and NOT a
+# member of the trunk bridge. That gives physical-layer isolation: a VLAN-hop or
+# bridge misconfig on the trunk cannot reach DMZ. The RB5009 routes/firewalls this
+# port as its own interface.
+- name: Assign the DMZ gateway IP to the dedicated port
+  community.routeros.api_modify:
+    path: ip address
+    handle_absent_entries: ignore
+    data:
+      - address: "{{ routeros_dmz.gateway }}/{{ routeros_dmz.subnet.split('/')[1] }}"
+        interface: "{{ routeros_dmz_port }}"
+        comment: "dmz gateway (managed: routeros role)"

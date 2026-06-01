@@ -1,0 +1,26 @@
+---
+# RouterOS (RB5009) network config, pushed over the API. Ordered for a lockout-safe
+# rollout — see the role README. The two dangerous steps (vlan-filtering, default-drop)
+# are guarded by both a var and a tag and are skipped by default.
+- name: VLAN interfaces + gateway IPs
+  ansible.builtin.import_tasks: vlans.yaml
+  tags: [vlans]
+
+- name: DMZ physical interface (dedicated NIC, untagged)
+  ansible.builtin.import_tasks: dmz.yaml
+  tags: [dmz]
+
+- name: DHCP servers, pools and networks
+  ansible.builtin.import_tasks: dhcp.yaml
+  tags: [dhcp]
+
+- name: Firewall address-lists, filter matrix and NAT
+  ansible.builtin.import_tasks: firewall.yaml
+  tags: [firewall]
+
+# Bridge VLAN membership is applied here, but the vlan-filtering FLIP (the lockout
+# step) lives inside and is self-gated by routeros_enable_vlan_filtering + the
+# `vlan-filtering` tag. Run membership first, verify, then enable filtering.
+- name: Bridge VLAN membership + filtering (lockout-risk flip is gated)
+  ansible.builtin.import_tasks: bridge.yaml
+  tags: [bridge]
