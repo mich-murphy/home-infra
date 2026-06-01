@@ -21,6 +21,16 @@ routeros_mgmt_untagged_ports:
   - ether5 # Proxmox IPMI/BMC — untagged MGMT access (already a bridge member)
 routeros_dmz_port: ether2 # Proxmox eno1 (vmbr1); MUST be removed from the bridge for isolation
 
+# Ports that carry untagged native MGMT (VLAN 1) once vlan-filtering is on. The trunks
+# (native) + IPMI access + the free ether6/ether7 (wired console-fallback during the flip).
+# The bridge itself is the tagged member so the router's 10.77.1.1 stays reachable.
+routeros_vlan1_untagged_ports:
+  - ether3 # Proxmox trunk (native MGMT)
+  - ether4 # UniFi AP trunk (native MGMT)
+  - ether5 # IPMI access
+  - ether6 # free — wired console fallback
+  - ether7 # free — wired console fallback
+
 # MGMT = existing flat network (kept as-is, referenced by the firewall).
 routeros_mgmt_subnet: 10.77.1.0/24
 # Sources allowed to reach the encrypted management services (ssh/winbox/api-ssl/www-ssl).

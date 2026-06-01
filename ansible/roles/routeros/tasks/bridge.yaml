@@ -13,6 +13,20 @@
   loop_control:
     label: "{{ item.name }} ({{ item.id }})"
 
+# MGMT native VLAN. Without an explicit VLAN 1 entry the router's IP on the bridge
+# can drop when vlan-filtering flips (classic RouterOS lockout). Applied while
+# filtering is still OFF (the table is inert until the flip), so it's in place first.
+- name: VLAN 1 (native MGMT) membership — bridge tagged, MGMT ports untagged
+  community.routeros.api_modify:
+    path: interface bridge vlan
+    handle_absent_entries: ignore
+    data:
+      - bridge: "{{ routeros_bridge }}"
+        vlan-ids: 1
+        tagged: "{{ routeros_bridge }}"
+        untagged: "{{ routeros_vlan1_untagged_ports | join(',') }}"
+        comment: "mgmt native (managed: routeros role)"
+
 # Keep MGMT reachable as the native VLAN once filtering is enabled.
 - name: Set PVID=1 (MGMT native) on the untagged access ports
   community.routeros.api_modify:
