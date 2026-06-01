@@ -6,15 +6,15 @@ ssh_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8Ux
 swap_mode: none
 swap_swappiness: 10
 
-# Tailscale is installed by roles/unifi (LXC has no cloud-init bootstrap like the VMs).
-# TAILSCALE_AUTHKEY must be added to the encrypted group_vars/secrets.yaml (`just edit`).
-manage_tailscale: true
-tailscale_hostname: unifi-controller
-
 # UniFi controller inbound ports, scoped to the flat LAN. Tighten `from` to the
 # management VLAN once VLANs exist. MongoDB (27117) is intentionally absent — it
 # binds to localhost only and must never be exposed.
+#
+# SSH is scoped to the LAN here because the controller has no Tailscale: without
+# this, the firewall role's default-deny + "delete bare 22/tcp allow" would lock
+# out Ansible. The from_ip differs from the deleted rule, so it survives.
 firewall_allow_ports:
+  - { port: "22", proto: tcp, from: "10.77.1.0/24" } # ssh / ansible (LAN only)
   - { port: "8080", proto: tcp, from: "10.77.1.0/24" } # device inform / adoption
   - { port: "8443", proto: tcp, from: "10.77.1.0/24" } # controller GUI (admin)
   - { port: "3478", proto: udp, from: "10.77.1.0/24" } # STUN

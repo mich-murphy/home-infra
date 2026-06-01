@@ -92,10 +92,6 @@ resource "proxmox_virtual_environment_container" "unifi" {
     bridge = "vmbr0"
   }
 
-  # No /dev/net/tun passthrough: device passthrough is root@pam-only over the API,
-  # and we authenticate with an API token. Tailscale runs in userspace-networking
-  # mode instead (see roles/unifi), which needs no tun device.
-
   startup {
     order = 3
   }

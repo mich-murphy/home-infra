@@ -1,6 +1,6 @@
 variable "unifi_ssh_public_key" {
   type        = string
-  description = "SSH public key authorised for root on the unifi-controller LXC (used by Ansible for the first run, before Tailscale SSH takes over)."
+  description = "SSH public key authorised for root on the unifi-controller LXC (used by Ansible over the LAN)."
   default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
 }
 
