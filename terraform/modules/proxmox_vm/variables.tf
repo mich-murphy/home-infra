@@ -39,13 +39,9 @@ variable "cloud_init_content" {
   sensitive = true
 }
 
-# Proxmox auto-generates a user-data document that includes `users: - default`,
-# which on the Arch cloud image creates the `arch` user and shadows any
-# `users:` block in our vendor-data snippet. Setting ciuser/ssh_public_key here
-# makes Proxmox emit `user: <ciuser>` in its user-data, which renames the
-# default user — so we end up with a single account named `ciuser` that has
-# the distro's default groups (wheel + sudo NOPASSWD on Arch) and the supplied
-# SSH key.
+# Setting ciuser/ssh_public_key makes Proxmox emit `user: <ciuser>`, which renames the
+# distro default user (vs. its `users: - default` creating a second `arch` account).
+# Result: one account = ciuser, with the distro's default groups and the supplied key.
 variable "ciuser" {
   type    = string
   default = ""

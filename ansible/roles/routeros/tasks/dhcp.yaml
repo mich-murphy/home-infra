@@ -1,5 +1,4 @@
 ---
-# DHCP per VLAN + DMZ (DMZ on its physical port). MGMT keeps its existing server.
 - name: Address pools
   community.routeros.api_modify:
     path: ip pool

@@ -1,5 +1,4 @@
 ---
-# One tagged VLAN interface per production VLAN (MGMT/VLAN 1 stays untagged).
 - name: Create VLAN interfaces on the trunk bridge
   community.routeros.api_modify:
     path: interface vlan

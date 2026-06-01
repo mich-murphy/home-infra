@@ -25,9 +25,8 @@
     - firewall
     - unifi
 
-# Mikrotik RB5009: pushed over the RouterOS API from localhost (no SSH, no become).
-# API connection params are injected once here via module_defaults so individual
-# tasks stay clean. routeros_api_user/password come from the vault.
+# RB5009 config is pushed over the RouterOS API from localhost (no SSH/become);
+# connection params injected here via module_defaults, credentials from the vault.
 - hosts: routeros
   gather_facts: false
   vars_files:
