@@ -15,7 +15,7 @@ resource "unifi_network" "vlan" {
 
 # DFLT — WPA3 transition (Sonos/AppleTV share this subnet; mDNS stays native).
 resource "unifi_wlan" "main" {
-  name            = "Skynet"
+  name            = "madviLANy"
   security        = "wpapsk"
   passphrase      = local.psk["dflt"].value
   wpa3_support    = true
@@ -28,7 +28,7 @@ resource "unifi_wlan" "main" {
 
 # KDS — WPA3-only.
 resource "unifi_wlan" "kids" {
-  name            = "Skynet-Jnr"
+  name            = "madviLANy-kds"
   security        = "wpapsk"
   passphrase      = local.psk["kids"].value
   wpa3_support    = true
@@ -41,7 +41,7 @@ resource "unifi_wlan" "kids" {
 
 # GST — WPA3 transition + L2 isolation.
 resource "unifi_wlan" "guest" {
-  name            = "Skynet-Guest"
+  name            = "madviLANy-gst"
   security        = "wpapsk"
   passphrase      = local.psk["guest"].value
   wpa3_support    = true
