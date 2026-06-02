@@ -3,9 +3,9 @@
 - name: Validate RouterOS management service sources
   ansible.builtin.assert:
     that:
-      - routeros_admin_sources | length > 0
-      - routeros_mgmt_admin_sources == (routeros_admin_sources | join(','))
-    fail_msg: routeros_admin_sources is the source of truth for RouterOS management access.
+      - routeros_router_admin_sources | length > 0
+      - routeros_mgmt_admin_sources == (routeros_router_admin_sources | join(','))
+    fail_msg: routeros_router_admin_sources is the source of truth for RouterOS management access.
 
 - name: Disable insecure / unused management services
   community.routeros.api_modify:
@@ -21,7 +21,7 @@
       - name: api # plain (cleartext) API; we use api-ssl only
         disabled: true
 
-# LOCKOUT NOTE: admin station + controller are on MGMT, so this keeps access. Widen routeros_mgmt_admin_sources to manage off-LAN.
+# LOCKOUT NOTE: router management is allowed from MGMT, so WiFi DHCP clients are not pinned to one reserved IP.
 - name: Restrict encrypted management services to MGMT
   community.routeros.api_modify:
     path: ip service
