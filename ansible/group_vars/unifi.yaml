@@ -6,11 +6,11 @@ ssh_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8Ux
 swap_mode: none
 swap_swappiness: 10
 
-unifi_admin_source: 10.77.1.241
+unifi_admin_source: 10.77.1.0/24
 unifi_ap_source: 10.77.1.0/24
 
-# Admin ports are pinned to the admin station; AP-facing ports stay on the MGMT LAN
-# until the AP has a reserved address/subnet that can be narrower.
+# Admin + AP ports are scoped to the MGMT subnet: the MGMT WiFi SSID lands clients
+# on VLAN 1, so the controller GUI/SSH must accept any MGMT host, not one reserved IP.
 # MongoDB (27117) is deliberately absent: it binds localhost only, never expose it.
 # SSH is explicitly allowed because the controller has no Tailscale; its from_ip differs from
 # the firewall role's deleted bare 22/tcp rule so it survives default-deny.
