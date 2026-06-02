@@ -49,25 +49,6 @@
         comment: "managed: routeros role"
       {% endfor %}
 
-- name: Address-list for MGMT hosts allowed to reach WAN
-  community.routeros.api_modify:
-    path: ip firewall address-list
-    handle_absent_entries: remove
-    restrict:
-      - field: list
-        values:
-          - mgmt-wan
-      - field: comment
-        regex: "managed: routeros role"
-    data: "{{ _routeros_mgmt_wan_address_list | from_yaml }}"
-  vars:
-    _routeros_mgmt_wan_address_list: |
-      {% for address in routeros_mgmt_wan_sources %}
-      - list: mgmt-wan
-        address: "{{ address }}"
-        comment: "managed: routeros role"
-      {% endfor %}
-
 - name: Input — allow MGMT hosts to manage the router
   community.routeros.api_modify:
     path: ip firewall filter
@@ -142,7 +123,7 @@
         action: accept
         comment: "SRV -> UniFi controller (managed: routeros role)"
       - chain: forward
-        src-address-list: mgmt-wan
+        src-address-list: admin
         out-interface-list: WAN
         action: accept
         comment: "MGMT admins -> WAN (managed: routeros role)"

@@ -42,12 +42,6 @@ routeros_mgmt_admin_sources: "{{ routeros_router_admin_sources | join(',') }}"
 routeros_admin_sources:
   - "{{ routeros_mgmt_subnet }}"
 
-# MGMT hosts that need internet egress. Management WiFi clients do not require
-# WAN access just to reach the router, UniFi controller, or IPMI on VLAN 1.
-routeros_mgmt_wan_sources:
-  - "{{ routeros_admin_station }}"
-  - "{{ routeros_unifi_ctrl }}"
-
 # Tagged on the trunk bridge; MGMT/VLAN 1 is the untagged net.
 routeros_vlans:
   - { id: 20, name: srv, subnet: 10.77.20.0/24, gateway: 10.77.20.1, pool_start: 10.77.20.50, pool_end: 10.77.20.250 }
