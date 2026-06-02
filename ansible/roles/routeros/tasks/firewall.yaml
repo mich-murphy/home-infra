@@ -11,35 +11,72 @@
         comment: "managed: routeros role"
   loop: "{{ [routeros_mgmt_subnet, routeros_dmz.subnet] + (routeros_vlans | map(attribute='subnet') | list) }}"
 
-- name: Address-list for admin sources
+- name: Address-list for router management sources
   community.routeros.api_modify:
     path: ip firewall address-list
-    handle_absent_entries: ignore
-    data:
-      - list: admin
-        address: "{{ item }}"
+    handle_absent_entries: remove
+    restrict:
+      - field: list
+        values:
+          - router-admin
+      - field: comment
+        regex: "managed: routeros role"
+    data: "{{ _routeros_router_admin_address_list | from_yaml }}"
+  vars:
+    _routeros_router_admin_address_list: |
+      {% for address in routeros_router_admin_sources %}
+      - list: router-admin
+        address: "{{ address }}"
         comment: "managed: routeros role"
-  loop: "{{ routeros_admin_sources }}"
+      {% endfor %}
+
+- name: Address-list for privileged routed admin sources
+  community.routeros.api_modify:
+    path: ip firewall address-list
+    handle_absent_entries: remove
+    restrict:
+      - field: list
+        values:
+          - admin
+      - field: comment
+        regex: "managed: routeros role"
+    data: "{{ _routeros_admin_address_list | from_yaml }}"
+  vars:
+    _routeros_admin_address_list: |
+      {% for address in routeros_admin_sources %}
+      - list: admin
+        address: "{{ address }}"
+        comment: "managed: routeros role"
+      {% endfor %}
 
 - name: Address-list for MGMT hosts allowed to reach WAN
   community.routeros.api_modify:
     path: ip firewall address-list
-    handle_absent_entries: ignore
-    data:
+    handle_absent_entries: remove
+    restrict:
+      - field: list
+        values:
+          - mgmt-wan
+      - field: comment
+        regex: "managed: routeros role"
+    data: "{{ _routeros_mgmt_wan_address_list | from_yaml }}"
+  vars:
+    _routeros_mgmt_wan_address_list: |
+      {% for address in routeros_mgmt_wan_sources %}
       - list: mgmt-wan
-        address: "{{ item }}"
+        address: "{{ address }}"
         comment: "managed: routeros role"
-  loop: "{{ routeros_mgmt_wan_sources }}"
+      {% endfor %}
 
-- name: Input — allow admin station to manage the router + IPMI host
+- name: Input — allow MGMT hosts to manage the router
   community.routeros.api_modify:
     path: ip firewall filter
     handle_absent_entries: ignore
     data:
       - chain: input
-        src-address-list: admin
+        src-address-list: router-admin
         action: accept
-        comment: "admin -> router (managed: routeros role)"
+        comment: "MGMT -> router (managed: routeros role)"
       - chain: input
         connection-state: established,related
         action: accept
