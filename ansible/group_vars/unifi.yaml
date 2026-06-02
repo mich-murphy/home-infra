@@ -6,13 +6,17 @@ ssh_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8Ux
 swap_mode: none
 swap_swappiness: 10
 
-# Inbound ports scoped to the flat LAN; tighten `from` to mgmt VLAN once VLANs exist.
+unifi_admin_source: 10.77.1.241
+unifi_ap_source: 10.77.1.0/24
+
+# Admin ports are pinned to the admin station; AP-facing ports stay on the MGMT LAN
+# until the AP has a reserved address/subnet that can be narrower.
 # MongoDB (27117) is deliberately absent: it binds localhost only, never expose it.
-# SSH is LAN-scoped because the controller has no Tailscale; its from_ip differs from
+# SSH is explicitly allowed because the controller has no Tailscale; its from_ip differs from
 # the firewall role's deleted bare 22/tcp rule so it survives default-deny.
 firewall_allow_ports:
-  - { port: "22", proto: tcp, from: "10.77.1.0/24" } # ssh / ansible (LAN only)
-  - { port: "8080", proto: tcp, from: "10.77.1.0/24" } # device inform / adoption
-  - { port: "8443", proto: tcp, from: "10.77.1.0/24" } # controller GUI (admin)
-  - { port: "3478", proto: udp, from: "10.77.1.0/24" } # STUN
-  - { port: "10001", proto: udp, from: "10.77.1.0/24" } # AP discovery
+  - { port: "22", proto: tcp, from: "{{ unifi_admin_source }}" } # ssh / ansible
+  - { port: "8443", proto: tcp, from: "{{ unifi_admin_source }}" } # controller GUI
+  - { port: "8080", proto: tcp, from: "{{ unifi_ap_source }}" } # device inform / adoption
+  - { port: "3478", proto: udp, from: "{{ unifi_ap_source }}" } # STUN
+  - { port: "10001", proto: udp, from: "{{ unifi_ap_source }}" } # AP discovery
