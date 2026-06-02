@@ -119,6 +119,13 @@
         action: redirect
         to-ports: 53
         comment: "KDS DNS redirect (managed: routeros role)"
+      - chain: dstnat
+        src-address: "{{ (routeros_vlans | selectattr('name', 'eq', 'kds') | first).subnet }}"
+        protocol: tcp
+        dst-port: 53
+        action: redirect
+        to-ports: 53
+        comment: "KDS TCP DNS redirect (managed: routeros role)"
 
 - name: Masquerade all internal sources out the WAN
   community.routeros.api_modify:
@@ -130,8 +137,7 @@
         action: masquerade
         comment: "masquerade (managed: routeros role)"
 
-# LOCKOUT RISK: apply LAST, after allows are verified in order. Double-gated (var + tag).
-- name: Forward — default drop (LOCKOUT RISK if allows aren't in place/order)
+- name: Forward — default drop
   community.routeros.api_modify:
     path: ip firewall filter
     handle_absent_entries: ignore
@@ -140,4 +146,4 @@
         action: drop
         comment: "DEFAULT DROP (managed: routeros role)"
   when: routeros_enable_default_drop | bool
-  tags: [never, default-drop]
+  tags: [default-drop]

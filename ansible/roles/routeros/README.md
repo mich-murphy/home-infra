@@ -3,9 +3,10 @@
 Configures the Mikrotik RB5009 (RouterOS v7) over the API using
 `community.routeros.api_modify`. All data lives in `group_vars/routeros.yaml`.
 
-Every task is **non-destructive** (`handle_absent_entries: ignore`): it reconciles
-only the entries declared here and never removes the router's existing WAN/base rules.
-Managed entries carry a `managed: routeros role` comment.
+The role reconciles managed entries and leaves unrelated WAN/base rules alone.
+Managed entries carry a `managed: routeros role` comment. The DMZ de-bridge is
+the only managed removal, because physical isolation requires `routeros_dmz_port`
+to be absent from the production bridge.
 
 ## Prerequisites
 
@@ -17,32 +18,23 @@ Managed entries carry a `managed: routeros role` comment.
    Put `routeros_api_user` / `routeros_api_password` in the vault (`just edit`).
 2. Confirm the OPEN ITEMS in `group_vars/routeros.yaml` (interface names, bridge
    name, admin/IPMI IPs, KDS DNS) against the live router.
-3. **Console/serial access ready** before the two gated steps below.
+3. Keep a console/serial fallback available before changing port maps or VLAN
+   membership.
 
-## Lockout-safe rollout
+## Steady State
 
-`just routeros` runs the safe steps (VLAN/DHCP/DMZ scaffolding, firewall *allows*,
-NAT) but **skips** the two dangerous flips, which are double-gated (a var
-*and* a `never` tag):
+`just routeros` applies the full desired state:
 
 ```sh
-# 1. Safe scaffold — VLANs, DHCP, address-lists, allow rules, NAT
-just routeros          # == ansible-playbook ... --limit routeros
-
-# 2. Verify the bridge VLAN table, then enable filtering (have console ready):
-cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
-  --limit routeros --tags vlan-filtering -e routeros_enable_vlan_filtering=true
-
-# 3. Verify all allows are present/ordered (`/ip firewall filter print`), THEN:
-cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
-  --limit routeros --tags default-drop -e routeros_enable_default_drop=true
+just routeros
 ```
 
-## ⚠️ Caveat — validate against the live router
+The normal run now maintains:
 
-These tasks were authored from the plan and the `community.routeros` schema, not
-against your live RB5009. Before trusting them: dry-run, and after each apply inspect
-the result (`/interface bridge vlan print`, `/ip firewall filter print`,
-`/ip dhcp-server print`). RouterOS firewall **rule ordering** in particular is not
-fully controlled by `api_modify` when pre-existing rules are present — verify the
-managed allows sit above the default-drop.
+- VLAN filtering on the bridge.
+- DMZ physical isolation by removing the DMZ port from the production bridge.
+- Forward-chain default drop after the managed allow rules.
+- RouterOS management services restricted to `routeros_mgmt_admin_sources`.
+
+After changes to the firewall matrix or port map, inspect `/interface bridge vlan print`,
+`/interface bridge port print`, `/ip firewall filter print`, and `/ip dhcp-server print`.
