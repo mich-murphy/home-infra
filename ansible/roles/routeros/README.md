@@ -33,8 +33,11 @@ The normal run now maintains:
 
 - VLAN filtering on the bridge.
 - DMZ physical isolation by removing the DMZ port from the production bridge.
-- Forward-chain default drop after the managed allow rules.
-- RouterOS management services restricted to `routeros_mgmt_admin_sources`.
+- An ordered managed forward-chain policy, with KDS DNS bypass blocks before WAN
+  egress and the default drop last.
+- RouterOS management services restricted to the static/reserved
+  `routeros_admin_sources`.
 
 After changes to the firewall matrix or port map, inspect `/interface bridge vlan print`,
-`/interface bridge port print`, `/ip firewall filter print`, and `/ip dhcp-server print`.
+`/interface bridge port print`, and `/ip dhcp-server print`. The role validates
+managed firewall order during apply.
