@@ -34,25 +34,16 @@
         owner: "media"
         group: "media"
 
-- name: check whether mount folders exist
-  ansible.builtin.stat:
+- name: create folders for nfs mounts
+  ansible.builtin.file:
     path: "{{ item.local_path }}"
-  register: mount_folders_stat
+    state: directory
+    mode: "0775"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
   loop: "{{ nfs_mounts }}"
   loop_control:
     label: "{{ item.name }}"
-
-- name: create missing folders for nfs mounts
-  ansible.builtin.file:
-    path: "{{ item.item.local_path }}"
-    state: directory
-    mode: "0775"
-    owner: "{{ item.item.owner }}"
-    group: "{{ item.item.group }}"
-  when: not item.stat.exists
-  loop: "{{ mount_folders_stat.results }}"
-  loop_control:
-    label: "{{ item.item.name }}"
 
 - name: mount nfs shares
   ansible.posix.mount:
