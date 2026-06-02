@@ -30,16 +30,17 @@ routeros_mgmt_subnet: 10.77.1.0/24
 routeros_admin_station: 10.77.1.241 # this Mac (MGMT) — see note: DHCP, reserve a lease before default-drop
 routeros_ipmi_host: 10.77.1.99 # Proxmox IPMI/BMC
 routeros_unifi_ctrl: 10.77.1.10
-# Static/reserved admin sources. This drives RouterOS service ACLs, input allow-list,
-# and privileged inter-VLAN access; add VPN/admin hosts here rather than widening MGMT.
+# Admin plane = the whole MGMT subnet. The hidden WPA3 MGMT SSID (madviLANy-mgmt)
+# lands clients untagged on VLAN 1, so any MGMT host — wired or over WiFi — can
+# manage the router, controller and IPMI without depending on a single reserved IP.
+# This drives RouterOS service ACLs, the input allow-list, and privileged inter-VLAN access.
 routeros_admin_sources:
-  - "{{ routeros_admin_station }}"
+  - "{{ routeros_mgmt_subnet }}"
 routeros_mgmt_admin_sources: "{{ routeros_admin_sources | join(',') }}"
 
-# MGMT hosts that need internet egress. Do not grant the whole MGMT subnet lateral access.
+# MGMT hosts that need internet egress — the whole MGMT subnet (admin plane).
 routeros_mgmt_wan_sources:
-  - "{{ routeros_admin_station }}"
-  - "{{ routeros_unifi_ctrl }}"
+  - "{{ routeros_mgmt_subnet }}"
 
 # Tagged on the trunk bridge; MGMT/VLAN 1 is the untagged net.
 routeros_vlans:
