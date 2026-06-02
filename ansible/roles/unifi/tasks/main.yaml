@@ -14,6 +14,7 @@
       - apt-transport-https
     state: present
     update_cache: true
+    cache_valid_time: 3600
 
 # Debian 12 doesn't ship Java 25; pull Eclipse Temurin from Adoptium.
 - name: download adoptium signing key
@@ -33,13 +34,7 @@
     filename: adoptium
     state: present
 
-- name: install temurin jre
-  ansible.builtin.apt:
-    name: "temurin-{{ unifi_java_version }}-jre"
-    state: present
-    update_cache: true
-
-# MongoDB binary only; UniFi runs its own mongod on :27117.
+# --- MongoDB (binary only; UniFi runs its own mongod instance on :27117) ---
 - name: download mongodb signing key
   ansible.builtin.get_url:
     url: "https://pgp.mongodb.com/server-{{ mongodb_version }}.asc"
@@ -62,20 +57,7 @@
     filename: "mongodb-org-{{ mongodb_version }}"
     state: present
 
-- name: install mongodb server
-  ansible.builtin.apt:
-    name: mongodb-org-server
-    state: present
-    update_cache: true
-
-# UniFi manages its own mongod on :27117; the packaged instance (:27017) is redundant.
-- name: disable redundant system mongod instance
-  ansible.builtin.systemd:
-    name: mongod
-    enabled: false
-    state: stopped
-  failed_when: false
-
+# --- UniFi Network controller ---
 - name: download unifi signing key
   ansible.builtin.get_url:
     url: https://dl.ui.com/unifi/unifi-repo.gpg
@@ -88,11 +70,23 @@
     filename: unifi
     state: present
 
-- name: install unifi controller
+- name: install unifi packages
   ansible.builtin.apt:
-    name: unifi
+    name:
+      - "temurin-{{ unifi_java_version }}-jre"
+      - mongodb-org-server
+      - unifi
     state: present
     update_cache: true
+
+# UniFi spawns + manages its own mongod on :27117; the packaged systemd instance
+# (:27017) is redundant and wastes RAM on a memory-constrained host.
+- name: disable redundant system mongod instance
+  ansible.builtin.systemd:
+    name: mongod
+    enabled: false
+    state: stopped
+  failed_when: false
 
 - name: enable and start unifi
   ansible.builtin.systemd:

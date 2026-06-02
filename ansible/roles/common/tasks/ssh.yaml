@@ -2,49 +2,55 @@
 - name: disable root login
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^(#\\s*)?PermitRootLogin (yes|no|prohibit-password|forced-commands-only)"
+    regexp: "^\\s*#?\\s*PermitRootLogin\\s+.*$"
     line: "PermitRootLogin no"
     state: present
+  notify: "restart sshd service"
 
 - name: disable password authentication
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^(#\\s*)?PasswordAuthentication (yes|no)"
+    regexp: "^\\s*#?\\s*PasswordAuthentication\\s+.*$"
     line: "PasswordAuthentication no"
     state: present
+  notify: "restart sshd service"
 
 - name: disable any keyboard interactive authentication
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^(#\\s*)KbdInteractiveAuthentication (yes|no)"
+    regexp: "^\\s*#?\\s*KbdInteractiveAuthentication\\s+.*$"
     line: "KbdInteractiveAuthentication no"
     state: present
+  notify: "restart sshd service"
 
 - name: disable x11 forwarding
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^(#\\s*)X11Forwarding (yes|no)"
+    regexp: "^\\s*#?\\s*X11Forwarding\\s+.*$"
     line: "X11Forwarding no"
     state: present
+  notify: "restart sshd service"
 
 - name: disable ssh-agent forwarding
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^(#\\s*)AllowAgentForwarding (yes|no)"
+    regexp: "^\\s*#?\\s*AllowAgentForwarding\\s+.*$"
     line: "AllowAgentForwarding no"
     state: present
+  notify: "restart sshd service"
 
 - name: disable unix-domain socket forwarding
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^(#\\s*)AllowStreamLocalForwarding (yes|no|all|local|remote)"
+    regexp: "^\\s*#?\\s*AllowStreamLocalForwarding\\s+.*$"
     line: "AllowStreamLocalForwarding no"
     state: present
+  notify: "restart sshd service"
 
 - name: set authentication methods to publickey
   ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
-    regexp: "^(#\\s*)AuthenticationMethods .*"
+    regexp: "^\\s*#?\\s*AuthenticationMethods\\s+.*$"
     line: "AuthenticationMethods publickey"
     state: present
   notify: "restart sshd service"
