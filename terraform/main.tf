@@ -19,8 +19,8 @@ locals {
   }
 }
 
-# Manually provisioned (no cloud-init); HBA passed through for ZFS. ignore_changes=all
-# keeps Terraform from mutating it — block exists only to capture the spec for rebuilds.
+# Manually provisioned (no cloud-init); HBA passed through for ZFS.
+# prevent_destroy blocks accidental replacement while still allowing drift detection.
 resource "proxmox_vm_qemu" "truenas" {
   vmid        = 101
   name        = "truenas"
@@ -72,22 +72,23 @@ resource "proxmox_vm_qemu" "truenas" {
   }
 
   lifecycle {
-    ignore_changes = all
+    prevent_destroy = true
   }
 }
 
-resource "local_file" "cloud_init_agents" {
-  content = templatefile("cloud_init.tftpl", {
+resource "local_sensitive_file" "cloud_init_agents" {
+  content = sensitive(templatefile("cloud_init.tftpl", {
     hostname           = "docker-host"
     os_family          = "debian"
     tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
     ssh_public_key     = var.docker_host_ssh_public_key
-  })
-  filename = "${path.module}/files/agents.cfg"
+  }))
+  filename        = "${path.module}/files/agents.cfg"
+  file_permission = "0600"
 }
 
 resource "terraform_data" "cloud_init_config" {
-  triggers_replace = [local_file.cloud_init_agents.content]
+  triggers_replace = [local_sensitive_file.cloud_init_agents.content]
   connection {
     type     = "ssh"
     user     = local.proxmox_creds.username
@@ -98,8 +99,11 @@ resource "terraform_data" "cloud_init_config" {
     inline = ["mkdir -p /var/lib/vz/snippets"]
   }
   provisioner "file" {
-    source      = local_file.cloud_init_agents.filename
+    source      = local_sensitive_file.cloud_init_agents.filename
     destination = "/var/lib/vz/snippets/agents.yml"
+  }
+  provisioner "remote-exec" {
+    inline = ["chmod 0600 /var/lib/vz/snippets/agents.yml"]
   }
 }
 
@@ -181,7 +185,7 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
   }
 
   lifecycle {
-    ignore_changes = all
+    prevent_destroy = true
   }
 }
 
