@@ -78,6 +78,7 @@ just edit                   # edit encrypted vault secrets
 ## Terraform
 
 Provisions VMs on Proxmox using the [telmate/proxmox](https://registry.terraform.io/providers/Telmate/proxmox) provider. Secrets sourced from 1Password via the `onepassword` provider.
+Run Terraform through the `just` recipes so local state and generated cloud-init files are created with a restrictive umask. Terraform state is secret-bearing because provider data includes Proxmox credentials, WLAN PSKs, and bootstrap auth material.
 
 | VM           | ID  | Spec                         | Purpose                 |
 | ------------ | --- | ---------------------------- | ----------------------- |
