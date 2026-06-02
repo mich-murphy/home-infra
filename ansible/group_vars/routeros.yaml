@@ -37,10 +37,10 @@ routeros_router_admin_sources:
   - "{{ routeros_mgmt_subnet }}"
 routeros_mgmt_admin_sources: "{{ routeros_router_admin_sources | join(',') }}"
 
-# Privileged routed access stays narrow. Do not grant all MGMT WiFi clients
-# lateral access to internal VLANs.
+# MGMT WiFi is trusted as an admin network, so MGMT clients may administer
+# internal VLAN hosts without needing reserved DHCP leases per device.
 routeros_admin_sources:
-  - "{{ routeros_admin_station }}"
+  - "{{ routeros_mgmt_subnet }}"
 
 # MGMT hosts that need internet egress. Management WiFi clients do not require
 # WAN access just to reach the router, UniFi controller, or IPMI on VLAN 1.
