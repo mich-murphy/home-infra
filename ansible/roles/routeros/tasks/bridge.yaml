@@ -34,8 +34,7 @@
         pvid: 1
   loop: "{{ routeros_mgmt_untagged_ports }}"
 
-# LOCKOUT RISK: run only after VLAN table verified, with console access ready. Double-gated (var + tag).
-- name: Enable bridge VLAN filtering (LOCKOUT RISK)
+- name: Enable bridge VLAN filtering
   community.routeros.api_modify:
     path: interface bridge
     handle_absent_entries: ignore
@@ -43,4 +42,4 @@
       - name: "{{ routeros_bridge }}"
         vlan-filtering: true
   when: routeros_enable_vlan_filtering | bool
-  tags: [never, vlan-filtering]
+  tags: [vlan-filtering]
