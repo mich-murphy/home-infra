@@ -4,30 +4,30 @@
 
 ## terraform
 init:
-  cd terraform && terraform init
+  umask 077; cd terraform && terraform init
 
 apply:
-  cd terraform && terraform apply
+  umask 077; cd terraform && terraform apply
 
 destroy:
-  cd terraform && terraform destroy
+  umask 077; cd terraform && terraform destroy
 
 # UniFi controller LXC lives in its own root (bpg provider; see terraform/unifi/versions.tf)
 unifi-init:
-  cd terraform/unifi && terraform init
+  umask 077; cd terraform/unifi && terraform init
 
 unifi-apply:
-  cd terraform/unifi && terraform apply
+  umask 077; cd terraform/unifi && terraform apply
 
 # UniFi network objects (VLAN-only networks + WLANs) via ubiquiti-community/unifi
 network-init:
-  cd terraform/network && terraform init
+  umask 077; cd terraform/network && terraform init
 
 network-plan:
-  cd terraform/network && terraform plan
+  umask 077; cd terraform/network && terraform plan
 
 network-apply:
-  cd terraform/network && terraform apply
+  umask 077; cd terraform/network && terraform apply
 
 ## ansible
 run HOST:
