@@ -18,7 +18,7 @@
       - name: "{{ item.name }}-dhcp"
         interface: "{{ ('vlan' ~ item.id ~ '-' ~ item.name) if item.name != 'dmz' else routeros_dmz_port }}"
         address-pool: "{{ item.name }}-pool"
-        lease-time: 1d
+        lease-time: "{{ routeros_dhcp_lease_time }}"
   loop: "{{ routeros_vlans + ([routeros_dmz] if routeros_enable_dmz | bool else []) }}"
   loop_control:
     label: "{{ item.name }}"
