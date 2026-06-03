@@ -34,7 +34,12 @@
         pvid: 1
   loop: "{{ routeros_mgmt_untagged_ports }}"
 
-- name: Enable bridge VLAN filtering
+# ⚠️ LOCKOUT RISK. Double-gated: the `routeros_enable_vlan_filtering` var AND the
+# `never` tag, so a normal run can never flip it — you must pass `--tags vlan-filtering`
+# explicitly. Only do so with the out-of-band port verified reachable and MGMT VLAN-1
+# DHCP confirmed working (a 2026-06-03 flip with MGMT on the raw bridge locked everything
+# out, and the in-bridge console fallback died with it).
+- name: Enable bridge VLAN filtering (LOCKOUT RISK)
   community.routeros.api_modify:
     path: interface bridge
     handle_absent_entries: ignore
@@ -42,4 +47,4 @@
       - name: "{{ routeros_bridge }}"
         vlan-filtering: true
   when: routeros_enable_vlan_filtering | bool
-  tags: [vlan-filtering]
+  tags: [never, vlan-filtering]

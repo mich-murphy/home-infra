@@ -18,26 +18,44 @@ to be absent from the production bridge.
    Put `routeros_api_user` / `routeros_api_password` in the vault (`just edit`).
 2. Confirm the OPEN ITEMS in `group_vars/routeros.yaml` (interface names, bridge
    name, admin/IPMI IPs, KDS DNS) against the live router.
-3. Keep a console/serial fallback available before changing port maps or VLAN
-   membership.
+3. **Out-of-band access staged before any VLAN-filtering work.** The role pulls
+   `routeros_oob_port` (`ether7`) out of the bridge and gives it `10.66.0.1/30`.
+   Plug a laptop into it with a static `10.66.0.2/30` and confirm you can reach
+   `10.66.0.1` over SSH/WinBox. This is the only fallback that survives
+   vlan-filtering — under filtering, untagged-VLAN1 console access **and**
+   Winbox-by-MAC both stop working (learned the hard way on 2026-06-03).
 
-## Steady State
+## Normal run (safe scaffold)
 
-`just routeros` applies the full desired state:
+`just routeros` is **safe** — it never enables the two lockout-risk flips:
 
 ```sh
 just routeros
 ```
 
-The normal run now maintains:
+It maintains: the out-of-band port, VLAN interfaces + per-VLAN DHCP, DMZ physical
+isolation, the firewall address-lists / **allow** rules / NAT, and management
+services restricted to `routeros_router_admin_sources` (MGMT + OOB subnets).
+`routeros_enable_vlan_filtering` / `routeros_enable_default_drop` default to
+`false`, and the vlan-filtering flip is additionally `never`-tagged.
 
-- VLAN filtering on the bridge.
-- DMZ physical isolation by removing the DMZ port from the production bridge.
-- An ordered managed forward-chain policy, with KDS DNS bypass blocks before WAN
-  egress and the default drop last.
-- RouterOS management services restricted to the static/reserved
-  `routeros_admin_sources`.
+## Lockout-risk flips (explicit, one at a time)
 
-After changes to the firewall matrix or port map, inspect `/interface bridge vlan print`,
-`/interface bridge port print`, and `/ip dhcp-server print`. The role validates
-managed firewall order during apply.
+⚠️ A 2026-06-03 apply that enabled vlan-filtering with MGMT bound to the raw bridge
+caused a full management lockout that needed a physical reset. Do these only with the
+OOB port verified (prereq 3):
+
+```sh
+# 1. Enable vlan-filtering (requires BOTH the var and the never-tag override):
+cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
+  --limit routeros --tags vlan-filtering -e routeros_enable_vlan_filtering=true
+# Then VERIFY MGMT still works: a DHCP client on VLAN 1 still pulls a lease,
+# and 10.77.1.1 is reachable. If not, disable filtering from the OOB port.
+
+# 2. Only once filtering is verified, enable the forward default-drop:
+cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
+  --limit routeros --tags firewall,default-drop -e routeros_enable_default_drop=true
+```
+
+After any flip, inspect `/interface bridge vlan print`, `/interface bridge port print`,
+`/ip dhcp-server print`, and `/ip firewall filter print`.
