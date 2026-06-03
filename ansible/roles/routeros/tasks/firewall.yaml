@@ -49,11 +49,48 @@
         comment: "managed: routeros role"
       {% endfor %}
 
-- name: Input — allow MGMT hosts to manage the router
+- name: Input — allow MGMT hosts + the router's own services
   community.routeros.api_modify:
     path: ip firewall filter
     handle_absent_entries: ignore
-    data:
+    data: "{{ _routeros_input_policy | from_yaml }}"
+  vars:
+    # The router is the DHCP and DNS server for its clients; these inbound services
+    # must be permitted explicitly so they survive future input-chain tightening
+    # (today they ride on defconf rules only). DHCP DISCOVER comes from 0.0.0.0, so
+    # scope it by ingress interface (not source address) to keep it off the WAN. MGMT
+    # rides the raw bridge (native VLAN 1), the routed VLANs their vlanX interfaces.
+    _routeros_dhcp_input_interfaces: >-
+      {{
+        [routeros_bridge]
+        + (routeros_vlans | map(attribute='id') | zip(routeros_vlans | map(attribute='name')) | map('join', '-') | map('regex_replace', '^', 'vlan') | list)
+        + ([routeros_dmz_port] if routeros_enable_dmz | bool else [])
+      }}
+    _routeros_input_policy: |
+      {% for interface in _routeros_dhcp_input_interfaces %}
+      - chain: input
+        in-interface: "{{ interface }}"
+        protocol: udp
+        dst-port: 67,68
+        action: accept
+        comment: "DHCP to router on {{ interface }} (managed: routeros role)"
+      {% endfor %}
+      - chain: input
+        src-address-list: internal
+        protocol: udp
+        dst-port: 53
+        action: accept
+        comment: "DNS udp from internal (managed: routeros role)"
+      - chain: input
+        src-address-list: internal
+        protocol: tcp
+        dst-port: 53
+        action: accept
+        comment: "DNS tcp from internal (managed: routeros role)"
+      - chain: input
+        protocol: icmp
+        action: accept
+        comment: "ICMP to router (managed: routeros role)"
       - chain: input
         src-address-list: router-admin
         action: accept

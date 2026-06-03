@@ -70,6 +70,19 @@ routeros_dmz:
 routeros_default_dns: 10.77.1.1
 routeros_kids_dns: 1.1.1.3 # OPEN ITEM: Cloudflare Families / NextDNS / AdGuard
 
+# MGMT DHCP reliability. MGMT (native VLAN 1) keeps its server on the raw bridge; we
+# only set a sane lease time and pin infra to fixed addresses so a missed renewal can
+# never strand a critical host. (The recurring DHCP outages were the VLAN-1 binding,
+# fixed in bridge.yaml — not the pool; these are belt-and-suspenders.)
+routeros_dhcp_lease_time: 1d
+# Reservations carry device MAC addresses, so the real list lives in the vaulted
+# secrets.yaml (overrides this empty default) — keep MACs out of the plaintext repo.
+# Vault entry shape:
+#   routeros_mgmt_reservations:
+#     - { name: truenas, mac: "<mac>", ip: 10.77.1.101 }
+#     - { name: docker-host, mac: "<mac>", ip: 10.77.1.246 }
+routeros_mgmt_reservations: []
+
 # DMZ isolation is safe to keep on (it's a separate physical port, not the bridge).
 routeros_enable_dmz: true
 
