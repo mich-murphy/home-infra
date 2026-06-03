@@ -12,15 +12,21 @@
   loop_control:
     label: "{{ item.name }} ({{ item.id }})"
 
-# Explicit VLAN 1 entry first: without it the router's bridge IP drops when vlan-filtering flips (lockout).
-- name: VLAN 1 (native MGMT) membership — bridge tagged, MGMT ports untagged
+# VLAN 1 (native MGMT) — untagged ports only, the bridge is NOT a tagged member.
+# The MGMT IP + DHCP stay on the raw `bridge` interface, which reaches VLAN 1 via the
+# bridge PVID (=1) untagged path. Adding the bridge to VLAN 1's *tagged* list (the
+# previous design) is what broke dynamic MGMT DHCP under vlan-filtering: the bridge
+# then expected VLAN 1 *tagged* while the raw-bridge IP/DHCP operate untagged, so
+# untagged clients' DISCOVERs went unanswered (the recurring AP/GL.iNet/docker-host
+# failures). Untagged-only here is MikroTik's native-VLAN-management pattern.
+# ⚠️ Verify from the OOB port that MGMT DHCP still works before enabling filtering.
+- name: VLAN 1 (native MGMT) membership — untagged access ports only (no bridge tag)
   community.routeros.api_modify:
     path: interface bridge vlan
     handle_absent_entries: ignore
     data:
       - bridge: "{{ routeros_bridge }}"
         vlan-ids: 1
-        tagged: "{{ routeros_bridge }}"
         untagged: "{{ routeros_vlan1_untagged_ports | join(',') }}"
         comment: "mgmt native (managed: routeros role)"
 
