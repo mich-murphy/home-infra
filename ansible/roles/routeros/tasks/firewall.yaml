@@ -9,7 +9,7 @@
       - list: internal
         address: "{{ item }}"
         comment: "managed: routeros role"
-  loop: "{{ [routeros_mgmt_subnet, routeros_dmz.subnet] + (routeros_vlans | map(attribute='subnet') | list) }}"
+  loop: "{{ routeros_internal_subnets }}"
 
 - name: Address-list for router management sources
   community.routeros.api_modify:
@@ -51,23 +51,32 @@
 
 # The defconf input chain ends with `drop chain=input in-interface-list=!LAN`. MGMT
 # rides the bridge, which defconf already put in LAN, so MGMT DHCP/DNS to the router
-# survives. The routed VLAN interfaces and the de-bridged DMZ port are NOT in LAN, so
-# their router-bound DHCP/DNS would hit that drop (the managed input accepts below get
-# appended AFTER the defconf drop, so they cannot rescue it). Add the interfaces to LAN
-# so they ride the defconf input accepts like MGMT does. Sensitive management services
-# stay pinned to the MGMT source list (services.yaml), so LAN membership only opens
-# DHCP/DNS/ICMP to the router here — not Winbox/SSH/API.
+# survives. The routed VLAN interfaces, the de-bridged DMZ port and the OOB port are
+# NOT in LAN, so their router-bound traffic would hit that drop (the managed input
+# accepts below get appended AFTER the defconf drop, so they cannot rescue it). Add
+# client VLANs/DMZ for DHCP/DNS and OOB for break-glass router input. Sensitive
+# management services stay source-pinned in services.yaml; OOB routed traffic is
+# explicitly dropped in the forward chain below.
 - name: Add routed VLAN + DMZ interfaces to the LAN interface-list
   community.routeros.api_modify:
     path: interface list member
     handle_absent_entries: ignore
     data:
       - list: LAN
-        interface: "{{ ('vlan' ~ item.id ~ '-' ~ item.name) if item.name != 'dmz' else routeros_dmz_port }}"
-        comment: "{{ item.name }} in LAN (managed: routeros role)"
-  loop: "{{ routeros_vlans + ([routeros_dmz] if routeros_enable_dmz | bool else []) }}"
+        interface: "{{ item }}"
+        comment: "{{ item }} in LAN (managed: routeros role)"
+  loop: "{{ routeros_router_lan_interfaces }}"
   loop_control:
-    label: "{{ item.name }}"
+    label: "{{ item }}"
+
+- name: Add OOB to the LAN interface-list for router recovery input
+  community.routeros.api_modify:
+    path: interface list member
+    handle_absent_entries: ignore
+    data:
+      - list: LAN
+        interface: "{{ routeros_oob_port }}"
+        comment: "oob in LAN for router input (managed: routeros role)"
 
 - name: Input — allow MGMT hosts + the router's own services
   community.routeros.api_modify:
@@ -82,14 +91,8 @@
     # DHCP DISCOVER comes from 0.0.0.0, so
     # scope it by ingress interface (not source address) to keep it off the WAN. MGMT
     # rides the raw bridge (native VLAN 1), the routed VLANs their vlanX interfaces.
-    _routeros_dhcp_input_interfaces: >-
-      {{
-        [routeros_bridge]
-        + (routeros_vlans | map(attribute='id') | zip(routeros_vlans | map(attribute='name')) | map('join', '-') | map('regex_replace', '^', 'vlan') | list)
-        + ([routeros_dmz_port] if routeros_enable_dmz | bool else [])
-      }}
     _routeros_input_policy: |
-      {% for interface in _routeros_dhcp_input_interfaces %}
+      {% for interface in routeros_lan_input_interfaces %}
       - chain: input
         in-interface: "{{ interface }}"
         protocol: udp
@@ -126,6 +129,13 @@
         action: drop
         comment: "input drop invalid (managed: routeros role)"
 
+- name: Require explicit default-drop tag for default-drop enablement
+  ansible.builtin.assert:
+    that:
+      - "'default-drop' in ansible_run_tags"
+    fail_msg: "routeros_enable_default_drop=true requires an explicit --tags firewall,default-drop run."
+  when: routeros_enable_default_drop | bool
+
 - name: Forward — ordered managed policy
   community.routeros.api_modify:
     path: ip firewall filter
@@ -140,7 +150,8 @@
     data: "{{ _routeros_forward_policy }}"
   vars:
     _net: "{{ routeros_vlans | items2dict(key_name='name', value_name='subnet') }}"
-    _routeros_forward_base_policy:
+    _routeros_forward_base_policy: "{{ _routeros_forward_base_policy_yaml | from_yaml }}"
+    _routeros_forward_base_policy_yaml: |
       - chain: forward
         connection-state: established,related
         action: accept
@@ -149,6 +160,10 @@
         connection-state: invalid
         action: drop
         comment: "fwd drop invalid (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ routeros_oob_subnet }}"
+        action: drop
+        comment: "OOB drop routed traffic (managed: routeros role)"
       - chain: forward
         src-address: "{{ _net.kds }}"
         protocol: tcp
@@ -161,11 +176,6 @@
         dst-port: 853
         action: drop
         comment: "KDS drop DoQ (managed: routeros role)"
-      - chain: forward
-        src-address-list: admin
-        dst-address-list: internal
-        action: accept
-        comment: "admin -> internal (managed: routeros role)"
       - chain: forward
         src-address: "{{ _net.dflt }}"
         dst-address: "{{ _net.srv }}"
@@ -186,31 +196,13 @@
         out-interface-list: WAN
         action: accept
         comment: "MGMT admins -> WAN (managed: routeros role)"
+      {% for subnet in routeros_wan_egress_subnets %}
       - chain: forward
-        src-address: "{{ _net.srv }}"
+        src-address: "{{ subnet }}"
         out-interface-list: WAN
         action: accept
-        comment: "srv -> WAN (managed: routeros role)"
-      - chain: forward
-        src-address: "{{ _net.dflt }}"
-        out-interface-list: WAN
-        action: accept
-        comment: "dflt -> WAN (managed: routeros role)"
-      - chain: forward
-        src-address: "{{ _net.kds }}"
-        out-interface-list: WAN
-        action: accept
-        comment: "kds -> WAN (managed: routeros role)"
-      - chain: forward
-        src-address: "{{ _net.gst }}"
-        out-interface-list: WAN
-        action: accept
-        comment: "gst -> WAN (managed: routeros role)"
-      - chain: forward
-        src-address: "{{ routeros_dmz.subnet }}"
-        out-interface-list: WAN
-        action: accept
-        comment: "dmz -> WAN (managed: routeros role)"
+        comment: "{{ subnet }} -> WAN (managed: routeros role)"
+      {% endfor %}
     _routeros_default_drop_rule:
       - chain: forward
         action: drop
@@ -277,22 +269,22 @@
         | map(attribute='comment')
         | list
       }}
-    _expected_managed_forward_comments:
-      - "fwd est/rel (managed: routeros role)"
-      - "fwd drop invalid (managed: routeros role)"
-      - "KDS drop DoT (managed: routeros role)"
-      - "KDS drop DoQ (managed: routeros role)"
-      - "admin -> internal (managed: routeros role)"
-      - "DFLT -> SRV services (managed: routeros role)"
-      - "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)"
-      - "SRV -> UniFi controller (managed: routeros role)"
-      - "MGMT admins -> WAN (managed: routeros role)"
-      - "srv -> WAN (managed: routeros role)"
-      - "dflt -> WAN (managed: routeros role)"
-      - "kds -> WAN (managed: routeros role)"
-      - "gst -> WAN (managed: routeros role)"
-      - "dmz -> WAN (managed: routeros role)"
-      - "DEFAULT DROP (managed: routeros role)"
+    _expected_managed_forward_comments: >-
+      {{
+        [
+          "fwd est/rel (managed: routeros role)",
+          "fwd drop invalid (managed: routeros role)",
+          "OOB drop routed traffic (managed: routeros role)",
+          "KDS drop DoT (managed: routeros role)",
+          "KDS drop DoQ (managed: routeros role)",
+          "DFLT -> SRV services (managed: routeros role)",
+          "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)",
+          "SRV -> UniFi controller (managed: routeros role)",
+          "MGMT admins -> WAN (managed: routeros role)"
+        ]
+        + (routeros_wan_egress_subnets | map('regex_replace', '$', ' -> WAN (managed: routeros role)') | list)
+        + ["DEFAULT DROP (managed: routeros role)"]
+      }}
   when: routeros_enable_default_drop | bool
   tags: [default-drop]
 
