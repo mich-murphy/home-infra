@@ -21,7 +21,8 @@
       - name: api # plain (cleartext) API; we use api-ssl only
         disabled: true
 
-# LOCKOUT NOTE: router management is allowed from MGMT, so WiFi DHCP clients are not pinned to one reserved IP.
+# LOCKOUT NOTE: router management is allowed from the whole wired MGMT subnet (plus the OOB
+# /30), so any wired MGMT DHCP client can manage the router without a pinned reserved IP.
 - name: Restrict encrypted management services to MGMT
   community.routeros.api_modify:
     path: ip service

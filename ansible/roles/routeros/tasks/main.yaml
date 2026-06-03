@@ -30,3 +30,7 @@
 - name: Bridge VLAN membership + filtering (lockout-risk flip is gated)
   ansible.builtin.import_tasks: bridge.yaml
   tags: [bridge]
+
+- name: Read-only post-change verification
+  ansible.builtin.import_tasks: verify.yaml
+  tags: [verify]

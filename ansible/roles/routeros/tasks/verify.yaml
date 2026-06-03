@@ -1,0 +1,153 @@
+---
+- name: Verify OOB address exists
+  community.routeros.api:
+    path: ip address
+    query: ".id address interface comment WHERE interface == {{ routeros_oob_port }}"
+  register: _routeros_verify_oob_ip
+  check_mode: false
+
+- name: Verify DMZ address exists
+  community.routeros.api:
+    path: ip address
+    query: ".id address interface comment WHERE interface == {{ routeros_dmz_port }}"
+  register: _routeros_verify_dmz_ip
+  check_mode: false
+  when: routeros_enable_dmz | bool
+
+- name: Verify bridge port membership
+  community.routeros.api:
+    path: interface bridge port
+    query: ".id interface bridge pvid"
+  register: _routeros_verify_bridge_ports
+  check_mode: false
+
+- name: Verify bridge VLAN filtering state
+  community.routeros.api:
+    path: interface bridge
+    query: ".id name vlan-filtering WHERE name == {{ routeros_bridge }}"
+  register: _routeros_verify_bridge
+  check_mode: false
+
+- name: Verify LAN interface-list membership
+  community.routeros.api:
+    path: interface list member
+    query: ".id list interface comment WHERE list == LAN"
+  register: _routeros_verify_lan_members
+  check_mode: false
+
+- name: Verify forward filter rules
+  community.routeros.api:
+    path: ip firewall filter
+    query: ".id chain action comment WHERE chain == forward"
+  register: _routeros_verify_forward_filter
+  check_mode: false
+
+- name: Verify DHCP servers
+  community.routeros.api:
+    path: ip dhcp-server
+    query: ".id name interface"
+  register: _routeros_verify_dhcp_servers
+  check_mode: false
+
+- name: Assert OOB and DMZ topology is staged
+  ansible.builtin.assert:
+    that:
+      - _oob_ip_matches | length > 0
+      - routeros_oob_port not in _bridge_port_interfaces
+      - not (routeros_enable_dmz | bool) or _dmz_ip_matches | length > 0
+      - not (routeros_enable_dmz | bool) or routeros_dmz_port not in _bridge_port_interfaces
+    fail_msg: OOB/DMZ topology does not match the intended isolated-port design.
+  vars:
+    _oob_ip_matches: >-
+      {{
+        _routeros_verify_oob_ip.msg
+        | select('mapping')
+        | selectattr('address', 'equalto', routeros_oob_ip)
+        | selectattr('interface', 'equalto', routeros_oob_port)
+        | list
+      }}
+    _dmz_expected_ip: "{{ routeros_dmz.gateway ~ '/' ~ routeros_dmz.subnet.split('/')[1] }}"
+    _dmz_ip_matches: >-
+      {{
+        (_routeros_verify_dmz_ip.msg | default([]))
+        | select('mapping')
+        | selectattr('address', 'equalto', _dmz_expected_ip)
+        | selectattr('interface', 'equalto', routeros_dmz_port)
+        | list
+      }}
+    _bridge_port_interfaces: >-
+      {{
+        _routeros_verify_bridge_ports.msg
+        | select('mapping')
+        | map(attribute='interface')
+        | list
+      }}
+
+- name: Assert router-facing interfaces are in LAN
+  ansible.builtin.assert:
+    that:
+      - _expected_lan_interfaces | difference(_lan_member_interfaces) | length == 0
+    fail_msg: "Missing LAN interface-list members: {{ _expected_lan_interfaces | difference(_lan_member_interfaces) }}"
+  vars:
+    _expected_lan_interfaces: "{{ routeros_router_lan_interfaces + [routeros_oob_port] }}"
+    _lan_member_interfaces: >-
+      {{
+        _routeros_verify_lan_members.msg
+        | select('mapping')
+        | map(attribute='interface')
+        | list
+      }}
+
+- name: Assert DHCP server interfaces are present
+  ansible.builtin.assert:
+    that:
+      - routeros_lan_input_interfaces | difference(_dhcp_interfaces) | length == 0
+    fail_msg: "Missing DHCP server interfaces: {{ routeros_lan_input_interfaces | difference(_dhcp_interfaces) }}"
+  vars:
+    _dhcp_interfaces: >-
+      {{
+        _routeros_verify_dhcp_servers.msg
+        | select('mapping')
+        | map(attribute='interface')
+        | list
+      }}
+
+- name: Assert vlan-filtering state matches the enable flag
+  ansible.builtin.assert:
+    that:
+      - (_bridge_filtering_enabled | bool) == (routeros_enable_vlan_filtering | bool)
+    fail_msg: "Bridge vlan-filtering state does not match routeros_enable_vlan_filtering."
+  vars:
+    _bridge_record: "{{ _routeros_verify_bridge.msg | select('mapping') | first }}"
+    _bridge_filtering_enabled: "{{ _bridge_record['vlan-filtering'] | default(false) }}"
+
+- name: Assert default-drop state matches the enable flag
+  ansible.builtin.assert:
+    that:
+      - not (routeros_enable_default_drop | bool) or _managed_forward_comments[-1] == "DEFAULT DROP (managed: routeros role)"
+      - routeros_enable_default_drop | bool or "DEFAULT DROP (managed: routeros role)" not in _managed_forward_comments
+    fail_msg: Managed forward default-drop state does not match routeros_enable_default_drop.
+  vars:
+    _managed_forward_comments: >-
+      {{
+        _routeros_verify_forward_filter.msg
+        | select('mapping')
+        | selectattr('comment', 'defined')
+        | selectattr('comment', 'search', 'managed: routeros role')
+        | map(attribute='comment')
+        | list
+      }}
+
+- name: Assert no unmanaged accepts are above default drop
+  ansible.builtin.assert:
+    that:
+      - >-
+        item.action | default('') != 'accept'
+        or (item.comment | default('')) is search('managed: routeros role|defconf')
+    fail_msg: "Unmanaged accept rule appears above managed default-drop: {{ item }}"
+  loop: "{{ _forward_filter_records[:_default_drop_index | int] }}"
+  vars:
+    _forward_filter_records: "{{ _routeros_verify_forward_filter.msg | select('mapping') | list }}"
+    _forward_comments: "{{ _forward_filter_records | map(attribute='comment', default='') | list }}"
+    _default_drop_index: "{{ _forward_comments.index('DEFAULT DROP (managed: routeros role)') }}"
+  when: routeros_enable_default_drop | bool
