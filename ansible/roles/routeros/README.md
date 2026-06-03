@@ -39,6 +39,13 @@ services restricted to `routeros_router_admin_sources` (MGMT + OOB subnets).
 `routeros_enable_vlan_filtering` / `routeros_enable_default_drop` default to
 `false`, and the vlan-filtering flip is additionally `never`-tagged.
 
+The run ends with read-only verification. To run only the checks:
+
+```sh
+cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
+  --limit routeros --tags verify
+```
+
 ## Lockout-risk flips (explicit, one at a time)
 
 ⚠️ A 2026-06-03 apply that enabled vlan-filtering with MGMT bound to the raw bridge
@@ -52,13 +59,22 @@ cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
 # Then VERIFY MGMT still works: a DHCP client on VLAN 1 still pulls a lease,
 # and 10.77.1.1 is reachable. If not, disable filtering from the OOB port.
 
-# 2. Only once filtering is verified, enable the forward default-drop:
+# 2. Only once filtering is verified, enable the forward default-drop.
+# This requires routeros_enable_default_drop=true AND an explicit default-drop tag:
 cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
   --limit routeros --tags firewall,default-drop -e routeros_enable_default_drop=true
 ```
 
-After any flip, inspect `/interface bridge vlan print`, `/interface bridge port print`,
-`/ip dhcp-server print`, and `/ip firewall filter print`.
+After any flip, run the read-only verifier:
+
+```sh
+cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
+  --limit routeros --tags verify -e routeros_enable_vlan_filtering=true \
+  -e routeros_enable_default_drop=true
+```
+
+Also inspect `/interface bridge vlan print`, `/interface bridge port print`,
+`/ip dhcp-server print`, and `/ip firewall filter print` if a check fails.
 
 ## MGMT / VLAN 1 DHCP (why it stays on the raw bridge)
 
@@ -76,3 +92,17 @@ VLAN 1 CPU delivery from the raw-bridge IP); that approach was abandoned for thi
 
 ⚠️ This binding is unverified under live vlan-filtering. Before trusting it: enable
 filtering from the OOB port and confirm a VLAN 1 client still pulls a DHCP lease.
+
+## Proxmox host topology
+
+The RouterOS port map assumes the Proxmox host is cabled and bridged like this:
+
+- `eno2` -> `vmbr0` -> RB5009 `ether3`: production/MGMT uplink. The host address
+  is `10.77.1.100/24` with gateway `10.77.1.1`; VMs/LXCs without an explicit VLAN tag
+  land on native MGMT.
+- `eno1` -> `vmbr1` -> RB5009 `ether2`: untagged DMZ uplink. The Proxmox host should
+  not have an IP on this bridge; ai-dev guests on `vmbr1` get DHCP from `10.77.99.1`.
+
+Keep `vmbr1` as an untagged bridge unless there is a deliberate need to trunk VLANs into
+the DMZ. Allowing all VLAN IDs on the DMZ bridge makes the host side broader than the
+RouterOS model, which treats `ether2` as a single untagged L3 DMZ interface.

@@ -15,12 +15,6 @@ variable "unifi_user_group_name" {
   default = "Default"
 }
 
-# Native LAN (VLAN 1) the MGMT SSID attaches to; a second untagged network is rejected. Override if renamed.
-variable "unifi_default_network_name" {
-  type    = string
-  default = "Default"
-}
-
 # Wireless VLANs only (MGMT/SRV/DMZ are wired — see the routeros role). `subnet` (gateway
 # CIDR on the RB5009) is required by the schema but not served by the controller.
 variable "wireless_vlans" {
