@@ -49,15 +49,37 @@
         comment: "managed: routeros role"
       {% endfor %}
 
+# The defconf input chain ends with `drop chain=input in-interface-list=!LAN`. MGMT
+# rides the bridge, which defconf already put in LAN, so MGMT DHCP/DNS to the router
+# survives. The routed VLAN interfaces and the de-bridged DMZ port are NOT in LAN, so
+# their router-bound DHCP/DNS would hit that drop (the managed input accepts below get
+# appended AFTER the defconf drop, so they cannot rescue it). Add the interfaces to LAN
+# so they ride the defconf input accepts like MGMT does. Sensitive management services
+# stay pinned to the MGMT source list (services.yaml), so LAN membership only opens
+# DHCP/DNS/ICMP to the router here — not Winbox/SSH/API.
+- name: Add routed VLAN + DMZ interfaces to the LAN interface-list
+  community.routeros.api_modify:
+    path: interface list member
+    handle_absent_entries: ignore
+    data:
+      - list: LAN
+        interface: "{{ ('vlan' ~ item.id ~ '-' ~ item.name) if item.name != 'dmz' else routeros_dmz_port }}"
+        comment: "{{ item.name }} in LAN (managed: routeros role)"
+  loop: "{{ routeros_vlans + ([routeros_dmz] if routeros_enable_dmz | bool else []) }}"
+  loop_control:
+    label: "{{ item.name }}"
+
 - name: Input — allow MGMT hosts + the router's own services
   community.routeros.api_modify:
     path: ip firewall filter
     handle_absent_entries: ignore
     data: "{{ _routeros_input_policy | from_yaml }}"
   vars:
-    # The router is the DHCP and DNS server for its clients; these inbound services
-    # must be permitted explicitly so they survive future input-chain tightening
-    # (today they ride on defconf rules only). DHCP DISCOVER comes from 0.0.0.0, so
+    # The router is the DHCP and DNS server for its clients; these inbound services are
+    # permitted explicitly as belt-and-suspenders so they survive future input-chain
+    # tightening. Function today comes from LAN membership above (these accepts append
+    # after the defconf !LAN drop, so they are inert until the chain is reordered).
+    # DHCP DISCOVER comes from 0.0.0.0, so
     # scope it by ingress interface (not source address) to keep it off the WAN. MGMT
     # rides the raw bridge (native VLAN 1), the routed VLANs their vlanX interfaces.
     _routeros_dhcp_input_interfaces: >-
