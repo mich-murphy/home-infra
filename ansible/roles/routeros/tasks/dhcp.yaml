@@ -35,3 +35,35 @@
   loop: "{{ routeros_vlans + ([routeros_dmz] if routeros_enable_dmz | bool else []) }}"
   loop_control:
     label: "{{ item.name }}"
+
+# MGMT keeps its existing bridge-bound DHCP server (Fix A leaves the MGMT IP/DHCP on
+# the raw bridge). Codify only what matters for reliability: a sane lease time and
+# static reservations, so a missed renewal can never strand a critical host (the
+# failure that downed docker-host and, most likely, the "bricked" AP).
+- name: Find the MGMT DHCP server bound to the bridge
+  community.routeros.api:
+    path: ip dhcp-server
+    query: ".id name interface WHERE interface == {{ routeros_bridge }}"
+  register: _mgmt_dhcp
+  check_mode: false # read-only query; must run in --check so the set below resolves
+
+- name: Set the MGMT DHCP lease time
+  community.routeros.api_modify:
+    path: ip dhcp-server
+    handle_absent_entries: ignore
+    data:
+      - name: "{{ (_mgmt_dhcp.msg | select('mapping') | first).name }}"
+        lease-time: "{{ routeros_dhcp_lease_time }}"
+  when: _mgmt_dhcp.msg | select('mapping') | list | length > 0
+
+- name: Static DHCP reservations for critical infra (MGMT)
+  community.routeros.api_modify:
+    path: ip dhcp-server lease
+    handle_absent_entries: ignore
+    data:
+      - address: "{{ item.ip }}"
+        mac-address: "{{ item.mac }}"
+        comment: "{{ item.name }} reservation (managed: routeros role)"
+  loop: "{{ routeros_mgmt_reservations }}"
+  loop_control:
+    label: "{{ item.name }} -> {{ item.ip }}"

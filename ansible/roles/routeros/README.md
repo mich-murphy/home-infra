@@ -59,3 +59,20 @@ cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
 
 After any flip, inspect `/interface bridge vlan print`, `/interface bridge port print`,
 `/ip dhcp-server print`, and `/ip firewall filter print`.
+
+## MGMT / VLAN 1 DHCP (why it stays on the raw bridge)
+
+MGMT keeps its gateway IP and DHCP server on the **raw `bridge` interface**, reachable
+on VLAN 1 via the bridge PVID (=1) untagged path. The bridge is **not** a tagged member
+of VLAN 1 in `bridge.yaml` (untagged ports only).
+
+Adding the bridge to VLAN 1's *tagged* list — the earlier design — is what broke
+dynamic MGMT DHCP under vlan-filtering: the bridge then expected VLAN 1 tagged while the
+raw-bridge IP/DHCP operate untagged, so untagged clients' DISCOVERs went unanswered.
+That was the recurring AP / GL.iNet / docker-host "random" DHCP loss. Static-lease hosts
+kept working (which masked it). A later attempt to fix it by moving MGMT onto a dedicated
+`vlan1-mgmt` interface **caused the 2026-06-03 lockout** (creating that interface hijacks
+VLAN 1 CPU delivery from the raw-bridge IP); that approach was abandoned for this one.
+
+⚠️ This binding is unverified under live vlan-filtering. Before trusting it: enable
+filtering from the OOB port and confirm a VLAN 1 client still pulls a DHCP lease.
