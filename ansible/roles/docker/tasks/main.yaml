@@ -114,11 +114,54 @@
     state: absent
   when: repo.stat.exists
 
+- name: ensure Pocket ID secret directory exists
+  ansible.builtin.file:
+    path: "{{ pocket_id_encryption_key_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: check for Pocket ID encryption key
+  ansible.builtin.stat:
+    path: "{{ pocket_id_encryption_key_path }}"
+  register: pocket_id_key_file
+
+- name: generate Pocket ID encryption key
+  ansible.builtin.command:
+    cmd: openssl rand -hex 32
+  register: generated_pocket_id_key
+  changed_when: true
+  when: not pocket_id_key_file.stat.exists
+  no_log: true
+
+- name: persist Pocket ID encryption key
+  ansible.builtin.copy:
+    content: "{{ generated_pocket_id_key.stdout }}\n"
+    dest: "{{ pocket_id_encryption_key_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  when: not pocket_id_key_file.stat.exists
+  no_log: true
+
+- name: read Pocket ID encryption key
+  ansible.builtin.slurp:
+    src: "{{ pocket_id_encryption_key_path }}"
+  register: pocket_id_key
+  no_log: true
+
+- name: set Pocket ID encryption key fact
+  ansible.builtin.set_fact:
+    pocket_id_encryption_key: "{{ pocket_id_key.content | b64decode | trim }}"
+  no_log: true
+
 - name: setup .env file
   ansible.builtin.copy:
     content: |
       CF_DNS_API_TOKEN={{ CF_DNS_API_TOKEN }}
       CF_API_EMAIL={{ CF_API_EMAIL }}
+      ENCRYPTION_KEY={{ pocket_id_encryption_key }}
       MAXMIND_LICENSE_KEY={{ MAXMIND_LICENSE_KEY }}
     dest: "{{ srv_dir }}/.env"
     owner: "{{ username }}"
