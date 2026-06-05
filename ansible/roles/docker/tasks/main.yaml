@@ -163,8 +163,10 @@
       ENCRYPTION_KEY={{ pocket_id_encryption_key }}
       MAXMIND_LICENSE_KEY={{ MAXMIND_LICENSE_KEY }}
     dest: "{{ srv_dir }}/.env"
-    owner: "{{ username }}"
-    mode: "0775"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
 
 - name: start init compose file
   ansible.builtin.shell:
