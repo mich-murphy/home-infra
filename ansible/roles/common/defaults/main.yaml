@@ -7,3 +7,6 @@ swap_swappiness: 60
 # zram-generator options (used when swap_mode == zram)
 zram_size: ram
 zram_compression: zstd
+
+# Bound persistent systemd journal growth.
+journald_system_max_use: 500M
