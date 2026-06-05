@@ -1,0 +1,9 @@
+---
+docker_log_driver: json-file
+docker_log_max_size: 20m
+docker_log_max_file: 3
+
+docker_image_prune_enabled: true
+docker_image_prune_until: 168h
+docker_image_prune_calendar: weekly
+docker_image_prune_randomized_delay: 1h

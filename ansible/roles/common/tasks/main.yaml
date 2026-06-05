@@ -7,6 +7,10 @@
   ansible.builtin.include_tasks:
     file: ssh.yaml
 
+- name: configure journald retention
+  ansible.builtin.include_tasks:
+    file: journald.yaml
+
 - name: configure swap
   ansible.builtin.include_tasks:
     file: swap.yaml

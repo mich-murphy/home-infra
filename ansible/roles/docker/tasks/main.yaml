@@ -1,4 +1,81 @@
 ---
+- name: ensure Docker daemon config directory exists
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: configure Docker daemon log rotation
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      {
+        "log-driver": "{{ docker_log_driver }}",
+        "log-opts": {
+          "max-size": "{{ docker_log_max_size }}",
+          "max-file": "{{ docker_log_max_file | string }}"
+        }
+      }
+  register: docker_daemon_config
+
+- name: apply Docker daemon config before compose changes
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
+  when: docker_daemon_config.changed
+
+- name: install Docker image prune service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/docker-image-prune.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Prune unused Docker images
+      Wants=docker.service
+      After=docker.service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/docker image prune -f --filter until={{ docker_image_prune_until }}
+  register: docker_image_prune_service
+
+- name: install Docker image prune timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/docker-image-prune.timer
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Run Docker image prune weekly
+
+      [Timer]
+      OnCalendar={{ docker_image_prune_calendar }}
+      Persistent=true
+      RandomizedDelaySec={{ docker_image_prune_randomized_delay }}
+
+      [Install]
+      WantedBy=timers.target
+  register: docker_image_prune_timer
+
+- name: reload systemd after Docker prune unit changes
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: docker_image_prune_service.changed or docker_image_prune_timer.changed
+
+- name: configure Docker image prune timer state
+  ansible.builtin.systemd:
+    name: docker-image-prune.timer
+    enabled: "{{ docker_image_prune_enabled }}"
+    state: "{{ 'started' if docker_image_prune_enabled else 'stopped' }}"
+
 - name: set clone directory
   ansible.builtin.set_fact:
     clone_dir: /tmp/home-infra
