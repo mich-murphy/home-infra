@@ -60,7 +60,7 @@ http:
     truenas:
       loadBalancer:
         servers:
-          - url: "https://10.77.1.101"
+          - url: "https://10.77.20.101"
         passHostHeader: true
     crafty:
       loadBalancer:
