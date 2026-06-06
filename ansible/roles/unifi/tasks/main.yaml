@@ -1,95 +1,37 @@
 ---
-- name: ensure apt keyring dir
-  ansible.builtin.file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: "0755"
-
-- name: install base packages
+- name: install UniFi OS Server prerequisites
   ansible.builtin.apt:
     name:
       - ca-certificates
       - curl
-      - gnupg
-      - apt-transport-https
+      - podman
+      - qemu-guest-agent
+      - slirp4netns
     state: present
     update_cache: true
     cache_valid_time: 3600
+    lock_timeout: 300
 
-# Debian 12 doesn't ship Java 25; pull Eclipse Temurin from Adoptium.
-- name: download adoptium signing key
-  ansible.builtin.get_url:
-    url: https://packages.adoptium.net/artifactory/api/gpg/key/public
-    dest: /etc/apt/keyrings/adoptium.asc
-    mode: "0644"
-
-- name: dearmor adoptium signing key
-  ansible.builtin.command:
-    cmd: gpg --batch --yes --dearmor -o /etc/apt/keyrings/adoptium.gpg /etc/apt/keyrings/adoptium.asc
-    creates: /etc/apt/keyrings/adoptium.gpg
-
-- name: add adoptium repo
-  ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb bookworm main"
-    filename: adoptium
-    state: present
-
-# --- MongoDB (binary only; UniFi runs its own mongod instance on :27117) ---
-- name: download mongodb signing key
-  ansible.builtin.get_url:
-    url: "https://pgp.mongodb.com/server-{{ mongodb_version }}.asc"
-    dest: "/etc/apt/keyrings/mongodb-server-{{ mongodb_version }}.asc"
-    mode: "0644"
-
-- name: dearmor mongodb signing key
-  ansible.builtin.command:
-    cmd: >-
-      gpg --batch --yes --dearmor
-      -o /etc/apt/keyrings/mongodb-server-{{ mongodb_version }}.gpg
-      /etc/apt/keyrings/mongodb-server-{{ mongodb_version }}.asc
-    creates: "/etc/apt/keyrings/mongodb-server-{{ mongodb_version }}.gpg"
-
-- name: add mongodb repo
-  ansible.builtin.apt_repository:
-    repo: >-
-      deb [signed-by=/etc/apt/keyrings/mongodb-server-{{ mongodb_version }}.gpg]
-      https://repo.mongodb.org/apt/debian bookworm/mongodb-org/{{ mongodb_version }} main
-    filename: "mongodb-org-{{ mongodb_version }}"
-    state: present
-
-# --- UniFi Network controller ---
-- name: download unifi signing key
-  ansible.builtin.get_url:
-    url: https://dl.ui.com/unifi/unifi-repo.gpg
-    dest: /etc/apt/keyrings/unifi-repo.gpg
-    mode: "0644"
-
-- name: add unifi repo
-  ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/unifi-repo.gpg] https://www.ui.com/downloads/unifi/debian stable ubiquiti"
-    filename: unifi
-    state: present
-
-- name: install unifi packages
-  ansible.builtin.apt:
-    name:
-      - "temurin-{{ unifi_java_version }}-jre"
-      - mongodb-org-server
-      - unifi
-    state: present
-    update_cache: true
-
-# UniFi spawns + manages its own mongod on :27117; the packaged systemd instance
-# (:27017) is redundant and wastes RAM on a memory-constrained host.
-- name: disable redundant system mongod instance
+- name: enable and start QEMU guest agent
   ansible.builtin.systemd:
-    name: mongod
-    enabled: false
-    state: stopped
-  failed_when: false
+    name: qemu-guest-agent
+    enabled: true
+    state: started
 
-- name: enable and start unifi
+- name: download UniFi OS Server installer
+  ansible.builtin.get_url:
+    url: "{{ unifi_os_server_download_url }}"
+    dest: "{{ unifi_os_server_installer_path }}"
+    mode: "0755"
+
+- name: install UniFi OS Server
+  ansible.builtin.command:
+    cmd: "{{ unifi_os_server_installer_path }}"
+    creates: /usr/local/bin/uosserver
+    stdin: "y\n"
+
+- name: enable and start UniFi OS Server
   ansible.builtin.systemd:
-    name: unifi
+    name: uosserver
     enabled: true
     state: started

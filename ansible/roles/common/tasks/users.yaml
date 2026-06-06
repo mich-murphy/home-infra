@@ -5,6 +5,7 @@
     name: sudo
     state: present
     update_cache: true
+    lock_timeout: 300
   when: ansible_os_family == "Debian"
 
 - name: ensure wheel group exists
@@ -18,6 +19,14 @@
     shell: /bin/bash
     groups: wheel
     append: true
+
+- name: ensure management user's home is owned by the user
+  ansible.builtin.file:
+    path: "/home/{{ username }}"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
 
 - name: add authorised ssh key to user
   ansible.posix.authorized_key:

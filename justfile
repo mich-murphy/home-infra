@@ -12,13 +12,6 @@ apply:
 destroy:
   umask 077; cd terraform && terraform destroy
 
-# UniFi controller LXC lives in its own root (bpg provider; see terraform/unifi/versions.tf)
-unifi-init:
-  umask 077; cd terraform/unifi && terraform init
-
-unifi-apply:
-  umask 077; cd terraform/unifi && terraform apply
-
 # UniFi network objects (VLAN-only networks + WLANs) via ubiquiti-community/unifi
 network-init:
   umask 077; cd terraform/network && terraform init
@@ -40,14 +33,20 @@ edit:
 reqs:
   cd ansible && ansible-galaxy install -r requirements.yaml
 
-routeros:
+routeros-scaffold:
   cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros
 
-routeros-verify:
+routeros-verify-scaffold:
   cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags verify
+
+routeros-verify:
+  cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true
 
 routeros-verify-strict:
   cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true
+
+routeros:
+  cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags services,oob,vlans,dmz,dhcp,firewall,bridge,vlan-filtering,default-drop,verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true
 
 routeros-strict:
   cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags services,oob,vlans,dmz,dhcp,firewall,bridge,vlan-filtering,default-drop,verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true

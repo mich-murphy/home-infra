@@ -11,7 +11,6 @@
 
 - hosts: ai-dev
   become: true
-  remote_user: michael
   vars_files:
     - "group_vars/secrets.yaml"
   roles:
