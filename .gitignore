@@ -3,7 +3,8 @@
 CLAUDE.md
 
 # docs
-docs
+docs/*
+!docs/docker-hardening.md
 
 # nix
 .direnv

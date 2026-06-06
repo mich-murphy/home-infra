@@ -130,6 +130,7 @@ All services run behind Traefik on the shared `proxy` network (172.20.1.0/24) wi
 
 - Images pinned to SHA256 digests (managed by Renovate)
 - `security_opt: no-new-privileges:true` on all containers
+- `cap_drop: [ALL]` is rolled out service-by-service; see [docs/docker-hardening.md](docs/docker-hardening.md)
 - Backend databases use isolated internal networks (e.g., `172.30.1.0/24`)
 - GPU passthrough (`/dev/dri`) for Plex, Jellyfin, Immich transcoding
 - NFS mounts at `/mnt/data`, `/mnt/music`, `/mnt/audiobooks`, etc.
