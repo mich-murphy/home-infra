@@ -45,11 +45,6 @@ import {
   id = "proxmox/110"
 }
 
-import {
-  to = module.ai_dev["ai-dev-bc"].proxmox_virtual_environment_vm.this
-  id = "proxmox/111"
-}
-
 # Manually provisioned (no cloud-init); HBA passed through for ZFS.
 # prevent_destroy blocks accidental replacement while still allowing drift detection.
 resource "proxmox_virtual_environment_vm" "truenas" {
@@ -222,6 +217,105 @@ resource "proxmox_virtual_environment_vm" "cloud_init_docker_host" {
   }
 }
 
+resource "local_sensitive_file" "cloud_init_unifi" {
+  content = sensitive(templatefile("cloud_init.tftpl", {
+    hostname           = "unifi-controller"
+    os_family          = "debian"
+    tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
+    ssh_public_key     = var.unifi_ssh_public_key
+  }))
+  filename        = "${path.module}/files/unifi-controller.cfg"
+  file_permission = "0600"
+}
+
+resource "proxmox_virtual_environment_file" "cloud_init_unifi" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = local.proxmox_node
+  overwrite    = true
+  source_file {
+    path      = local_sensitive_file.cloud_init_unifi.filename
+    file_name = "unifi-controller.yml"
+    checksum  = local_sensitive_file.cloud_init_unifi.content_sha256
+  }
+}
+
+resource "proxmox_virtual_environment_vm" "unifi_controller" {
+  depends_on = [
+    proxmox_virtual_environment_file.cloud_init_unifi,
+  ]
+  vm_id               = 111
+  name                = "unifi-controller"
+  description         = "UniFi OS Server (managed by Terraform and Ansible)."
+  node_name           = local.proxmox_node
+  tags                = ["ubuntu", "unifi"]
+  bios                = "seabios"
+  keyboard_layout     = "en-us"
+  boot_order          = ["scsi0"]
+  on_boot             = true
+  reboot_after_update = true
+  scsi_hardware       = "virtio-scsi-single"
+  started             = true
+  agent {
+    enabled = true
+    type    = "virtio"
+  }
+  operating_system {
+    type = "l26"
+  }
+  startup {
+    order = 3
+  }
+  clone {
+    full      = false
+    node_name = local.proxmox_node
+    vm_id     = var.ubuntu_server_24_04_template_vmid
+  }
+  cpu {
+    cores   = 2
+    sockets = 1
+    type    = "host"
+  }
+  memory {
+    dedicated = 4096
+  }
+  initialization {
+    datastore_id        = "local-zfs"
+    interface           = "ide1"
+    vendor_data_file_id = "local:snippets/unifi-controller.yml"
+    ip_config {
+      ipv4 {
+        address = "10.77.1.10/24"
+        gateway = "10.77.1.1"
+      }
+    }
+    user_account {
+      keys     = [var.unifi_ssh_public_key]
+      username = "mm"
+    }
+  }
+  serial_device {
+    device = "socket"
+  }
+  disk {
+    datastore_id = "local-zfs"
+    discard      = "on"
+    file_format  = "raw"
+    interface    = "scsi0"
+    iothread     = false
+    replicate    = false
+    size         = 40
+  }
+  network_device {
+    bridge = "vmbr0"
+    model  = "virtio"
+  }
+  lifecycle {
+    ignore_changes  = [clone]
+    prevent_destroy = true
+  }
+}
+
 # Blueprint for the planned K8s migration; gated by enable_talos until then.
 resource "proxmox_virtual_environment_vm" "talos_control_plane" {
   count               = var.enable_talos ? 1 : 0
@@ -286,7 +380,7 @@ module "ai_dev" {
   name                = each.key
   vmid                = each.value.vmid
   clone_template_vmid = var.arch_cloud_template_vmid
-  tags                = ["ai-dev", "arch"]
+  tags                = ["arch", "ai-dev"]
   cores               = 2
   memory_mib          = 4096
   disk_size           = 150

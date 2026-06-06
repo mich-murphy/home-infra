@@ -5,6 +5,7 @@ provider "registry.terraform.io/1password/onepassword" {
   version     = "3.3.1"
   constraints = "3.3.1"
   hashes = [
+    "h1:35PCpSNLVubReT1imwfC+FpIP5gQWx+rvG4njkXkZKM=",
     "h1:Tg8bJ+ATy5pla6ZTn87lb3nIyiTJTgQHJdxOWQjFF9k=",
     "zh:02d93a7f520ec69ad8944a68dcbf512e2f9920a6696628b8d05e6ad408309f35",
     "zh:0f91a902da84470af95f0da4dc21127b84e23c856a431ff9ecfe45d9c6775ef0",
@@ -21,6 +22,7 @@ provider "registry.terraform.io/ubiquiti-community/unifi" {
   version     = "0.41.25"
   constraints = "~> 0.41"
   hashes = [
+    "h1:qRFnztw0TZG/RQVLHe2Pjz5U/IOY0g+8ESV1AwzIEWU=",
     "h1:zwJDyrNyfxz3/iHXVSRO3mVxMrE5VAOM2Q8g7Z2yOnI=",
     "zh:1f45ce17895b191156c1556cb704e022c903afce13d4d0eb9c7a8c2ba1d5c882",
     "zh:25350e49be814fa80b0831d598773ef5ca6349875fc84ae8c68c5aeecc8546a6",

@@ -21,21 +21,35 @@ Proxmox v9.1.6 (hypervisor)
 ├── TrueNAS VM (SRV VLAN) ─── NFS shares (media, downloads, bulk storage)
 ├── Docker Host VM (Ubuntu 24.04) ─── 18+ services via Docker Compose
 │   └── Traefik → *.local.elmurphy.com (TLS via Cloudflare ACME)
-└── [Talos K8s VM] ─── Inactive, pending stability investigation
+├── UniFi OS Server VM (MGMT) ─── Network controller for AP/WLANs
+├── ai-dev-bgd VM (DMZ) ─── Isolated AI development sandbox
+└── [Talos K8s VM] ─── Inactive, pending migration work
 ```
 
-### Network (Ubiquiti Dream Machine)
+### Network (MikroTik RB5009 + UniFi AP)
 
-| VLAN           | Purpose                                 |
-| -------------- | --------------------------------------- |
-| Skynet         | Trusted devices (laptop, server)        |
-| Skynet - DMZ   | Internet-exposed services (isolated)    |
-| Skynet - IoT   | Smart home devices                      |
-| Skynet - Work  | Work devices (MAC whitelist, isolated)  |
-| Skynet - Jnr   | Kids devices (content + time filtering) |
-| Skynet - Guest | Visitors                                |
+Routing, DHCP, firewall policy and inter-VLAN isolation live on the MikroTik
+RB5009 and are managed by the Ansible `routeros` role. The UniFi controller runs
+as a dedicated Proxmox VM (`unifi-controller`, VMID 111) and the AP/WLAN objects
+are managed through the UniFi controller API (`terraform/network`).
 
-The server has two ethernet ports mapped to Skynet and Skynet-DMZ respectively via Proxmox.
+| Network | VLAN / link | Purpose |
+| --- | --- | --- |
+| MGMT | native VLAN 1 | Wired-only management plane (`10.77.1.0/24`) |
+| SRV | VLAN 20 | TrueNAS + docker-host services (`10.77.20.0/24`) |
+| DFLT | VLAN 30 | Main wireless clients (`10.77.30.0/24`) |
+| KDS | VLAN 50 | Kids wireless clients with filtered DNS (`10.77.50.0/24`) |
+| GST | VLAN 60 | Guest wireless clients with UniFi L2 isolation (`10.77.60.0/24`) |
+| DMZ | RB5009 `ether2` / Proxmox `vmbr1` | Isolated ai-dev VMs (`10.77.99.0/24`) |
+| OOB | RB5009 `ether7` | Break-glass router access (`10.66.0.0/30`) |
+
+The server has two ethernet ports: `eno2`/`vmbr0` trunks MGMT/SRV to RB5009
+`ether3`, while `eno1`/`vmbr1` is the untagged DMZ uplink to RB5009 `ether2`.
+The UniFi U7 Pro AP is adopted in the controller. The three managed WLANs are
+attached to the default `All APs` group and mapped to the DFLT/KDS/GST
+VLAN-only networks. The ai-dev VMs are isolated on the physical DMZ
+(`10.77.99.0/24`), protected by host nftables default-deny input rules, and
+further scoped by an external Tailscale ACL policy managed outside this repo.
 
 ## Repository Structure
 
@@ -68,10 +82,13 @@ nix develop
 just init       # terraform init
 just apply      # terraform apply
 just destroy    # terraform destroy
+just network-init && just network-apply   # UniFi VLAN-only networks + WLANs
 
 # Ansible
 just reqs                   # install galaxy requirements
 just run docker-host        # run playbook against a host
+just run unifi-controller   # configure UniFi OS Server VM
+just routeros               # steady-state strict RouterOS config
 just edit                   # edit encrypted vault secrets
 ```
 
@@ -84,14 +101,16 @@ Run Terraform through the `just` recipes so local state and generated cloud-init
 | ------------ | --- | ---------------------------- | ----------------------- |
 | truenas      | 101 | 2 CPU, 10GB RAM, 32GB        | NAS with HBA passthrough |
 | docker-host  | 102 | 6 CPU, 10GB RAM, 128GB       | Docker Compose services |
+| ai-dev-bgd   | 110 | 2 CPU, 4GB RAM, 150GB        | AI development sandbox   |
+| unifi        | 111 | 2 CPU, 4GB RAM, 40GB         | UniFi OS Server          |
 | talos-prod-1 | 200 | 6 CPU, 10GB RAM, 100GB+128GB | Kubernetes (inactive)   |
 
-Cloud-init template (`cloud_init.tftpl`) bootstraps the ansible user, installs qemu-guest-agent, Tailscale, and Docker.
+Cloud-init template (`cloud_init.tftpl`) bootstraps the management user, installs qemu-guest-agent, and joins Tailscale.
 TrueNAS and docker-host are managed with `prevent_destroy`; their pinned MAC addresses are supplied through sensitive Terraform variables in the ignored root `.envrc`.
 
 ## Ansible
 
-Configures provisioned VMs with four roles:
+Configures provisioned hosts and the RB5009 with these primary roles:
 
 | Role     | Purpose                                     |
 | -------- | ------------------------------------------- |
@@ -99,8 +118,19 @@ Configures provisioned VMs with four roles:
 | firewall | UFW rules                                   |
 | media    | NFS mounts, media user/group (UID/GID 1215) |
 | docker   | Docker engine installation                  |
+| unifi    | UniFi OS Server install                     |
+| routeros | RB5009 VLANs, DHCP, firewall, NAT, OOB port |
 
 Secrets are managed via ansible-vault (`ansible/group_vars/secrets.yaml`).
+
+RouterOS strict mode is the current steady state. `just routeros` maintains the
+strict config; `just routeros-scaffold` is only for pre-strict bootstrap or
+recovery work. See `ansible/roles/routeros/README.md`.
+
+## Network Operations
+
+Apply/verify order for a fresh rebuild is manual: root Terraform →
+`just run unifi-controller` → `terraform/network` → `just routeros`.
 
 ## Docker Services
 
@@ -136,7 +166,7 @@ All services run behind Traefik on the shared `proxy` network (172.20.1.0/24) wi
 
 ## Kubernetes (Inactive)
 
-Talos Linux single-node cluster managed by Flux CD. Currently offline due to unresolved Proxmox host instability when Flux deploys workloads. See [docs/PRD.md](docs/PRD.md) for the migration plan.
+Talos Linux single-node cluster managed by Flux CD. Currently inactive pending the next Kubernetes migration pass. See [docs/PRD.md](docs/PRD.md) for the migration plan.
 
 ## CI/CD
 

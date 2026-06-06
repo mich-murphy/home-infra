@@ -4,6 +4,12 @@ variable "docker_host_ssh_public_key" {
   default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
 }
 
+variable "unifi_ssh_public_key" {
+  type        = string
+  description = "SSH public key for the mm user on the UniFi OS Server VM."
+  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
+}
+
 variable "ai_dev_ssh_public_key" {
   type        = string
   description = "SSH public key for the michael user on ai-dev VMs (the laptop key)."
@@ -40,7 +46,6 @@ variable "ai_devs" {
   }))
   default = {
     "ai-dev-bgd" = { vmid = 110 }
-    "ai-dev-bc"  = { vmid = 111 }
   }
 }
 

@@ -18,7 +18,10 @@ packages:
   - qemu-guest-agent
 runcmd:
   - systemctl enable --now qemu-guest-agent
+  - pacman-key --init
+  - pacman-key --populate archlinux
   - pacman -Sy --noconfirm archlinux-keyring
+  - pacman -Syu --noconfirm
   - curl -fsSL https://tailscale.com/install.sh | sh
   - tailscale up --ssh --hostname=${hostname} --advertise-tags=tag:ai-dev --authkey=${tailscale_auth_key}
 %{ endif ~}
