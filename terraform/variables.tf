@@ -22,6 +22,18 @@ variable "docker_host_macaddr" {
   sensitive   = true
 }
 
+variable "ubuntu_server_24_04_template_vmid" {
+  type        = number
+  description = "Proxmox VMID for the ubuntu-server-24-04 cloud-init template."
+  default     = 9001
+}
+
+variable "arch_cloud_template_vmid" {
+  type        = number
+  description = "Proxmox VMID for the arch-cloud cloud-init template."
+  default     = 9002
+}
+
 variable "ai_devs" {
   type = map(object({
     vmid = number

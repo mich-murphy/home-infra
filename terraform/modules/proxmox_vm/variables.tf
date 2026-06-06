@@ -6,12 +6,12 @@ variable "vmid" {
   type = number
 }
 
-variable "clone_template" {
-  type = string
+variable "clone_template_vmid" {
+  type = number
 }
 
 variable "tags" {
-  type = string
+  type = list(string)
 }
 
 variable "cores" {
@@ -25,8 +25,8 @@ variable "memory_mib" {
 }
 
 variable "disk_size" {
-  type    = string
-  default = "100G"
+  type    = number
+  default = 100
 }
 
 variable "bridge" {
@@ -52,17 +52,7 @@ variable "ssh_public_key" {
   default = ""
 }
 
-variable "proxmox_host" {
-  type      = string
-  sensitive = true
-}
-
-variable "proxmox_user" {
-  type      = string
-  sensitive = true
-}
-
-variable "proxmox_password" {
-  type      = string
-  sensitive = true
+variable "node_name" {
+  type    = string
+  default = "proxmox"
 }

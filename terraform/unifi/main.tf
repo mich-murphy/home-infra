@@ -1,4 +1,4 @@
-# OP_SERVICE_ACCOUNT_TOKEN inherited from terraform/.envrc via direnv (parent applies to subdirs).
+# OP_SERVICE_ACCOUNT_TOKEN is inherited from the repository root .envrc.
 data "onepassword_item" "proxmox" {
   vault = "5v7zjyz2kanfxgsui2jx735vum"
   title = "proxmox_creds"
@@ -11,11 +11,10 @@ locals {
 }
 
 provider "proxmox" {
-  # 443 via the reverse proxy; :8006 resolves to a Tailscale addr that refuses the connection.
-  endpoint  = "https://proxmox.local.elmurphy.com"
+  # Use the direct PVE API; the reverse-proxied endpoint times out on cluster-wide VM queries.
+  endpoint  = "https://${local.scp["hostname"].value}:8006"
   api_token = "${data.onepassword_item.proxmox.username}=${data.onepassword_item.proxmox.password}"
-  insecure  = false
-
+  insecure  = true
   ssh {
     agent    = false
     username = local.scp["scp username"].value
@@ -43,50 +42,40 @@ resource "proxmox_virtual_environment_container" "unifi" {
   tags          = ["lxc", "unifi"]
   unprivileged  = true
   start_on_boot = true
-
   cpu {
     cores = 2
   }
-
   memory {
     dedicated = 2048
   }
-
   disk {
     datastore_id = "local-zfs"
     size         = 12
   }
-
   operating_system {
     template_file_id = proxmox_download_file.debian12.id
     type             = "debian"
   }
-
   # Static IP below the DHCP pool (.150-.250) for a stable inform URL. Add `vlan_id` once VLANs land.
   initialization {
     hostname = "unifi-controller"
-
     ip_config {
       ipv4 {
         address = "10.77.1.10/24"
         gateway = "10.77.1.1"
       }
     }
-
     dns {
       servers = ["10.77.1.1"]
     }
-
     user_account {
       keys = [var.unifi_ssh_public_key]
     }
   }
-
   network_interface {
     name   = "eth0"
     bridge = "vmbr0"
   }
-
   startup {
     order = 3
   }
