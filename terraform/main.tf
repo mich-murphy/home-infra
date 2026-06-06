@@ -168,6 +168,7 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
     bridge  = "vmbr0"
     model   = "virtio"
     macaddr = "BC:24:11:13:C4:53"
+    tag     = 20
   }
 
   # Intel iGPU passed through for Plex/Jellyfin hardware transcoding.

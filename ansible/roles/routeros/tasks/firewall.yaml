@@ -189,6 +189,13 @@
         comment: "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)"
       - chain: forward
         src-address: "{{ _net.srv }}"
+        dst-address: "{{ routeros_truenas_host }}"
+        protocol: tcp
+        dst-port: 111,2049
+        action: accept
+        comment: "SRV -> TrueNAS NFS (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ _net.srv }}"
         dst-address: "{{ routeros_unifi_ctrl }}"
         action: accept
         comment: "SRV -> UniFi controller (managed: routeros role)"
@@ -280,6 +287,7 @@
           "KDS drop DoQ (managed: routeros role)",
           "DFLT -> SRV services (managed: routeros role)",
           "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)",
+          "SRV -> TrueNAS NFS (managed: routeros role)",
           "SRV -> UniFi controller (managed: routeros role)",
           "MGMT admins -> WAN (managed: routeros role)"
         ]

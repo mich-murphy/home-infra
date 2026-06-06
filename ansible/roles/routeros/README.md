@@ -42,8 +42,7 @@ services restricted to `routeros_router_admin_sources` (MGMT + OOB subnets).
 The run ends with read-only verification. To run only the checks:
 
 ```sh
-cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
-  --limit routeros --tags verify
+just routeros-verify
 ```
 
 ## Lockout-risk flips (explicit, one at a time)
@@ -53,24 +52,17 @@ caused a full management lockout that needed a physical reset. Do these only wit
 OOB port verified (prereq 3):
 
 ```sh
-# 1. Enable vlan-filtering (requires BOTH the var and the never-tag override):
-cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
-  --limit routeros --tags vlan-filtering -e routeros_enable_vlan_filtering=true
-# Then VERIFY MGMT still works: a DHCP client on VLAN 1 still pulls a lease,
-# and 10.77.1.1 is reachable. If not, disable filtering from the OOB port.
-
-# 2. Only once filtering is verified, enable the forward default-drop.
-# This requires routeros_enable_default_drop=true AND an explicit default-drop tag:
-cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
-  --limit routeros --tags firewall,default-drop -e routeros_enable_default_drop=true
+just routeros-strict
 ```
+
+The strict recipe applies the normal scaffold plus the two explicit hardening flips:
+`vlan-filtering` and `default-drop`. It is intentionally separate from
+`just routeros` so the lockout-risk path is auditable in shell history and review.
 
 After any flip, run the read-only verifier:
 
 ```sh
-cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass \
-  --limit routeros --tags verify -e routeros_enable_vlan_filtering=true \
-  -e routeros_enable_default_drop=true
+just routeros-verify-strict
 ```
 
 Also inspect `/interface bridge vlan print`, `/interface bridge port print`,
@@ -106,3 +98,14 @@ The RouterOS port map assumes the Proxmox host is cabled and bridged like this:
 Keep `vmbr1` as an untagged bridge unless there is a deliberate need to trunk VLANs into
 the DMZ. Allowing all VLAN IDs on the DMZ bridge makes the host side broader than the
 RouterOS model, which treats `ether2` as a single untagged L3 DMZ interface.
+
+## Service VLAN cutover checks
+
+`docker-host` is a service workload and should not live on native MGMT. Terraform tags
+its NIC with VLAN 20, and this role reserves `10.77.20.246` on `srv-dhcp`. After the
+VM reconnects or reboots, verify the guest has a `10.77.20.0/24` lease, then update any
+external DNS records that still point service names at the old `10.77.1.246` address.
+
+The ai-dev guests should land on the physical DMZ (`10.77.99.0/24`) through `vmbr1`.
+If they receive `10.77.1.0/24` leases, the RB5009 DMZ port is still bridged into MGMT
+or the cabling/port map is wrong; do not enable `default-drop` until that is corrected.
