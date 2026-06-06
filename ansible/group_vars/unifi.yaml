@@ -2,7 +2,7 @@
 username: mm
 ssh_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJB/6HGQa6B3kSZqVosObsWeiRSI5UsKkeBkLsxPlWqQ
 
-# LXC swap is the host's job; `none` just clears any in-guest swap.
+# VM swap is intentionally disabled in guest config; memory pressure belongs in Proxmox sizing.
 swap_mode: none
 swap_swappiness: 10
 
