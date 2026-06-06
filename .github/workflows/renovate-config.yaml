@@ -1,0 +1,20 @@
+name: Renovate Config
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Validate repository config
+        run: npx --yes --package renovate renovate-config-validator --strict
+      - name: Validate self-hosted config
+        run: npx --yes --package renovate renovate-config-validator --strict .github/renovate-config.json

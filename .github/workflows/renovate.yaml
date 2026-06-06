@@ -9,6 +9,8 @@ on:
         type: string
   schedule:
     - cron: "30 4,6 * * *"
+permissions:
+  contents: read
 jobs:
   renovate:
     runs-on: ubuntu-latest

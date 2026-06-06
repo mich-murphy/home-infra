@@ -8,21 +8,46 @@
   ],
   "semanticCommits": "enabled",
   "branchPrefix": "actions-renovate/",
-  "prHourlyLimit": 15,
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 5,
+  "branchConcurrentLimit": 5,
   "rebaseWhen": "conflicted",
   "automergeStrategy": "rebase",
+  "osvVulnerabilityAlerts": true,
+  "dependencyDashboardOSVVulnerabilitySummary": "unresolved",
   "major": {
-    "automerge": false
+    "automerge": false,
+    "dependencyDashboardApproval": true
   },
   "kubernetes": {
     "managerFilePatterns": ["/kubernetes/.+\\.ya?ml$/"]
   },
   "packageRules": [
     {
-      "matchUpdateTypes": ["minor", "patch"],
-      "matchCurrentVersion": "!/^0/",
-      "automerge": true,
-      "ignoreTests": true
+      "description": "Require approval for high-risk infrastructure updates",
+      "matchPackageNames": [
+        "/^cilium$/",
+        "/^cilium\\//",
+        "/^external-secrets$/",
+        "/^external-secrets\\//",
+        "/^fluxcd\\/flux2$/",
+        "/^ghcr\\.io\\/fluxcd\\//",
+        "/^ghcr\\.io\\/immich-app\\//",
+        "/^hashicorp\\/terraform$/",
+        "/^local$/",
+        "/^mariadb$/",
+        "/^miniflux\\/miniflux$/",
+        "/^nextcloud$/",
+        "/^onepassword$/",
+        "/^openebs$/",
+        "/^openebs\\//",
+        "/^postgres$/",
+        "/^proxmox$/",
+        "/^redis$/",
+        "/^terraform-provider-.*/",
+        "/^traefik$/"
+      ],
+      "dependencyDashboardApproval": true
     },
     {
       "description": "Linuxserver.io Qbittorrent",
