@@ -60,7 +60,7 @@ resource "proxmox_vm_qemu" "truenas" {
     id       = 0
     bridge   = "vmbr0"
     model    = "virtio"
-    macaddr  = "BC:24:11:AF:30:C0"
+    macaddr  = var.truenas_macaddr
     tag      = 20
     firewall = true
   }
@@ -168,7 +168,7 @@ resource "proxmox_vm_qemu" "cloud_init_docker_host" {
     id      = 0
     bridge  = "vmbr0"
     model   = "virtio"
-    macaddr = "BC:24:11:13:C4:53"
+    macaddr = var.docker_host_macaddr
     tag     = 20
   }
 

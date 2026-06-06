@@ -10,6 +10,18 @@ variable "ai_dev_ssh_public_key" {
   default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
 }
 
+variable "truenas_macaddr" {
+  type        = string
+  description = "Pinned TrueNAS VM NIC MAC address. Provide via TF_VAR_truenas_macaddr in the ignored root .envrc."
+  sensitive   = true
+}
+
+variable "docker_host_macaddr" {
+  type        = string
+  description = "Pinned docker-host VM NIC MAC address. Provide via TF_VAR_docker_host_macaddr in the ignored root .envrc."
+  sensitive   = true
+}
+
 variable "ai_devs" {
   type = map(object({
     vmid = number

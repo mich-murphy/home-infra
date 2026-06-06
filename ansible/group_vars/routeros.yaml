@@ -42,7 +42,6 @@ routeros_admin_station: 10.77.1.241 # this Mac (MGMT) — see note: DHCP, reserv
 routeros_ipmi_host: 10.77.1.99 # Proxmox IPMI/BMC
 routeros_unifi_ctrl: 10.77.1.10
 routeros_truenas_host: 10.77.20.101
-routeros_truenas_mac: BC:24:11:AF:30:C0
 routeros_docker_host_srv_ip: 10.77.20.246
 # Router management is allowed from the wired MGMT subnet plus the dedicated OOB
 # recovery link. MGMT is intentionally not exposed by a WiFi SSID.
@@ -101,8 +100,8 @@ routeros_kids_dns: 1.1.1.3 # OPEN ITEM: Cloudflare Families / NextDNS / AdGuard
 # never strand a critical host. (The recurring DHCP outages were the VLAN-1 binding,
 # fixed in bridge.yaml — not the pool; these are belt-and-suspenders.)
 routeros_dhcp_lease_time: 1d
-# Reservations carry device MAC addresses, so the real list lives in the vaulted
-# secrets.yaml (overrides this empty default) — keep MACs out of the plaintext repo.
+# Reservations carry device MAC addresses, so MAC variables live in vaulted
+# secrets.yaml. Keep stable device identifiers out of the plaintext repo.
 # Vault entry shape:
 #   routeros_mgmt_reservations:
 #     - { name: proxmox, mac: "<mac>", ip: 10.77.1.10 }
@@ -113,7 +112,7 @@ routeros_mgmt_reservations: []
 # service configs do not depend on the dynamic pool.
 routeros_srv_reservations:
   - { name: truenas, mac: "{{ routeros_truenas_mac }}", ip: "{{ routeros_truenas_host }}" }
-  - { name: docker-host, mac: "BC:24:11:13:C4:53", ip: "{{ routeros_docker_host_srv_ip }}" }
+  - { name: docker-host, mac: "{{ routeros_docker_host_mac }}", ip: "{{ routeros_docker_host_srv_ip }}" }
 
 # DMZ isolation is safe to keep on (it's a separate physical port, not the bridge).
 routeros_enable_dmz: true
