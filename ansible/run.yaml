@@ -36,7 +36,8 @@
       hostname: "{{ routeros_api_host }}"
       username: "{{ routeros_api_user }}"
       password: "{{ routeros_api_password }}"
-      tls: true
+      port: "{{ routeros_api_port | default(omit) }}"
+      tls: "{{ routeros_api_tls | default(true) }}"
       validate_certs: false
   roles:
     - routeros

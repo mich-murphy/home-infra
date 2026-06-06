@@ -60,13 +60,37 @@
 - name: Static DHCP reservations for critical infra (MGMT)
   community.routeros.api_modify:
     path: ip dhcp-server lease
+    handle_absent_entries: remove
+    restrict:
+      - field: server
+        values:
+          - "{{ (_mgmt_dhcp.msg | select('mapping') | first).name }}"
+      - field: comment
+        regex: ".*managed: routeros role.*"
+    data: "{{ (_routeros_effective_mgmt_reservations | from_yaml) | default([], true) }}"
+  vars:
+    _mgmt_dhcp_name: "{{ (_mgmt_dhcp.msg | select('mapping') | first).name }}"
+    _routeros_effective_mgmt_reservations: |
+      {% set srv_macs = routeros_srv_reservations | map(attribute='mac') | map('lower') | list %}
+      {% for reservation in routeros_mgmt_reservations %}
+      {% if reservation.mac | lower not in srv_macs %}
+      - address: "{{ reservation.ip }}"
+        mac-address: "{{ reservation.mac }}"
+        server: "{{ _mgmt_dhcp_name }}"
+        comment: "{{ reservation.name }} reservation (managed: routeros role)"
+      {% endif %}
+      {% endfor %}
+  when: _mgmt_dhcp.msg | select('mapping') | list | length > 0
+
+- name: Static DHCP reservations for critical infra (SRV)
+  community.routeros.api_modify:
+    path: ip dhcp-server lease
     handle_absent_entries: ignore
     data:
       - address: "{{ item.ip }}"
         mac-address: "{{ item.mac }}"
-        server: "{{ (_mgmt_dhcp.msg | select('mapping') | first).name }}"
+        server: srv-dhcp
         comment: "{{ item.name }} reservation (managed: routeros role)"
-  loop: "{{ routeros_mgmt_reservations }}"
+  loop: "{{ routeros_srv_reservations }}"
   loop_control:
     label: "{{ item.name }} -> {{ item.ip }}"
-  when: _mgmt_dhcp.msg | select('mapping') | list | length > 0

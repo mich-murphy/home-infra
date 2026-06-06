@@ -24,18 +24,20 @@ Proxmox v9.1.6 (hypervisor)
 └── [Talos K8s VM] ─── Inactive, pending stability investigation
 ```
 
-### Network (Ubiquiti Dream Machine)
+### Network (MikroTik RB5009 + UniFi AP)
 
-| VLAN           | Purpose                                 |
-| -------------- | --------------------------------------- |
-| Skynet         | Trusted devices (laptop, server)        |
-| Skynet - DMZ   | Internet-exposed services (isolated)    |
-| Skynet - IoT   | Smart home devices                      |
-| Skynet - Work  | Work devices (MAC whitelist, isolated)  |
-| Skynet - Jnr   | Kids devices (content + time filtering) |
-| Skynet - Guest | Visitors                                |
+| VLAN / subnet       | Purpose                                      |
+| ------------------- | -------------------------------------------- |
+| MGMT / 10.77.1.0/24 | Wired management only: Proxmox, IPMI, UniFi  |
+| SRV / 10.77.20.0/24 | Service workloads, including `docker-host`   |
+| DFLT / 10.77.30.0/24 | Trusted wireless clients                     |
+| KDS / 10.77.50.0/24 | Kids devices with filtered DNS controls      |
+| GST / 10.77.60.0/24 | Guest wireless clients                       |
+| DMZ / 10.77.99.0/24 | Isolated untrusted/sandbox workloads         |
 
-The server has two ethernet ports mapped to Skynet and Skynet-DMZ respectively via Proxmox.
+The server has two ethernet ports: `vmbr0` is the MGMT native / production VLAN trunk,
+and `vmbr1` is the untagged physical DMZ. Service VMs use explicit VLAN tags rather
+than landing on MGMT by default.
 
 ## Repository Structure
 
