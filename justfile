@@ -12,14 +12,6 @@ apply:
 destroy:
   umask 077; cd terraform && terraform destroy
 
-# Legacy UniFi Network controller LXC root. Kept temporarily for rollback during
-# the UniFi OS Server VM migration.
-unifi-init:
-  umask 077; cd terraform/unifi && terraform init
-
-unifi-apply:
-  umask 077; cd terraform/unifi && terraform apply
-
 # UniFi network objects (VLAN-only networks + WLANs) via ubiquiti-community/unifi
 network-init:
   umask 077; cd terraform/network && terraform init
@@ -40,10 +32,6 @@ edit:
 
 reqs:
   cd ansible && ansible-galaxy install -r requirements.yaml
-
-unifi-bootstrap:
-  # Legacy terraform/unifi LXC bootstrap only.
-  cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit unifi -e ansible_user=root
 
 routeros-scaffold:
   cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros
