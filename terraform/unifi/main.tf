@@ -26,14 +26,6 @@ provider "proxmox" {
   }
 }
 
-# Fetched to `local` so the build is self-contained (no manual `pveam download`).
-resource "proxmox_download_file" "debian12" {
-  content_type = "vztmpl"
-  datastore_id = "local"
-  node_name    = "proxmox"
-  url          = var.template_url
-}
-
 # Isolated controller LXC: keeps the network management plane off docker-host.
 resource "proxmox_virtual_environment_container" "unifi" {
   node_name     = "proxmox"
@@ -41,7 +33,8 @@ resource "proxmox_virtual_environment_container" "unifi" {
   description   = "UniFi Network controller (managed by ansible roles/unifi)"
   tags          = ["lxc", "unifi"]
   unprivileged  = true
-  start_on_boot = true
+  started       = false
+  start_on_boot = false
   cpu {
     cores = 2
   }
@@ -53,7 +46,7 @@ resource "proxmox_virtual_environment_container" "unifi" {
     size         = 12
   }
   operating_system {
-    template_file_id = proxmox_download_file.debian12.id
+    template_file_id = "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
     type             = "debian"
   }
   # Static IP below the DHCP pool (.150-.250) for a stable inform URL. Add `vlan_id` once VLANs land.
@@ -78,5 +71,15 @@ resource "proxmox_virtual_environment_container" "unifi" {
   }
   startup {
     order = 3
+  }
+  lifecycle {
+    ignore_changes = [
+      cpu,
+      disk,
+      initialization,
+      memory,
+      network_interface,
+      operating_system,
+    ]
   }
 }
