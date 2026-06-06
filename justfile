@@ -27,7 +27,8 @@ network-plan:
   umask 077; cd terraform/network && terraform plan
 
 network-apply:
-  umask 077; cd terraform/network && terraform apply
+  # The UniFi provider can crash when creating multiple network resources concurrently.
+  umask 077; cd terraform/network && terraform apply -parallelism=1
 
 ## ansible
 run HOST:

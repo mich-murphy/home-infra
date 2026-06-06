@@ -19,15 +19,25 @@ resource "unifi_network" "vlan" {
 
 # DFLT — WPA3 transition (Sonos/AppleTV share this subnet; mDNS stays native).
 resource "unifi_wlan" "dflt" {
-  name            = "madviLANy"
+  name            = "MadviLANy"
   security        = "wpapsk"
   passphrase      = local.psk["dflt"].value
   wpa3_support    = true
   wpa3_transition = true
   pmf_mode        = "optional"
-  network_id      = unifi_network.vlan["dflt"].id
-  ap_group_ids    = [data.unifi_ap_group.default.id]
-  user_group_id   = data.unifi_client_qos_rate.default.id
+  bss_transition  = true
+
+  minimum_data_rate_2g_kbps = 1000
+  minimum_data_rate_5g_kbps = 6000
+
+  mac_filter = {
+    enabled = false
+    policy  = "allow"
+  }
+
+  network_id    = unifi_network.vlan["dflt"].id
+  ap_group_ids  = [data.unifi_ap_group.default.id]
+  user_group_id = data.unifi_client_qos_rate.default.id
 }
 
 # KDS — WPA3-only.
@@ -38,9 +48,19 @@ resource "unifi_wlan" "kds" {
   wpa3_support    = true
   wpa3_transition = false
   pmf_mode        = "required"
-  network_id      = unifi_network.vlan["kds"].id
-  ap_group_ids    = [data.unifi_ap_group.default.id]
-  user_group_id   = data.unifi_client_qos_rate.default.id
+  bss_transition  = true
+
+  minimum_data_rate_2g_kbps = 1000
+  minimum_data_rate_5g_kbps = 6000
+
+  mac_filter = {
+    enabled = false
+    policy  = "allow"
+  }
+
+  network_id    = unifi_network.vlan["kds"].id
+  ap_group_ids  = [data.unifi_ap_group.default.id]
+  user_group_id = data.unifi_client_qos_rate.default.id
 }
 
 # GST — WPA3 transition + L2 isolation.
@@ -51,11 +71,21 @@ resource "unifi_wlan" "gst" {
   wpa3_support    = true
   wpa3_transition = true
   pmf_mode        = "optional"
-  is_guest        = true
-  l2_isolation    = true
-  network_id      = unifi_network.vlan["gst"].id
-  ap_group_ids    = [data.unifi_ap_group.default.id]
-  user_group_id   = data.unifi_client_qos_rate.default.id
+  bss_transition  = true
+
+  minimum_data_rate_2g_kbps = 1000
+  minimum_data_rate_5g_kbps = 6000
+
+  mac_filter = {
+    enabled = false
+    policy  = "allow"
+  }
+
+  is_guest      = true
+  l2_isolation  = true
+  network_id    = unifi_network.vlan["gst"].id
+  ap_group_ids  = [data.unifi_ap_group.default.id]
+  user_group_id = data.unifi_client_qos_rate.default.id
 }
 
 # Fallback if a legacy Sonos won't join WPA3: uncomment, add a `sonos` PSK field (DFLT keeps mDNS native).
