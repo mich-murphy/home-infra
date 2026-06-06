@@ -90,9 +90,8 @@
   when: swap_rebuild
 
 - name: persist swapfile in fstab
-  ansible.posix.mount:
-    path: none
-    src: /swapfile
-    fstype: swap
-    opts: sw
-    state: present
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '^/swapfile\s+none\s+swap\s+'
+    line: "/swapfile none swap sw 0 0"
+    create: true

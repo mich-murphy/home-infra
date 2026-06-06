@@ -7,6 +7,7 @@
 
 - name: define nfs configurations
   ansible.builtin.set_fact:
+    nfs_mount_opts: "rw,vers=4.2,proto=tcp,hard,_netdev,x-systemd.automount,x-systemd.idle-timeout=600,nofail"
     nfs_mounts:
       - name: "media"
         local_path: "/mnt/data"
@@ -28,11 +29,48 @@
         nfs_share: "10.77.20.101:/mnt/slow/media/audiobooks"
         owner: "media"
         group: "media"
+    retired_nfs_mounts:
       - name: "emulators"
         local_path: "/mnt/emulators"
         nfs_share: "10.77.20.101:/mnt/slow/media/emulators"
-        owner: "media"
-        group: "media"
+
+- name: check retired nfs mount state
+  ansible.builtin.command:
+    cmd: "findmnt -rn --target {{ item.local_path }}"
+  register: retired_nfs_mount_state
+  changed_when: false
+  failed_when: retired_nfs_mount_state.rc not in [0, 1]
+  loop: "{{ retired_nfs_mounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: unmount retired nfs mounts
+  ansible.builtin.command:
+    cmd: "umount {{ item.item.local_path }}"
+  register: retired_nfs_unmount_results
+  changed_when: true
+  when: item.rc == 0
+  loop: "{{ retired_nfs_mount_state.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+
+- name: remove retired nfs fstab entries
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: "^{{ item.nfs_share | regex_escape }}\\s+{{ item.local_path | regex_escape }}\\s+"
+    state: absent
+  register: retired_nfs_fstab_results
+  loop: "{{ retired_nfs_mounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: remove retired nfs mount folders
+  ansible.builtin.file:
+    path: "{{ item.local_path }}"
+    state: absent
+  loop: "{{ retired_nfs_mounts }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: create folders for nfs mounts
   ansible.builtin.file:
@@ -45,13 +83,48 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: mount nfs shares
-  ansible.posix.mount:
-    src: "{{ item.nfs_share }}"
-    path: "{{ item.local_path }}"
-    fstype: nfs
-    opts: "rw,proto=tcp,nofail"
-    state: mounted
+- name: persist active nfs fstab entries
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: "^{{ item.nfs_share | regex_escape }}\\s+{{ item.local_path | regex_escape }}\\s+"
+    line: "{{ item.nfs_share }} {{ item.local_path }} nfs4 {{ nfs_mount_opts }} 0 0"
+    create: true
+  register: active_nfs_fstab_results
   loop: "{{ nfs_mounts }}"
   loop_control:
     label: "{{ item.name }}"
+
+- name: reload systemd after nfs fstab changes
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: >
+    (retired_nfs_fstab_results is changed)
+    or (active_nfs_fstab_results is changed)
+
+- name: check active nfs mount state
+  ansible.builtin.command:
+    cmd: "findmnt -rn --target {{ item.local_path }}"
+  register: active_nfs_mount_state
+  changed_when: false
+  failed_when: active_nfs_mount_state.rc not in [0, 1]
+  loop: "{{ nfs_mounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: mount inactive nfs shares
+  ansible.builtin.command:
+    cmd: "mount {{ item.item.local_path }}"
+  changed_when: true
+  when: item.rc == 1
+  loop: "{{ active_nfs_mount_state.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+
+- name: remount nfs shares after fstab changes
+  ansible.builtin.command:
+    cmd: "mount -o remount {{ item.item.local_path }}"
+  changed_when: true
+  when: item.changed
+  loop: "{{ active_nfs_fstab_results.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
