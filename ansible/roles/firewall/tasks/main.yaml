@@ -3,6 +3,7 @@
   ansible.builtin.apt:
     name: ufw
     state: present
+    lock_timeout: 300
 
 - name: enable ufw
   community.general.ufw:

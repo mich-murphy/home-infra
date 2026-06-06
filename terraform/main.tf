@@ -217,33 +217,7 @@ resource "proxmox_virtual_environment_vm" "cloud_init_docker_host" {
   }
 }
 
-resource "local_sensitive_file" "cloud_init_unifi" {
-  content = sensitive(templatefile("cloud_init.tftpl", {
-    hostname           = "unifi-controller"
-    os_family          = "debian"
-    tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
-    ssh_public_key     = var.unifi_ssh_public_key
-  }))
-  filename        = "${path.module}/files/unifi-controller.cfg"
-  file_permission = "0600"
-}
-
-resource "proxmox_virtual_environment_file" "cloud_init_unifi" {
-  content_type = "snippets"
-  datastore_id = "local"
-  node_name    = local.proxmox_node
-  overwrite    = true
-  source_file {
-    path      = local_sensitive_file.cloud_init_unifi.filename
-    file_name = "unifi-controller.yml"
-    checksum  = local_sensitive_file.cloud_init_unifi.content_sha256
-  }
-}
-
 resource "proxmox_virtual_environment_vm" "unifi_controller" {
-  depends_on = [
-    proxmox_virtual_environment_file.cloud_init_unifi,
-  ]
   vm_id               = 111
   name                = "unifi-controller"
   description         = "UniFi OS Server (managed by Terraform and Ansible)."
@@ -280,14 +254,16 @@ resource "proxmox_virtual_environment_vm" "unifi_controller" {
     dedicated = 4096
   }
   initialization {
-    datastore_id        = "local-zfs"
-    interface           = "ide1"
-    vendor_data_file_id = "local:snippets/unifi-controller.yml"
+    datastore_id = "local-zfs"
+    interface    = "ide1"
     ip_config {
       ipv4 {
         address = "10.77.1.10/24"
         gateway = "10.77.1.1"
       }
+    }
+    dns {
+      servers = ["10.77.1.1"]
     }
     user_account {
       keys     = [var.unifi_ssh_public_key]

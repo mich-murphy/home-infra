@@ -5,10 +5,18 @@
       - ca-certificates
       - curl
       - podman
+      - qemu-guest-agent
       - slirp4netns
     state: present
     update_cache: true
     cache_valid_time: 3600
+    lock_timeout: 300
+
+- name: enable and start QEMU guest agent
+  ansible.builtin.systemd:
+    name: qemu-guest-agent
+    enabled: true
+    state: started
 
 - name: download UniFi OS Server installer
   ansible.builtin.get_url:

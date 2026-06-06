@@ -5,6 +5,7 @@
     name: sudo
     state: present
     update_cache: true
+    lock_timeout: 300
   when: ansible_os_family == "Debian"
 
 - name: ensure wheel group exists
