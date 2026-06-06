@@ -16,6 +16,8 @@ docs
 terraform.tfstate
 terraform.tfstate.backup
 terraform.tfstate.*.backup
+*.tfvars
+*.tfvars.json
 terraform/files
 
 # ansible
