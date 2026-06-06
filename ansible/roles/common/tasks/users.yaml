@@ -19,6 +19,14 @@
     groups: wheel
     append: true
 
+- name: ensure management user's home is owned by the user
+  ansible.builtin.file:
+    path: "/home/{{ username }}"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
 - name: add authorised ssh key to user
   ansible.posix.authorized_key:
     user: "{{ username }}"

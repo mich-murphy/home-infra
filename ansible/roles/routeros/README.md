@@ -17,7 +17,7 @@ to be absent from the production bridge.
    ```
    Put `routeros_api_user` / `routeros_api_password` in the vault (`just edit`).
 2. Confirm the OPEN ITEMS in `group_vars/routeros.yaml` (interface names, bridge
-   name, admin/IPMI IPs, KDS DNS) against the live router.
+   name, admin/IPMI IPs) against the live router.
 3. **Out-of-band access staged before any VLAN-filtering work.** The role pulls
    `routeros_oob_port` (`ether7`) out of the bridge and gives it `10.66.0.1/30`.
    Plug a laptop into it with a static `10.66.0.2/30` and confirm you can reach
@@ -25,9 +25,9 @@ to be absent from the production bridge.
    vlan-filtering — under filtering, untagged-VLAN1 console access **and**
    Winbox-by-MAC both stop working (learned the hard way on 2026-06-03).
 
-## Normal run (safe scaffold)
+## Normal run (strict steady state)
 
-`just routeros` is **safe** — it never enables the two lockout-risk flips:
+`just routeros` maintains the current strict RouterOS state:
 
 ```sh
 just routeros
@@ -36,8 +36,8 @@ just routeros
 It maintains: the out-of-band port, VLAN interfaces + per-VLAN DHCP, DMZ physical
 isolation, the firewall address-lists / **allow** rules / NAT, and management
 services restricted to `routeros_router_admin_sources` (MGMT + OOB subnets).
-`routeros_enable_vlan_filtering` / `routeros_enable_default_drop` default to
-`false`, and the vlan-filtering flip is additionally `never`-tagged.
+It also keeps `vlan-filtering` and managed `default-drop` enabled. The live router
+was verified in this state on 2026-06-06.
 
 The run ends with read-only verification. To run only the checks:
 
@@ -45,24 +45,24 @@ The run ends with read-only verification. To run only the checks:
 just routeros-verify
 ```
 
-## Lockout-risk flips (explicit, one at a time)
+## Scaffold / Recovery Run
 
-⚠️ A 2026-06-03 apply that enabled vlan-filtering with MGMT bound to the raw bridge
-caused a full management lockout that needed a physical reset. Do these only with the
-OOB port verified (prereq 3):
+`just routeros-scaffold` runs the pre-strict scaffold without the hardening flips.
+Use it only for bootstrap or recovery work before strict mode is re-enabled:
 
 ```sh
-just routeros-strict
+just routeros-scaffold
 ```
 
-The strict recipe applies the normal scaffold plus the two explicit hardening flips:
-`vlan-filtering` and `default-drop`. It is intentionally separate from
-`just routeros` so the lockout-risk path is auditable in shell history and review.
+⚠️ A 2026-06-03 apply that enabled vlan-filtering with MGMT bound to the raw bridge
+caused a full management lockout that needed a physical reset. Strict mode is now
+validated, but any scaffold/recovery work should still start from verified OOB access
+(prereq 3).
 
-After any flip, run the read-only verifier:
+To verify a scaffold/non-strict state only:
 
 ```sh
-just routeros-verify-strict
+just routeros-verify-scaffold
 ```
 
 Also inspect `/interface bridge vlan print`, `/interface bridge port print`,
