@@ -3,8 +3,8 @@
 - name: Validate RouterOS management service sources
   ansible.builtin.assert:
     that:
-      - routeros_router_admin_sources | length > 0
-      - routeros_mgmt_admin_sources == (routeros_router_admin_sources | join(','))
+      - "routeros_router_admin_sources | length > 0"
+      - "routeros_mgmt_admin_sources == (routeros_router_admin_sources | join(','))"
     fail_msg: routeros_router_admin_sources is the source of truth for RouterOS management access.
 
 - name: Disable insecure / unused management services

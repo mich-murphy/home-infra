@@ -33,4 +33,5 @@
 
 - name: Read-only post-change verification
   ansible.builtin.import_tasks: verify.yaml
+  when: not ansible_check_mode
   tags: [verify]

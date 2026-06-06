@@ -7,7 +7,7 @@ variable "unifi_api_url" {
 # Controller defaults the SSIDs attach to; override if labelled differently (Settings -> WiFi).
 variable "unifi_ap_group_name" {
   type    = string
-  default = "Default"
+  default = "All APs"
 }
 
 variable "unifi_user_group_name" {

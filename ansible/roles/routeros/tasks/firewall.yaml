@@ -20,7 +20,7 @@
         values:
           - router-admin
       - field: comment
-        regex: "managed: routeros role"
+        regex: ".*managed: routeros role.*"
     data: "{{ _routeros_router_admin_address_list | from_yaml }}"
   vars:
     _routeros_router_admin_address_list: |
@@ -39,7 +39,7 @@
         values:
           - admin
       - field: comment
-        regex: "managed: routeros role"
+        regex: ".*managed: routeros role.*"
     data: "{{ _routeros_admin_address_list | from_yaml }}"
   vars:
     _routeros_admin_address_list: |
@@ -140,13 +140,14 @@
   community.routeros.api_modify:
     path: ip firewall filter
     handle_absent_entries: remove
+    handle_entries_content: remove_as_much_as_possible
     ensure_order: true
     restrict:
       - field: chain
         values:
           - forward
       - field: comment
-        regex: "managed: routeros role"
+        regex: ".*managed: routeros role.*"
     data: "{{ _routeros_forward_policy }}"
   vars:
     _net: "{{ routeros_vlans | items2dict(key_name='name', value_name='subnet') }}"
@@ -255,10 +256,10 @@
 - name: Assert managed forward rules end in default drop
   ansible.builtin.assert:
     that:
-      - _managed_forward_comments | length > 0
-      - _managed_forward_comments[-1] == "DEFAULT DROP (managed: routeros role)"
-      - _managed_forward_comments | length == _expected_managed_forward_comments | length
-      - _managed_forward_comments == _expected_managed_forward_comments
+      - "_managed_forward_comments | length > 0"
+      - "_managed_forward_comments[-1] == 'DEFAULT DROP (managed: routeros role)'"
+      - "_managed_forward_comments | length == _expected_managed_forward_comments | length"
+      - "_managed_forward_comments == _expected_managed_forward_comments"
     fail_msg: Managed forward rules are not in the expected order; default-drop must be last.
   vars:
     _managed_forward_comments: >-
@@ -295,7 +296,7 @@
         item.action | default('') != 'accept'
         or (item.comment | default('')) is search('managed: routeros role|defconf')
     fail_msg: "Unmanaged accept rule appears above managed default-drop: {{ item }}"
-  loop: "{{ _routeros_forward_filter.msg[:_default_drop_index | int] }}"
+  loop: "{{ _routeros_forward_filter.msg[:(_default_drop_index | int)] }}"
   vars:
     _forward_comments: "{{ _routeros_forward_filter.msg | map(attribute='comment', default='') | list }}"
     _default_drop_index: "{{ _forward_comments.index('DEFAULT DROP (managed: routeros role)') }}"

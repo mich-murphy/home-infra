@@ -53,6 +53,7 @@
     handle_absent_entries: ignore
     data:
       - name: "{{ (_mgmt_dhcp.msg | select('mapping') | first).name }}"
+        interface: "{{ routeros_bridge }}"
         lease-time: "{{ routeros_dhcp_lease_time }}"
   when: _mgmt_dhcp.msg | select('mapping') | list | length > 0
 
@@ -63,7 +64,9 @@
     data:
       - address: "{{ item.ip }}"
         mac-address: "{{ item.mac }}"
+        server: "{{ (_mgmt_dhcp.msg | select('mapping') | first).name }}"
         comment: "{{ item.name }} reservation (managed: routeros role)"
   loop: "{{ routeros_mgmt_reservations }}"
   loop_control:
     label: "{{ item.name }} -> {{ item.ip }}"
+  when: _mgmt_dhcp.msg | select('mapping') | list | length > 0
