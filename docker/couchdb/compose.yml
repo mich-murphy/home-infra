@@ -5,6 +5,8 @@ services:
     container_name: couchdb
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     user: 5984:5984
     networks:
       - proxy

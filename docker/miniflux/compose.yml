@@ -4,6 +4,8 @@ services:
     container_name: miniflux
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
       - miniflux-backend

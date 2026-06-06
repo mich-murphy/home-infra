@@ -36,6 +36,8 @@ services:
     container_name: qbitwebui
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     environment:

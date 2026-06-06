@@ -53,6 +53,8 @@ services:
     init: true
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     environment:
@@ -74,6 +76,8 @@ services:
     container_name: kometa
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy
     volumes:
