@@ -30,8 +30,6 @@ services:
     container_name: immich-ml
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
     networks:
       - immich-backend
     volumes:
