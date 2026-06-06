@@ -19,7 +19,7 @@ resource "unifi_network" "vlan" {
 
 # DFLT — WPA3 transition (Sonos/AppleTV share this subnet; mDNS stays native).
 resource "unifi_wlan" "dflt" {
-  name            = "MadviLANy"
+  name            = "madviLANy"
   security        = "wpapsk"
   passphrase      = local.psk["dflt"].value
   wpa3_support    = true
