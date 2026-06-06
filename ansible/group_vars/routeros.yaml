@@ -41,7 +41,8 @@ routeros_mgmt_subnet: 10.77.1.0/24
 routeros_admin_station: 10.77.1.241 # this Mac (MGMT) — see note: DHCP, reserve a lease before default-drop
 routeros_ipmi_host: 10.77.1.99 # Proxmox IPMI/BMC
 routeros_unifi_ctrl: 10.77.1.10
-routeros_truenas_host: 10.77.1.101
+routeros_truenas_host: 10.77.20.101
+routeros_truenas_mac: BC:24:11:AF:30:C0
 routeros_docker_host_srv_ip: 10.77.20.246
 # Router management is allowed from the wired MGMT subnet plus the dedicated OOB
 # recovery link. MGMT is intentionally not exposed by a WiFi SSID.
@@ -104,13 +105,14 @@ routeros_dhcp_lease_time: 1d
 # secrets.yaml (overrides this empty default) — keep MACs out of the plaintext repo.
 # Vault entry shape:
 #   routeros_mgmt_reservations:
-#     - { name: truenas, mac: "<mac>", ip: 10.77.1.101 }
+#     - { name: proxmox, mac: "<mac>", ip: 10.77.1.10 }
 routeros_mgmt_reservations: []
 
-# Service VLAN reservations. The docker host intentionally moved off MGMT after
-# the VLAN rollout; keep its address stable so DNS / port forwards / NFS exports
-# do not depend on the dynamic pool.
+# Service VLAN reservations. TrueNAS and docker-host intentionally moved off
+# MGMT after the VLAN rollout; keep addresses stable so DNS, NFS exports, and
+# service configs do not depend on the dynamic pool.
 routeros_srv_reservations:
+  - { name: truenas, mac: "{{ routeros_truenas_mac }}", ip: "{{ routeros_truenas_host }}" }
   - { name: docker-host, mac: "BC:24:11:13:C4:53", ip: "{{ routeros_docker_host_srv_ip }}" }
 
 # DMZ isolation is safe to keep on (it's a separate physical port, not the bridge).

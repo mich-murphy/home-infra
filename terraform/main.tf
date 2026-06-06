@@ -61,6 +61,7 @@ resource "proxmox_vm_qemu" "truenas" {
     bridge   = "vmbr0"
     model    = "virtio"
     macaddr  = "BC:24:11:AF:30:C0"
+    tag      = 20
     firewall = true
   }
 
