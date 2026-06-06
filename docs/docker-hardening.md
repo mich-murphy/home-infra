@@ -20,14 +20,12 @@ Applied capability drops:
 - `docker/beszel/compose.yml`: `cap_drop: [ALL]`
 - `docker/couchdb/compose.yml`: `cap_drop: [ALL]`
 - `docker/downloads/compose.yml`: `qbitwebui` only
-- `docker/immich/compose.yml`: `immich-ml` only
-- `docker/init/compose.yml`: `pocket-id` only
 - `docker/miniflux/compose.yml`: `miniflux` only
 - `docker/pinchflat/compose.yml`: `cap_drop: [ALL]`
 - `docker/plex/compose.yml`: `seerr` and `kometa` only
 
 These changes intentionally exclude Docker socket controllers, database/cache
-services, LinuxServer.io images, and GPU-backed media services.
+services, LinuxServer.io images, GPU-backed media services, `immich-ml` after its healthcheck failed, and `pocket-id` after startup failed with `su-exec: setgroups(1000): Operation not permitted`.
 
 ## Research Baseline
 
@@ -65,11 +63,11 @@ They still need deployment validation.
 | Stack | Service | Notes |
 | --- | --- | --- |
 | `beszel` | `beszel` | Applied as pilot; app listens on 8090 and writes only to `beszel-data`. |
-| `init` | `pocket-id` | Applied; app listens on 1411; validate writable `/app/data`. |
+| `init` | `pocket-id` | Deferred; `cap_drop: [ALL]` caused startup permission errors and `su-exec: setgroups(1000): Operation not permitted`. |
 | `downloads` | `qbitwebui` | Applied; app listens on 3000; validate `/data` and `/data/torrents` writes. |
 | `plex` | `seerr` | Applied; app listens on 5055; `init: true` is not a capability need. |
 | `plex` | `kometa` | Applied; no exposed port; validate config read/write and scheduled run behavior. |
-| `immich` | `immich-ml` | Applied; no device mount in current compose; validate model cache writes. |
+| `immich` | `immich-ml` | Deferred; `cap_drop: [ALL]` left the service unhealthy during validation. |
 | `miniflux` | `miniflux` | Applied; app listens on 8080; migrations are DB operations, not Linux capabilities. |
 | `couchdb` | `couchdb` | Applied; already runs as `5984:5984`; validate named volume ownership. |
 | `pinchflat` | `pinchflat` | Applied; app listens on 8945; validate `/downloads` and `/config` writes. |
@@ -150,7 +148,7 @@ into read-only API access.
 ## Suggested Rollout Order
 
 1. Keep `beszel` as the pilot.
-2. Deploy the low-risk app batch one stack at a time: `couchdb`, `pocket-id`, `pinchflat`, `qbitwebui`, `seerr`, `kometa`, `immich-ml`, and `miniflux`.
+2. Deploy the low-risk app batch one stack at a time: `couchdb`, `pinchflat`, `qbitwebui`, `seerr`, `kometa`, and `miniflux`.
 3. Try GPU services only when prepared to validate actual transcoding.
 4. Treat LinuxServer.io services as their own batch and follow each image's docs; if `cap_drop: [ALL]` fails on the normal `PUID`/`PGID` path, test a minimal re-add set starting with `CHOWN`, `SETUID`, and `SETGID`.
 5. Convert DB/cache services to fixed users with pre-owned volumes before dropping all capabilities, or retain the init capabilities their official entrypoints need.
