@@ -15,9 +15,19 @@ Start with low-risk app containers:
 - Internal listener on port 1024 or higher
 - No root entrypoint that performs ownership, user, or database init
 
-Current pilot:
+Applied capability drops:
 
 - `docker/beszel/compose.yml`: `cap_drop: [ALL]`
+- `docker/couchdb/compose.yml`: `cap_drop: [ALL]`
+- `docker/downloads/compose.yml`: `qbitwebui` only
+- `docker/immich/compose.yml`: `immich-ml` only
+- `docker/init/compose.yml`: `pocket-id` only
+- `docker/miniflux/compose.yml`: `miniflux` only
+- `docker/pinchflat/compose.yml`: `cap_drop: [ALL]`
+- `docker/plex/compose.yml`: `seerr` and `kometa` only
+
+These changes intentionally exclude Docker socket controllers, database/cache
+services, LinuxServer.io images, and GPU-backed media services.
 
 ## Research Baseline
 
@@ -55,14 +65,14 @@ They still need deployment validation.
 | Stack | Service | Notes |
 | --- | --- | --- |
 | `beszel` | `beszel` | Applied as pilot; app listens on 8090 and writes only to `beszel-data`. |
-| `init` | `pocket-id` | App listens on 1411; validate writable `/app/data`. |
-| `downloads` | `qbitwebui` | App listens on 3000; validate `/data` and `/data/torrents` writes. |
-| `plex` | `seerr` | App listens on 5055; `init: true` is not a capability need. |
-| `plex` | `kometa` | No exposed port; validate config read/write and scheduled run behavior. |
-| `immich` | `immich-ml` | No device mount in current compose; validate model cache writes. |
-| `miniflux` | `miniflux` | App listens on 8080; migrations are DB operations, not Linux capabilities. |
-| `couchdb` | `couchdb` | Already runs as `5984:5984`; validate named volume ownership. |
-| `pinchflat` | `pinchflat` | App listens on 8945; validate `/downloads` and `/config` writes. |
+| `init` | `pocket-id` | Applied; app listens on 1411; validate writable `/app/data`. |
+| `downloads` | `qbitwebui` | Applied; app listens on 3000; validate `/data` and `/data/torrents` writes. |
+| `plex` | `seerr` | Applied; app listens on 5055; `init: true` is not a capability need. |
+| `plex` | `kometa` | Applied; no exposed port; validate config read/write and scheduled run behavior. |
+| `immich` | `immich-ml` | Applied; no device mount in current compose; validate model cache writes. |
+| `miniflux` | `miniflux` | Applied; app listens on 8080; migrations are DB operations, not Linux capabilities. |
+| `couchdb` | `couchdb` | Applied; already runs as `5984:5984`; validate named volume ownership. |
+| `pinchflat` | `pinchflat` | Applied; app listens on 8945; validate `/downloads` and `/config` writes. |
 
 ### Likely `cap_drop: [ALL]` With Device Validation
 
@@ -140,7 +150,7 @@ into read-only API access.
 ## Suggested Rollout Order
 
 1. Keep `beszel` as the pilot.
-2. Try `couchdb`, `pocket-id`, `pinchflat`, `qbitwebui`, `seerr`, `kometa`, and `miniflux` app one at a time.
+2. Deploy the low-risk app batch one stack at a time: `couchdb`, `pocket-id`, `pinchflat`, `qbitwebui`, `seerr`, `kometa`, `immich-ml`, and `miniflux`.
 3. Try GPU services only when prepared to validate actual transcoding.
 4. Treat LinuxServer.io services as their own batch and follow each image's docs; if `cap_drop: [ALL]` fails on the normal `PUID`/`PGID` path, test a minimal re-add set starting with `CHOWN`, `SETUID`, and `SETGID`.
 5. Convert DB/cache services to fixed users with pre-owned volumes before dropping all capabilities, or retain the init capabilities their official entrypoints need.
