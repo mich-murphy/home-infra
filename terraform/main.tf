@@ -3,75 +3,106 @@ data "onepassword_item" "proxmox" {
   title = "proxmox_creds"
 }
 
-provider "proxmox" {
-  pm_api_url          = "https://proxmox.local.elmurphy.com/api2/json"
-  pm_api_token_id     = data.onepassword_item.proxmox.username
-  pm_api_token_secret = data.onepassword_item.proxmox.password
-  pm_tls_insecure     = false
+locals {
+  proxmox_node = "proxmox"
+  srv_vlan_id  = 20
+  scp          = data.onepassword_item.proxmox.section_map["Terraform SCP"].field_map
+  proxmox_creds = {
+    username           = local.scp["scp username"].value
+    password           = local.scp["scp password"].value
+    host               = local.scp["hostname"].value
+    tailscale_auth_key = local.scp["tailscale authkey"].value
+  }
 }
 
-locals {
-  proxmox_creds = {
-    username           = data.onepassword_item.proxmox.section[0].field[0].value
-    password           = data.onepassword_item.proxmox.section[0].field[1].value
-    host               = data.onepassword_item.proxmox.section[0].field[2].value
-    tailscale_auth_key = data.onepassword_item.proxmox.section[0].field[3].value
+provider "proxmox" {
+  endpoint  = "https://${local.proxmox_creds.host}:8006"
+  api_token = "${data.onepassword_item.proxmox.username}=${data.onepassword_item.proxmox.password}"
+  insecure  = true
+  ssh {
+    agent    = false
+    username = local.proxmox_creds.username
+    password = local.proxmox_creds.password
+    node {
+      name    = local.proxmox_node
+      address = local.proxmox_creds.host
+    }
   }
+}
+
+import {
+  to = proxmox_virtual_environment_vm.truenas
+  id = "proxmox/101"
+}
+
+import {
+  to = proxmox_virtual_environment_vm.cloud_init_docker_host
+  id = "proxmox/102"
+}
+
+import {
+  to = module.ai_dev["ai-dev-bgd"].proxmox_virtual_environment_vm.this
+  id = "proxmox/110"
+}
+
+import {
+  to = module.ai_dev["ai-dev-bc"].proxmox_virtual_environment_vm.this
+  id = "proxmox/111"
 }
 
 # Manually provisioned (no cloud-init); HBA passed through for ZFS.
 # prevent_destroy blocks accidental replacement while still allowing drift detection.
-resource "proxmox_vm_qemu" "truenas" {
-  vmid        = 101
-  name        = "truenas"
-  target_node = "proxmox"
-  tags        = "truenas"
-  bios        = "seabios"
-  machine     = "q35"
-  boot        = "order=scsi0;net0"
-  scsihw      = "virtio-scsi-single"
-  agent       = 0
-
-  start_at_node_boot = true
-  startup_shutdown {
-    order = 1
+resource "proxmox_virtual_environment_vm" "truenas" {
+  vm_id           = 101
+  name            = "truenas"
+  node_name       = local.proxmox_node
+  tags            = ["truenas"]
+  bios            = "seabios"
+  keyboard_layout = "en-us"
+  machine         = "q35"
+  boot_order      = ["scsi0", "net0"]
+  scsi_hardware   = "virtio-scsi-single"
+  on_boot         = true
+  agent {
+    enabled = false
+    type    = "virtio"
   }
-
+  operating_system {
+    type = "l26"
+  }
+  startup {
+    order    = 1
+    up_delay = 60
+  }
   cpu {
     cores   = 2
     sockets = 1
     type    = "host"
   }
-  memory = 12288
-
-  disks {
-    scsi {
-      scsi0 {
-        disk {
-          storage = "local-zfs"
-          size    = "32G"
-          discard = true
-        }
-      }
-    }
+  memory {
+    dedicated = 10240
   }
-
-  network {
-    id       = 0
-    bridge   = "vmbr0"
-    model    = "virtio"
-    macaddr  = var.truenas_macaddr
-    tag      = 20
-    firewall = true
+  disk {
+    datastore_id = "local-zfs"
+    discard      = "on"
+    file_format  = "raw"
+    interface    = "scsi0"
+    replicate    = true
+    size         = 32
   }
-
-  pci {
-    id     = 1
-    raw_id = "0000:02:00"
+  network_device {
+    bridge      = "vmbr0"
+    firewall    = true
+    mac_address = var.truenas_macaddr
+    model       = "virtio"
+    vlan_id     = local.srv_vlan_id
+  }
+  hostpci {
+    device = "hostpci1"
+    id     = "0000:02:00"
     pcie   = true
     rombar = false
   }
-
   lifecycle {
     prevent_destroy = true
   }
@@ -88,195 +119,185 @@ resource "local_sensitive_file" "cloud_init_agents" {
   file_permission = "0600"
 }
 
-resource "terraform_data" "cloud_init_config" {
-  triggers_replace = [local_sensitive_file.cloud_init_agents.content]
-  connection {
-    type     = "ssh"
-    user     = local.proxmox_creds.username
-    password = local.proxmox_creds.password
-    host     = local.proxmox_creds.host
-  }
-  provisioner "remote-exec" {
-    inline = ["mkdir -p /var/lib/vz/snippets"]
-  }
-  provisioner "file" {
-    source      = local_sensitive_file.cloud_init_agents.filename
-    destination = "/var/lib/vz/snippets/agents.yml"
-  }
-  provisioner "remote-exec" {
-    inline = ["chmod 0600 /var/lib/vz/snippets/agents.yml"]
+resource "proxmox_virtual_environment_file" "cloud_init_agents" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = local.proxmox_node
+  overwrite    = true
+  source_file {
+    path      = local_sensitive_file.cloud_init_agents.filename
+    file_name = "agents.yml"
+    checksum  = local_sensitive_file.cloud_init_agents.content_sha256
   }
 }
 
-
-# Cloud-init template setup: https://registry.terraform.io/providers/Telmate/proxmox/latest/docs/guides/cloud-init%2520getting%2520started#creating-a-cloud-init-template
-resource "proxmox_vm_qemu" "cloud_init_docker_host" {
+resource "proxmox_virtual_environment_vm" "cloud_init_docker_host" {
   depends_on = [
-    terraform_data.cloud_init_config,
+    proxmox_virtual_environment_file.cloud_init_agents,
   ]
-  vmid        = 102
-  name        = "docker-host"
-  target_node = "proxmox"
-  tags        = "ubuntu"
-  agent       = 1
+  vm_id               = 102
+  name                = "docker-host"
+  description         = "Managed by Terraform."
+  node_name           = local.proxmox_node
+  tags                = ["ubuntu"]
+  bios                = "seabios"
+  keyboard_layout     = "en-us"
+  boot_order          = ["scsi0"]
+  on_boot             = true
+  reboot_after_update = true
+  scsi_hardware       = "virtio-scsi-single"
+  started             = true
+  agent {
+    enabled = true
+    type    = "virtio"
+  }
+  operating_system {
+    type = "l26"
+  }
+  startup {
+    order = 2
+  }
+  clone {
+    full      = false
+    node_name = local.proxmox_node
+    vm_id     = var.ubuntu_server_24_04_template_vmid
+  }
   cpu {
     cores   = 6
     sockets = 1
     type    = "host"
   }
-  memory             = 10240
-  start_at_node_boot = true
-  startup_shutdown {
-    order = 2
+  memory {
+    dedicated = 10240
   }
-  bios             = "seabios"
-  boot             = "order=scsi0"         # has to be the same as the OS disk of the template
-  clone            = "ubuntu-server-24-04" # name of the template
-  scsihw           = "virtio-scsi-single"
-  vm_state         = "running"
-  automatic_reboot = true
-  cicustom         = "vendor=local:snippets/agents.yml" # path under /var/lib/vz/snippets
-  ciupgrade        = true
-  ciuser           = "ansible"
-  sshkeys          = var.docker_host_ssh_public_key
-  ipconfig0        = "ip=dhcp,ip6=dhcp"
-  skip_ipv6        = true
-  serial {
-    id = 0
-  }
-  disks {
-    scsi {
-      scsi0 {
-        disk {
-          discard   = true
-          storage   = "local-zfs"
-          size      = "128G"
-          iothread  = false
-          replicate = false
-        }
+  initialization {
+    datastore_id        = "local-zfs"
+    interface           = "ide1"
+    vendor_data_file_id = "local:snippets/agents.yml"
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+      ipv6 {
+        address = "dhcp"
       }
     }
-    ide {
-      ide1 {
-        cloudinit {
-          storage = "local-zfs"
-        }
-      }
+    user_account {
+      keys     = [var.docker_host_ssh_public_key]
+      username = "ansible"
     }
   }
-  network {
-    id      = 0
-    bridge  = "vmbr0"
-    model   = "virtio"
-    macaddr = var.docker_host_macaddr
-    tag     = 20
+  serial_device {
+    device = "socket"
   }
-
+  disk {
+    datastore_id = "local-zfs"
+    discard      = "on"
+    file_format  = "raw"
+    interface    = "scsi0"
+    iothread     = false
+    replicate    = false
+    size         = 128
+  }
+  network_device {
+    bridge      = "vmbr0"
+    mac_address = var.docker_host_macaddr
+    model       = "virtio"
+    vlan_id     = local.srv_vlan_id
+  }
   # Intel iGPU passed through for Plex/Jellyfin hardware transcoding.
-  pci {
-    id     = 0
-    raw_id = "0000:00:02.0"
+  hostpci {
+    device = "hostpci0"
+    id     = "0000:00:02.0"
+    rombar = true
   }
-
   # Zigbee/Z-Wave dongle pinned by host port (survives reboots better than vendor id).
-  # 3.0.2-rc07 only ships the deprecated string form; newer providers have port/mapping blocks.
   usb {
-    id   = 0
     host = "1-3"
     usb3 = true
   }
-
   lifecycle {
+    ignore_changes  = [clone]
     prevent_destroy = true
   }
 }
 
-# Blueprint for the planned K8s migration (docs/PRD.md); gated by enable_talos until then.
-resource "proxmox_vm_qemu" "talos_control_plane" {
-  count       = var.enable_talos ? 1 : 0
-  vmid        = "20${count.index}"
-  name        = "talos-prod-${count.index + 1}"
-  description = "Siderolabs install image v1.12.2"
-  target_node = "proxmox"
-  tags        = "kubernetes"
-  agent       = 1
+# Blueprint for the planned K8s migration; gated by enable_talos until then.
+resource "proxmox_virtual_environment_vm" "talos_control_plane" {
+  count               = var.enable_talos ? 1 : 0
+  vm_id               = 200 + count.index
+  name                = "talos-prod-${count.index + 1}"
+  description         = "Siderolabs install image v1.12.2"
+  node_name           = local.proxmox_node
+  tags                = ["kubernetes"]
+  bios                = "ovmf"
+  boot_order          = ["scsi0", "ide1"]
+  machine             = "q35"
+  on_boot             = true
+  reboot_after_update = true
+  scsi_hardware       = "virtio-scsi-pci"
+  started             = true
+  agent {
+    enabled = true
+  }
   cpu {
     cores = 6
     type  = "host"
   }
-  memory             = 10240
-  start_at_node_boot = true
-  bios               = "ovmf"
-  machine            = "q35"
-  boot               = "order=scsi0;ide1"
-  scsihw             = "virtio-scsi-pci"
-  vm_state           = "running"
-  automatic_reboot   = true
-  ipconfig0          = "ip=dhcp,ip6=dhcp"
-  skip_ipv6          = true
-  serial {
-    id = 0
+  memory {
+    dedicated = 10240
   }
-  disks {
-    scsi {
-      scsi0 {
-        disk {
-          cache   = "writethrough"
-          discard = true
-          format  = "raw"
-          storage = "local-zfs"
-          size    = "100G"
-        }
-      }
-      scsi1 {
-        disk {
-          cache   = "writethrough"
-          discard = true
-          format  = "raw"
-          storage = "local-zfs"
-          size    = "128G"
-        }
-      }
-    }
-    ide {
-      ide1 {
-        cdrom {
-          iso = "local:iso/metal-amd64.iso"
-        }
-      }
-    }
+  serial_device {
+    device = "socket"
   }
-  efidisk {
-    efitype = "4m"
-    storage = "local-zfs"
+  disk {
+    cache        = "writethrough"
+    datastore_id = "local-zfs"
+    discard      = "on"
+    file_format  = "raw"
+    interface    = "scsi0"
+    size         = 100
   }
-  network {
-    id     = 0
+  disk {
+    cache        = "writethrough"
+    datastore_id = "local-zfs"
+    discard      = "on"
+    file_format  = "raw"
+    interface    = "scsi1"
+    size         = 128
+  }
+  cdrom {
+    file_id   = "local:iso/metal-amd64.iso"
+    interface = "ide1"
+  }
+  efi_disk {
+    datastore_id = "local-zfs"
+    type         = "4m"
+  }
+  network_device {
     bridge = "vmbr0"
     model  = "virtio"
   }
 }
 
 module "ai_dev" {
-  for_each       = var.ai_devs
-  source         = "./modules/proxmox_vm"
-  name           = each.key
-  vmid           = each.value.vmid
-  clone_template = "arch-cloud"
-  tags           = "arch;ai-dev"
-  cores          = 2
-  memory_mib     = 3072
-  disk_size      = "150G"
-  bridge         = "vmbr1"
-  ciuser         = "michael"
-  ssh_public_key = var.ai_dev_ssh_public_key
+  for_each            = var.ai_devs
+  source              = "./modules/proxmox_vm"
+  name                = each.key
+  vmid                = each.value.vmid
+  clone_template_vmid = var.arch_cloud_template_vmid
+  tags                = ["ai-dev", "arch"]
+  cores               = 2
+  memory_mib          = 4096
+  disk_size           = 150
+  bridge              = "vmbr1"
+  ciuser              = "michael"
+  ssh_public_key      = var.ai_dev_ssh_public_key
   cloud_init_content = templatefile("cloud_init.tftpl", {
     hostname           = each.key
     os_family          = "arch"
     ssh_public_key     = var.ai_dev_ssh_public_key
     tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
   })
-  proxmox_host     = local.proxmox_creds.host
-  proxmox_user     = local.proxmox_creds.username
-  proxmox_password = local.proxmox_creds.password
+  node_name = local.proxmox_node
 }

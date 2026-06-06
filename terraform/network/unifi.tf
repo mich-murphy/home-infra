@@ -7,10 +7,24 @@ data "unifi_client_qos_rate" "default" {
   name = var.unifi_user_group_name
 }
 
+moved {
+  from = unifi_wlan.main
+  to   = unifi_wlan.dflt
+}
+
+moved {
+  from = unifi_wlan.kids
+  to   = unifi_wlan.kds
+}
+
+moved {
+  from = unifi_wlan.guest
+  to   = unifi_wlan.gst
+}
+
 # third_party_gateway = the RB5009 owns L3/DHCP; the controller only tags the VLAN.
 resource "unifi_network" "vlan" {
-  for_each = var.wireless_vlans
-
+  for_each            = var.wireless_vlans
   name                = upper(each.key)
   subnet              = each.value.subnet
   vlan                = each.value.vlan

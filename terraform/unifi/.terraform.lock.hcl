@@ -5,6 +5,7 @@ provider "registry.terraform.io/1password/onepassword" {
   version     = "3.3.1"
   constraints = "3.3.1"
   hashes = [
+    "h1:35PCpSNLVubReT1imwfC+FpIP5gQWx+rvG4njkXkZKM=",
     "h1:Tg8bJ+ATy5pla6ZTn87lb3nIyiTJTgQHJdxOWQjFF9k=",
     "zh:02d93a7f520ec69ad8944a68dcbf512e2f9920a6696628b8d05e6ad408309f35",
     "zh:0f91a902da84470af95f0da4dc21127b84e23c856a431ff9ecfe45d9c6775ef0",
@@ -22,6 +23,7 @@ provider "registry.terraform.io/bpg/proxmox" {
   constraints = "0.107.0"
   hashes = [
     "h1:THU5BKb+B9heDPKkgeARA09ZEY63U1JkOGa0OwCWGI8=",
+    "h1:W/DuNEQCgP510F1LfeRCvJa4vXGNT2byH7DzbknpEO4=",
     "zh:3c1e298f4f0d954e83d11aaf2400ec242b835ca294f8a94d67bb5ce0b30da0e9",
     "zh:4776f7f262728f8e2252360f7d1a4adc853d87d86a7515f4780375c2932ef763",
     "zh:53633a48f7fad5561a30b349e7b46c6a7a10a54c99225a4d30a7a24086921098",

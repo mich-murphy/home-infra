@@ -18,26 +18,24 @@ Infrastructure-as-code for a single-server homelab running on Proxmox. Manages V
 
 ```
 Proxmox v9.1.6 (hypervisor)
-├── TrueNAS VM ─── NFS shares (media, downloads, bulk storage)
+├── TrueNAS VM (SRV VLAN) ─── NFS shares (media, downloads, bulk storage)
 ├── Docker Host VM (Ubuntu 24.04) ─── 18+ services via Docker Compose
 │   └── Traefik → *.local.elmurphy.com (TLS via Cloudflare ACME)
 └── [Talos K8s VM] ─── Inactive, pending stability investigation
 ```
 
-### Network (MikroTik RB5009 + UniFi AP)
+### Network (Ubiquiti Dream Machine)
 
-| VLAN / subnet       | Purpose                                      |
-| ------------------- | -------------------------------------------- |
-| MGMT / 10.77.1.0/24 | Wired management only: Proxmox, IPMI, UniFi  |
-| SRV / 10.77.20.0/24 | Service workloads, including `docker-host`   |
-| DFLT / 10.77.30.0/24 | Trusted wireless clients                     |
-| KDS / 10.77.50.0/24 | Kids devices with filtered DNS controls      |
-| GST / 10.77.60.0/24 | Guest wireless clients                       |
-| DMZ / 10.77.99.0/24 | Isolated untrusted/sandbox workloads         |
+| VLAN           | Purpose                                 |
+| -------------- | --------------------------------------- |
+| Skynet         | Trusted devices (laptop, server)        |
+| Skynet - DMZ   | Internet-exposed services (isolated)    |
+| Skynet - IoT   | Smart home devices                      |
+| Skynet - Work  | Work devices (MAC whitelist, isolated)  |
+| Skynet - Jnr   | Kids devices (content + time filtering) |
+| Skynet - Guest | Visitors                                |
 
-The server has two ethernet ports: `vmbr0` is the MGMT native / production VLAN trunk,
-and `vmbr1` is the untagged physical DMZ. Service VMs use explicit VLAN tags rather
-than landing on MGMT by default.
+The server has two ethernet ports mapped to Skynet and Skynet-DMZ respectively via Proxmox.
 
 ## Repository Structure
 
@@ -79,15 +77,17 @@ just edit                   # edit encrypted vault secrets
 
 ## Terraform
 
-Provisions VMs on Proxmox using the [telmate/proxmox](https://registry.terraform.io/providers/Telmate/proxmox) provider. Secrets sourced from 1Password via the `onepassword` provider.
+Provisions VMs on Proxmox using the [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox) provider. Secrets sourced from 1Password via the `onepassword` provider.
 Run Terraform through the `just` recipes so local state and generated cloud-init files are created with a restrictive umask. Terraform state is secret-bearing because provider data includes Proxmox credentials, WLAN PSKs, and bootstrap auth material.
 
 | VM           | ID  | Spec                         | Purpose                 |
 | ------------ | --- | ---------------------------- | ----------------------- |
-| docker-host  | 102 | 4 CPU, 12GB RAM, 128GB       | Docker Compose services |
-| talos-prod-1 | 200 | 8 CPU, 12GB RAM, 100GB+128GB | Kubernetes (inactive)   |
+| truenas      | 101 | 2 CPU, 10GB RAM, 32GB        | NAS with HBA passthrough |
+| docker-host  | 102 | 6 CPU, 10GB RAM, 128GB       | Docker Compose services |
+| talos-prod-1 | 200 | 6 CPU, 10GB RAM, 100GB+128GB | Kubernetes (inactive)   |
 
 Cloud-init template (`cloud_init.tftpl`) bootstraps the ansible user, installs qemu-guest-agent, Tailscale, and Docker.
+TrueNAS and docker-host are managed with `prevent_destroy`; their pinned MAC addresses are supplied through sensitive Terraform variables in the ignored root `.envrc`.
 
 ## Ansible
 

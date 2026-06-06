@@ -1,6 +1,6 @@
 ---
 git_user_name: "Michael Murphy"
-git_user_email: "michael.murphy@businesscraft.com.au"
+git_user_email: "{{ ai_dev_git_user_emails[inventory_hostname] }}"
 
 # Encrypt secrets below with: ansible-vault encrypt_string --name '<key>' '<value>'
 # gh_token: !vault | ...
