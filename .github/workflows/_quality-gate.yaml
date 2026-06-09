@@ -24,16 +24,16 @@ jobs:
         run: nix flake check
       - name: Lint workflows
         if: inputs.check == 'actions'
-        run: nix develop --command actionlint
+        run: nix shell .#actionlint --command actionlint
       - name: Check Terraform formatting
         if: inputs.check == 'terraform'
-        run: nix develop --command terraform-ci -chdir=terraform fmt -check -recursive
+        run: nix shell .#terraform-ci --command terraform-ci -chdir=terraform fmt -check -recursive
       - name: Validate Terraform roots
         if: inputs.check == 'terraform'
         env:
           TF_IN_AUTOMATION: "true"
         run: |
-          nix develop --command bash -euo pipefail <<'SCRIPT'
+          nix shell .#terraform-ci --command bash -euo pipefail <<'SCRIPT'
           for dir in terraform terraform/network; do
             echo "Validating ${dir}"
             terraform-ci -chdir="${dir}" init -backend=false -input=false -lockfile=readonly
@@ -60,7 +60,7 @@ jobs:
           TZ: Australia/Melbourne
           UPLOAD_LOCATION: /tmp/immich-upload
         run: |
-          nix develop --command bash -euo pipefail <<'SCRIPT'
+          nix shell .#docker-compose --command bash -euo pipefail <<'SCRIPT'
           while IFS= read -r compose_file; do
             echo "Checking ${compose_file}"
             docker-compose -f "${compose_file}" config --quiet
@@ -69,7 +69,7 @@ jobs:
       - name: Build and validate active kustomizations
         if: inputs.check == 'kubernetes'
         run: |
-          nix develop --command bash -euo pipefail <<'SCRIPT'
+          nix shell .#kubectl .#kubeconform --command bash -euo pipefail <<'SCRIPT'
           while IFS= read -r kustomization; do
             dir="${kustomization%/*}"
             echo "Checking ${dir}"
@@ -78,4 +78,4 @@ jobs:
           SCRIPT
       - name: Parse Talos YAML
         if: inputs.check == 'talos'
-        run: nix develop --command yq eval 'true' talos/controlplane-patch.yaml talos/schematic.yaml
+        run: nix shell .#yq-go --command yq eval 'true' talos/controlplane-patch.yaml talos/schematic.yaml

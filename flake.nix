@@ -18,6 +18,7 @@
     forAllSystems = f:
       nixpkgs.lib.genAttrs allSystems (system:
         f {
+          inherit system;
           pkgs = import nixpkgs {
             inherit system;
             config = {allowUnfree = true;};
@@ -46,11 +47,23 @@
         exec ${pkgs.terraform}/bin/terraform "$@"
       '';
   in {
-    devShells = forAllSystems ({pkgs}: {
+    packages = forAllSystems ({pkgs, ...}: {
+      actionlint = pkgs.actionlint;
+      docker-compose = pkgs.docker-compose;
+      kubectl = pkgs.kubectl;
+      kubeconform = pkgs.kubeconform;
+      terraform-ci = terraformCiFor pkgs;
+      yq-go = pkgs.yq-go;
+    });
+
+    devShells = forAllSystems ({
+      pkgs,
+      system,
+    }: {
       default = pkgs.mkShell {
         packages = [
           (terraformFor pkgs)
-          (terraformCiFor pkgs)
+          self.packages.${system}.terraform-ci
           # Ansible + librouteros on one interpreter: the community.routeros API
           # modules import librouteros from the controller's python (this shell).
           # ansible-core supplies the ansible-playbook CLI (the ansible bundle
@@ -63,10 +76,10 @@
           pkgs.fluxcd
           pkgs.kubernetes-helm
           pkgs.alejandra
-          pkgs.actionlint
-          pkgs.docker-compose
-          pkgs.kubeconform
-          pkgs.yq-go
+          self.packages.${system}.actionlint
+          self.packages.${system}.docker-compose
+          self.packages.${system}.kubeconform
+          self.packages.${system}.yq-go
         ];
       };
     });
