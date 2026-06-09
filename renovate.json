@@ -37,7 +37,6 @@
         "/^local$/",
         "/^mariadb$/",
         "/^miniflux\\/miniflux$/",
-        "/^nextcloud$/",
         "/^onepassword$/",
         "/^openebs$/",
         "/^openebs\\//",
@@ -56,9 +55,7 @@
     },
     {
       "description": "Linuxserver.io Sabnzbd",
-      "matchPackageNames": [
-        "/^(gh|ls)cr\\.io\\/linuxserver\\/(sabnzbd|freshrss)/"
-      ],
+      "matchPackageNames": ["/^(gh|ls)cr\\.io\\/linuxserver\\/sabnzbd/"],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>.+)$"
     },
     {
