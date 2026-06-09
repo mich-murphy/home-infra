@@ -24,6 +24,7 @@ Applied capability drops:
 - `docker/miniflux/compose.yml`: `miniflux` only
 - `docker/pinchflat/compose.yml`: `cap_drop: [ALL]`
 - `docker/plex/compose.yml`: `seerr` and `kometa` only
+- `docker/arrs/compose.yml`: `prowlarr` with LSIO retained init capabilities
 
 These changes intentionally exclude Docker socket controllers, database/cache
 services, LinuxServer.io images, GPU-backed media services, `immich-ml` after its healthcheck failed, and `pocket-id` after startup failed with `su-exec: setgroups(1000): Operation not permitted`.
@@ -118,7 +119,7 @@ changes bypass the normal `PUID`/`PGID` path and need the LSIO non-root recipe.
 | `arrs` | `radarr` | https://docs.linuxserver.io/images/docker-radarr/ | Page lists read-only and non-root operation; validate `/config` and `/data` ownership. |
 | `arrs` | `sonarr` | https://docs.linuxserver.io/images/docker-sonarr/ | Page lists read-only and non-root operation; validate `/config` and `/data` ownership. |
 | `arrs` | `lidarr` | https://docs.linuxserver.io/images/docker-lidarr/ | Page lists read-only and non-root operation; validate `/config`, `/data`, and `/music` ownership. |
-| `arrs` | `prowlarr` | https://docs.linuxserver.io/images/docker-prowlarr/ | Page lists read-only and non-root operation; simplest LSIO Arr candidate. |
+| `arrs` | `prowlarr` | https://docs.linuxserver.io/images/docker-prowlarr/ | Applied as the LSIO pilot with retained init capabilities; validate fresh `/config` ownership and indexer/app writes. |
 | `downloads` | `qbittorrent` | https://docs.linuxserver.io/images/docker-qbittorrent/ | Page lists read-only and non-root operation; also validate TCP/UDP torrent listener. |
 | `downloads` | `sabnzbd` | https://docs.linuxserver.io/images/docker-sabnzbd/ | Page lists read-only and non-root operation; validate incomplete/complete download paths. |
 | `plex` | `tautulli` | https://docs.linuxserver.io/images/docker-tautulli/ | Page lists read-only and non-root operation; validate config DB writes and Plex connectivity. |
@@ -137,6 +138,13 @@ For normal rootful LSIO operation on fresh volumes, do not start from
 Only add service-specific capabilities after logs prove a need. For this repo's
 current LSIO services, no container listens below port 1024, so
 `NET_BIND_SERVICE` is not expected for the LSIO batch.
+
+Prowlarr pilot validation used disposable fresh named volumes. With the retained
+init capability set, `/config` was initialized as `1215:1215`, Prowlarr ran as
+`abc`, and migrations completed. With bare `cap_drop: [ALL]`, startup logged
+`chown: Operation not permitted` and repeated `s6-applyuidgid` group-list
+failures, which confirms that warm-volume tests are insufficient for LSIO
+images.
 
 LSIO non-root recipe notes:
 
