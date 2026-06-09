@@ -13,7 +13,11 @@ services:
       - TZ=${TZ}
     volumes:
       - radarr-data:/config
-      - /mnt/data:/data:rw
+      - type: bind
+        source: /mnt/data
+        target: /data
+        bind:
+          propagation: rslave
     labels:
       - traefik.enable=true
       - traefik.http.routers.radarr.rule=Host(`radarr.local.elmurphy.com`)
@@ -34,7 +38,11 @@ services:
       - TZ=${TZ}
     volumes:
       - sonarr-data:/config
-      - /mnt/data:/data:rw
+      - type: bind
+        source: /mnt/data
+        target: /data
+        bind:
+          propagation: rslave
     labels:
       - traefik.enable=true
       - traefik.http.routers.sonarr.rule=Host(`sonarr.local.elmurphy.com`)
@@ -55,8 +63,16 @@ services:
       - TZ=${TZ}
     volumes:
       - lidarr-data:/config
-      - /mnt/data:/data:rw
-      - /mnt/music:/music:rw
+      - type: bind
+        source: /mnt/data
+        target: /data
+        bind:
+          propagation: rslave
+      - type: bind
+        source: /mnt/music
+        target: /music
+        bind:
+          propagation: rslave
     labels:
       - traefik.enable=true
       - traefik.http.routers.lidarr.rule=Host(`lidarr.local.elmurphy.com`)

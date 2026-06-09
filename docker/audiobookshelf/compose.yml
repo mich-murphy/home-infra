@@ -14,7 +14,11 @@ services:
     environment:
       - TZ=${TZ}
     volumes:
-      - /mnt/audiobooks:/data/audiobooks:rw
+      - type: bind
+        source: /mnt/audiobooks
+        target: /data/audiobooks
+        bind:
+          propagation: rslave
       - audiobookshelf-data:/config
       - audiobookshelf-data:/metadata
     labels:

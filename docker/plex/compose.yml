@@ -18,8 +18,16 @@ services:
     volumes:
       - plex-data:/config
       - plex-transcode:/transcode
-      - /mnt/data/media:/data/media:rw
-      - /mnt/music:/data/music:rw
+      - type: bind
+        source: /mnt/data/media
+        target: /data/media
+        bind:
+          propagation: rslave
+      - type: bind
+        source: /mnt/music
+        target: /data/music
+        bind:
+          propagation: rslave
     labels:
       - traefik.enable=true
       - traefik.http.routers.plex.rule=Host(`plex.local.elmurphy.com`)
