@@ -11,6 +11,11 @@ on:
     - cron: "30 4,6 * * *"
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   renovate:
     runs-on: ubuntu-latest
