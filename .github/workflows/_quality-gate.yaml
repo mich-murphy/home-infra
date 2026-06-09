@@ -1,0 +1,80 @@
+name: Quality Gate Template
+
+on:
+  workflow_call:
+    inputs:
+      check:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: ${{ inputs.check }}
+    runs-on: ubuntu-latest
+    env:
+      ADMIN_PASSWORD: ci-placeholder
+      ADMIN_USERNAME: ci-placeholder
+      CF_API_EMAIL: ci@example.invalid
+      CF_DNS_API_TOKEN: ci-placeholder
+      COUCHDB_PASSWORD: ci-placeholder
+      DATABASE_PASSWORD: ci-placeholder
+      DB_DATABASE_NAME: immich
+      DB_DATA_LOCATION: /tmp/immich-db
+      DB_PASSWORD: ci-placeholder
+      DB_USERNAME: immich
+      ENCRYPTION_KEY: ci-placeholder
+      MAXMIND_LICENSE_KEY: ci-placeholder
+      OWNCLOUD_DB_PASSWORD: ci-placeholder
+      PLEX_CLAIM: ci-placeholder
+      TF_IN_AUTOMATION: "true"
+      TZ: Australia/Melbourne
+      UPLOAD_LOCATION: /tmp/immich-upload
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+      - name: Check flake
+        if: inputs.check == 'nix'
+        run: nix flake check
+      - name: Lint workflows
+        if: inputs.check == 'actions'
+        run: nix develop --command actionlint
+      - name: Check Terraform formatting
+        if: inputs.check == 'terraform'
+        run: nix develop --command terraform -chdir=terraform fmt -check -recursive
+      - name: Validate Terraform roots
+        if: inputs.check == 'terraform'
+        run: |
+          nix develop --command bash -euo pipefail <<'SCRIPT'
+          for dir in terraform terraform/network; do
+            echo "Validating ${dir}"
+            terraform -chdir="${dir}" init -backend=false -input=false -lockfile=readonly
+            terraform -chdir="${dir}" validate
+          done
+          SCRIPT
+      - name: Render Compose files
+        if: inputs.check == 'docker'
+        run: |
+          nix develop --command bash -euo pipefail <<'SCRIPT'
+          while IFS= read -r compose_file; do
+            echo "Checking ${compose_file}"
+            docker-compose -f "${compose_file}" config --quiet
+          done < <(find docker -name compose.yml -print | sort)
+          SCRIPT
+      - name: Build and validate active kustomizations
+        if: inputs.check == 'kubernetes'
+        run: |
+          nix develop --command bash -euo pipefail <<'SCRIPT'
+          while IFS= read -r kustomization; do
+            dir="${kustomization%/*}"
+            echo "Checking ${dir}"
+            kubectl kustomize "${dir}" | kubeconform -summary -strict -ignore-missing-schemas
+          done < <(find kubernetes -path kubernetes/archive -prune -o -name kustomization.yaml -print | sort)
+          SCRIPT
+      - name: Parse Talos YAML
+        if: inputs.check == 'talos'
+        run: nix develop --command yq eval 'true' talos/controlplane-patch.yaml talos/schematic.yaml
