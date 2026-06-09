@@ -8,13 +8,6 @@ on:
       - "talos/**"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/talos.yaml"
-  push:
-    branches:
-      - main
-    paths:
-      - "talos/**"
-      - ".github/workflows/_quality-gate.yaml"
-      - ".github/workflows/talos.yaml"
   workflow_dispatch:
 
 permissions:
