@@ -38,11 +38,19 @@
           runScript = "terraform";
         }
       else pkgs.terraform;
+
+    # GitHub-hosted Ubuntu runners do not allow the user namespace setup that
+    # buildFHSEnv uses, but CI only needs Terraform init/validate on glibc Linux.
+    terraformCiFor = pkgs:
+      pkgs.writeShellScriptBin "terraform-ci" ''
+        exec ${pkgs.terraform}/bin/terraform "$@"
+      '';
   in {
     devShells = forAllSystems ({pkgs}: {
       default = pkgs.mkShell {
         packages = [
           (terraformFor pkgs)
+          (terraformCiFor pkgs)
           # Ansible + librouteros on one interpreter: the community.routeros API
           # modules import librouteros from the controller's python (this shell).
           # ansible-core supplies the ansible-playbook CLI (the ansible bundle

@@ -27,7 +27,7 @@ jobs:
         run: nix develop --command actionlint
       - name: Check Terraform formatting
         if: inputs.check == 'terraform'
-        run: nix develop --command terraform -chdir=terraform fmt -check -recursive
+        run: nix develop --command terraform-ci -chdir=terraform fmt -check -recursive
       - name: Validate Terraform roots
         if: inputs.check == 'terraform'
         env:
@@ -36,8 +36,8 @@ jobs:
           nix develop --command bash -euo pipefail <<'SCRIPT'
           for dir in terraform terraform/network; do
             echo "Validating ${dir}"
-            terraform -chdir="${dir}" init -backend=false -input=false -lockfile=readonly
-            terraform -chdir="${dir}" validate
+            terraform-ci -chdir="${dir}" init -backend=false -input=false -lockfile=readonly
+            terraform-ci -chdir="${dir}" validate
           done
           SCRIPT
       - name: Render Compose files
