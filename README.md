@@ -144,16 +144,13 @@ All services run behind Traefik on the shared `proxy` network (172.20.1.0/24) wi
 | **plex**           | Plex, Tautulli, Overseerr, Maintainerr, Kometa |
 | **jellyfin**       | Jellyfin, Jellyseerr                           |
 | **immich**         | Immich Server, Immich ML, PostgreSQL, Redis    |
-| **nextcloud**      | Nextcloud, PostgreSQL, Redis                   |
 | **owncloud**       | OwnCloud, MariaDB, Redis                       |
 | **miniflux**       | Miniflux, PostgreSQL                           |
 | **couchdb**        | CouchDB (Obsidian sync)                        |
-| **freshrss**       | FreshRSS                                       |
 | **komga**          | Komga (manga/comics)                           |
 | **audiobookshelf** | Audiobookshelf                                 |
 | **wallabag**       | Wallabag, MariaDB, Redis                       |
 | **pinchflat**      | Pinchflat (YouTube archival)                   |
-| **minecraft**      | Crafty (Minecraft server manager)              |
 | **beszel**         | Infrastructure monitoring                      |
 
 ### Conventions

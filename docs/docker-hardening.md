@@ -50,7 +50,6 @@ Relevant upstream notes:
 - CouchDB Docker docs state the image runs as `couchdb` uid `5984`: https://docs.couchdb.org/en/stable/install/docker.html
 - Jellyfin Docker docs require `/dev/dri` for hardware acceleration: https://jellyfin.org/docs/general/installation/container/
 - Immich Docker hardware transcoding uses `/dev/dri` for QSV/VAAPI: https://immich.app/docs/features/hardware-transcoding
-- Nextcloud Docker docs note that changing the default user makes the image stop assuming root privileges: https://github.com/nextcloud/docker
 
 ## Capability Classes
 
@@ -123,9 +122,6 @@ that can require capabilities such as `CHOWN`, `SETUID`, `SETGID`, `FOWNER`, or
 | --- | --- | --- |
 | `immich` | `redis` | Valkey/Redis style entrypoint may chown and drop from root when started as root. |
 | `immich` | `database` | Postgres-derived image; DB data directory ownership/init is capability sensitive. |
-| `nextcloud` | `nextcloud`, `nextcloud-cron` | Official image has root-aware entrypoint behavior and shared app/data volumes. |
-| `nextcloud` | `nextcloud-postgres` | Official Postgres entrypoint chowns data and drops privileges when root. |
-| `nextcloud` | `nextcloud-redis` | Official Redis entrypoint chowns data and drops privileges when root. |
 | `owncloud` | `owncloud` | Official app image performs permission/setup work; validate chown/chmod behavior. |
 | `owncloud` | `owncloud-mariadb` | MariaDB docs explicitly call out temporary root plus `CHOWN`. |
 | `owncloud` | `owncloud-redis` | Official Redis entrypoint pattern; persistent cache volume increases ownership risk. |
