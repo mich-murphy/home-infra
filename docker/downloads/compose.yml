@@ -20,7 +20,11 @@ services:
       - TORRENTING_PORT=25565
     volumes:
       - qbittorrent-data:/config
-      - /mnt/data/torrents:/data/torrents:rw
+      - type: bind
+        source: /mnt/data/torrents
+        target: /data/torrents
+        bind:
+          propagation: rslave
     ports:
       - 25565:25565
       - 25565:25565/udp
@@ -46,7 +50,11 @@ services:
       - DISABLE_REGISTRATION=true # NOTE: prints initial password to logs on first start
     volumes:
       - qbitwebui-data:/data
-      - /mnt/data/torrents:/data/torrents:rw
+      - type: bind
+        source: /mnt/data/torrents
+        target: /data/torrents
+        bind:
+          propagation: rslave
     labels:
       - traefik.enable=true
       - traefik.http.routers.qbitwebui.rule=Host(`qbitwebui.local.elmurphy.com`)
@@ -70,7 +78,11 @@ services:
       - TZ=${TZ}
     volumes:
       - sabnzbd-data:/config
-      - /mnt/data/usenet:/data/usenet:rw
+      - type: bind
+        source: /mnt/data/usenet
+        target: /data/usenet
+        bind:
+          propagation: rslave
     labels:
       - traefik.enable=true
       - traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.local.elmurphy.com`)
