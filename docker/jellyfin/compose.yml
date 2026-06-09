@@ -17,8 +17,18 @@ services:
     volumes:
       - jellyfin-data:/config
       - jellyfin-cache:/cache
-      - /mnt/data/media:/data/media:ro
-      - /mnt/music:/data/music:ro
+      - type: bind
+        source: /mnt/data/media
+        target: /data/media
+        read_only: true
+        bind:
+          propagation: rslave
+      - type: bind
+        source: /mnt/music
+        target: /data/music
+        read_only: true
+        bind:
+          propagation: rslave
       - /dev/shm:/transcode # ram transcode
     ports:
       - 8096:8096 
