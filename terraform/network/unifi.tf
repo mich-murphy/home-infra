@@ -7,6 +7,13 @@ data "unifi_client_qos_rate" "default" {
   name = var.unifi_user_group_name
 }
 
+resource "unifi_setting" "mgmt" {
+  mgmt = {
+    auto_upgrade = true
+    ssh_enabled  = false
+  }
+}
+
 moved {
   from = unifi_wlan.main
   to   = unifi_wlan.dflt
@@ -40,6 +47,11 @@ resource "unifi_wlan" "dflt" {
   wpa3_transition = true
   pmf_mode        = "optional"
   bss_transition  = true
+  iapp_enabled    = true
+  group_rekey     = 0
+  dtim_6e         = 3
+  dtim_na         = 3
+  dtim_ng         = 1
 
   minimum_data_rate_2g_kbps = 1000
   minimum_data_rate_5g_kbps = 6000
@@ -63,6 +75,11 @@ resource "unifi_wlan" "kds" {
   wpa3_transition = false
   pmf_mode        = "required"
   bss_transition  = true
+  iapp_enabled    = true
+  group_rekey     = 0
+  dtim_6e         = 3
+  dtim_na         = 3
+  dtim_ng         = 1
 
   minimum_data_rate_2g_kbps = 1000
   minimum_data_rate_5g_kbps = 6000
@@ -86,6 +103,11 @@ resource "unifi_wlan" "gst" {
   wpa3_transition = true
   pmf_mode        = "optional"
   bss_transition  = true
+  iapp_enabled    = true
+  group_rekey     = 0
+  dtim_6e         = 3
+  dtim_na         = 3
+  dtim_ng         = 1
 
   minimum_data_rate_2g_kbps = 1000
   minimum_data_rate_5g_kbps = 6000
@@ -102,16 +124,32 @@ resource "unifi_wlan" "gst" {
   user_group_id = data.unifi_client_qos_rate.default.id
 }
 
-# Fallback if a legacy Sonos won't join WPA3: uncomment, add a `sonos` PSK field (DFLT keeps mDNS native).
-# resource "unifi_wlan" "sonos" {
-#   name            = "madviLANy-sonos"
-#   security        = "wpapsk"
-#   passphrase      = local.psk["sonos"].value
-#   wpa3_support    = false
-#   wpa3_transition = false
-#   pmf_mode        = "disabled"
-#   wlan_band       = "2g"
-#   network_id      = unifi_network.vlan["dflt"].id
-#   ap_group_ids    = [data.unifi_ap_group.default.id]
-#   user_group_id   = data.unifi_client_qos_rate.default.id
-# }
+# Sonos legacy compatibility. Stays on DFLT so discovery/mDNS remains native.
+resource "unifi_wlan" "sonos" {
+  name                       = "madviLANy-sonos"
+  security                   = "wpapsk"
+  passphrase                 = local.psk[var.sonos_wlan_psk_field].value
+  wpa3_support               = false
+  wpa3_transition            = false
+  pmf_mode                   = "disabled"
+  iapp_enabled               = true
+  group_rekey                = 3600
+  dtim_6e                    = 3
+  dtim_na                    = 3
+  dtim_ng                    = 1
+  wlan_band                  = "both"
+  wlan_bands                 = ["2g", "5g"]
+  no2ghz_oui                 = false
+  minrate_setting_preference = "auto"
+  minimum_data_rate_2g_kbps  = 1000
+  minimum_data_rate_5g_kbps  = 6000
+
+  mac_filter = {
+    enabled = false
+    policy  = "allow"
+  }
+
+  network_id    = unifi_network.vlan["dflt"].id
+  ap_group_ids  = [data.unifi_ap_group.default.id]
+  user_group_id = data.unifi_client_qos_rate.default.id
+}
