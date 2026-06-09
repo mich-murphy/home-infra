@@ -1,0 +1,33 @@
+name: Nix
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "flake.lock"
+      - "flake.nix"
+      - ".github/workflows/_quality-gate.yaml"
+      - ".github/workflows/nix.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "flake.lock"
+      - "flake.nix"
+      - ".github/workflows/_quality-gate.yaml"
+      - ".github/workflows/nix.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nix:
+    uses: ./.github/workflows/_quality-gate.yaml
+    with:
+      check: nix

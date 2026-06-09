@@ -1,0 +1,31 @@
+name: Terraform
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+      - ".github/workflows/_quality-gate.yaml"
+      - ".github/workflows/terraform.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+      - ".github/workflows/_quality-gate.yaml"
+      - ".github/workflows/terraform.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  terraform:
+    uses: ./.github/workflows/_quality-gate.yaml
+    with:
+      check: terraform

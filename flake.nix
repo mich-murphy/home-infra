@@ -55,6 +55,10 @@
           pkgs.fluxcd
           pkgs.kubernetes-helm
           pkgs.alejandra
+          pkgs.actionlint
+          pkgs.docker-compose
+          pkgs.kubeconform
+          pkgs.yq-go
         ];
       };
     });

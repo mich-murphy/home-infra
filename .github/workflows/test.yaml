@@ -1,4 +1,4 @@
-name: Actions Runner Controller Test
+name: GitHub Runner Test
 on:
   workflow_dispatch:
 
@@ -6,7 +6,7 @@ permissions:
   contents: read
 
 jobs:
-  test-actions-runner:
-    runs-on: home-infra-runner
+  test-github-runner:
+    runs-on: ubuntu-latest
     steps:
-    - run: echo "🎉 This job uses runner scale set runners!"
+      - run: echo "GitHub-hosted runner is available."

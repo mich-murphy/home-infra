@@ -1,0 +1,31 @@
+name: Kubernetes
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "kubernetes/**"
+      - ".github/workflows/_quality-gate.yaml"
+      - ".github/workflows/kubernetes.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "kubernetes/**"
+      - ".github/workflows/_quality-gate.yaml"
+      - ".github/workflows/kubernetes.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kubernetes:
+    uses: ./.github/workflows/_quality-gate.yaml
+    with:
+      check: kubernetes

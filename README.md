@@ -168,7 +168,15 @@ Talos Linux single-node cluster managed by Flux CD. Currently inactive pending t
 
 ## CI/CD
 
+- **Quality Gates**: Path-scoped static validation on PRs and pushes
+  - Actions workflow linting for `.github/workflows/**`
+  - Nix flake check for `flake.nix` and `flake.lock`
+  - Terraform format and validate for `terraform/**`
+  - Docker Compose render checks for `docker/**`
+  - Offline Kubernetes kustomize builds with kubeconform schema validation for `kubernetes/**`
+  - Talos YAML parsing for `talos/**`
 - **Renovate**: Automated dependency updates on schedule (GitHub Actions)
+  - Config validation only runs when Renovate config changes
   - Semantic commits with `actions-renovate/` branch prefix
   - Auto-merge for minor/patch (non-zero versions)
   - Custom versioning for Linuxserver.io images
