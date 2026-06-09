@@ -17,6 +17,7 @@ Start with low-risk app containers:
 
 Applied capability drops:
 
+- `docker/audiobookshelf/compose.yml`: `cap_drop: [ALL]`, `cap_add: [NET_BIND_SERVICE]` for port 80
 - `docker/beszel/compose.yml`: `cap_drop: [ALL]`
 - `docker/couchdb/compose.yml`: `cap_drop: [ALL]`
 - `docker/downloads/compose.yml`: `qbitwebui` only
@@ -70,6 +71,7 @@ They still need deployment validation.
 | `miniflux` | `miniflux` | Applied; app listens on 8080; migrations are DB operations, not Linux capabilities. |
 | `couchdb` | `couchdb` | Applied; already runs as `5984:5984`; validate named volume ownership. |
 | `pinchflat` | `pinchflat` | Applied; app listens on 8945; validate `/downloads` and `/config` writes. |
+| `audiobookshelf` | `audiobookshelf` | Applied with `NET_BIND_SERVICE` retained because the app listens on port 80; validate `/config`, `/metadata`, and audiobook library access. |
 
 ### Likely `cap_drop: [ALL]` With Device Validation
 
@@ -145,10 +147,11 @@ into read-only API access.
 
 1. Keep `beszel` as the pilot.
 2. Deploy the low-risk app batch one stack at a time: `couchdb`, `pinchflat`, `qbitwebui`, `seerr`, `kometa`, and `miniflux`.
-3. Try GPU services only when prepared to validate actual transcoding.
-4. Treat LinuxServer.io services as their own batch and follow each image's docs; if `cap_drop: [ALL]` fails on the normal `PUID`/`PGID` path, test a minimal re-add set starting with `CHOWN`, `SETUID`, and `SETGID`.
-5. Convert DB/cache services to fixed users with pre-owned volumes before dropping all capabilities, or retain the init capabilities their official entrypoints need.
-6. Address Traefik's Docker socket before spending much time on smaller capability tweaks there.
+3. Deploy low-port standalone apps such as `audiobookshelf` with only `NET_BIND_SERVICE` re-added when needed.
+4. Try GPU services only when prepared to validate actual transcoding.
+5. Treat LinuxServer.io services as their own batch and follow each image's docs; if `cap_drop: [ALL]` fails on the normal `PUID`/`PGID` path, test a minimal re-add set starting with `CHOWN`, `SETUID`, and `SETGID`.
+6. Convert DB/cache services to fixed users with pre-owned volumes before dropping all capabilities, or retain the init capabilities their official entrypoints need.
+7. Address Traefik's Docker socket before spending much time on smaller capability tweaks there.
 
 Deployment checklist for each stack:
 
