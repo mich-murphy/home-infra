@@ -8,13 +8,6 @@ on:
       - "docker/**"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/docker.yaml"
-  push:
-    branches:
-      - main
-    paths:
-      - "docker/**"
-      - ".github/workflows/_quality-gate.yaml"
-      - ".github/workflows/docker.yaml"
   workflow_dispatch:
 
 permissions:

@@ -8,13 +8,6 @@ on:
       - "terraform/**"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/terraform.yaml"
-  push:
-    branches:
-      - main
-    paths:
-      - "terraform/**"
-      - ".github/workflows/_quality-gate.yaml"
-      - ".github/workflows/terraform.yaml"
   workflow_dispatch:
 
 permissions:

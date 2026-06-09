@@ -9,14 +9,6 @@ on:
       - "flake.nix"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/nix.yaml"
-  push:
-    branches:
-      - main
-    paths:
-      - "flake.lock"
-      - "flake.nix"
-      - ".github/workflows/_quality-gate.yaml"
-      - ".github/workflows/nix.yaml"
   workflow_dispatch:
 
 permissions:

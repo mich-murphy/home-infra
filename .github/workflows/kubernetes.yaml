@@ -8,13 +8,6 @@ on:
       - "kubernetes/**"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/kubernetes.yaml"
-  push:
-    branches:
-      - main
-    paths:
-      - "kubernetes/**"
-      - ".github/workflows/_quality-gate.yaml"
-      - ".github/workflows/kubernetes.yaml"
   workflow_dispatch:
 
 permissions:
