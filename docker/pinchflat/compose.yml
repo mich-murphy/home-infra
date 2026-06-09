@@ -12,7 +12,11 @@ services:
     environment:
       - TZ=${TZ}
     volumes:
-      - /mnt/data/media/youtube:/downloads:rw
+      - type: bind
+        source: /mnt/data/media/youtube
+        target: /downloads
+        bind:
+          propagation: rslave
       - pinchflat-data:/config
     labels:
       - traefik.enable=true
