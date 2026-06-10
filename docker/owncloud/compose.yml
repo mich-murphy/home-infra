@@ -93,6 +93,7 @@ services:
       - DAC_OVERRIDE
       - FOWNER
       - KILL
+      - SETPCAP
     networks:
       - owncloud-backend
     volumes:
