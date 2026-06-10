@@ -5,6 +5,8 @@ metadata:
   namespace: default
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: jellyfin
@@ -13,8 +15,6 @@ spec:
       labels:
         app: jellyfin
     spec:
-      strategy:
-        type: Recreate
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -43,7 +43,7 @@ spec:
             timeoutSeconds: 1
             failureThreshold: 3
           securityContext:
-            allowPriviligeEscalation: false
+            allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL

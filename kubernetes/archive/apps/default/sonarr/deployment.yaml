@@ -5,6 +5,8 @@ metadata:
   namespace: default
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: sonarr
@@ -13,8 +15,6 @@ spec:
       labels:
         app: sonarr
     spec:
-      strategy:
-        type: Recreate
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -46,7 +46,7 @@ spec:
             timeoutSeconds: 1
             failureThreshold: 3
           securityContext:
-            allowPriviligeEscalation: false
+            allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - NET_RAW
