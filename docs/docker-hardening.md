@@ -24,14 +24,13 @@ Applied capability drops:
 - `docker/immich/compose.yml`: `immich-server` with `cap_drop: [ALL]`; `redis` and `database` with retained init capabilities
 - `docker/jellyfin/compose.yml`: `cap_drop: [ALL]`
 - `docker/miniflux/compose.yml`: `miniflux` with `cap_drop: [ALL]`; `miniflux-db` with retained init capabilities
-- `docker/owncloud/compose.yml`: `owncloud-mariadb` and `owncloud-redis` with retained init capabilities
+- `docker/owncloud/compose.yml`: `owncloud`, `owncloud-mariadb`, and `owncloud-redis` with retained init capabilities
 - `docker/pinchflat/compose.yml`: `cap_drop: [ALL]`
 - `docker/plex/compose.yml`: `seerr` and `kometa` with `cap_drop: [ALL]`; `plex` and `tautulli` with retained init capabilities
 - `docker/arrs/compose.yml`: all services with LSIO retained init capabilities
-- `docker/wallabag/compose.yml`: `db` and `redis` with retained init capabilities
+- `docker/wallabag/compose.yml`: `wallabag` with retained init capabilities and `NET_BIND_SERVICE` for port 80; `db` and `redis` with retained init capabilities
 
-These changes intentionally exclude Docker socket controllers, root-init app
-containers, `immich-ml` after its healthcheck failed, and `pocket-id` after startup failed with `su-exec: setgroups(1000): Operation not permitted`.
+These changes intentionally exclude Docker socket controllers, `immich-ml` after its healthcheck failed, and `pocket-id` after startup failed with `su-exec: setgroups(1000): Operation not permitted`.
 
 ### Already-Applied Fresh-Volume Audit
 
@@ -65,6 +64,11 @@ device access by themselves. The applied drops still require post-deploy
 validation of startup health plus an actual hardware transcode or video job.
 `plex` keeps the retained init capability set because its official image starts
 through `/init` as root before preparing the runtime process.
+
+For root-init app containers, the applied capability drop keeps the retained
+init capability set so startup scripts can prepare writable application data and
+drop to the runtime service user. `wallabag` also keeps `NET_BIND_SERVICE`
+because its web server listens on port 80.
 
 ## Research Baseline
 
@@ -186,10 +190,10 @@ that can require capabilities such as `CHOWN`, `SETUID`, `SETGID`, `FOWNER`, or
 | --- | --- | --- |
 | `immich` | `redis` | Applied with retained init capabilities; validate startup and cache connectivity. |
 | `immich` | `database` | Applied with retained init capabilities; validate fresh DB data directory initialization and Immich migrations. |
-| `owncloud` | `owncloud` | Official app image performs permission/setup work; validate chown/chmod behavior. |
+| `owncloud` | `owncloud` | Applied with retained init capabilities; validate chown/chmod behavior, app setup, and file upload/write paths. |
 | `owncloud` | `owncloud-mariadb` | Applied with retained init capabilities; validate fresh DB data directory initialization. |
 | `owncloud` | `owncloud-redis` | Applied with retained init capabilities; validate fresh cache volume ownership and Redis health. |
-| `wallabag` | `wallabag` | PHP/web image on port 80 with app asset volume; validate root entrypoint behavior. |
+| `wallabag` | `wallabag` | Applied with retained init capabilities plus `NET_BIND_SERVICE`; validate root entrypoint behavior and asset upload/write paths. |
 | `wallabag` | `db` | Applied with retained init capabilities; validate fresh DB data directory initialization. |
 | `wallabag` | `redis` | Applied with retained init capabilities; validate Redis health. |
 | `miniflux` | `miniflux-db` | Applied with retained init capabilities; validate fresh Postgres data directory initialization. |

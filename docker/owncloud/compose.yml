@@ -5,6 +5,15 @@ services:
     container_name: owncloud
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
     networks:
       - proxy
       - owncloud-backend
