@@ -21,13 +21,15 @@ Applied capability drops:
 - `docker/beszel/compose.yml`: `cap_drop: [ALL]`
 - `docker/couchdb/compose.yml`: `cap_drop: [ALL]`
 - `docker/downloads/compose.yml`: `qbitwebui` with `cap_drop: [ALL]`; `qbittorrent` and `sabnzbd` with LSIO retained init capabilities
+- `docker/immich/compose.yml`: `immich-server` with `cap_drop: [ALL]`
+- `docker/jellyfin/compose.yml`: `cap_drop: [ALL]`
 - `docker/miniflux/compose.yml`: `miniflux` only
 - `docker/pinchflat/compose.yml`: `cap_drop: [ALL]`
-- `docker/plex/compose.yml`: `seerr` and `kometa` with `cap_drop: [ALL]`; `tautulli` with LSIO retained init capabilities
+- `docker/plex/compose.yml`: `seerr` and `kometa` with `cap_drop: [ALL]`; `plex` and `tautulli` with retained init capabilities
 - `docker/arrs/compose.yml`: all services with LSIO retained init capabilities
 
 These changes intentionally exclude Docker socket controllers, database/cache
-services, GPU-backed media services, `immich-ml` after its healthcheck failed, and `pocket-id` after startup failed with `su-exec: setgroups(1000): Operation not permitted`.
+services, `immich-ml` after its healthcheck failed, and `pocket-id` after startup failed with `su-exec: setgroups(1000): Operation not permitted`.
 
 ### Already-Applied Fresh-Volume Audit
 
@@ -50,6 +52,12 @@ For LSIO services, the applied capability drop keeps the retained init
 capabilities validated during the Prowlarr pilot: `CHOWN`, `SETUID`, `SETGID`,
 `DAC_OVERRIDE`, `FOWNER`, and `KILL`. Runtime validation is still required for
 fresh `/config` initialization, bind-mount writes, and service-specific behavior.
+
+For GPU-backed services, capability drops do not grant or remove `/dev/dri`
+device access by themselves. The applied drops still require post-deploy
+validation of startup health plus an actual hardware transcode or video job.
+`plex` keeps the retained init capability set because its official image starts
+through `/init` as root before preparing the runtime process.
 
 ## Research Baseline
 
@@ -104,9 +112,9 @@ transcoding, not just container startup.
 
 | Stack | Service | Notes |
 | --- | --- | --- |
-| `jellyfin` | `jellyfin` | Runs as `1000:1000` with `group_add: 992`; validate VAAPI/QSV playback. |
-| `immich` | `immich-server` | Uses `/dev/dri`; validate video transcode job and upload processing. |
-| `plex` | `plex` | Uses `/dev/dri`; official image uses s6-style init, so validate startup and hardware transcode before keeping the drop. |
+| `jellyfin` | `jellyfin` | Applied; runs as `1000:1000` with `group_add: 992`; validate VAAPI/QSV playback. |
+| `immich` | `immich-server` | Applied; uses `/dev/dri`; validate video transcode job and upload processing. |
+| `plex` | `plex` | Applied with retained init capabilities; uses `/dev/dri`; validate startup and hardware transcode. |
 
 ### LinuxServer.io Images
 
@@ -196,7 +204,7 @@ into read-only API access.
 2. Deploy the low-risk app batch one stack at a time: `couchdb`, `pinchflat`, `qbitwebui`, `seerr`, `kometa`, and `miniflux`.
 3. Deploy low-port standalone apps such as `audiobookshelf` with only `NET_BIND_SERVICE` re-added when needed.
 4. Deploy LinuxServer.io services as their own batch and preserve the fresh-host init capabilities above before removing more.
-5. Try GPU services only when prepared to validate actual transcoding.
+5. Deploy GPU services only when prepared to validate actual transcoding.
 6. Convert DB/cache services to fixed users with pre-owned volumes before dropping all capabilities, or retain the init capabilities their official entrypoints need.
 7. Address Traefik's Docker socket before spending much time on smaller capability tweaks there.
 
