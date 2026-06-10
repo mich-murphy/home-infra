@@ -86,6 +86,7 @@ Relevant upstream notes:
 - LinuxServer.io container init uses s6 and runs init scripts for users, folders, permissions, mods, and custom files: https://www.linuxserver.io/blog/how-is-container-formed
 - LinuxServer.io non-root operation is supported on a tested-image basis and has caveats around `/run`, Docker Mods, custom scripts/services, and `no-new-privileges`: https://docs.linuxserver.io/misc/non-root/
 - Traefik's Docker provider requires Docker API access and documents socket proxy patterns: https://doc.traefik.io/traefik/providers/docker/
+- Tecnativa Docker Socket Proxy is the Traefik-documented request-filtering option: https://github.com/Tecnativa/docker-socket-proxy
 - Portainer local Docker socket mode requires access to `/var/run/docker.sock`: https://docs.portainer.io/admin/environments/add/docker/socket
 - MariaDB documents that the official image briefly needs root and `CHOWN` to fix volume ownership before dropping privileges: https://mariadb.com/docs/server/server-management/automated-mariadb-deployment-and-administration/docker-and-mariadb/docker-official-image-frequently-asked-questions
 - Postgres official entrypoint creates/chowns data directories and uses `gosu` when started as root: https://github.com/docker-library/postgres/blob/master/docker-entrypoint.sh
@@ -206,7 +207,7 @@ into read-only API access.
 
 | Stack | Service | Recommended direction |
 | --- | --- | --- |
-| `init` | `traefik` | Move to a Docker socket proxy or file provider. With `cap_drop: [ALL]`, either add `NET_BIND_SERVICE` or move internal entrypoints above 1024 if low-port binding fails. |
+| `init` | `traefik` | Applied with Tecnativa Docker Socket Proxy. With `cap_drop: [ALL]`, either add `NET_BIND_SERVICE` or move internal entrypoints above 1024 if low-port binding fails. |
 | `init` | `portainer` | Keep as the explicit Docker API controller; isolate access rather than relying on capability drops. |
 
 ## Suggested Rollout Order

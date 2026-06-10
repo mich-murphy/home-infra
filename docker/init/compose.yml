@@ -1,5 +1,24 @@
 ---
 services:
+  docker-socket-proxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:v0.4.2@sha256:1f3a6f303320723d199d2316a3e82b2e2685d86c275d5e3deeaf182573b47476
+    container_name: docker-socket-proxy
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - docker-socket-proxy
+    environment:
+      - CONTAINERS=1
+      - EVENTS=1
+      - INFO=1
+      - NETWORKS=1
+      - PING=1
+      - POST=0
+      - VERSION=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
   portainer:
     image: portainer/portainer-ee:lts@sha256:5eda42b43ecf9c227079469fb819700449d60f0fa6b0f10f8c895b9d9ad50c2b
     container_name: portainer
@@ -29,12 +48,12 @@ services:
       - no-new-privileges:true
     networks:
       - proxy
+      - docker-socket-proxy
     environment:
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
       - CF_API_EMAIL=${CF_API_EMAIL}
     volumes:
       - traefik-data:/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.yml:/traefik.yml:ro
       - ./traefik-dynamic.yml:/traefik-dynamic.yml:ro
     ports:
@@ -60,6 +79,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    depends_on:
+      - docker-socket-proxy
     restart: unless-stopped
 
   pocket-id:
@@ -108,3 +129,6 @@ networks:
     ipam:
       config:
         - subnet: 172.20.1.0/24
+  docker-socket-proxy:
+    name: docker-socket-proxy
+    internal: true
