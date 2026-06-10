@@ -34,6 +34,28 @@
   loop: "{{ firewall_allow_ports | default([]) }}"
   notify: reload ufw
 
+# docker-host only: docker's DNAT/FORWARD rules bypass ufw's default-deny, so
+# published ports must be allowlisted in DOCKER-USER instead (ufw-docker
+# pattern, github.com/chaifeng/ufw-docker). after.rules survives reboots and
+# docker restarts; only NEW connections on the external interface are filtered.
+- name: allowlist docker published ports in DOCKER-USER
+  ansible.builtin.blockinfile:
+    path: /etc/ufw/after.rules
+    marker: "# {mark} ANSIBLE MANAGED BLOCK: docker published-port allowlist"
+    block: |
+      *filter
+      :DOCKER-USER - [0:0]
+      -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
+      -A DOCKER-USER -m conntrack --ctstate INVALID -j DROP
+      {% for entry in firewall_docker_allowed_ports %}
+      -A DOCKER-USER -i {{ firewall_docker_external_interface }} -p {{ entry.proto }} -m conntrack --ctdir ORIGINAL --ctorigdstport {{ entry.port }} -j RETURN
+      {% endfor %}
+      -A DOCKER-USER -i {{ firewall_docker_external_interface }} -m conntrack --ctstate NEW -j DROP
+      -A DOCKER-USER -j RETURN
+      COMMIT
+  when: firewall_docker_allowed_ports is defined
+  notify: reload ufw
+
 # docker-host only: lets the compose bridge reach the Tailscale CGNAT range.
 # Enabled by setting firewall_docker_bridge_subnet in group vars.
 - name: allow internal docker bridge to tailscale

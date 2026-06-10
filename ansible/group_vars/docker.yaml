@@ -9,3 +9,13 @@ swap_swappiness: 10
 
 # enables the firewall rule letting the compose bridge reach Tailscale
 firewall_docker_bridge_subnet: 172.20.1.0/24
+
+# enables DOCKER-USER filtering (see roles/firewall); docker-published ports
+# not listed here are dropped
+firewall_docker_allowed_ports:
+  - {port: 80, proto: tcp}  # traefik
+  - {port: 443, proto: tcp}  # traefik
+  - {port: 9443, proto: tcp}  # portainer escape hatch
+  - {port: 8096, proto: tcp}  # jellyfin
+  - {port: 25565, proto: tcp}  # qbittorrent peers
+  - {port: 25565, proto: udp}  # qbittorrent peers
