@@ -20,20 +20,20 @@ Applied capability drops:
 - `docker/audiobookshelf/compose.yml`: `cap_drop: [ALL]`, `cap_add: [NET_BIND_SERVICE]` for port 80
 - `docker/beszel/compose.yml`: `cap_drop: [ALL]`
 - `docker/couchdb/compose.yml`: `cap_drop: [ALL]`
-- `docker/downloads/compose.yml`: `qbitwebui` only
+- `docker/downloads/compose.yml`: `qbitwebui` with `cap_drop: [ALL]`; `qbittorrent` and `sabnzbd` with LSIO retained init capabilities
 - `docker/miniflux/compose.yml`: `miniflux` only
 - `docker/pinchflat/compose.yml`: `cap_drop: [ALL]`
-- `docker/plex/compose.yml`: `seerr` and `kometa` only
-- `docker/arrs/compose.yml`: `prowlarr` with LSIO retained init capabilities
+- `docker/plex/compose.yml`: `seerr` and `kometa` with `cap_drop: [ALL]`; `tautulli` with LSIO retained init capabilities
+- `docker/arrs/compose.yml`: all services with LSIO retained init capabilities
 
 These changes intentionally exclude Docker socket controllers, database/cache
-services, LinuxServer.io images, GPU-backed media services, `immich-ml` after its healthcheck failed, and `pocket-id` after startup failed with `su-exec: setgroups(1000): Operation not permitted`.
+services, GPU-backed media services, `immich-ml` after its healthcheck failed, and `pocket-id` after startup failed with `su-exec: setgroups(1000): Operation not permitted`.
 
 ### Already-Applied Fresh-Volume Audit
 
-The LinuxServer.io fresh-volume issue does not directly apply to the currently
-applied capability drops because none of them are LSIO images. Do not back-apply
-the LSIO retained capability set to these containers without a specific failure:
+The LinuxServer.io fresh-volume issue does not apply to the non-LSIO capability
+drops below. Do not back-apply the LSIO retained capability set to these
+containers without a specific failure:
 
 | Stack | Service | Fresh-volume capability risk |
 | --- | --- | --- |
@@ -45,6 +45,11 @@ the LSIO retained capability set to these containers without a specific failure:
 | `plex` | `seerr` | Low. Image runs as `node:node`; the `/app/config` volume is owned by uid/gid `1000` after initialization. |
 | `plex` | `kometa` | Low. Image starts via `tini` into Python and runs as root; no ownership repair or user switching observed. |
 | `audiobookshelf` | `audiobookshelf` | Low. Entrypoint only normalizes the command before launching Node; `NET_BIND_SERVICE` is retained only for port 80. |
+
+For LSIO services, the applied capability drop keeps the retained init
+capabilities validated during the Prowlarr pilot: `CHOWN`, `SETUID`, `SETGID`,
+`DAC_OVERRIDE`, `FOWNER`, and `KILL`. Runtime validation is still required for
+fresh `/config` initialization, bind-mount writes, and service-specific behavior.
 
 ## Research Baseline
 
@@ -116,13 +121,13 @@ changes bypass the normal `PUID`/`PGID` path and need the LSIO non-root recipe.
 
 | Stack | Service | Image docs | Current notes |
 | --- | --- | --- | --- |
-| `arrs` | `radarr` | https://docs.linuxserver.io/images/docker-radarr/ | Page lists read-only and non-root operation; validate `/config` and `/data` ownership. |
-| `arrs` | `sonarr` | https://docs.linuxserver.io/images/docker-sonarr/ | Page lists read-only and non-root operation; validate `/config` and `/data` ownership. |
-| `arrs` | `lidarr` | https://docs.linuxserver.io/images/docker-lidarr/ | Page lists read-only and non-root operation; validate `/config`, `/data`, and `/music` ownership. |
+| `arrs` | `radarr` | https://docs.linuxserver.io/images/docker-radarr/ | Applied with retained init capabilities; validate `/config` and `/data` ownership. |
+| `arrs` | `sonarr` | https://docs.linuxserver.io/images/docker-sonarr/ | Applied with retained init capabilities; validate `/config` and `/data` ownership. |
+| `arrs` | `lidarr` | https://docs.linuxserver.io/images/docker-lidarr/ | Applied with retained init capabilities; validate `/config`, `/data`, and `/music` ownership. |
 | `arrs` | `prowlarr` | https://docs.linuxserver.io/images/docker-prowlarr/ | Applied as the LSIO pilot with retained init capabilities; validate fresh `/config` ownership and indexer/app writes. |
-| `downloads` | `qbittorrent` | https://docs.linuxserver.io/images/docker-qbittorrent/ | Page lists read-only and non-root operation; also validate TCP/UDP torrent listener. |
-| `downloads` | `sabnzbd` | https://docs.linuxserver.io/images/docker-sabnzbd/ | Page lists read-only and non-root operation; validate incomplete/complete download paths. |
-| `plex` | `tautulli` | https://docs.linuxserver.io/images/docker-tautulli/ | Page lists read-only and non-root operation; validate config DB writes and Plex connectivity. |
+| `downloads` | `qbittorrent` | https://docs.linuxserver.io/images/docker-qbittorrent/ | Applied with retained init capabilities; also validate TCP/UDP torrent listener. |
+| `downloads` | `sabnzbd` | https://docs.linuxserver.io/images/docker-sabnzbd/ | Applied with retained init capabilities; validate incomplete/complete download paths. |
+| `plex` | `tautulli` | https://docs.linuxserver.io/images/docker-tautulli/ | Applied with retained init capabilities; validate config DB writes and Plex connectivity. |
 
 For normal rootful LSIO operation on fresh volumes, do not start from
 `cap_drop: [ALL]` with no re-adds. Test a retained init capability set first:
@@ -190,8 +195,8 @@ into read-only API access.
 1. Keep `beszel` as the pilot.
 2. Deploy the low-risk app batch one stack at a time: `couchdb`, `pinchflat`, `qbitwebui`, `seerr`, `kometa`, and `miniflux`.
 3. Deploy low-port standalone apps such as `audiobookshelf` with only `NET_BIND_SERVICE` re-added when needed.
-4. Try GPU services only when prepared to validate actual transcoding.
-5. Treat LinuxServer.io services as their own batch and preserve the fresh-host init capabilities above before removing more.
+4. Deploy LinuxServer.io services as their own batch and preserve the fresh-host init capabilities above before removing more.
+5. Try GPU services only when prepared to validate actual transcoding.
 6. Convert DB/cache services to fixed users with pre-owned volumes before dropping all capabilities, or retain the init capabilities their official entrypoints need.
 7. Address Traefik's Docker socket before spending much time on smaller capability tweaks there.
 

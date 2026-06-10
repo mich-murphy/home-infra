@@ -8,6 +8,15 @@ services:
     container_name: qbittorrent
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
     mem_limit: 1g
     memswap_limit: 1g
     networks:
@@ -70,6 +79,15 @@ services:
     container_name: sabnzbd
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
     networks:
       - proxy
     environment:
