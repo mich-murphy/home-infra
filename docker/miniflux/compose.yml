@@ -37,6 +37,15 @@ services:
     container_name: miniflux-db
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
     networks:
       - miniflux-backend
     environment:

@@ -43,6 +43,15 @@ services:
     container_name: owncloud-mariadb
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
     networks:
       - owncloud-backend
     environment:
@@ -66,6 +75,15 @@ services:
     container_name: owncloud-redis
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
     networks:
       - owncloud-backend
     volumes:

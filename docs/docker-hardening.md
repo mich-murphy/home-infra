@@ -21,15 +21,17 @@ Applied capability drops:
 - `docker/beszel/compose.yml`: `cap_drop: [ALL]`
 - `docker/couchdb/compose.yml`: `cap_drop: [ALL]`
 - `docker/downloads/compose.yml`: `qbitwebui` with `cap_drop: [ALL]`; `qbittorrent` and `sabnzbd` with LSIO retained init capabilities
-- `docker/immich/compose.yml`: `immich-server` with `cap_drop: [ALL]`
+- `docker/immich/compose.yml`: `immich-server` with `cap_drop: [ALL]`; `redis` and `database` with retained init capabilities
 - `docker/jellyfin/compose.yml`: `cap_drop: [ALL]`
-- `docker/miniflux/compose.yml`: `miniflux` only
+- `docker/miniflux/compose.yml`: `miniflux` with `cap_drop: [ALL]`; `miniflux-db` with retained init capabilities
+- `docker/owncloud/compose.yml`: `owncloud-mariadb` and `owncloud-redis` with retained init capabilities
 - `docker/pinchflat/compose.yml`: `cap_drop: [ALL]`
 - `docker/plex/compose.yml`: `seerr` and `kometa` with `cap_drop: [ALL]`; `plex` and `tautulli` with retained init capabilities
 - `docker/arrs/compose.yml`: all services with LSIO retained init capabilities
+- `docker/wallabag/compose.yml`: `db` and `redis` with retained init capabilities
 
-These changes intentionally exclude Docker socket controllers, database/cache
-services, `immich-ml` after its healthcheck failed, and `pocket-id` after startup failed with `su-exec: setgroups(1000): Operation not permitted`.
+These changes intentionally exclude Docker socket controllers, root-init app
+containers, `immich-ml` after its healthcheck failed, and `pocket-id` after startup failed with `su-exec: setgroups(1000): Operation not permitted`.
 
 ### Already-Applied Fresh-Volume Audit
 
@@ -52,6 +54,11 @@ For LSIO services, the applied capability drop keeps the retained init
 capabilities validated during the Prowlarr pilot: `CHOWN`, `SETUID`, `SETGID`,
 `DAC_OVERRIDE`, `FOWNER`, and `KILL`. Runtime validation is still required for
 fresh `/config` initialization, bind-mount writes, and service-specific behavior.
+
+For database/cache sidecars that start as root, the applied capability drop uses
+the same retained init capability set so official entrypoints can prepare data
+directories and drop to the service user. Runtime validation is still required
+with fresh data volumes and an application-level read/write check.
 
 For GPU-backed services, capability drops do not grant or remove `/dev/dri`
 device access by themselves. The applied drops still require post-deploy
@@ -170,22 +177,22 @@ LSIO non-root recipe notes:
 
 ### Root Init / Ownership Sensitive
 
-These are poor first-pass `cap_drop: [ALL]` candidates. Their image docs or
+These are poor candidates for bare `cap_drop: [ALL]`. Their image docs or
 entrypoints indicate startup ownership fixes, user switching, or service init
 that can require capabilities such as `CHOWN`, `SETUID`, `SETGID`, `FOWNER`, or
 `DAC_OVERRIDE`.
 
 | Stack | Service | Why it needs extra care |
 | --- | --- | --- |
-| `immich` | `redis` | Valkey/Redis style entrypoint may chown and drop from root when started as root. |
-| `immich` | `database` | Postgres-derived image; DB data directory ownership/init is capability sensitive. |
+| `immich` | `redis` | Applied with retained init capabilities; validate startup and cache connectivity. |
+| `immich` | `database` | Applied with retained init capabilities; validate fresh DB data directory initialization and Immich migrations. |
 | `owncloud` | `owncloud` | Official app image performs permission/setup work; validate chown/chmod behavior. |
-| `owncloud` | `owncloud-mariadb` | MariaDB docs explicitly call out temporary root plus `CHOWN`. |
-| `owncloud` | `owncloud-redis` | Official Redis entrypoint pattern; persistent cache volume increases ownership risk. |
+| `owncloud` | `owncloud-mariadb` | Applied with retained init capabilities; validate fresh DB data directory initialization. |
+| `owncloud` | `owncloud-redis` | Applied with retained init capabilities; validate fresh cache volume ownership and Redis health. |
 | `wallabag` | `wallabag` | PHP/web image on port 80 with app asset volume; validate root entrypoint behavior. |
-| `wallabag` | `db` | MariaDB entrypoint ownership/init path. |
-| `wallabag` | `redis` | Official Redis entrypoint pattern. |
-| `miniflux` | `miniflux-db` | Official Postgres 18 entrypoint; current mount point is `/var/lib/postgresql`. |
+| `wallabag` | `db` | Applied with retained init capabilities; validate fresh DB data directory initialization. |
+| `wallabag` | `redis` | Applied with retained init capabilities; validate Redis health. |
+| `miniflux` | `miniflux-db` | Applied with retained init capabilities; validate fresh Postgres data directory initialization. |
 
 ### Docker Socket Controllers
 

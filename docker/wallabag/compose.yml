@@ -37,6 +37,15 @@ services:
     container_name: wallabag-mariadb
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
     networks:
       - wallabag-backend
     environment:
@@ -54,6 +63,15 @@ services:
     container_name: wallabag-redis
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
     networks:
       - wallabag-backend
     healthcheck:
