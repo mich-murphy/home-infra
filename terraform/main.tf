@@ -8,9 +8,11 @@ locals {
   srv_vlan_id  = 20
   scp          = data.onepassword_item.proxmox.section_map["Terraform SCP"].field_map
   proxmox_creds = {
-    username           = local.scp["scp username"].value
-    password           = local.scp["scp password"].value
-    host               = local.scp["hostname"].value
+    username = local.scp["scp username"].value
+    password = local.scp["scp password"].value
+    host     = local.scp["hostname"].value
+    # use an ephemeral/tagged single-use key; the previous shared key leaked into
+    # cloud-init logs and must be rotated in the Tailscale admin console
     tailscale_auth_key = local.scp["tailscale authkey"].value
   }
 }

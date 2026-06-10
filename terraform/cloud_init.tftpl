@@ -4,14 +4,26 @@ hostname: ${hostname}
 fqdn: ${hostname}
 manage_etc_hosts: true
 
+# root-only file keeps the auth key out of process args and cloud-init logs
+write_files:
+  - path: /etc/tailscale/authkey
+    owner: "root:root"
+    permissions: "0600"
+    content: "${tailscale_auth_key}"
+
 %{ if os_family == "debian" ~}
 package_update: true
 packages:
   - qemu-guest-agent
 runcmd:
   - systemctl enable --now qemu-guest-agent
-  - curl -fsSL https://tailscale.com/install.sh | sh
-  - tailscale up --ssh --hostname=${hostname} --authkey=${tailscale_auth_key}
+  # pinned vendor repo instead of curl | sh
+  - . /etc/os-release && curl -fsSL "https://pkgs.tailscale.com/stable/$ID/$VERSION_CODENAME.noarmor.gpg" -o /usr/share/keyrings/tailscale-archive-keyring.gpg
+  - . /etc/os-release && curl -fsSL "https://pkgs.tailscale.com/stable/$ID/$VERSION_CODENAME.tailscale-keyring.list" -o /etc/apt/sources.list.d/tailscale.list
+  - apt-get update
+  - apt-get install -y tailscale
+  - systemctl enable --now tailscaled
+  - tailscale up --ssh --hostname=${hostname} --auth-key=file:/etc/tailscale/authkey && rm -f /etc/tailscale/authkey
 %{ endif ~}
 %{ if os_family == "arch" ~}
 packages:
@@ -22,6 +34,7 @@ runcmd:
   - pacman-key --populate archlinux
   - pacman -Sy --noconfirm archlinux-keyring
   - pacman -Syu --noconfirm
-  - curl -fsSL https://tailscale.com/install.sh | sh
-  - tailscale up --ssh --hostname=${hostname} --advertise-tags=tag:ai-dev --authkey=${tailscale_auth_key}
+  - pacman -S --noconfirm tailscale
+  - systemctl enable --now tailscaled
+  - tailscale up --ssh --hostname=${hostname} --advertise-tags=tag:ai-dev --auth-key=file:/etc/tailscale/authkey && rm -f /etc/tailscale/authkey
 %{ endif ~}
