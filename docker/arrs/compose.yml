@@ -1,7 +1,7 @@
 ---
 services:
   radarr:
-    image: ghcr.io/linuxserver/radarr:6.1.1.10360-ls304@sha256:c0a4335d4249b46102f64cf6fa27ffc3bddfd9138fac1e4ddf238afd37f02d1f
+    image: ghcr.io/linuxserver/radarr:6.2.1.10461-ls305@sha256:4c490ccd44d31feb49dc4cc542f2148a420fc1ae0c1ba94e59b39ba4bf112716
     container_name: radarr
     security_opt:
       - no-new-privileges:true
@@ -108,7 +108,7 @@ services:
     restart: unless-stopped
 
   prowlarr:
-    image: ghcr.io/linuxserver/prowlarr:2.3.5.5327-ls148@sha256:2489c6dbaf11e3a6d71aeb2e6980d04193d4af611aa7064a974851222fd41722
+    image: ghcr.io/linuxserver/prowlarr:2.4.0.5397-ls149@sha256:a46d0ce0a8236bc4e065fe7c91a55d026c9d849620c5845250519b977d8857f3
     container_name: prowlarr
     security_opt:
       - no-new-privileges:true
