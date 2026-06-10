@@ -243,3 +243,15 @@ Known exception patterns:
 
 After capability drops are stable, evaluate `read_only: true` service by service
 with explicit `tmpfs` entries for required writable runtime paths.
+
+## Docker Socket Proxy Rollout
+
+Traefik uses the Tecnativa Docker Socket Proxy on an internal-only network
+instead of mounting `/var/run/docker.sock` directly. Portainer keeps its direct
+socket mount as the explicit Docker API controller.
+
+The proxy is GET-only (`POST=0`): `CONTAINERS` is granted for label discovery
+plus the image-default `EVENTS`/`PING`/`VERSION`, matching what Traefik's
+non-swarm provider actually calls. `INFO` and `NETWORKS` stay denied. It runs
+with `cap_drop: ALL` and `read_only` (tmpfs on `/tmp` and `/run`), validated
+against the pinned image with a live socket.
