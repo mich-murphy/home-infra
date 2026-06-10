@@ -62,6 +62,12 @@ services:
       - traefik.http.routers.tautulli.rule=Host(`tautulli.local.elmurphy.com`)
       - traefik.http.routers.tautulli.tls=true
       - traefik.http.services.tautulli.loadbalancer.server.port=8181
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8181/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   seerr:
@@ -84,6 +90,12 @@ services:
       - traefik.http.routers.seerr.rule=Host(`seerr.local.elmurphy.com`)
       - traefik.http.routers.seerr.tls=true
       - traefik.http.services.seerr.loadbalancer.server.port=5055
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5055/api/v1/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   # Manually setup initial config

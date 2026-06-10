@@ -27,6 +27,12 @@ services:
       - traefik.http.middlewares.obsidiancors.headers.accesscontrolmaxage=3600
       - traefik.http.middlewares.obsidiancors.headers.addvaryheader=true
       - traefik.http.middlewares.obsidiancors.headers.accessControlAllowCredentials=true
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:5984/_up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
 volumes:

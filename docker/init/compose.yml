@@ -54,6 +54,12 @@ services:
       - "traefik.http.routers.traefik-secure.tls.domains[0].main=local.elmurphy.com"
       - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.local.elmurphy.com"
       - "traefik.http.routers.traefik-secure.service=api@internal"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   pocket-id:
