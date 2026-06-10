@@ -6,6 +6,16 @@ services:
     container_name: wallabag
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
+      - NET_BIND_SERVICE
     networks:
       - proxy
       - wallabag-backend
