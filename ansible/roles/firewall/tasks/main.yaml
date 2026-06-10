@@ -54,7 +54,9 @@
       -A DOCKER-USER -j RETURN
       COMMIT
   when: firewall_docker_allowed_ports is defined
-  notify: reload ufw
+  notify:
+    - flush docker-user chain
+    - reload ufw
 
 # docker-host only: lets the compose bridge reach the Tailscale CGNAT range.
 # Enabled by setting firewall_docker_bridge_subnet in group vars.
