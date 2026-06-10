@@ -42,6 +42,12 @@ services:
       - traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.local.elmurphy.com`)
       - traefik.http.routers.qbittorrent.tls=true
       - traefik.http.services.qbittorrent.loadbalancer.server.port=8080
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   qbitwebui:
@@ -69,6 +75,12 @@ services:
       - traefik.http.routers.qbitwebui.rule=Host(`qbitwebui.local.elmurphy.com`)
       - traefik.http.routers.qbitwebui.tls=true
       - traefik.http.services.qbitwebui.loadbalancer.server.port=3000
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   # NOTE: initial setup is done via "http://<docker localhost ip>:8080"
@@ -106,6 +118,12 @@ services:
       - traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.local.elmurphy.com`)
       - traefik.http.routers.sabnzbd.tls=true
       - traefik.http.services.sabnzbd.loadbalancer.server.port=8080
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
 volumes:
