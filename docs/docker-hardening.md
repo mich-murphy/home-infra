@@ -58,6 +58,8 @@ For database/cache sidecars that start as root, the applied capability drop uses
 the same retained init capability set so official entrypoints can prepare data
 directories and drop to the service user. Runtime validation is still required
 with fresh data volumes and an application-level read/write check.
+`owncloud-redis` also keeps `SETPCAP` because the Redis 8 entrypoint uses
+`setpriv` to adjust the bounding set before starting Redis.
 
 For GPU-backed services, capability drops do not grant or remove `/dev/dri`
 device access by themselves. The applied drops still require post-deploy
@@ -192,7 +194,7 @@ that can require capabilities such as `CHOWN`, `SETUID`, `SETGID`, `FOWNER`, or
 | `immich` | `database` | Applied with retained init capabilities; validate fresh DB data directory initialization and Immich migrations. |
 | `owncloud` | `owncloud` | Applied with retained init capabilities; validate chown/chmod behavior, app setup, and file upload/write paths. |
 | `owncloud` | `owncloud-mariadb` | Applied with retained init capabilities; validate fresh DB data directory initialization. |
-| `owncloud` | `owncloud-redis` | Applied with retained init capabilities; validate fresh cache volume ownership and Redis health. |
+| `owncloud` | `owncloud-redis` | Applied with retained init capabilities plus `SETPCAP`; validate fresh cache volume ownership and Redis health. |
 | `wallabag` | `wallabag` | Applied with retained init capabilities plus `NET_BIND_SERVICE`; validate root entrypoint behavior and asset upload/write paths. |
 | `wallabag` | `db` | Applied with retained init capabilities; validate fresh DB data directory initialization. |
 | `wallabag` | `redis` | Applied with retained init capabilities; validate Redis health. |
