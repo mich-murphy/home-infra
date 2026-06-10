@@ -5,6 +5,7 @@
     regexp: "^\\s*#?\\s*PermitRootLogin\\s+.*$"
     line: "PermitRootLogin no"
     state: present
+    validate: /usr/sbin/sshd -t -f %s
   notify: "restart sshd service"
 
 - name: disable password authentication
@@ -13,6 +14,7 @@
     regexp: "^\\s*#?\\s*PasswordAuthentication\\s+.*$"
     line: "PasswordAuthentication no"
     state: present
+    validate: /usr/sbin/sshd -t -f %s
   notify: "restart sshd service"
 
 - name: disable any keyboard interactive authentication
@@ -21,6 +23,7 @@
     regexp: "^\\s*#?\\s*KbdInteractiveAuthentication\\s+.*$"
     line: "KbdInteractiveAuthentication no"
     state: present
+    validate: /usr/sbin/sshd -t -f %s
   notify: "restart sshd service"
 
 - name: disable x11 forwarding
@@ -29,6 +32,7 @@
     regexp: "^\\s*#?\\s*X11Forwarding\\s+.*$"
     line: "X11Forwarding no"
     state: present
+    validate: /usr/sbin/sshd -t -f %s
   notify: "restart sshd service"
 
 - name: disable ssh-agent forwarding
@@ -37,6 +41,7 @@
     regexp: "^\\s*#?\\s*AllowAgentForwarding\\s+.*$"
     line: "AllowAgentForwarding no"
     state: present
+    validate: /usr/sbin/sshd -t -f %s
   notify: "restart sshd service"
 
 - name: disable unix-domain socket forwarding
@@ -45,6 +50,7 @@
     regexp: "^\\s*#?\\s*AllowStreamLocalForwarding\\s+.*$"
     line: "AllowStreamLocalForwarding no"
     state: present
+    validate: /usr/sbin/sshd -t -f %s
   notify: "restart sshd service"
 
 - name: set authentication methods to publickey
@@ -53,4 +59,5 @@
     regexp: "^\\s*#?\\s*AuthenticationMethods\\s+.*$"
     line: "AuthenticationMethods publickey"
     state: present
+    validate: /usr/sbin/sshd -t -f %s
   notify: "restart sshd service"

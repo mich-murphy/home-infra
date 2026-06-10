@@ -22,6 +22,8 @@
   ansible.builtin.get_url:
     url: "{{ unifi_os_server_download_url }}"
     dest: "{{ unifi_os_server_installer_path }}"
+    # update checksum whenever unifi_os_server_download_url changes
+    checksum: "sha256:db17656f222d371da5f96ed104e33503be16ca755817f126409b67d8009b1419"
     mode: "0755"
 
 - name: install UniFi OS Server
