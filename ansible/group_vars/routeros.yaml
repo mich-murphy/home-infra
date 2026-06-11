@@ -57,8 +57,10 @@ routeros_admin_sources:
   - "{{ routeros_mgmt_subnet }}"
 
 # Tagged on the trunk bridge; MGMT/VLAN 1 is the untagged net.
+# SRV pool ends at .223: 10.77.20.224-254 is the Kubernetes LoadBalancer
+# range (Cilium L2), and .20 (static Talos node) sits below the pool.
 routeros_vlans:
-  - { id: 20, name: srv, subnet: 10.77.20.0/24, gateway: 10.77.20.1, pool_start: 10.77.20.50, pool_end: 10.77.20.250 }
+  - { id: 20, name: srv, subnet: 10.77.20.0/24, gateway: 10.77.20.1, pool_start: 10.77.20.50, pool_end: 10.77.20.223 }
   - { id: 30, name: dflt, subnet: 10.77.30.0/24, gateway: 10.77.30.1, pool_start: 10.77.30.50, pool_end: 10.77.30.250 }
   - { id: 50, name: kds, subnet: 10.77.50.0/24, gateway: 10.77.50.1, pool_start: 10.77.50.50, pool_end: 10.77.50.250, dns: "{{ routeros_kids_dns }}" }
   - { id: 60, name: gst, subnet: 10.77.60.0/24, gateway: 10.77.60.1, pool_start: 10.77.60.50, pool_end: 10.77.60.250 }

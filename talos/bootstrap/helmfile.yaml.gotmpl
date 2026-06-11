@@ -1,0 +1,16 @@
+# Bootstrap-only: installs the CNI on a fresh node before Flux exists
+# (machine config sets cni: none). Chart version and values are read from the
+# Flux HelmRelease so there is exactly one copy; same release name/namespace
+# lets Flux adopt the release on first reconcile.
+#
+#   helmfile apply -f talos/bootstrap/helmfile.yaml.gotmpl
+repositories:
+  - name: cilium
+    url: https://helm.cilium.io
+releases:
+  - name: cilium
+    namespace: kube-system
+    chart: cilium/cilium
+    version: {{ (readFile "../../kubernetes/infrastructure/controllers/cilium/release.yaml" | fromYaml).spec.chart.spec.version }}
+    values:
+      - values.yaml.gotmpl

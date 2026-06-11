@@ -9,13 +9,71 @@ spec:
   chart:
     spec:
       chart: cilium
-      version: "1.18.6"
+      # Stay on 1.18.x: 1.19.3/1.19.4 break host networking on single-node
+      # Talos (cilium#46010). Bump only after a release noting the fix.
+      version: "1.18.10"
       sourceRef:
         kind: HelmRepository
         name: cilium
         namespace: kube-system
   driftDetection:
     mode: enabled
-  valuesFrom:
-    - kind: ConfigMap
-      name: cilium-values
+  # Values are inlined (not a ConfigMap) so talos/bootstrap/helmfile.yaml can
+  # read them from this file — one copy shared by bootstrap and Flux.
+  values:
+    ipam:
+      mode: kubernetes
+    kubeProxyReplacement: true
+    # KubePrism host-local apiserver balancer.
+    k8sServiceHost: localhost
+    k8sServicePort: 7445
+    routingMode: native
+    autoDirectNodeRoutes: true
+    ipv4NativeRoutingCIDR: 10.244.0.0/16
+    bpf:
+      masquerade: true
+      # Required with Talos hostDNS.forwardKubeDNSToHost (talos#10002).
+      hostLegacyRouting: true
+    securityContext:
+      capabilities:
+        ciliumAgent:
+          - CHOWN
+          - KILL
+          - NET_ADMIN
+          - NET_RAW
+          - IPC_LOCK
+          - SYS_ADMIN
+          - SYS_RESOURCE
+          - DAC_OVERRIDE
+          - FOWNER
+          - SETGID
+          - SETUID
+          - PERFMON
+          - BPF
+        cleanCiliumState:
+          - NET_ADMIN
+          - SYS_ADMIN
+          - SYS_RESOURCE
+    cgroup:
+      autoMount:
+        enabled: false
+      hostRoot: /sys/fs/cgroup
+    devices: ens18
+    l2announcements:
+      enabled: true
+      # Single node: failover is meaningless, so relax the lease churn.
+      leaseDuration: 30s
+      leaseRenewDeadline: 15s
+      leaseRetryPeriod: 5s
+    # ~30 services / 15s renew deadline; see cilium L2 sizing docs.
+    k8sClientRateLimit:
+      qps: 5
+      burst: 10
+    gatewayAPI:
+      enabled: true
+    hubble:
+      enabled: false
+    operator:
+      replicas: 1
+    socketLB:
+      hostNamespaceOnly: true
