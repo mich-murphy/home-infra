@@ -1,9 +1,0 @@
----
-git_user_name: "Michael Murphy"
-git_user_email: "{{ ai_dev_git_user_emails[inventory_hostname] }}"
-
-# Encrypt secrets below with: ansible-vault encrypt_string --name '<key>' '<value>'
-# gh_token: !vault | ...
-# Choose ONE Claude auth method:
-# claude_credentials_json: !vault | ...   (contents of a logged-in ~/.claude/.credentials.json)
-# anthropic_api_key: !vault | ...
