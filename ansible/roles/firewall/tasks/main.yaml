@@ -58,16 +58,6 @@
     - flush docker-user chain
     - reload ufw
 
-# docker-host only: lets the compose bridge reach the Tailscale CGNAT range.
-# Enabled by setting firewall_docker_bridge_subnet in group vars.
-- name: allow internal docker bridge to tailscale
-  community.general.ufw:
-    rule: allow
-    from_ip: "{{ firewall_docker_bridge_subnet }}"
-    to_ip: 100.64.0.0/10
-  when: firewall_docker_bridge_subnet is defined
-  notify: reload ufw
-
 - name: deny ssh traffic outside of tailscale
   community.general.ufw:
     rule: allow
