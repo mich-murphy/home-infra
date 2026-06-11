@@ -2,7 +2,7 @@
   description = "Homelab development environment";
 
   inputs = {
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511.903775";
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2605.1005841";
   };
 
   outputs = {
