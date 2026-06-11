@@ -26,7 +26,7 @@
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
-    mode: "0755"
+    mode: "0750"
 
 - name: add authorised ssh key to user
   ansible.posix.authorized_key:

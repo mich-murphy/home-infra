@@ -1,4 +1,22 @@
 ---
+# this role manages compose stacks but deliberately does not install docker
+# (host runs docker-ce; an apt docker.io install would conflict)
+- name: check docker compose availability
+  ansible.builtin.command:
+    cmd: docker compose version
+  register: docker_compose_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: assert docker and the compose plugin are installed
+  ansible.builtin.assert:
+    that: docker_compose_check.rc == 0
+    fail_msg: >-
+      docker with the compose plugin is required on {{ inventory_hostname }}
+      but `docker compose version` failed; install docker-ce and the
+      docker-compose-plugin before running this role
+
 - name: ensure Docker daemon config directory exists
   ansible.builtin.file:
     path: /etc/docker
@@ -76,29 +94,12 @@
     enabled: "{{ docker_image_prune_enabled }}"
     state: "{{ 'started' if docker_image_prune_enabled else 'stopped' }}"
 
-- name: set clone directory
-  ansible.builtin.set_fact:
-    clone_dir: /tmp/home-infra
-    srv_dir: "/srv/init"
-
-- name: clone docker repo
-  ansible.builtin.git:
-    repo: "https://github.com/mich-murphy/home-infra.git"
-    dest: "{{ clone_dir }}"
-    depth: 1
-
 - name: sync init compose files
   ansible.builtin.copy:
-    remote_src: true
-    src: "{{ clone_dir }}/docker/init/"
+    src: "{{ playbook_dir }}/../docker/init/"
     dest: "{{ srv_dir }}/"
     owner: "{{ username }}"
     mode: "0775"
-
-- name: delete clone directory
-  ansible.builtin.file:
-    path: "{{ clone_dir }}"
-    state: absent
 
 - name: ensure Pocket ID secret directory exists
   ansible.builtin.file:
@@ -113,11 +114,13 @@
     path: "{{ pocket_id_encryption_key_path }}"
   register: pocket_id_key_file
 
+# side-effect free; runs in --check so the key fact below resolves
 - name: generate Pocket ID encryption key
   ansible.builtin.command:
     cmd: openssl rand -hex 32
   register: generated_pocket_id_key
-  changed_when: true
+  changed_when: false
+  check_mode: false
   when: not pocket_id_key_file.stat.exists
   no_log: true
 
@@ -135,11 +138,17 @@
   ansible.builtin.slurp:
     src: "{{ pocket_id_encryption_key_path }}"
   register: pocket_id_key
+  check_mode: false
+  when: pocket_id_key_file.stat.exists
   no_log: true
 
+# freshly generated key is used directly; in --check the file is never written
 - name: set Pocket ID encryption key fact
   ansible.builtin.set_fact:
-    pocket_id_encryption_key: "{{ pocket_id_key.content | b64decode | trim }}"
+    pocket_id_encryption_key: >-
+      {{ (pocket_id_key.content | b64decode | trim)
+         if pocket_id_key_file.stat.exists
+         else generated_pocket_id_key.stdout }}
   no_log: true
 
 - name: setup .env file

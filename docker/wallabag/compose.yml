@@ -37,13 +37,21 @@ services:
       - traefik.http.routers.wallabag.rule=Host(`wallabag.local.elmurphy.com`)
       - traefik.http.routers.wallabag.tls=true
       - traefik.http.services.wallabag.loadbalancer.server.port=80
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/api/info"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
   db:
-    image: mariadb@sha256:b1c7bf836e64ed9406a8984af29509f40089d55cea14b32f12c4726a1f17104b
+    image: mariadb:12.3.2@sha256:b1c7bf836e64ed9406a8984af29509f40089d55cea14b32f12c4726a1f17104b
     container_name: wallabag-mariadb
     security_opt:
       - no-new-privileges:true
@@ -69,7 +77,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:alpine@sha256:09160599abd229764c0fb44cb6be640294e1d360a54b19985ab4843dcf2d90f1
+    image: redis:8.8.0-alpine@sha256:09160599abd229764c0fb44cb6be640294e1d360a54b19985ab4843dcf2d90f1
     container_name: wallabag-redis
     security_opt:
       - no-new-privileges:true
@@ -88,7 +96,7 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 20s
       timeout: 3s
-    restart: unless-stopped    
+    restart: unless-stopped
 
 volumes:
   wallabag-data:
