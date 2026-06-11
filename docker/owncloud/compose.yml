@@ -38,8 +38,10 @@ services:
       - traefik.http.routers.owncloud.tls=true
       - traefik.http.services.owncloud.loadbalancer.server.port=8080
     depends_on:
-      - owncloud-mariadb
-      - owncloud-redis
+      owncloud-mariadb:
+        condition: service_healthy
+      owncloud-redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "/usr/bin/healthcheck"]
       interval: 30s
@@ -80,7 +82,7 @@ services:
     restart: unless-stopped
 
   owncloud-redis:
-    image: redis:8@sha256:aa049e689e141a4358ad1d4562dc49c88a89fbab711fd8fcc33f684c80b26301
+    image: redis:8.8.0@sha256:aa049e689e141a4358ad1d4562dc49c88a89fbab711fd8fcc33f684c80b26301
     container_name: owncloud-redis
     security_opt:
       - no-new-privileges:true

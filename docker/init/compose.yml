@@ -71,19 +71,14 @@ services:
       - 80:80
       - 443:443
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.entrypoints=web"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.local.elmurphy.com`)"
-      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=web"
-      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
-      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
-      - "traefik.http.routers.traefik-secure.entrypoints=websecure"
-      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.local.elmurphy.com`)"
-      - "traefik.http.routers.traefik-secure.tls=true"
-      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].main=local.elmurphy.com"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.local.elmurphy.com"
-      - "traefik.http.routers.traefik-secure.service=api@internal"
+      - traefik.enable=true
+      - traefik.http.routers.traefik-secure.entrypoints=websecure
+      - traefik.http.routers.traefik-secure.rule=Host(`traefik.local.elmurphy.com`)
+      - traefik.http.routers.traefik-secure.tls=true
+      - traefik.http.routers.traefik-secure.tls.certresolver=cloudflare
+      - traefik.http.routers.traefik-secure.tls.domains[0].main=local.elmurphy.com
+      - traefik.http.routers.traefik-secure.tls.domains[0].sans=*.local.elmurphy.com
+      - traefik.http.routers.traefik-secure.service=api@internal
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s
