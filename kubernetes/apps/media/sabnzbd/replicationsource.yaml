@@ -1,0 +1,52 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: sabnzbd-volsync
+  namespace: media
+spec:
+  refreshPolicy: OnChange
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword-secrets
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    template:
+      data:
+        RESTIC_REPOSITORY: /mnt/repository/sabnzbd
+        RESTIC_PASSWORD: "{{ .resticPassword }}"
+  data:
+    - secretKey: resticPassword
+      remoteRef:
+        key: volsync/restic-password
+---
+# Nightly config backup to the TrueNAS volsync export. Direct copy is not
+# point-in-time consistent; apps with databases pair this with a dump job.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: sabnzbd
+  namespace: media
+spec:
+  sourcePVC: sabnzbd-data
+  trigger:
+    schedule: "25 3 * * *"
+  restic:
+    repository: sabnzbd-volsync
+    copyMethod: Direct
+    pruneIntervalDays: 14
+    retain:
+      daily: 7
+      weekly: 4
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 1215
+      runAsGroup: 1215
+      fsGroup: 1215
+    moverVolumes:
+      - name: repository
+        mountPath: repository
+        volumeSource:
+          nfs:
+            server: 10.77.20.101
+            path: /mnt/slow/backups/volsync

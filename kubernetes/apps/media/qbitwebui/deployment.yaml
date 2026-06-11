@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbitwebui
+  namespace: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: qbitwebui
+  template:
+    metadata:
+      labels:
+        app: qbitwebui
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1215
+        runAsGroup: 1215
+        fsGroup: 1215
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: qbitwebui
+          image: ghcr.io/mkbula/qbitwebui:2.44.1@sha256:e485a06a0806da73d328ef5b94c97a2351eed0b8de270f1ce82a61ed1863860f
+          ports:
+            - containerPort: 3000
+          env:
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: qbitwebui-credentials
+                  key: encryption-key
+            - name: DOWNLOADS_PATH
+              value: /data/torrents
+            # Prints the initial password to logs on first start.
+            - name: DISABLE_REGISTRATION
+              value: "true"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: media
+              mountPath: /data/torrents
+              subPath: torrents
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: qbitwebui-data
+        - name: media
+          persistentVolumeClaim:
+            claimName: nfs-media

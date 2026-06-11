@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: prowlarr
+  namespace: media
+spec:
+  parentRefs:
+    - name: prod
+      namespace: gateway
+  hostnames:
+    - prowlarr.local.elmurphy.com
+  rules:
+    - backendRefs:
+        - name: prowlarr
+          port: 9696
