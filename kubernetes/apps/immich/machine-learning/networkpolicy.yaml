@@ -1,0 +1,17 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: machine-learning
+  namespace: immich
+spec:
+  endpointSelector:
+    matchLabels:
+      app: machine-learning
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: immich-server
+      toPorts:
+        - ports:
+            - port: "3003"
+              protocol: TCP

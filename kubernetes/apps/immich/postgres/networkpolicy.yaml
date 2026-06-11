@@ -1,0 +1,19 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: postgres
+  namespace: immich
+spec:
+  endpointSelector:
+    matchLabels:
+      app: postgres
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: immich-server
+        - matchLabels:
+            app: postgres-backup
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
