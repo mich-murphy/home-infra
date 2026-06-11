@@ -1,11 +1,9 @@
 ---
-# Lockout-safe ordering matters: membership and allow rules are reconciled before hardening flips.
+# Order matters: reconcile reachability before hardening flips.
 - name: Harden the management plane (disable telnet/cleartext, pin services to MGMT)
   ansible.builtin.import_tasks: services.yaml
   tags: [services]
 
-# Bring up the out-of-band port early so it is available as the safety net before any
-# of the VLAN/bridge work (and well before the gated vlan-filtering flip).
 - name: Out-of-band management port (off the bridge, own /30)
   ansible.builtin.import_tasks: oob.yaml
   tags: [oob]
