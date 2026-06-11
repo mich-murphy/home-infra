@@ -1,0 +1,52 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: seerr-data-volsync
+  namespace: media
+spec:
+  refreshPolicy: OnChange
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword-secrets
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    template:
+      data:
+        RESTIC_REPOSITORY: /mnt/repository/seerr-data
+        RESTIC_PASSWORD: "{{ .resticPassword }}"
+  data:
+    - secretKey: resticPassword
+      remoteRef:
+        key: volsync/restic-password
+---
+# Nightly config backup to the TrueNAS volsync export. Direct copy is not
+# point-in-time consistent; apps with databases pair this with a dump job.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: seerr-data
+  namespace: media
+spec:
+  sourcePVC: seerr-data
+  trigger:
+    schedule: "55 3 * * *"
+  restic:
+    repository: seerr-data-volsync
+    copyMethod: Direct
+    pruneIntervalDays: 14
+    retain:
+      daily: 7
+      weekly: 4
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+    moverVolumes:
+      - name: repository
+        mountPath: repository
+        volumeSource:
+          nfs:
+            server: 10.77.20.101
+            path: /mnt/slow/backups/volsync

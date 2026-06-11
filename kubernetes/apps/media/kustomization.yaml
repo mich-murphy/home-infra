@@ -10,3 +10,8 @@ resources:
   - sabnzbd
   - audiobookshelf
   - pinchflat
+  - plex
+  - tautulli
+  - seerr
+  - kometa
+  - jellyfin
