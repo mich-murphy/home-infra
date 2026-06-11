@@ -52,6 +52,6 @@ variable "ai_devs" {
 
 variable "enable_talos" {
   type        = bool
-  description = "Provision the Talos control plane VM(s). Off until the K8s migration starts; the resource block is kept as a blueprint."
+  description = "Cut over to Kubernetes: provisions the Talos VM and its install ISO, stops docker-host (disks kept for rollback) and moves the iGPU passthrough to the Talos VM."
   default     = false
 }
