@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plex
+  namespace: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: plex
+  template:
+    metadata:
+      labels:
+        app: plex
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: plex
+          image: plexinc/pms-docker:1.43.2.10687-563d026ea@sha256:c37106c57fed7a6624f5dee5a3ce460ff011f09a2aa7f4ee9e8dbbd08ae1b87e
+          ports:
+            - containerPort: 32400
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: Australia/Melbourne
+            - name: PLEX_CLAIM
+              valueFrom:
+                secretKeyRef:
+                  name: plex-credentials
+                  key: claim
+                  optional: true
+          livenessProbe:
+            httpGet:
+              path: /identity
+              port: 32400
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /identity
+              port: 32400
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              # Plex init starts as root and drops to PUID/PGID.
+              add:
+                - CHOWN
+                - SETUID
+                - SETGID
+                - DAC_OVERRIDE
+                - FOWNER
+                - KILL
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: transcode
+              mountPath: /transcode
+            - name: media
+              mountPath: /data/media
+              subPath: media
+              readOnly: true
+            - name: music
+              mountPath: /data/music
+              readOnly: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+              gpu.intel.com/i915: 1
+            limits:
+              memory: 2Gi
+              gpu.intel.com/i915: 1
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: plex-data
+        - name: transcode
+          emptyDir: {}
+        - name: media
+          persistentVolumeClaim:
+            claimName: nfs-media
+        - name: music
+          persistentVolumeClaim:
+            claimName: nfs-music

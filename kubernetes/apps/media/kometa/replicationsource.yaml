@@ -1,0 +1,53 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: kometa-data-volsync
+  namespace: media
+spec:
+  refreshPolicy: OnChange
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword-secrets
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    template:
+      data:
+        RESTIC_REPOSITORY: /mnt/repository/kometa-data
+        RESTIC_PASSWORD: "{{ .resticPassword }}"
+  data:
+    - secretKey: resticPassword
+      remoteRef:
+        key: volsync/restic-password
+---
+# Nightly config backup to the TrueNAS volsync export. Direct copy is not
+# point-in-time consistent; apps with databases pair this with a dump job.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: kometa-data
+  namespace: media
+spec:
+  sourcePVC: kometa-data
+  trigger:
+    schedule: "0 4 * * *"
+  restic:
+    repository: kometa-data-volsync
+    copyMethod: Direct
+    pruneIntervalDays: 14
+    retain:
+      daily: 7
+      weekly: 4
+    cacheCapacity: 2Gi
+    # Kometa's image has no user-drop; config files are root-owned.
+    moverSecurityContext:
+      runAsUser: 0
+      runAsGroup: 0
+      fsGroup: 0
+    moverVolumes:
+      - name: repository
+        mountPath: repository
+        volumeSource:
+          nfs:
+            server: 10.77.20.101
+            path: /mnt/slow/backups/volsync
