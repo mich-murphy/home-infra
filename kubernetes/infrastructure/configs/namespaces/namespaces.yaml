@@ -1,0 +1,22 @@
+# Workload namespaces, grouped by stack. All run under the cluster-wide
+# baseline PSA; namespaces needing privileged opt in via label next to the
+# workload that requires it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: media
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: immich
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tools
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: auth
