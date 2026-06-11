@@ -4,9 +4,13 @@ data "onepassword_item" "proxmox" {
 }
 
 locals {
-  proxmox_node = "proxmox"
-  srv_vlan_id  = 20
-  scp          = data.onepassword_item.proxmox.section_map["Terraform SCP"].field_map
+  proxmox_node  = "proxmox"
+  srv_vlan_id   = 20
+  talos_version = "v1.13.3"
+  # Factory schematic must match talos/schematic.yaml (i915, intel-ucode,
+  # qemu-guest-agent, util-linux-tools).
+  talos_schematic_id = "97349bd8a02320e952ef34bdc1369278958bf77fb1b1cbddb62ec6719777a7b6"
+  scp                = data.onepassword_item.proxmox.section_map["Terraform SCP"].field_map
   proxmox_creds = {
     username = local.scp["scp username"].value
     password = local.scp["scp password"].value
@@ -124,10 +128,12 @@ resource "proxmox_virtual_environment_vm" "cloud_init_docker_host" {
   bios                = "seabios"
   keyboard_layout     = "en-us"
   boot_order          = ["scsi0"]
-  on_boot             = true
+  on_boot             = !var.enable_talos
   reboot_after_update = true
   scsi_hardware       = "virtio-scsi-single"
-  started             = true
+  # The Talos VM replaces docker-host: the same apply that creates it stops
+  # this VM (and takes the iGPU below). Disks are kept for rollback.
+  started = !var.enable_talos
   agent {
     enabled = true
     type    = "virtio"
@@ -186,11 +192,15 @@ resource "proxmox_virtual_environment_vm" "cloud_init_docker_host" {
     model       = "virtio"
     vlan_id     = local.srv_vlan_id
   }
-  # Intel iGPU passed through for Plex/Jellyfin hardware transcoding.
-  hostpci {
-    device = "hostpci0"
-    id     = "0000:00:02.0"
-    rombar = true
+  # Intel iGPU passed through for Plex/Jellyfin hardware transcoding. A PCI
+  # device can only attach to one VM; enable_talos hands it to the Talos VM.
+  dynamic "hostpci" {
+    for_each = var.enable_talos ? [] : [1]
+    content {
+      device = "hostpci0"
+      id     = "0000:00:02.0"
+      rombar = true
+    }
   }
   # Zigbee/Z-Wave dongle pinned by host port (survives reboots better than vendor id).
   usb {
@@ -278,12 +288,25 @@ resource "proxmox_virtual_environment_vm" "unifi_controller" {
   }
 }
 
-# Blueprint for the planned K8s migration; gated by enable_talos until then.
+# Install media matching talos/schematic.yaml; refreshed when the schematic
+# or version locals change.
+resource "proxmox_download_file" "talos_iso" {
+  count        = var.enable_talos ? 1 : 0
+  content_type = "iso"
+  datastore_id = "local"
+  node_name    = local.proxmox_node
+  file_name    = "talos-${local.talos_version}-metal-amd64.iso"
+  url          = "https://factory.talos.dev/image/${local.talos_schematic_id}/${local.talos_version}/metal-amd64.iso"
+}
+
+# Single-node K8s cluster (control plane + worker); gated by enable_talos
+# until cutover. Sized to absorb the docker-host workload within the 31GiB
+# RAM ceiling of the Proxmox host.
 resource "proxmox_virtual_environment_vm" "talos_control_plane" {
   count               = var.enable_talos ? 1 : 0
   vm_id               = 200 + count.index
   name                = "talos-prod-${count.index + 1}"
-  description         = "Siderolabs install image v1.12.2"
+  description         = "Talos ${local.talos_version} (factory schematic ${substr(local.talos_schematic_id, 0, 12)})"
   node_name           = local.proxmox_node
   tags                = ["kubernetes"]
   bios                = "ovmf"
@@ -296,16 +319,23 @@ resource "proxmox_virtual_environment_vm" "talos_control_plane" {
   agent {
     enabled = true
   }
+  operating_system {
+    type = "l26"
+  }
+  startup {
+    order = 2
+  }
   cpu {
-    cores = 6
+    cores = 8
     type  = "host"
   }
   memory {
-    dedicated = 10240
+    dedicated = 12288
   }
   serial_device {
     device = "socket"
   }
+  # Talos install disk.
   disk {
     cache        = "writethrough"
     datastore_id = "local-zfs"
@@ -314,6 +344,7 @@ resource "proxmox_virtual_environment_vm" "talos_control_plane" {
     interface    = "scsi0"
     size         = 100
   }
+  # OpenEBS LocalPV hostpath volume (UserVolumeConfig in the machine config).
   disk {
     cache        = "writethrough"
     datastore_id = "local-zfs"
@@ -323,7 +354,7 @@ resource "proxmox_virtual_environment_vm" "talos_control_plane" {
     size         = 128
   }
   cdrom {
-    file_id   = "local:iso/metal-amd64.iso"
+    file_id   = proxmox_download_file.talos_iso[0].id
     interface = "ide1"
   }
   efi_disk {
@@ -331,8 +362,26 @@ resource "proxmox_virtual_environment_vm" "talos_control_plane" {
     type         = "4m"
   }
   network_device {
-    bridge = "vmbr0"
-    model  = "virtio"
+    bridge  = "vmbr0"
+    model   = "virtio"
+    vlan_id = local.srv_vlan_id
+  }
+  # iGPU for Plex/Jellyfin/Immich transcoding; handed over from docker-host
+  # by the same enable_talos gate (a PCI device attaches to one VM only).
+  dynamic "hostpci" {
+    for_each = var.enable_talos ? [1] : []
+    content {
+      device = "hostpci0"
+      id     = "0000:00:02.0"
+      pcie   = true
+      rombar = false
+    }
+  }
+  # Pairs with the WatchdogTimerConfig machine config document: the node
+  # hard-resets if Talos stops feeding the timer.
+  watchdog {
+    model  = "i6300esb"
+    action = "reset"
   }
 }
 
