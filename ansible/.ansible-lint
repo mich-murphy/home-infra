@@ -5,10 +5,6 @@ exclude_paths:
   # syntax-check loads vault-encrypted group_vars/secrets.yaml; CI has no vault password
   - run.yaml
 
-mock_modules:
-  # not bundled with nixpkgs ansible; CI has no galaxy collections installed
-  - kewlfft.aur.aur
-
 skip_list:
   - command-instead-of-module # curl installers and nfs mount/remount are deliberate shell usage
   - jinja[invalid] # false positive: routeros assert templates need play vars lint cannot provide

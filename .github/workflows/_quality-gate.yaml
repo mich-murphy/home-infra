@@ -81,4 +81,5 @@ jobs:
         run: nix shell .#yq-go --command yq eval 'true' talos/controlplane-patch.yaml talos/schematic.yaml
       - name: Lint Ansible
         if: inputs.check == 'ansible'
-        run: nix shell .#ansible-lint --command bash -euo pipefail -c 'cd ansible && ansible-lint'
+        # galaxy install: kewlfft.aur is not bundled with nixpkgs ansible
+        run: nix shell .#ansible-lint --command bash -euo pipefail -c 'cd ansible && ansible-galaxy collection install -r requirements.yaml && ansible-lint'
