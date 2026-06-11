@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audiobookshelf
+  namespace: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: audiobookshelf
+  template:
+    metadata:
+      labels:
+        app: audiobookshelf
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1215
+        runAsGroup: 1215
+        fsGroup: 1215
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: audiobookshelf
+          image: ghcr.io/advplyr/audiobookshelf:2.35.1@sha256:1eef6716183c52abafe5405e7d6be8390248ecd59c7488c44af871757ac8fc4d
+          ports:
+            - containerPort: 80
+          env:
+            - name: TZ
+              value: Australia/Melbourne
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              # Listens on port 80 inside the container.
+              add:
+                - NET_BIND_SERVICE
+          volumeMounts:
+            - name: audiobooks
+              mountPath: /data/audiobooks
+            - name: config
+              mountPath: /config
+            - name: metadata
+              mountPath: /metadata
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: audiobooks
+          persistentVolumeClaim:
+            claimName: nfs-audiobooks
+        - name: config
+          persistentVolumeClaim:
+            claimName: audiobookshelf-data
+        - name: metadata
+          persistentVolumeClaim:
+            claimName: audiobookshelf-metadata

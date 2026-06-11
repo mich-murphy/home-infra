@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lidarr
+  namespace: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: lidarr
+  template:
+    metadata:
+      labels:
+        app: lidarr
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: lidarr
+          image: ghcr.io/linuxserver/lidarr:3.1.0.4875-ls30@sha256:b08b2194fa4ddb7f7ace9d1bfd82bd9b26f457d79aa70f42d923d2e15a820f0e
+          ports:
+            - containerPort: 8686
+          env:
+            - name: PUID
+              value: "1215"
+            - name: PGID
+              value: "1215"
+            - name: TZ
+              value: Australia/Melbourne
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8686
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8686
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              # LSIO s6 init starts as root and drops to PUID/PGID.
+              add:
+                - CHOWN
+                - SETUID
+                - SETGID
+                - DAC_OVERRIDE
+                - FOWNER
+                - KILL
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /data
+            - name: music
+              mountPath: /music
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 384Mi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: lidarr-data
+        - name: media
+          persistentVolumeClaim:
+            claimName: nfs-media
+        - name: music
+          persistentVolumeClaim:
+            claimName: nfs-music
