@@ -1,0 +1,29 @@
+---
+nfs_mount_opts: "rw,vers=4.2,proto=tcp,hard,_netdev,x-systemd.automount,x-systemd.idle-timeout=600,nofail"
+
+nfs_mounts:
+  - name: "media"
+    local_path: "/mnt/data"
+    nfs_share: "10.77.20.101:/mnt/slow/media"
+    owner: "media"
+    group: "media"
+  - name: "photos"
+    local_path: "/mnt/photos"
+    nfs_share: "10.77.20.101:/mnt/slow/photos"
+    owner: "photos"
+    group: "photos"
+  - name: "music"
+    local_path: "/mnt/music"
+    nfs_share: "10.77.20.101:/mnt/slow/media/music"
+    owner: "media"
+    group: "media"
+  - name: "audiobooks"
+    local_path: "/mnt/audiobooks"
+    nfs_share: "10.77.20.101:/mnt/slow/media/audiobooks"
+    owner: "media"
+    group: "media"
+
+retired_nfs_mounts:
+  - name: "emulators"
+    local_path: "/mnt/emulators"
+    nfs_share: "10.77.20.101:/mnt/slow/media/emulators"

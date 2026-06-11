@@ -1,5 +1,6 @@
 ---
-- hosts: docker
+- name: configure docker hosts
+  hosts: docker
   become: true
   vars_files:
     - "group_vars/secrets.yaml"
@@ -9,7 +10,8 @@
     - media
     - docker
 
-- hosts: ai-dev
+- name: configure ai-dev hosts
+  hosts: ai-dev
   become: true
   vars_files:
     - "group_vars/secrets.yaml"
@@ -17,7 +19,8 @@
     - common
     - ai-dev
 
-- hosts: unifi
+- name: configure unifi controller
+  hosts: unifi
   become: true
   vars_files:
     - "group_vars/secrets.yaml"
@@ -28,7 +31,8 @@
 
 # RB5009 config is pushed over the RouterOS API from localhost (no SSH/become);
 # connection params injected here via module_defaults, credentials from the vault.
-- hosts: routeros
+- name: configure routeros gateway
+  hosts: routeros
   gather_facts: false
   vars_files:
     - "group_vars/secrets.yaml"
@@ -39,6 +43,7 @@
       password: "{{ routeros_api_password }}"
       port: "{{ routeros_api_port | default(omit) }}"
       tls: "{{ routeros_api_tls | default(true) }}"
+      # accepted risk: self-signed router cert, API reachable only on the MGMT VLAN
       validate_certs: false
   roles:
     - routeros
