@@ -53,6 +53,7 @@
       docker-compose = pkgs.docker-compose;
       kubectl = pkgs.kubectl;
       kubeconform = pkgs.kubeconform;
+      talosctl = pkgs.talosctl;
       terraform-ci = terraformCiFor pkgs;
       yq-go = pkgs.yq-go;
     });
