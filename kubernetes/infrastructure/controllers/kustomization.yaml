@@ -4,4 +4,6 @@ resources:
   - cilium
   - cert-manager
   - external-secrets
+  - intel-device-plugins
   - openebs
+  - volsync
