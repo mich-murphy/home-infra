@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pinchflat
+  namespace: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: pinchflat
+  template:
+    metadata:
+      labels:
+        app: pinchflat
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1215
+        runAsGroup: 1215
+        fsGroup: 1215
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pinchflat
+          image: ghcr.io/kieraneglin/pinchflat:v2025.6.6@sha256:4e975edf58f0861a5cbfe8fc6aac4851ff5a02dfc3f05ffeea4982e3084a5a4a
+          ports:
+            - containerPort: 8945
+          env:
+            - name: TZ
+              value: Australia/Melbourne
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8945
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8945
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: media
+              mountPath: /downloads
+              subPath: media/youtube
+            - name: config
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: nfs-media
+        - name: config
+          persistentVolumeClaim:
+            claimName: pinchflat-data

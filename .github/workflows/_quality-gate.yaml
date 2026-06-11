@@ -80,11 +80,14 @@ jobs:
         if: inputs.check == 'kubernetes'
         run: |
           nix shell .#kubectl .#kubeconform --command bash -euo pipefail <<'SCRIPT'
-          # CRDs-catalog covers Flux, Gateway API, cert-manager, cilium.io and
-          # external-secrets kinds; -ignore-missing-schemas stays as the fallback
-          # for anything the catalog lacks.
+          # Vendored schemas (.github/schemas) take precedence over the
+          # CRDs-catalog — used where the catalog copy is stale (volsync).
+          # The catalog covers Flux, Gateway API, cert-manager, cilium.io and
+          # external-secrets kinds; -ignore-missing-schemas stays as the
+          # fallback for anything neither location has.
           schema_args=(
             -schema-location default
+            -schema-location '.github/schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
           )
           while IFS= read -r kustomization; do
