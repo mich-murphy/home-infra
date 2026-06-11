@@ -34,10 +34,7 @@
   loop: "{{ firewall_allow_ports | default([]) }}"
   notify: reload ufw
 
-# docker-host only: docker's DNAT/FORWARD rules bypass ufw's default-deny, so
-# published ports must be allowlisted in DOCKER-USER instead (ufw-docker
-# pattern, github.com/chaifeng/ufw-docker). after.rules survives reboots and
-# docker restarts; only NEW connections on the external interface are filtered.
+# Docker-published ports bypass ufw default-deny; filter them in DOCKER-USER.
 - name: allowlist docker published ports in DOCKER-USER
   ansible.builtin.blockinfile:
     path: /etc/ufw/after.rules
@@ -58,7 +55,7 @@
     - flush docker-user chain
     - reload ufw
 
-# ssh stays reachable via the tailscale0 allow rule above
+# SSH stays reachable via tailscale0.
 - name: delete bare 22/tcp allow rule
   community.general.ufw:
     rule: allow

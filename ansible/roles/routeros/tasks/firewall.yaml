@@ -1,6 +1,5 @@
 ---
-# Managed forward rules are reconciled as one ordered subset; unrelated defconf/WAN rules are left alone.
-# Assumes the default `WAN` interface-list exists.
+# Reconcile managed rules only; leave defconf/WAN rules alone.
 - name: Address-list of all internal subnets ("internal")
   community.routeros.api_modify:
     path: ip firewall address-list
@@ -49,14 +48,7 @@
         comment: "managed: routeros role"
       {% endfor %}
 
-# The defconf input chain ends with `drop chain=input in-interface-list=!LAN`. MGMT
-# rides the bridge, which defconf already put in LAN, so MGMT DHCP/DNS to the router
-# survives. The routed VLAN interfaces, the de-bridged DMZ port and the OOB port are
-# NOT in LAN, so their router-bound traffic would hit that drop (the managed input
-# accepts below get appended AFTER the defconf drop, so they cannot rescue it). Add
-# client VLANs/DMZ for DHCP/DNS and OOB for break-glass router input. Sensitive
-# management services stay source-pinned in services.yaml; OOB routed traffic is
-# explicitly dropped in the forward chain below.
+# Defconf drops non-LAN router input, so routed VLANs/DMZ/OOB must be LAN members.
 - name: Address-lists for the Kubernetes node and LoadBalancer range
   community.routeros.api_modify:
     path: ip firewall address-list
@@ -103,13 +95,7 @@
     handle_absent_entries: ignore
     data: "{{ _routeros_input_policy | from_yaml }}"
   vars:
-    # The router is the DHCP and DNS server for its clients; these inbound services are
-    # permitted explicitly as belt-and-suspenders so they survive future input-chain
-    # tightening. Function today comes from LAN membership above (these accepts append
-    # after the defconf !LAN drop, so they are inert until the chain is reordered).
-    # DHCP DISCOVER comes from 0.0.0.0, so
-    # scope it by ingress interface (not source address) to keep it off the WAN. MGMT
-    # rides the raw bridge (native VLAN 1), the routed VLANs their vlanX interfaces.
+    # DHCP is scoped by ingress interface because DISCOVER starts from 0.0.0.0.
     _routeros_input_policy: |
       {% for interface in routeros_lan_input_interfaces %}
       - chain: input
@@ -196,9 +182,7 @@
         dst-port: 853
         action: drop
         comment: "KDS drop DoQ (managed: routeros role)"
-      # Mirrors the Talos ingress firewall (defense in depth): only MGMT may
-      # reach the node's Kubernetes/Talos APIs, nothing else reaches the node.
-      # Must precede the blanket VLAN -> SRV accepts below.
+      # Keep the Talos node management-only; must precede VLAN -> SRV accepts.
       - chain: forward
         src-address-list: admin
         dst-address-list: k8s-node
@@ -210,8 +194,7 @@
         dst-address-list: k8s-node
         action: drop
         comment: "k8s node mgmt-only drop (managed: routeros role)"
-      # Explicit client -> LB intent; today still shadowed by the blanket
-      # VLAN -> SRV accepts, which go away with the docker-host decommission.
+      # Explicit client -> LB intent; currently shadowed by VLAN -> SRV accepts.
       - chain: forward
         src-address: "{{ _net.dflt }}"
         dst-address-list: k8s-lb
