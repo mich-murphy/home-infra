@@ -80,15 +80,30 @@ jobs:
         if: inputs.check == 'kubernetes'
         run: |
           nix shell .#kubectl .#kubeconform --command bash -euo pipefail <<'SCRIPT'
+          # CRDs-catalog covers Flux, Gateway API, cert-manager, cilium.io and
+          # external-secrets kinds; -ignore-missing-schemas stays as the fallback
+          # for anything the catalog lacks.
+          schema_args=(
+            -schema-location default
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+          )
           while IFS= read -r kustomization; do
             dir="${kustomization%/*}"
             echo "Checking ${dir}"
-            kubectl kustomize "${dir}" | kubeconform -summary -strict -ignore-missing-schemas
+            kubectl kustomize "${dir}" | kubeconform -summary -strict -ignore-missing-schemas "${schema_args[@]}"
           done < <(find kubernetes -path kubernetes/archive -prune -o -name kustomization.yaml -print | sort)
           SCRIPT
-      - name: Parse Talos YAML
+      - name: Render and validate Talos config
         if: inputs.check == 'talos'
-        run: nix shell .#yq-go --command yq eval 'true' talos/controlplane-patch.yaml talos/schematic.yaml
+        run: |
+          nix shell .#talosctl .#yq-go --command bash -euo pipefail <<'SCRIPT'
+          yq eval 'true' talos/schematic.yaml > /dev/null
+          # Throwaway secrets; renders the real machine config so schema errors
+          # in the patch fail the gate instead of surfacing at apply time.
+          talosctl gen config ci https://10.77.20.20:6443 \
+            --config-patch @talos/controlplane-patch.yaml \
+            --output-types controlplane --output - | talosctl validate --mode metal --config /dev/stdin
+          SCRIPT
       - name: Lint Ansible
         if: inputs.check == 'ansible'
         # galaxy install: kewlfft.aur is not bundled with nixpkgs ansible

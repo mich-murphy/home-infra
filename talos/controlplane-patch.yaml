@@ -14,7 +14,6 @@ machine:
       partitions:
         - mountpoint: /var/openebs/local
   network:
-    hostname: talos-prod-1
     interfaces:
       - interface: ens18
         dhcp: true
@@ -138,3 +137,10 @@ cluster:
                   - k8sServiceHost=localhost
                   - --set
                   - k8sServicePort=7445
+---
+# Talos 1.13 emits a HostnameConfig document by default; a static hostname in
+# the v1alpha1 machine config conflicts with it, so the hostname lives here.
+apiVersion: v1alpha1
+kind: HostnameConfig
+auto: off
+hostname: talos-prod-1
