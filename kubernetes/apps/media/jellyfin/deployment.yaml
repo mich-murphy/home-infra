@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jellyfin
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        # render group for /dev/dri access (compose group_add).
+        supplementalGroups:
+          - 992
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: jellyfin
+          image: jellyfin/jellyfin:10.11.11@sha256:aefb67e6a7ff1debdd154a78a7bbb780fd0c873d8639210a7f6a2016ad2b35db
+          ports:
+            - containerPort: 8096
+          env:
+            - name: JELLYFIN_PublishedServerUrl
+              value: https://jellyfin.local.elmurphy.com
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: cache
+              mountPath: /cache
+            - name: transcode
+              mountPath: /transcode
+            - name: media
+              mountPath: /data/media
+              subPath: media
+              readOnly: true
+            - name: music
+              mountPath: /data/music
+              readOnly: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+              gpu.intel.com/i915: 1
+            limits:
+              memory: 1536Mi
+              gpu.intel.com/i915: 1
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: jellyfin-data
+        - name: cache
+          persistentVolumeClaim:
+            claimName: jellyfin-cache
+        # Disk-backed (compose used tmpfs): node RAM is too scarce for transcode buffers.
+        - name: transcode
+          emptyDir: {}
+        - name: media
+          persistentVolumeClaim:
+            claimName: nfs-media
+        - name: music
+          persistentVolumeClaim:
+            claimName: nfs-music
