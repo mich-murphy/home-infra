@@ -1,0 +1,58 @@
+# Point-in-time consistent backup; the data PVC is deliberately not
+# volsync'd — restores come from these dumps.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: immich
+spec:
+  schedule: "30 2 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: postgres-backup
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: postgres-backup
+              image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+              command:
+                - sh
+                - -c
+                # %u keeps one dump per weekday, overwritten weekly.
+                - pg_dumpall -h postgres -U "$POSTGRES_USER" | gzip > "/backup/immich-$(date +%u).sql.gz"
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-db
+                      key: db-username
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-db
+                      key: db-password
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+              resources:
+                requests:
+                  memory: 128Mi
+                limits:
+                  memory: 256Mi
+          volumes:
+            - name: backup
+              nfs:
+                server: 10.77.20.101
+                path: /mnt/slow/backups/dumps
