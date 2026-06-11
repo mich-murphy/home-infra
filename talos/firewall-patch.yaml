@@ -1,0 +1,44 @@
+# Node ingress firewall. Kept out of controlplane-patch.yaml so it can be
+# applied separately with `talosctl apply-config --mode=try` — a bad rule
+# otherwise locks the node out permanently.
+#
+# L2-announced LoadBalancer traffic is handled by Cilium's eBPF datapath
+# before nftables and is not governed by these rules.
+apiVersion: v1alpha1
+kind: NetworkDefaultActionConfig
+ingress: block
+---
+# Talos API: management plane only.
+apiVersion: v1alpha1
+kind: NetworkRuleConfig
+name: apid
+portSelector:
+  ports:
+    - 50000
+  protocol: tcp
+ingress:
+  - subnet: 10.77.1.0/24
+---
+# Kubernetes API: management plane only. In-cluster clients reach the
+# apiserver via the service IP / KubePrism, not the node interface.
+apiVersion: v1alpha1
+kind: NetworkRuleConfig
+name: kube-apiserver
+portSelector:
+  ports:
+    - 6443
+  protocol: tcp
+ingress:
+  - subnet: 10.77.1.0/24
+---
+# Kubelet: the node itself (metrics-server scrapes via node IP) and pods.
+apiVersion: v1alpha1
+kind: NetworkRuleConfig
+name: kubelet
+portSelector:
+  ports:
+    - 10250
+  protocol: tcp
+ingress:
+  - subnet: 10.77.20.20/32
+  - subnet: 10.244.0.0/16
