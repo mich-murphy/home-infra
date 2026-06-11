@@ -21,8 +21,10 @@ services:
       - traefik.http.routers.immich.tls=true
       - traefik.http.services.immich.loadbalancer.server.port=2283
     depends_on:
-      - redis
-      - database
+      redis:
+        condition: service_healthy
+      database:
+        condition: service_started # immich postgres image ships no healthcheck
     restart: unless-stopped
     healthcheck:
       disable: false
@@ -41,7 +43,7 @@ services:
       disable: false
 
   redis:
-    image: docker.io/valkey/valkey:9@sha256:546304417feac0874c3dd576e0952c6bb8f06bb4093ea0c9ca303c73cf458f63
+    image: docker.io/valkey/valkey:9.0.1@sha256:546304417feac0874c3dd576e0952c6bb8f06bb4093ea0c9ca303c73cf458f63
     container_name: immich-redis
     security_opt:
       - no-new-privileges:true
