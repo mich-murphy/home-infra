@@ -1,6 +1,5 @@
 ---
-# this role manages compose stacks but deliberately does not install docker
-# (host runs docker-ce; an apt docker.io install would conflict)
+# Docker is installed outside this role.
 - name: check docker compose availability
   ansible.builtin.command:
     cmd: docker compose version
@@ -114,7 +113,7 @@
     path: "{{ pocket_id_encryption_key_path }}"
   register: pocket_id_key_file
 
-# side-effect free; runs in --check so the key fact below resolves
+# Runs in --check so the key fact below resolves.
 - name: generate Pocket ID encryption key
   ansible.builtin.command:
     cmd: openssl rand -hex 32
@@ -142,7 +141,7 @@
   when: pocket_id_key_file.stat.exists
   no_log: true
 
-# freshly generated key is used directly; in --check the file is never written
+# In --check, use the generated key without writing it.
 - name: set Pocket ID encryption key fact
   ansible.builtin.set_fact:
     pocket_id_encryption_key: >-
@@ -164,7 +163,7 @@
     mode: "0600"
   no_log: true
 
-# no --force-recreate: compose only recreates services whose config/image changed
+# Let compose decide which services need recreation.
 - name: start init compose file
   ansible.builtin.command:
     cmd: docker compose up -d --remove-orphans

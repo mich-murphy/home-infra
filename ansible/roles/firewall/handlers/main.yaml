@@ -1,6 +1,5 @@
 ---
-# ufw reload re-renders after.rules into the still-loaded DOCKER-USER chain,
-# appending below its terminal RETURN; flush first so edits take effect
+# Flush DOCKER-USER before ufw reload so regenerated rules take effect.
 - name: flush docker-user chain
   ansible.builtin.command: iptables -F DOCKER-USER
   register: docker_user_flush
