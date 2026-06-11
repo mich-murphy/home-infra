@@ -4,11 +4,16 @@ metadata:
   name: l2-policy
 spec:
   loadBalancerIPs: true
+  interfaces:
+    - ens18
 ---
+# SRV VLAN range, kept out of the DHCP pool (.50-.223) by ansible routeros
+# config. .255 is the subnet broadcast, hence a range instead of a /27 CIDR.
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: prod-pool
 spec:
   blocks:
-    - cidr: "10.77.1.240/28"
+    - start: 10.77.20.224
+      stop: 10.77.20.254

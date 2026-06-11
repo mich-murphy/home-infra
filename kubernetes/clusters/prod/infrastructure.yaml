@@ -1,9 +1,29 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: infra-crds
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  path: ./kubernetes/infrastructure/crds
+  prune: true
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: infra-controllers
   namespace: flux-system
 spec:
+  dependsOn:
+    # Gateway API CRDs must exist before the cilium HelmRelease reconciles
+    # with gatewayAPI.enabled, or the operator skips the controllers.
+    - name: infra-crds
   interval: 1h
   retryInterval: 1m
   timeout: 5m
@@ -30,3 +50,4 @@ spec:
     name: flux-system
   path: ./kubernetes/infrastructure/configs
   prune: true
+  wait: true

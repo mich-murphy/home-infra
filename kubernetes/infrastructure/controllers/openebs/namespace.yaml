@@ -2,3 +2,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: openebs
+  labels:
+    # hostPath provisioner; was a cluster-wide PSA exemption before the
+    # machine config trimmed exemptions to kube-system.
+    pod-security.kubernetes.io/enforce: privileged
