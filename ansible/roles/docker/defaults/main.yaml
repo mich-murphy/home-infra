@@ -8,5 +8,7 @@ docker_image_prune_until: 168h
 docker_image_prune_calendar: weekly
 docker_image_prune_randomized_delay: 1h
 
+srv_dir: /srv/init
+
 pocket_id_encryption_key_dir: /etc/pocket-id
 pocket_id_encryption_key_path: "{{ pocket_id_encryption_key_dir }}/encryption-key"

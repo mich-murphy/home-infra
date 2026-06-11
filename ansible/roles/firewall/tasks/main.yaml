@@ -58,7 +58,8 @@
     - flush docker-user chain
     - reload ufw
 
-- name: deny ssh traffic outside of tailscale
+# ssh stays reachable via the tailscale0 allow rule above
+- name: delete bare 22/tcp allow rule
   community.general.ufw:
     rule: allow
     port: "22"

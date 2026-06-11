@@ -44,6 +44,7 @@ variable "ai_devs" {
   type = map(object({
     vmid = number
   }))
+  description = "AI dev VMs to provision, keyed by hostname."
   default = {
     "ai-dev-bgd" = { vmid = 110 }
   }
