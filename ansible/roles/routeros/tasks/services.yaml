@@ -1,5 +1,5 @@
 ---
-# Telnet was being brute-forced from the WAN; disable cleartext/unused services and pin encrypted ones to MGMT.
+# Disable cleartext/unused services and source-pin encrypted management.
 - name: Validate RouterOS management service sources
   ansible.builtin.assert:
     that:
@@ -21,8 +21,7 @@
       - name: api # plain (cleartext) API; we use api-ssl only
         disabled: true
 
-# LOCKOUT NOTE: router management is allowed from the whole wired MGMT subnet (plus the OOB
-# /30), so any wired MGMT DHCP client can manage the router without a pinned reserved IP.
+# Management is allowed from wired MGMT plus OOB.
 - name: Restrict encrypted management services to MGMT
   community.routeros.api_modify:
     path: ip service

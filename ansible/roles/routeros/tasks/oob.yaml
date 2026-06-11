@@ -1,15 +1,11 @@
 ---
-# Out-of-band management port. Removed from the bridge and given its own /30 so it is
-# reachable regardless of bridge / vlan-filtering state — the recovery path the
-# 2026-06-03 lockout lacked. Set up BEFORE any vlan-filtering flip so it can serve as
-# the safety net. The OOB subnet is in routeros_router_admin_sources, so management
-# services accept it. Plug a laptop in with a static 10.66.0.2/30 to reach 10.66.0.1.
+# Set up OOB before any bridge/VLAN hardening so there is a recovery path.
 - name: Find the OOB port's bridge-port entry
   community.routeros.api:
     path: interface bridge port
     query: ".id interface WHERE interface == {{ routeros_oob_port }}"
   register: _oob_bridge_port
-  check_mode: false # read-only query; must run in --check so the loop resolves
+  check_mode: false # query must run in --check so the loop resolves
 
 - name: Remove the OOB port from the bridge (out-of-band isolation)
   community.routeros.api:

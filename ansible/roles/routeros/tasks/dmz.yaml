@@ -1,18 +1,16 @@
 ---
-# Isolation requires ether2 off the production bridge before the gateway IP applies; it ships as a defconf member.
-# DISRUPTIVE: de-bridging ether2 drops ai-dev VMs on vmbr1 off MGMT — they re-DHCP into 10.77.99.0/24. Gated (var + tag).
+# Disruptive: de-bridging ether2 moves vmbr1 guests into the DMZ subnet.
 - name: Find the DMZ port's bridge-port entry
   community.routeros.api:
     path: interface bridge port
     query: ".id interface WHERE interface == {{ routeros_dmz_port }}"
   register: _dmz_bridge_port
-  check_mode: false # read-only query; must run even in --check so the loop below resolves
+  check_mode: false # query must run in --check so the loop resolves
 
 - name: Remove the DMZ port from the production bridge (physical isolation)
   community.routeros.api:
     path: interface bridge port
     remove: "{{ item['.id'] }}"
-  # Drop the "no results" string the query returns when already de-bridged, so that case is a no-op.
   loop: "{{ _dmz_bridge_port.msg | select('mapping') | list }}"
   loop_control:
     label: "{{ routeros_dmz_port }}"

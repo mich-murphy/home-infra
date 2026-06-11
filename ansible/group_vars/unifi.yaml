@@ -9,11 +9,7 @@ swap_swappiness: 10
 unifi_admin_source: 10.77.1.0/24
 unifi_ap_source: 10.77.1.0/24
 
-# Admin + AP ports are scoped to the MGMT subnet: MGMT is wired-only on VLAN 1, so the
-# controller GUI/SSH must accept any wired MGMT host, not one reserved IP.
-# MongoDB (27117) is deliberately absent: it binds localhost only, never expose it.
-# SSH is explicitly allowed because the controller has no Tailscale; its from_ip differs from
-# the firewall role's deleted bare 22/tcp rule so it survives default-deny.
+# Controller ports are MGMT-only; MongoDB stays localhost-only.
 firewall_allow_ports:
   - { port: "22", proto: tcp, from: "{{ unifi_admin_source }}" } # ssh / ansible
   - { port: "11443", proto: tcp, from: "{{ unifi_admin_source }}" } # UniFi OS Server console
