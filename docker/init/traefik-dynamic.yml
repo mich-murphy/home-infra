@@ -23,16 +23,11 @@ tls:
         - CurveP256
         - CurveP384
 http:
+  serversTransports:
+    # only for the truenas backend with a self-signed cert; never global
+    insecure-internal:
+      insecureSkipVerify: true
   routers:
-    proxmox:
-      entryPoints:
-        - "websecure"
-      rule: "Host(`proxmox.local.elmurphy.com`)"
-      middlewares:
-        - default-headers
-        - https-redirectscheme
-      tls: {}
-      service: proxmox
     truenas:
       entryPoints:
         - "websecure"
@@ -43,16 +38,12 @@ http:
       tls: {}
       service: truenas
   services:
-    proxmox:
-      loadBalancer:
-        servers:
-          - url: "https://10.77.1.100:8006"
-        passHostHeader: true
     truenas:
       loadBalancer:
         servers:
           - url: "https://10.77.20.101"
         passHostHeader: true
+        serversTransport: insecure-internal
   middlewares:
     https-redirectscheme:
       redirectScheme:
@@ -73,7 +64,7 @@ http:
     default-whitelist:
       ipAllowList:
         sourceRange:
-        - "100.0.0.0/8"
+        - "100.64.0.0/10"
         - "10.77.1.0/24"
         - "172.20.1.0/24"
     secured:

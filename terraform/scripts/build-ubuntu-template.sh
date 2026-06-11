@@ -5,6 +5,7 @@ VMID=9003
 NAME=ubuntu-server-24-04-clean
 IMG=noble-server-cloudimg-amd64.img
 URL=https://cloud-images.ubuntu.com/noble/current/${IMG}
+SUMS_URL=https://cloud-images.ubuntu.com/noble/current/SHA256SUMS
 SNIPPET=ubuntu-template-builder.yml
 
 if qm status "${VMID}" >/dev/null 2>&1; then
@@ -13,8 +14,20 @@ if qm status "${VMID}" >/dev/null 2>&1; then
 fi
 
 cd /var/lib/vz/template/iso
+DOWNLOADED=0
 if [ ! -f "${IMG}" ]; then
   wget -q "${URL}"
+  DOWNLOADED=1
+fi
+
+# Checksum comes from the same dir as the moving "current" image, so this mainly protects download integrity.
+SUM_LINE=$(wget -qO- "${SUMS_URL}" | grep " [*]${IMG}\$")
+if ! echo "${SUM_LINE}" | sha256sum --check --status -; then
+  echo "ERROR: SHA256 verification failed for ${IMG}" >&2
+  if [ "${DOWNLOADED}" -eq 1 ]; then
+    rm -f "${IMG}"
+  fi
+  exit 1
 fi
 
 mkdir -p /var/lib/vz/snippets
