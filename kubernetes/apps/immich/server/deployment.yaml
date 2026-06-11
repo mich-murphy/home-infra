@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  namespace: immich
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: immich-server
+  template:
+    metadata:
+      labels:
+        app: immich-server
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: immich-server
+          image: ghcr.io/immich-app/immich-server:v2.7.5@sha256:c15bff75068effb03f4355997d03dc7e0fc58720c2b54ad6f7f10d1bc57efaa5
+          ports:
+            - containerPort: 2283
+          env:
+            - name: TZ
+              value: Australia/Melbourne
+            - name: DB_HOSTNAME
+              value: postgres
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db
+                  key: db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db
+                  key: db-password
+            - name: DB_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db
+                  key: db-name
+            - name: REDIS_HOSTNAME
+              value: valkey
+            - name: IMMICH_MACHINE_LEARNING_URL
+              value: http://machine-learning:3003
+          livenessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: 2283
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: 2283
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: upload
+              mountPath: /usr/src/app/upload
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+              gpu.intel.com/i915: 1
+            limits:
+              memory: 1536Mi
+              gpu.intel.com/i915: 1
+      volumes:
+        - name: upload
+          persistentVolumeClaim:
+            claimName: nfs-photos
