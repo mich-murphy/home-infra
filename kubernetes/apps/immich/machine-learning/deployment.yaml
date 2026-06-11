@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: machine-learning
+  namespace: immich
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: machine-learning
+  template:
+    metadata:
+      labels:
+        app: machine-learning
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: machine-learning
+          image: ghcr.io/immich-app/immich-machine-learning:v2.7.5@sha256:a2501141440f10516d329fdfba2c68082e19eb9ba6016c061ac80d23beadf7f3
+          ports:
+            - containerPort: 3003
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 3003
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: cache
+              mountPath: /cache
+          # Tight limit on purpose: designated sacrifice if the node is
+          # RAM-starved — set replicas to 0 to shed load.
+          resources:
+            requests:
+              memory: 512Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: machine-learning-cache

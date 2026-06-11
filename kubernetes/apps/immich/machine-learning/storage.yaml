@@ -1,0 +1,14 @@
+# Model cache is rebuildable, but the models are multi-GB downloads;
+# persisting avoids re-fetching them on every pod restart.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: machine-learning-cache
+  namespace: immich
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: openebs-hostpath
+  resources:
+    requests:
+      storage: 10Gi

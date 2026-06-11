@@ -1,0 +1,17 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: valkey
+  namespace: immich
+spec:
+  endpointSelector:
+    matchLabels:
+      app: valkey
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: immich-server
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
