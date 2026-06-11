@@ -1,0 +1,1 @@
+{{ (readFile "../../kubernetes/infrastructure/controllers/cilium/release.yaml" | fromYaml).spec.values | toYaml }}
