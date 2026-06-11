@@ -164,11 +164,11 @@ All services run behind Traefik on the shared `proxy` network (172.20.1.0/24) wi
 
 ## Kubernetes (Inactive)
 
-Talos Linux single-node cluster managed by Flux CD. Currently inactive pending the next Kubernetes migration pass. See [docs/PRD.md](docs/PRD.md) for the migration plan.
+Talos Linux single-node cluster managed by Flux CD. Currently inactive pending the next Kubernetes migration pass.
 
 ## CI/CD
 
-- **Quality Gates**: Path-scoped static validation on PRs and pushes
+- **Quality Gates**: Path-scoped static validation on pull requests (plus manual dispatch)
   - Actions workflow linting for `.github/workflows/**`
   - Nix flake check for `flake.nix` and `flake.lock`
   - Terraform format and validate for `terraform/**`
@@ -178,6 +178,6 @@ Talos Linux single-node cluster managed by Flux CD. Currently inactive pending t
 - **Renovate**: Automated dependency updates on schedule (GitHub Actions)
   - Config validation only runs when Renovate config changes
   - Semantic commits with `actions-renovate/` branch prefix
-  - Auto-merge for minor/patch (non-zero versions)
+  - Auto-merge for digest updates only; major updates require Dependency Dashboard approval
   - Custom versioning for Linuxserver.io images
   - Manual approval required for Immich updates

@@ -8,6 +8,8 @@ on:
       - "kubernetes/**"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/kubernetes.yaml"
+      - "flake.lock"
+      - "flake.nix"
   workflow_dispatch:
 
 permissions:

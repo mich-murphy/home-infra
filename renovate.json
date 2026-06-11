@@ -4,6 +4,7 @@
     "config:best-practices",
     "docker:enableMajor",
     "default:automergeDigest",
+    "customManagers:githubActionsVersions",
     ":rebaseStalePrs"
   ],
   "semanticCommits": "enabled",

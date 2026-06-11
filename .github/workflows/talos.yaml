@@ -8,6 +8,8 @@ on:
       - "talos/**"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/talos.yaml"
+      - "flake.lock"
+      - "flake.nix"
   workflow_dispatch:
 
 permissions:

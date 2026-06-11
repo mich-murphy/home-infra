@@ -8,6 +8,8 @@ on:
       - "terraform/**"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/terraform.yaml"
+      - "flake.lock"
+      - "flake.nix"
   workflow_dispatch:
 
 permissions:

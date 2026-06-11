@@ -42,11 +42,5 @@ routeros-verify-scaffold:
 routeros-verify:
   cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true
 
-routeros-verify-strict:
-  cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true
-
 routeros:
-  cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags services,oob,vlans,dmz,dhcp,firewall,bridge,vlan-filtering,default-drop,verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true
-
-routeros-strict:
   cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags services,oob,vlans,dmz,dhcp,firewall,bridge,vlan-filtering,default-drop,verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true
