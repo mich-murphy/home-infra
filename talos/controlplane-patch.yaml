@@ -1,24 +1,37 @@
 machine:
   type: controlplane
+  install:
+    disk: /dev/sda
+    # Factory installer keeps the system extensions across upgrades.
+    image: factory.talos.dev/metal-installer/97349bd8a02320e952ef34bdc1369278958bf77fb1b1cbddb62ec6719777a7b6:v1.13.3
+  network:
+    interfaces:
+      - interface: ens18
+        addresses:
+          - 10.77.20.20/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 10.77.20.1
+    nameservers:
+      - 10.77.20.1
   kubelet:
     extraMounts:
-      - destination: /var/openebs/local
+      # OpenEBS LocalPV hostpath volumes (user volume "openebs" below).
+      - destination: /var/mnt/openebs
         type: bind
-        source: /var/openebs/local
+        source: /var/mnt/openebs
         options:
           - bind
           - rshared
           - rw
-  disks:
-    - device: /dev/sdb
-      partitions:
-        - mountpoint: /var/openebs/local
-  network:
-    interfaces:
-      - interface: ens18
-        dhcp: true
-  install:
-    disk: /dev/sda
+  sysctls:
+    # Unattended single node: panic and let the watchdog/reboot recover.
+    kernel.panic: "10"
+    kernel.panic_on_oops: "1"
+    kernel.softlockup_panic: "1"
+    # The arr/media apps watch large library trees.
+    fs.inotify.max_user_watches: "1048576"
+    fs.inotify.max_user_instances: "8192"
 cluster:
   apiServer:
     admissionControl:
@@ -34,109 +47,26 @@ cluster:
             warn: restricted
             warn-version: latest
           exemptions:
+            # Cilium needs privileged capabilities; workload namespaces opt in
+            # via the pod-security.kubernetes.io/enforce label instead.
             namespaces:
-              - openebs
-              # Cilium (installed via inlineManifests below) needs privileged capabilities
               - kube-system
   network:
+    podSubnets:
+      - 10.244.0.0/16
+    serviceSubnets:
+      - 10.96.0.0/12
+    # Cilium is installed by talos/bootstrap/helmfile.yaml and then adopted
+    # by the Flux HelmRelease.
     cni:
       name: none
   proxy:
     disabled: true
+  etcd:
+    extraArgs:
+      auto-compaction-mode: periodic
+      auto-compaction-retention: 5m
   allowSchedulingOnControlPlanes: true
-  inlineManifests:
-    - name: cilium-install
-      contents: |
-        ---
-        apiVersion: rbac.authorization.k8s.io/v1
-        kind: ClusterRoleBinding
-        metadata:
-          name: cilium-install
-        roleRef:
-          apiGroup: rbac.authorization.k8s.io
-          kind: ClusterRole
-          name: cluster-admin
-        subjects:
-        - kind: ServiceAccount
-          name: cilium-install
-          namespace: kube-system
-        ---
-        apiVersion: v1
-        kind: ServiceAccount
-        metadata:
-          name: cilium-install
-          namespace: kube-system
-        ---
-        apiVersion: batch/v1
-        kind: Job
-        metadata:
-          name: cilium-install
-          namespace: kube-system
-        spec:
-          backoffLimit: 10
-          template:
-            metadata:
-              labels:
-                app: cilium-install
-            spec:
-              restartPolicy: OnFailure
-              tolerations:
-                - operator: Exists
-                - effect: NoSchedule
-                  operator: Exists
-                - effect: NoExecute
-                  operator: Exists
-                - effect: PreferNoSchedule
-                  operator: Exists
-                - key: node-role.kubernetes.io/control-plane
-                  operator: Exists
-                  effect: NoSchedule
-                - key: node-role.kubernetes.io/control-plane
-                  operator: Exists
-                  effect: NoExecute
-                - key: node-role.kubernetes.io/control-plane
-                  operator: Exists
-                  effect: PreferNoSchedule
-              affinity:
-                nodeAffinity:
-                  requiredDuringSchedulingIgnoredDuringExecution:
-                    nodeSelectorTerms:
-                      - matchExpressions:
-                          - key: node-role.kubernetes.io/control-plane
-                            operator: Exists
-              serviceAccount: cilium-install
-              serviceAccountName: cilium-install
-              hostNetwork: true
-              containers:
-              - name: cilium-install
-                image: quay.io/cilium/cilium-cli:latest
-                env:
-                - name: KUBERNETES_SERVICE_HOST
-                  valueFrom:
-                    fieldRef:
-                      apiVersion: v1
-                      fieldPath: status.podIP
-                - name: KUBERNETES_SERVICE_PORT
-                  value: "6443"
-                command:
-                  - cilium
-                  - install
-                  - --set
-                  - ipam.mode=kubernetes
-                  - --set
-                  - kubeProxyReplacement=true
-                  - --set
-                  - securityContext.capabilities.ciliumAgent={CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}
-                  - --set
-                  - securityContext.capabilities.cleanCiliumState={NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}
-                  - --set
-                  - cgroup.autoMount.enabled=false
-                  - --set
-                  - cgroup.hostRoot=/sys/fs/cgroup
-                  - --set
-                  - k8sServiceHost=localhost
-                  - --set
-                  - k8sServicePort=7445
 ---
 # Talos 1.13 emits a HostnameConfig document by default; a static hostname in
 # the v1alpha1 machine config conflicts with it, so the hostname lives here.
@@ -144,3 +74,22 @@ apiVersion: v1alpha1
 kind: HostnameConfig
 auto: off
 hostname: talos-prod-1
+---
+# Second virtual disk (scsi1), mounted at /var/mnt/openebs.
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: openebs
+provisioning:
+  diskSelector:
+    match: disk.dev_path == "/dev/sdb"
+  minSize: 100GiB
+  grow: true
+filesystem:
+  type: xfs
+---
+# Pairs with the i6300esb watchdog device on the Proxmox VM: hard-reset if
+# Talos stops feeding the timer.
+apiVersion: v1alpha1
+kind: WatchdogTimerConfig
+device: /dev/watchdog0
+timeout: 5m

@@ -102,6 +102,7 @@ jobs:
           # in the patch fail the gate instead of surfacing at apply time.
           talosctl gen config ci https://10.77.20.20:6443 \
             --config-patch @talos/controlplane-patch.yaml \
+            --config-patch @talos/firewall-patch.yaml \
             --output-types controlplane --output - | talosctl validate --mode metal --config /dev/stdin
           SCRIPT
       - name: Lint Ansible
