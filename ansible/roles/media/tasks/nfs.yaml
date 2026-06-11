@@ -5,40 +5,13 @@
       - nfs-common
     state: present
 
-- name: define nfs configurations
-  ansible.builtin.set_fact:
-    nfs_mount_opts: "rw,vers=4.2,proto=tcp,hard,_netdev,x-systemd.automount,x-systemd.idle-timeout=600,nofail"
-    nfs_mounts:
-      - name: "media"
-        local_path: "/mnt/data"
-        nfs_share: "10.77.20.101:/mnt/slow/media"
-        owner: "media"
-        group: "media"
-      - name: "photos"
-        local_path: "/mnt/photos"
-        nfs_share: "10.77.20.101:/mnt/slow/photos"
-        owner: "photos"
-        group: "photos"
-      - name: "music"
-        local_path: "/mnt/music"
-        nfs_share: "10.77.20.101:/mnt/slow/media/music"
-        owner: "media"
-        group: "media"
-      - name: "audiobooks"
-        local_path: "/mnt/audiobooks"
-        nfs_share: "10.77.20.101:/mnt/slow/media/audiobooks"
-        owner: "media"
-        group: "media"
-    retired_nfs_mounts:
-      - name: "emulators"
-        local_path: "/mnt/emulators"
-        nfs_share: "10.77.20.101:/mnt/slow/media/emulators"
-
+# read-only query; must run in --check so the unmount loop below resolves
 - name: check retired nfs mount state
   ansible.builtin.command:
     cmd: "findmnt -rn --target {{ item.local_path }}"
   register: retired_nfs_mount_state
   changed_when: false
+  check_mode: false
   failed_when: retired_nfs_mount_state.rc not in [0, 1]
   loop: "{{ retired_nfs_mounts }}"
   loop_control:
@@ -101,11 +74,13 @@
     (retired_nfs_fstab_results is changed)
     or (active_nfs_fstab_results is changed)
 
+# read-only query; must run in --check so the mount loop below resolves
 - name: check active nfs mount state
   ansible.builtin.command:
     cmd: "findmnt -rn --target {{ item.local_path }}"
   register: active_nfs_mount_state
   changed_when: false
+  check_mode: false
   failed_when: active_nfs_mount_state.rc not in [0, 1]
   loop: "{{ nfs_mounts }}"
   loop_control:
