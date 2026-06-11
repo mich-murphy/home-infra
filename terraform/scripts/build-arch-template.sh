@@ -31,6 +31,7 @@ fi
 
 qm create "${VMID}" --name "${NAME}" --memory 1024 --cores 2 --net0 virtio,bridge=vmbr0 --scsihw virtio-scsi-single --ostype l26 --agent 1
 qm importdisk "${VMID}" "${IMG}" local-zfs
-qm set "${VMID}" --scsi0 local-zfs:vm-${VMID}-disk-0,discard=on,iothread=1
+# no iothread: it can hang the host on local-zfs zvols (see modules/proxmox_vm/main.tf)
+qm set "${VMID}" --scsi0 local-zfs:vm-${VMID}-disk-0,discard=on
 qm set "${VMID}" --ide2 local-zfs:cloudinit --boot order=scsi0 --serial0 socket
 qm template "${VMID}"

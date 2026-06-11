@@ -32,21 +32,6 @@ provider "proxmox" {
   }
 }
 
-import {
-  to = proxmox_virtual_environment_vm.truenas
-  id = "proxmox/101"
-}
-
-import {
-  to = proxmox_virtual_environment_vm.cloud_init_docker_host
-  id = "proxmox/102"
-}
-
-import {
-  to = module.ai_dev["ai-dev-bgd"].proxmox_virtual_environment_vm.this
-  id = "proxmox/110"
-}
-
 # Manually provisioned (no cloud-init); HBA passed through for ZFS.
 # prevent_destroy blocks accidental replacement while still allowing drift detection.
 resource "proxmox_virtual_environment_vm" "truenas" {
@@ -110,7 +95,6 @@ resource "local_sensitive_file" "cloud_init_agents" {
     hostname           = "docker-host"
     os_family          = "debian"
     tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
-    ssh_public_key     = var.docker_host_ssh_public_key
   }))
   filename        = "${path.module}/files/agents.cfg"
   file_permission = "0600"
@@ -368,7 +352,6 @@ module "ai_dev" {
   cloud_init_content = templatefile("cloud_init.tftpl", {
     hostname           = each.key
     os_family          = "arch"
-    ssh_public_key     = var.ai_dev_ssh_public_key
     tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
   })
   node_name = local.proxmox_node
