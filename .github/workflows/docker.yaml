@@ -8,6 +8,8 @@ on:
       - "docker/**"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/docker.yaml"
+      - "flake.lock"
+      - "flake.nix"
   workflow_dispatch:
 
 permissions:

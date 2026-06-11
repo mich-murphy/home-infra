@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - ".github/workflows/**"
+      - "flake.lock"
+      - "flake.nix"
   workflow_dispatch:
 
 permissions:
