@@ -74,6 +74,7 @@ spec:
         - name: jellyfin-transcode
           emptyDir:
             medium: Memory
+            sizeLimit: 4Gi
         - name: media
           nfs:
             server: 10.77.1.101

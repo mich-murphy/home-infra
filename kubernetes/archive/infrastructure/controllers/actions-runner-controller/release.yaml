@@ -7,8 +7,8 @@ spec:
   interval: 12h
   chart:
     spec:
-      chart: ./charts/gha-runner-scale-set-controller 
-      version: "0.12.*"
+      chart: ./charts/gha-runner-scale-set-controller
+      version: "0.12.1"
       sourceRef:
         kind: GitRepository
         name: actions-runner-controller

@@ -5,4 +5,4 @@ metadata:
   namespace: openebs
 spec:
   interval: 24h
-  url: https://openebs.github.io/openebs 
+  url: https://openebs.github.io/openebs
