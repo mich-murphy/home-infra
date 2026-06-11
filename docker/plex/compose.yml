@@ -30,11 +30,13 @@ services:
       - type: bind
         source: /mnt/data/media
         target: /data/media
+        read_only: true
         bind:
           propagation: rslave
       - type: bind
         source: /mnt/music
         target: /data/music
+        read_only: true
         bind:
           propagation: rslave
     labels:
@@ -42,6 +44,12 @@ services:
       - traefik.http.routers.plex.rule=Host(`plex.local.elmurphy.com`)
       - traefik.http.routers.plex.tls=true
       - traefik.http.services.plex.loadbalancer.server.port=32400
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:32400/identity"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   tautulli:
@@ -120,6 +128,7 @@ services:
       - proxy
     volumes:
       - kometa-data:/config:rw
+    # no healthcheck: kometa is a scheduled batch job, not a long-running server
     restart: unless-stopped
 
 volumes:

@@ -20,7 +20,7 @@ services:
         bind:
           propagation: rslave
       - audiobookshelf-data:/config
-      - audiobookshelf-data:/metadata
+      - audiobookshelf-metadata:/metadata
     labels:
       - traefik.enable=true
       - traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.local.elmurphy.com`)
@@ -36,6 +36,8 @@ services:
 volumes:
   audiobookshelf-data:
     name: audiobookshelf-data
+  audiobookshelf-metadata:
+    name: audiobookshelf-metadata
 
 networks:
   proxy:
