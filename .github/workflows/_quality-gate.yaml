@@ -19,6 +19,16 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Install Nix
         uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
+        with:
+          # Per-check keys: the gate jobs run in parallel and build different tools,
+          # so a single shared key would only ever persist the first job's store.
+          primary-key: nix-${{ runner.os }}-${{ inputs.check }}-${{ hashFiles('flake.nix', 'flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ inputs.check }}-
+          # Trim oversized stores before saving; GitHub evicts least-recently-used
+          # caches once the repo exceeds its 10GB total.
+          gc-max-store-size-linux: 5G
       - name: Check flake
         if: inputs.check == 'nix'
         run: nix flake check
