@@ -79,3 +79,6 @@ jobs:
       - name: Parse Talos YAML
         if: inputs.check == 'talos'
         run: nix shell .#yq-go --command yq eval 'true' talos/controlplane-patch.yaml talos/schematic.yaml
+      - name: Lint Ansible
+        if: inputs.check == 'ansible'
+        run: nix shell .#ansible-lint --command bash -euo pipefail -c 'cd ansible && ansible-lint'

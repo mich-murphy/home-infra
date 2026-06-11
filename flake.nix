@@ -49,6 +49,7 @@
   in {
     packages = forAllSystems ({pkgs, ...}: {
       actionlint = pkgs.actionlint;
+      ansible-lint = pkgs.ansible-lint;
       docker-compose = pkgs.docker-compose;
       kubectl = pkgs.kubectl;
       kubeconform = pkgs.kubeconform;
@@ -80,6 +81,9 @@
           self.packages.${system}.docker-compose
           self.packages.${system}.kubeconform
           self.packages.${system}.yq-go
+          # Listed after the python env so its propagated ansible-core does not
+          # shadow the librouteros-enabled interpreter above.
+          self.packages.${system}.ansible-lint
         ];
       };
     });

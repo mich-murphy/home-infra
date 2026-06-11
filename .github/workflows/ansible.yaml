@@ -1,0 +1,26 @@
+name: Ansible
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "ansible/**"
+      - ".github/workflows/_quality-gate.yaml"
+      - ".github/workflows/ansible.yaml"
+      - "flake.nix"
+      - "flake.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ansible:
+    uses: ./.github/workflows/_quality-gate.yaml
+    with:
+      check: ansible
