@@ -1,5 +1,6 @@
 ---
 collections:
+  - ansible.posix
   - community.general
   - kewlfft.aur
   # MikroTik RouterOS API (routeros role)
