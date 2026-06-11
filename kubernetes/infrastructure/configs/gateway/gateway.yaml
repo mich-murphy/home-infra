@@ -1,0 +1,46 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: prod
+  namespace: gateway
+  annotations:
+    # Stable LB IP: the *.local.elmurphy.com wildcard DNS record points here.
+    io.cilium/lb-ipam-ips: "10.77.20.224"
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.local.elmurphy.com"
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.local.elmurphy.com"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: local-elmurphy-com-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+# Blanket HTTP -> HTTPS redirect on the http listener.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: https-redirect
+  namespace: gateway
+spec:
+  parentRefs:
+    - name: prod
+      sectionName: http
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
