@@ -15,7 +15,7 @@ spec:
             app: wallabag-db-backup
       toPorts:
         - ports:
-            - port: "3306"
+            - port: "5432"
               protocol: TCP
 ---
 apiVersion: cilium.io/v2

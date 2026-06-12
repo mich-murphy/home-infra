@@ -24,17 +24,12 @@ spec:
           ports:
             - containerPort: 80
           env:
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: wallabag-credentials
-                  key: db-password
             - name: SYMFONY__ENV__DATABASE_DRIVER
-              value: pdo_mysql
+              value: pdo_pgsql
             - name: SYMFONY__ENV__DATABASE_HOST
               value: wallabag-db
             - name: SYMFONY__ENV__DATABASE_PORT
-              value: "3306"
+              value: "5432"
             - name: SYMFONY__ENV__DATABASE_NAME
               value: wallabag
             - name: SYMFONY__ENV__DATABASE_USER
@@ -45,7 +40,7 @@ spec:
                   name: wallabag-credentials
                   key: db-password
             - name: SYMFONY__ENV__DATABASE_CHARSET
-              value: utf8mb4
+              value: utf8
             - name: SYMFONY__ENV__DOMAIN_NAME
               value: https://wallabag.local.elmurphy.com
             - name: SYMFONY__ENV__SERVER_NAME
@@ -118,21 +113,25 @@ spec:
           type: RuntimeDefault
       containers:
         - name: wallabag-db
-          image: mariadb:12.3.2@sha256:b1c7bf836e64ed9406a8984af29509f40089d55cea14b32f12c4726a1f17104b
+          image: postgres:18@sha256:8ff36f3c66371cba71d20ceedccfc3de9669a68737607888c4ef0af93abe8e39
           ports:
-            - containerPort: 3306
+            - containerPort: 5432
           env:
-            - name: MYSQL_ROOT_PASSWORD
+            - name: POSTGRES_USER
+              value: wallabag
+            - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: wallabag-credentials
                   key: db-password
+            - name: POSTGRES_DB
+              value: wallabag
           livenessProbe:
             exec:
               command:
-                - healthcheck.sh
-                - --connect
-                - --innodb_initialized
+                - pg_isready
+                - -U
+                - wallabag
             initialDelaySeconds: 30
             periodSeconds: 20
             timeoutSeconds: 3
@@ -140,9 +139,9 @@ spec:
           readinessProbe:
             exec:
               command:
-                - healthcheck.sh
-                - --connect
-                - --innodb_initialized
+                - pg_isready
+                - -U
+                - wallabag
             initialDelaySeconds: 5
             periodSeconds: 20
             timeoutSeconds: 3
@@ -152,7 +151,7 @@ spec:
             capabilities:
               drop:
                 - ALL
-              # Entrypoint starts as root and drops to the mysql user.
+              # Entrypoint starts as root and drops to the postgres user.
               add:
                 - CHOWN
                 - SETUID
@@ -162,7 +161,7 @@ spec:
                 - KILL
           volumeMounts:
             - name: db
-              mountPath: /var/lib/mysql
+              mountPath: /var/lib/postgresql
           resources:
             requests:
               memory: 256Mi

@@ -16,7 +16,7 @@ metadata:
   namespace: tools
 spec:
   ports:
-    - port: 3306
+    - port: 5432
   selector:
     app: wallabag-db
 ---
