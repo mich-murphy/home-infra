@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: miniflux
+  namespace: tools
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: miniflux
+  template:
+    metadata:
+      labels:
+        app: miniflux
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: miniflux
+          image: miniflux/miniflux:2.3.1@sha256:42f14382a035e9d9bbc33910ca53f72d47177f75c3c638d2c5a85adf5582d538
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: miniflux-credentials
+                  key: database-url
+            - name: CREATE_ADMIN
+              value: "1"
+            - name: ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: miniflux-credentials
+                  key: admin-username
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: miniflux-credentials
+                  key: admin-password
+            - name: BASE_URL
+              value: https://miniflux.local.elmurphy.com
+            - name: RUN_MIGRATIONS
+              value: "1"
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: miniflux-db
+  namespace: tools
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: miniflux-db
+  template:
+    metadata:
+      labels:
+        app: miniflux-db
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: miniflux-db
+          image: postgres:18@sha256:8ff36f3c66371cba71d20ceedccfc3de9669a68737607888c4ef0af93abe8e39
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: miniflux
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: miniflux-credentials
+                  key: db-password
+            - name: POSTGRES_DB
+              value: miniflux
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - miniflux
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - miniflux
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              # Entrypoint starts as root and drops to the postgres user.
+              add:
+                - CHOWN
+                - SETUID
+                - SETGID
+                - DAC_OVERRIDE
+                - FOWNER
+                - KILL
+          volumeMounts:
+            - name: db
+              mountPath: /var/lib/postgresql
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: db
+          persistentVolumeClaim:
+            claimName: miniflux-db

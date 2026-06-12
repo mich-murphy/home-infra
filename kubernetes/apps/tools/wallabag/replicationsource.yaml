@@ -1,0 +1,48 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: wallabag-data-volsync
+  namespace: tools
+spec:
+  refreshPolicy: OnChange
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword-secrets
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    template:
+      data:
+        RESTIC_REPOSITORY: /mnt/repository/wallabag-data
+        RESTIC_PASSWORD: "{{ .resticPassword }}"
+  data:
+    - secretKey: resticPassword
+      remoteRef:
+        key: volsync/restic-password
+---
+# Nightly image-assets backup to the TrueNAS volsync export. Direct copy is
+# not point-in-time consistent; the database pairs this with a dump job.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: wallabag-data
+  namespace: tools
+spec:
+  sourcePVC: wallabag-data
+  trigger:
+    schedule: "15 4 * * *"
+  restic:
+    repository: wallabag-data-volsync
+    copyMethod: Direct
+    pruneIntervalDays: 14
+    retain:
+      daily: 7
+      weekly: 4
+    cacheCapacity: 2Gi
+    moverVolumes:
+      - name: repository
+        mountPath: repository
+        volumeSource:
+          nfs:
+            server: 10.77.20.101
+            path: /mnt/slow/backups/volsync

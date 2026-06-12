@@ -1,0 +1,83 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: victoria-metrics-k8s-stack
+  namespace: monitoring
+spec:
+  releaseName: victoria-metrics-k8s-stack
+  interval: 12h
+  chart:
+    spec:
+      chart: victoria-metrics-k8s-stack
+      version: "0.82.0"
+      reconcileStrategy: ChartVersion
+      sourceRef:
+        kind: HelmRepository
+        name: victoriametrics
+        namespace: monitoring
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled
+  values:
+    victoria-metrics-operator:
+      crds:
+        cleanup:
+          enabled: true
+      operator:
+        disable_prometheus_converter: true
+    vmsingle:
+      enabled: true
+      spec:
+        retentionPeriod: 14d
+        resources:
+          requests:
+            memory: 256Mi
+          limits:
+            memory: 768Mi
+        storage:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 20Gi
+    vmagent:
+      spec:
+        resources:
+          requests:
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+    vmalert:
+      spec:
+        resources:
+          requests:
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+    alertmanager:
+      spec:
+        resources:
+          requests:
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+    grafana:
+      resources:
+        requests:
+          memory: 128Mi
+        limits:
+          memory: 256Mi
+    kubeControllerManager:
+      enabled: false
+    kubeEtcd:
+      enabled: false
+    kubeScheduler:
+      enabled: false
+    kubeProxy:
+      enabled: false

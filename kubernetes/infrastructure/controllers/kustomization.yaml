@@ -5,5 +5,6 @@ resources:
   - cert-manager
   - external-secrets
   - intel-device-plugins
+  - monitoring
   - openebs
   - volsync
