@@ -1,0 +1,37 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: owncloud-mariadb
+  namespace: tools
+spec:
+  endpointSelector:
+    matchLabels:
+      app: owncloud-mariadb
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: owncloud
+        - matchLabels:
+            app: owncloud-db-backup
+      toPorts:
+        - ports:
+            - port: "3306"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: owncloud-redis
+  namespace: tools
+spec:
+  endpointSelector:
+    matchLabels:
+      app: owncloud-redis
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: owncloud
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP

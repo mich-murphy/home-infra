@@ -1,0 +1,19 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: miniflux-db
+  namespace: tools
+spec:
+  endpointSelector:
+    matchLabels:
+      app: miniflux-db
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: miniflux
+        - matchLabels:
+            app: miniflux-db-backup
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP

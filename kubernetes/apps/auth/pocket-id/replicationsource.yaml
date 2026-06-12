@@ -1,0 +1,51 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: pocket-id-restic
+  namespace: auth
+spec:
+  refreshPolicy: OnChange
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword-secrets
+  target:
+    creationPolicy: Owner
+    deletionPolicy: Delete
+    template:
+      data:
+        RESTIC_REPOSITORY: /mnt/repository/pocket-id-data
+        RESTIC_PASSWORD: "{{ .resticPassword }}"
+  data:
+    - secretKey: resticPassword
+      remoteRef:
+        key: volsync/restic-password
+---
+# Nightly file backup to the TrueNAS volsync export.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: pocket-id-data
+  namespace: auth
+spec:
+  sourcePVC: pocket-id-data
+  trigger:
+    schedule: "25 4 * * *"
+  restic:
+    repository: pocket-id-restic
+    copyMethod: Direct
+    pruneIntervalDays: 14
+    retain:
+      daily: 7
+      weekly: 4
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+    moverVolumes:
+      - name: repository
+        mountPath: repository
+        volumeSource:
+          nfs:
+            server: 10.77.20.101
+            path: /mnt/slow/backups/volsync
