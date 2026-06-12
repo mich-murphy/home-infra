@@ -1,6 +1,6 @@
 # home-infra
 
-Infrastructure-as-code for a single-server homelab running on Proxmox. Manages VM provisioning, host configuration, and containerised application services.
+Infrastructure-as-code for a single-server homelab running on Proxmox. Manages VM provisioning, host configuration, containerised application services, and a prepared Talos Kubernetes migration.
 
 ## Hardware
 
@@ -19,11 +19,11 @@ Infrastructure-as-code for a single-server homelab running on Proxmox. Manages V
 ```
 Proxmox v9.1.6 (hypervisor)
 ├── TrueNAS VM (SRV VLAN) ─── NFS shares (media, downloads, bulk storage)
-├── Docker Host VM (Ubuntu 24.04) ─── 18+ services via Docker Compose
+├── Docker Host VM (Ubuntu 24.04) ─── live services via Docker Compose
 │   └── Traefik → *.local.elmurphy.com (TLS via Cloudflare ACME)
 ├── UniFi OS Server VM (MGMT) ─── Network controller for AP/WLANs
 ├── ai-dev-bgd VM (DMZ) ─── Isolated AI development sandbox
-└── [Talos K8s VM] ─── Inactive, pending migration work
+└── [Talos K8s VM] ─── prepared, gated by enable_talos, pending cutover
 ```
 
 ### Network (MikroTik RB5009 + UniFi AP)
@@ -57,9 +57,9 @@ further scoped by an external Tailscale ACL policy managed outside this repo.
 .
 ├── terraform/       # Proxmox VM provisioning
 ├── ansible/         # Host configuration (Docker host, game server)
-├── docker/          # Docker Compose services (active)
-├── kubernetes/      # Flux CD manifests (inactive)
-├── talos/           # Talos Linux cluster config (inactive)
+├── docker/          # Docker Compose services (active until cutover)
+├── kubernetes/      # Flux CD manifests (prepared, not live)
+├── talos/           # Talos Linux cluster config (prepared, not live)
 ├── docs/            # Documentation
 ├── flake.nix        # Nix dev shell
 └── justfile         # Task runner
@@ -97,16 +97,16 @@ just edit                   # edit encrypted vault secrets
 Provisions VMs on Proxmox using the [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox) provider. Secrets sourced from 1Password via the `onepassword` provider.
 Run Terraform through the `just` recipes so local state and generated cloud-init files are created with a restrictive umask. Terraform state is secret-bearing because provider data includes Proxmox credentials, WLAN PSKs, and bootstrap auth material.
 
-| VM           | ID  | Spec                         | Purpose                 |
-| ------------ | --- | ---------------------------- | ----------------------- |
-| truenas      | 101 | 2 CPU, 10GB RAM, 32GB        | NAS with HBA passthrough |
-| docker-host  | 102 | 6 CPU, 10GB RAM, 128GB       | Docker Compose services |
-| ai-dev-bgd   | 110 | 2 CPU, 4GB RAM, 150GB        | AI development sandbox   |
-| unifi        | 111 | 2 CPU, 4GB RAM, 40GB         | UniFi OS Server          |
-| talos-prod-1 | 200 | 6 CPU, 10GB RAM, 100GB+128GB | Kubernetes (inactive)   |
+| VM           | ID  | Spec                          | Purpose                            |
+| ------------ | --- | ----------------------------- | ---------------------------------- |
+| truenas      | 101 | 2 CPU, 10GB RAM, 32GB         | NAS with HBA passthrough           |
+| docker-host  | 102 | 6 CPU, 10GB RAM, 128GB        | Current Docker Compose services    |
+| ai-dev-bgd   | 110 | 2 CPU, 4GB RAM, 150GB         | AI development sandbox             |
+| unifi        | 111 | 2 CPU, 4GB RAM, 40GB          | UniFi OS Server                    |
+| talos-prod-1 | 200 | 8 CPU, 12GB RAM, 100GB+128GB  | Kubernetes, created at cutover only |
 
 Cloud-init template (`cloud_init.tftpl`) bootstraps the management user, installs qemu-guest-agent, and joins Tailscale.
-TrueNAS and docker-host are managed with `prevent_destroy`; their pinned MAC addresses are supplied through sensitive Terraform variables in the ignored root `.envrc`.
+TrueNAS and docker-host are managed with `prevent_destroy`; their pinned MAC addresses are supplied through sensitive Terraform variables in the ignored root `.envrc`. The Talos VM is gated by `enable_talos=false` by default; enabling it creates VM 200, stops docker-host, and moves the iGPU passthrough to Talos.
 
 ## Ansible
 
@@ -162,9 +162,11 @@ All services run behind Traefik on the shared `proxy` network (172.20.1.0/24) wi
 - GPU passthrough (`/dev/dri`) for Plex, Jellyfin, Immich transcoding
 - NFS mounts at `/mnt/data`, `/mnt/music`, `/mnt/audiobooks`, etc.
 
-## Kubernetes (Inactive)
+## Kubernetes (Prepared)
 
-Talos Linux single-node cluster managed by Flux CD. Currently inactive pending the next Kubernetes migration pass.
+Talos Linux single-node cluster managed by Flux CD. The manifests are prepared for cutover but are not live while `enable_talos=false`.
+
+Prepared components include Cilium Gateway API, cert-manager, External Secrets backed by 1Password, OpenEBS LocalPV, static TrueNAS NFS PVs, VolSync/restic backups, Intel GPU device plugin, media/tool/auth app migrations, Immich without machine learning, and VictoriaMetrics monitoring. The rollout checklist lives in [docs/k8s-migration.md](docs/k8s-migration.md).
 
 ## CI/CD
 
