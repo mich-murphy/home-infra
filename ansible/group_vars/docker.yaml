@@ -6,6 +6,10 @@ swap_mode: file
 swap_size_gb: 4
 swap_swappiness: 10
 
+# Allows containers on the compose proxy bridge to reach services via
+# *.local.elmurphy.com, which currently resolves to Tailscale.
+firewall_docker_bridge_subnet: 172.20.1.0/24
+
 # Published Docker ports must be allowlisted in DOCKER-USER.
 firewall_docker_allowed_ports:
   - {port: 80, proto: tcp}  # traefik

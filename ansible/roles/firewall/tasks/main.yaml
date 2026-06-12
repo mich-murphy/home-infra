@@ -55,6 +55,16 @@
     - flush docker-user chain
     - reload ufw
 
+# docker-host only: lets containers reach services whose names resolve to
+# Tailscale addresses, such as *.local.elmurphy.com.
+- name: allow internal docker bridge to tailscale
+  community.general.ufw:
+    rule: allow
+    from_ip: "{{ firewall_docker_bridge_subnet }}"
+    to_ip: 100.64.0.0/10
+  when: firewall_docker_bridge_subnet is defined
+  notify: reload ufw
+
 # SSH stays reachable via tailscale0.
 - name: delete bare 22/tcp allow rule
   community.general.ufw:
