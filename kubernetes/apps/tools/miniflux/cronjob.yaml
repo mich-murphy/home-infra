@@ -1,0 +1,53 @@
+# Point-in-time consistent backup; the db PVC is deliberately not
+# volsync'd — restores come from these dumps.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: miniflux-db-backup
+  namespace: tools
+spec:
+  schedule: "40 2 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: miniflux-db-backup
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: miniflux-db-backup
+              image: postgres:18@sha256:8ff36f3c66371cba71d20ceedccfc3de9669a68737607888c4ef0af93abe8e39
+              command:
+                - sh
+                - -c
+                # %u keeps one dump per weekday, overwritten weekly.
+                - pg_dump -h miniflux-db -U miniflux miniflux | gzip > "/backup/miniflux-$(date +%u).sql.gz"
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: miniflux-credentials
+                      key: db-password
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+              resources:
+                requests:
+                  memory: 128Mi
+                limits:
+                  memory: 256Mi
+          volumes:
+            - name: backup
+              nfs:
+                server: 10.77.20.101
+                path: /mnt/slow/backups/dumps
