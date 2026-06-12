@@ -5,6 +5,7 @@ CLAUDE.md
 # docs
 docs/*
 !docs/docker-hardening.md
+!docs/k8s-migration.md
 
 # nix
 .direnv
