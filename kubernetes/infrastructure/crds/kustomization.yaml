@@ -4,3 +4,5 @@ resources:
   # Standard channel, the version supported by Cilium 1.18. The experimental
   # channel (TLSRoute, ExternalAuth filter) waits for Cilium 1.20.
   - https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml
+  - victoria-metrics-operator-crds-repository.yaml
+  - victoria-metrics-operator-crds-release.yaml
