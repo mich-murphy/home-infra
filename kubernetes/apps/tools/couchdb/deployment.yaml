@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: couchdb
+  namespace: tools
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: couchdb
+  template:
+    metadata:
+      labels:
+        app: couchdb
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 5984
+        runAsGroup: 5984
+        fsGroup: 5984
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: couchdb
+          image: couchdb:3.5.2@sha256:9a84b943671e9587a690e0c4418e0bd89984b5045db84532add2e560e6b76127
+          ports:
+            - containerPort: 5984
+          env:
+            - name: COUCHDB_USER
+              value: admin
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-credentials
+                  key: password
+          livenessProbe:
+            httpGet:
+              path: /_up
+              port: 5984
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /_up
+              port: 5984
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /opt/couchdb/data
+            - name: config
+              mountPath: /opt/couchdb/etc/local.d/cors.ini
+              subPath: cors.ini
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: couchdb-data
+        - name: config
+          configMap:
+            name: couchdb-config
