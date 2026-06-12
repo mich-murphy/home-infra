@@ -21,14 +21,14 @@ spec:
               type: RuntimeDefault
           containers:
             - name: wallabag-db-backup
-              image: mariadb:12.3.2@sha256:b1c7bf836e64ed9406a8984af29509f40089d55cea14b32f12c4726a1f17104b
+              image: postgres:18@sha256:8ff36f3c66371cba71d20ceedccfc3de9669a68737607888c4ef0af93abe8e39
               command:
                 - sh
                 - -c
                 # %u keeps one dump per weekday, overwritten weekly.
-                - mariadb-dump -h wallabag-db -u root --all-databases | gzip > "/backup/wallabag-$(date +%u).sql.gz"
+                - pg_dump -h wallabag-db -U wallabag wallabag | gzip > "/backup/wallabag-$(date +%u).sql.gz"
               env:
-                - name: MYSQL_PWD
+                - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
                       name: wallabag-credentials
