@@ -1,0 +1,265 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: owncloud
+  namespace: tools
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: owncloud
+  template:
+    metadata:
+      labels:
+        app: owncloud
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: owncloud
+          image: owncloud/server:10.16.3@sha256:e05d1d12b61073c1e7f80ddab6eb015cbbf7bed1d409fa270cc94662bd8693a7
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OWNCLOUD_DOMAIN
+              value: owncloud.local.elmurphy.com
+            - name: OWNCLOUD_TRUSTED_DOMAINS
+              value: owncloud.local.elmurphy.com
+            - name: OWNCLOUD_DB_TYPE
+              value: mysql
+            - name: OWNCLOUD_DB_NAME
+              value: owncloud
+            - name: OWNCLOUD_DB_USERNAME
+              value: owncloud
+            - name: OWNCLOUD_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: owncloud-credentials
+                  key: db-password
+            - name: OWNCLOUD_DB_HOST
+              value: owncloud-mariadb
+            - name: OWNCLOUD_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: owncloud-credentials
+                  key: admin-username
+            - name: OWNCLOUD_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: owncloud-credentials
+                  key: admin-password
+            - name: OWNCLOUD_MYSQL_UTF8MB4
+              value: "true"
+            - name: OWNCLOUD_REDIS_ENABLED
+              value: "true"
+            - name: OWNCLOUD_REDIS_HOST
+              value: owncloud-redis
+          livenessProbe:
+            exec:
+              command:
+                - /usr/bin/healthcheck
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - /usr/bin/healthcheck
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              # Entrypoint starts as root and drops to www-data.
+              add:
+                - CHOWN
+                - SETUID
+                - SETGID
+                - DAC_OVERRIDE
+                - FOWNER
+                - KILL
+          volumeMounts:
+            - name: data
+              mountPath: /mnt/data
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: owncloud-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: owncloud-mariadb
+  namespace: tools
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: owncloud-mariadb
+  template:
+    metadata:
+      labels:
+        app: owncloud-mariadb
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: owncloud-mariadb
+          image: mariadb:12.3.2@sha256:b1c7bf836e64ed9406a8984af29509f40089d55cea14b32f12c4726a1f17104b # minimum required ownCloud version is 10.9
+          args:
+            - --max-allowed-packet=128M
+            - --innodb-log-file-size=64M
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: owncloud-credentials
+                  key: db-password
+            - name: MYSQL_USER
+              value: owncloud
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: owncloud-credentials
+                  key: db-password
+            - name: MYSQL_DATABASE
+              value: owncloud
+            - name: MARIADB_AUTO_UPGRADE
+              value: "1"
+          livenessProbe:
+            exec:
+              command:
+                - healthcheck.sh
+                - --connect
+                - --innodb_initialized
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - healthcheck.sh
+                - --connect
+                - --innodb_initialized
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              # Entrypoint starts as root and drops to the mysql user.
+              add:
+                - CHOWN
+                - SETUID
+                - SETGID
+                - DAC_OVERRIDE
+                - FOWNER
+                - KILL
+          volumeMounts:
+            - name: db
+              mountPath: /var/lib/mysql
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: db
+          persistentVolumeClaim:
+            claimName: owncloud-db
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: owncloud-redis
+  namespace: tools
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: owncloud-redis
+  template:
+    metadata:
+      labels:
+        app: owncloud-redis
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: owncloud-redis
+          image: redis:8.8.0@sha256:aa049e689e141a4358ad1d4562dc49c88a89fbab711fd8fcc33f684c80b26301
+          args:
+            - --databases
+            - "1"
+          ports:
+            - containerPort: 6379
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              # Entrypoint starts as root and drops to the redis user;
+              # SETPCAP lets it shed its own capabilities afterwards.
+              add:
+                - CHOWN
+                - SETUID
+                - SETGID
+                - DAC_OVERRIDE
+                - FOWNER
+                - KILL
+                - SETPCAP
+          volumeMounts:
+            - name: cache
+              mountPath: /data
+          resources:
+            requests:
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        # Cache only; nothing worth persisting.
+        - name: cache
+          emptyDir: {}

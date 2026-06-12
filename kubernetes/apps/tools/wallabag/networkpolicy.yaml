@@ -1,0 +1,37 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: wallabag-db
+  namespace: tools
+spec:
+  endpointSelector:
+    matchLabels:
+      app: wallabag-db
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: wallabag
+        - matchLabels:
+            app: wallabag-db-backup
+      toPorts:
+        - ports:
+            - port: "3306"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: wallabag-redis
+  namespace: tools
+spec:
+  endpointSelector:
+    matchLabels:
+      app: wallabag-redis
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: wallabag
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
