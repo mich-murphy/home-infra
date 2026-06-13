@@ -6,12 +6,15 @@ CLAUDE.md
 docs/*
 !docs/docker-hardening.md
 !docs/k8s-migration.md
+!docs/truenas-storage.md
 
 # nix
 .direnv
 
 # direnv (contains OP_SERVICE_ACCOUNT_TOKEN)
 .envrc
+# local secrets (contains TRUENAS_PASSWORD)
+.env
 
 # terraform
 .terraform

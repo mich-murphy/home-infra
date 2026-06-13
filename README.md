@@ -11,8 +11,11 @@ Infrastructure-as-code for a single-server homelab running on Proxmox. Manages V
 | Motherboard | Supermicro X13SAE                                                  |
 | Boot disk   | 250GB NVMe                                                         |
 | VM storage  | 2x 1TB Samsung EVO NVMe (ZFS mirror, Proxmox-managed)              |
-| Data SSDs   | 2x Micron 960GB DC SSD (ZFS mirror metadata vdev, TrueNAS via HBA) |
+| Data SSDs   | 2x Kingston DC600M 960GB (ZFS special vdev mirror, TrueNAS HBA)    |
 | Data HDDs   | 2x Seagate IronWolf 10TB (ZFS mirror, TrueNAS via HBA)             |
+
+TrueNAS pool layout, dataset tuning, and the storage change plan are
+documented in [docs/truenas-storage.md](docs/truenas-storage.md).
 
 ## Architecture
 
