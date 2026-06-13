@@ -31,6 +31,12 @@ services:
         read_only: true
         bind:
           propagation: rslave
+      - type: bind
+        source: /mnt/music
+        target: /data/media/music
+        read_only: true
+        bind:
+          propagation: rslave
     tmpfs:
       - /transcode # ram transcode
     ports:
