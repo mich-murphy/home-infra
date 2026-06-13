@@ -66,6 +66,20 @@ PITR-capable recovery, and PostgreSQL-native import paths. References:
 - <https://cloudnative-pg.io/docs/1.29/backup/>
 - <https://cloudnative-pg.io/docs/1.29/recovery/>
 
+## Monitoring Direction
+
+Monitoring is victoria-metrics-k8s-stack, pinned to an exact 0.82.x release.
+The prometheus-operator object converter is disabled
+(`disable_prometheus_converter: true`) and the `prometheus-operator-crds`
+chart is deliberately not installed: nothing in the cluster emits
+ServiceMonitor or PodMonitor objects, and the stack renders only native
+VictoriaMetrics CRDs (VMServiceScrape, VMNodeScrape, VMRule). If a future
+chart ships ServiceMonitors, re-enable the converter and add
+`prometheus-operator-crds` to `kubernetes/infrastructure/crds/` in the same
+change. The control-plane scrape jobs (controller-manager, scheduler, etcd,
+kube-proxy) are disabled because a single Talos node with kube-proxy
+replacement cannot serve them.
+
 ## Preflight
 
 1. Populate the 1Password `kubernetes` vault:
@@ -145,7 +159,8 @@ For OwnCloud, keep the MariaDB dump as the Kubernetes restore artifact:
 
 ```sh
 docker compose -f docker/owncloud/compose.yml exec -T owncloud-mariadb \
-  sh -c 'mariadb-dump -u root -p"$MYSQL_ROOT_PASSWORD" --single-transaction --routines --triggers --events --all-databases' \
+  sh -c 'mariadb-dump -u root -p"$MYSQL_ROOT_PASSWORD" --single-transaction \
+    --routines --triggers --events --all-databases' \
   | gzip | sudo tee "${backup_root}/mariadb/owncloud.sql.gz" >/dev/null
 ```
 
@@ -153,7 +168,8 @@ For Wallabag, take a raw MariaDB dump first:
 
 ```sh
 docker compose -f docker/wallabag/compose.yml exec -T db \
-  sh -c 'mariadb-dump -u root -p"$MYSQL_ROOT_PASSWORD" --single-transaction --routines --triggers --events --all-databases' \
+  sh -c 'mariadb-dump -u root -p"$MYSQL_ROOT_PASSWORD" --single-transaction \
+    --routines --triggers --events --all-databases' \
   | gzip | sudo tee "${backup_root}/raw/wallabag-mariadb.sql.gz" >/dev/null
 ```
 
@@ -325,26 +341,23 @@ kubectl -n tools scale deploy/wallabag --replicas=1
 
 ## Validation
 
-Local validation matching CI:
+Local validation matching CI. CI builds every kustomization under
+`kubernetes/` except the archive, so mirror its loop rather than picking
+directories by hand:
 
 ```sh
 catalog="https://raw.githubusercontent.com/datreeio/CRDs-catalog/main"
 tmpl="{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
-kubectl kustomize kubernetes/apps | kubeconform -summary -strict \
-  -ignore-missing-schemas \
-  -schema-location default \
-  -schema-location ".github/schemas/${tmpl}" \
-  -schema-location "${catalog}/${tmpl}"
-kubectl kustomize kubernetes/infrastructure/crds | kubeconform -summary -strict \
-  -ignore-missing-schemas \
-  -schema-location default \
-  -schema-location ".github/schemas/${tmpl}" \
-  -schema-location "${catalog}/${tmpl}"
-kubectl kustomize kubernetes/infrastructure/controllers | kubeconform -summary -strict \
-  -ignore-missing-schemas \
-  -schema-location default \
-  -schema-location ".github/schemas/${tmpl}" \
-  -schema-location "${catalog}/${tmpl}"
+while IFS= read -r kustomization; do
+  dir="${kustomization%/*}"
+  echo "Checking ${dir}"
+  kubectl kustomize "${dir}" | kubeconform -summary -strict \
+    -ignore-missing-schemas \
+    -schema-location default \
+    -schema-location ".github/schemas/${tmpl}" \
+    -schema-location "${catalog}/${tmpl}"
+done < <(find kubernetes -path kubernetes/archive -prune \
+  -o -name kustomization.yaml -print | sort)
 ```
 
 Cluster checks:
@@ -355,6 +368,7 @@ kubectl get kustomizations -A
 kubectl get gateway,httproute -A
 kubectl get pods -A
 kubectl get volumesnapshotclasses,pvc -A
+kubectl -n monitoring get vmsingle,vmagent,vmalert,vmalertmanager
 ```
 
 ## Soak and Cleanup
