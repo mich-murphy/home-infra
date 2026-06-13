@@ -100,14 +100,15 @@ replacement cannot serve them.
    `local.talos_schematic_id`.
 4. Apply the RouterOS DHCP shrink and Kubernetes firewall rules before the VM
    is started.
-5. On TrueNAS, allow `10.77.20.20` on the NFS exports used by Kubernetes.
-6. On TrueNAS, create backup targets:
-
-   ```sh
-   /mnt/slow/backups/volsync
-   /mnt/slow/backups/dumps
-   ```
-
+5. On TrueNAS, complete the storage change plan in
+   [truenas-storage.md](truenas-storage.md): the `slow/backups` datasets
+   with their NFS exports (phase 1) and the host restrictions on the
+   existing exports (phase 2). Both the Talos node `10.77.20.20` and
+   docker-host `10.77.20.246` must be allowed on the backup exports —
+   docker-host writes the staging artifacts, the cluster restores from
+   them.
+6. On Proxmox, confirm headroom for ZFS snapshots of the docker-host
+   vdisks (taken at the flip, below).
 7. Rehearse database dumps from docker-host:
    - `pg_dumpall` for Immich PostgreSQL
    - `pg_dump` for Miniflux PostgreSQL
@@ -189,9 +190,28 @@ PostgreSQL.
 2. Run final database dumps and the Wallabag PostgreSQL conversion dump to the
    TrueNAS staging area.
 3. Stop application stacks with Docker Compose.
-4. Tar each non-database named Docker volume from
+4. Take named pre-cutover ZFS snapshots of the NFS datasets that Kubernetes
+   apps will write to on first boot. These are the instant rollback for
+   first-boot misbehaviour (immich writing to photos, the media apps to
+   media), independent of the daily snapshot tasks:
+
+   ```sh
+   zfs snapshot slow/photos@pre-k8s-cutover
+   zfs snapshot slow/owncloud@pre-k8s-cutover
+   zfs snapshot -r slow/media@pre-k8s-cutover
+   ```
+
+5. Tar each non-database named Docker volume from
    `/var/lib/docker/volumes/<name>/_data` to a TrueNAS staging directory.
-5. Keep docker-host disks intact. They are the first rollback path.
+6. After all dumps and tars are complete, snapshot the staging dataset so
+   the cutover artifacts are immutable before any restore touches the
+   export:
+
+   ```sh
+   zfs snapshot -r slow/backups@cutover
+   ```
+
+7. Keep docker-host disks intact. They are the first rollback path.
 
 Useful volume tar pattern:
 
@@ -213,6 +233,16 @@ Skip database volumes when restoring to Kubernetes. Keep their raw tars only
 for forensic rollback if you deliberately add them to the list.
 
 ## Terraform Flip
+
+Before the flip, snapshot the docker-host vdisks on the Proxmox ZFS mirror —
+a rollback point stronger than the VM merely being stopped:
+
+```sh
+ssh root@10.77.20.100 'zfs snapshot -r rpool/data@pre-k8s-cutover'
+```
+
+Adjust the dataset path to wherever the docker-host (VM 102) disks live
+(`zfs list -t volume` on the Proxmox host shows them).
 
 Run Terraform from the repo root module:
 
