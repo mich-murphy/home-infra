@@ -1,7 +1,7 @@
 ---
 services:
   owncloud:
-    image: owncloud/server:10.16.3@sha256:111bcabfd821aa663a050671669dca8dd71d62e30fa689ec6d3d46dba3997ea8
+    image: owncloud/server:10.16.3@sha256:0fc11a442422fee65b03efafcd3a769d8989ddffb09c7f02d59aae01de29538e
     container_name: owncloud
     security_opt:
       - no-new-privileges:true
@@ -83,7 +83,7 @@ services:
     restart: unless-stopped
 
   owncloud-redis:
-    image: redis:8.8.0@sha256:aa049e689e141a4358ad1d4562dc49c88a89fbab711fd8fcc33f684c80b26301
+    image: redis:8.8.0@sha256:0a972391db0b24ec336e35d1bc98b237237e26f82bf5120cf2f6b1688d1df973
     container_name: owncloud-redis
     security_opt:
       - no-new-privileges:true
