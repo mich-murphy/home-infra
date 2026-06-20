@@ -26,6 +26,8 @@ jobs:
         uses: renovatebot/github-action@8217b3fc286df088d7c27f3255fe8414463bc0fd # v46.1.15
         env:
           RENOVATE_FORCE: ${{ inputs.overrideSchedule == true && '{''schedule'':null}' || '' }}
+          RENOVATE_HOST_RULES: >-
+            [{"hostType":"docker","matchHost":"ghcr.io","username":"mich-murphy","password":"${{ secrets.RENOVATE_TOKEN }}"}]
         with:
           configurationFile: .github/renovate-config.json
           token: ${{ secrets.RENOVATE_TOKEN }}
