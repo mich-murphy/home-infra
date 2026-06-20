@@ -170,6 +170,16 @@
         src-address: "{{ routeros_oob_subnet }}"
         action: drop
         comment: "OOB drop routed traffic (managed: routeros role)"
+      {% for protocol in routeros_qbittorrent_peer_protocols %}
+      - chain: forward
+        in-interface-list: WAN
+        connection-nat-state: dstnat
+        dst-address: "{{ routeros_qbittorrent_peer_target }}"
+        protocol: "{{ protocol }}"
+        dst-port: "{{ routeros_qbittorrent_peer_port }}"
+        action: accept
+        comment: "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
+      {% endfor %}
       - chain: forward
         src-address: "{{ _net.kds }}"
         protocol: tcp
@@ -225,6 +235,11 @@
         action: accept
         comment: "SRV -> UniFi controller (managed: routeros role)"
       - chain: forward
+        src-address: "{{ _net.gst }}"
+        dst-address-list: internal
+        action: drop
+        comment: "GST drop internal routing (managed: routeros role)"
+      - chain: forward
         src-address-list: admin
         out-interface-list: WAN
         action: accept
@@ -265,6 +280,31 @@
         action: redirect
         to-ports: 53
         comment: "KDS TCP DNS redirect (managed: routeros role)"
+
+- name: WAN dst-nat — qBittorrent peer traffic to docker-host
+  community.routeros.api_modify:
+    path: ip firewall nat
+    handle_absent_entries: remove
+    handle_entries_content: remove_as_much_as_possible
+    restrict:
+      - field: chain
+        values:
+          - dstnat
+      - field: comment
+        regex: ".*qBittorrent peers.*managed: routeros role.*"
+    data: "{{ _routeros_qbittorrent_dstnat | from_yaml }}"
+  vars:
+    _routeros_qbittorrent_dstnat: |
+      {% for protocol in routeros_qbittorrent_peer_protocols %}
+      - chain: dstnat
+        in-interface-list: WAN
+        protocol: "{{ protocol }}"
+        dst-port: "{{ routeros_qbittorrent_peer_port }}"
+        action: dst-nat
+        to-addresses: "{{ routeros_qbittorrent_peer_target }}"
+        to-ports: "{{ routeros_qbittorrent_peer_port }}"
+        comment: "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
+      {% endfor %}
 
 - name: Masquerade all internal sources out the WAN
   community.routeros.api_modify:
@@ -308,6 +348,8 @@
           "fwd est/rel (managed: routeros role)",
           "fwd drop invalid (managed: routeros role)",
           "OOB drop routed traffic (managed: routeros role)",
+          "WAN -> qBittorrent peers tcp (managed: routeros role)",
+          "WAN -> qBittorrent peers udp (managed: routeros role)",
           "KDS drop DoT (managed: routeros role)",
           "KDS drop DoQ (managed: routeros role)",
           "MGMT -> k8s node API (managed: routeros role)",
@@ -317,6 +359,7 @@
           "DFLT -> SRV services (managed: routeros role)",
           "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)",
           "SRV -> UniFi controller (managed: routeros role)",
+          "GST drop internal routing (managed: routeros role)",
           "MGMT admins -> WAN (managed: routeros role)"
         ]
         + (routeros_wan_egress_subnets | map('regex_replace', '$', ' -> WAN (managed: routeros role)') | list)

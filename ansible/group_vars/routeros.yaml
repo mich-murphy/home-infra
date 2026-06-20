@@ -35,6 +35,11 @@ routeros_ipmi_host: 10.77.1.99 # Proxmox IPMI/BMC
 routeros_unifi_ctrl: 10.77.1.10
 routeros_truenas_host: 10.77.20.101
 routeros_docker_host_srv_ip: 10.77.20.246
+routeros_qbittorrent_peer_port: 25565
+routeros_qbittorrent_peer_target: "{{ routeros_docker_host_srv_ip }}"
+routeros_qbittorrent_peer_protocols:
+  - tcp
+  - udp
 # Router management is wired MGMT plus OOB only.
 routeros_router_admin_sources:
   - "{{ routeros_mgmt_subnet }}"

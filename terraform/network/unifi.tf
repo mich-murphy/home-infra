@@ -79,7 +79,7 @@ resource "unifi_wlan" "kds" {
   user_group_id = data.unifi_client_qos_rate.default.id
 }
 
-# GST — WPA3 transition + L2 isolation.
+# GST — WPA3 transition on a plain VLAN; RouterOS enforces guest routing policy.
 resource "unifi_wlan" "gst" {
   name            = "madviLANy-gst"
   security        = "wpapsk"
@@ -102,7 +102,7 @@ resource "unifi_wlan" "gst" {
     policy  = "allow"
   }
 
-  is_guest      = true
+  is_guest      = false
   l2_isolation  = true
   network_id    = unifi_network.vlan["gst"].id
   ap_group_ids  = [data.unifi_ap_group.default.id]
