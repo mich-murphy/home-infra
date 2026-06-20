@@ -42,6 +42,13 @@
   register: _routeros_verify_forward_filter
   check_mode: false
 
+- name: Verify dst-nat rules
+  community.routeros.api:
+    path: ip firewall nat
+    query: ".id chain action comment protocol dst-port to-addresses to-ports WHERE chain == dstnat"
+  register: _routeros_verify_dstnat
+  check_mode: false
+
 - name: Verify DHCP servers
   community.routeros.api:
     path: ip dhcp-server
@@ -128,6 +135,48 @@
       - "routeros_enable_default_drop | bool or 'DEFAULT DROP (managed: routeros role)' not in _managed_forward_comments"
     fail_msg: Managed forward default-drop state does not match routeros_enable_default_drop.
   vars:
+    _managed_forward_comments: >-
+      {{
+        _routeros_verify_forward_filter.msg
+        | select('mapping')
+        | selectattr('comment', 'defined')
+        | selectattr('comment', 'search', 'managed: routeros role')
+        | map(attribute='comment')
+        | list
+      }}
+
+- name: Assert qBittorrent peer dst-nat rules exist
+  ansible.builtin.assert:
+    that:
+      - "_expected_qbittorrent_dstnat_comments | difference(_managed_dstnat_comments) | length == 0"
+    fail_msg: "Missing qBittorrent dst-nat rules: {{ _expected_qbittorrent_dstnat_comments | difference(_managed_dstnat_comments) }}"
+  vars:
+    _expected_qbittorrent_dstnat_comments: "{{ _expected_qbittorrent_dstnat_comments_yaml | from_yaml }}"
+    _expected_qbittorrent_dstnat_comments_yaml: |
+      {% for protocol in routeros_qbittorrent_peer_protocols %}
+      - "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
+      {% endfor %}
+    _managed_dstnat_comments: >-
+      {{
+        _routeros_verify_dstnat.msg
+        | select('mapping')
+        | selectattr('comment', 'defined')
+        | selectattr('comment', 'search', 'qBittorrent peers.*managed: routeros role')
+        | map(attribute='comment')
+        | list
+      }}
+
+- name: Assert guest isolation and qBittorrent forward rules exist
+  ansible.builtin.assert:
+    that:
+      - "_expected_forward_comments | difference(_managed_forward_comments) | length == 0"
+    fail_msg: "Missing managed forward rules: {{ _expected_forward_comments | difference(_managed_forward_comments) }}"
+  vars:
+    _expected_forward_comments: "{{ (_expected_qbittorrent_forward_comments_yaml | from_yaml) + ['GST drop internal routing (managed: routeros role)'] }}"
+    _expected_qbittorrent_forward_comments_yaml: |
+      {% for protocol in routeros_qbittorrent_peer_protocols %}
+      - "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
+      {% endfor %}
     _managed_forward_comments: >-
       {{
         _routeros_verify_forward_filter.msg
