@@ -20,7 +20,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: owncloud
-          image: owncloud/server:10.16.3@sha256:adb83edb08e91d5bdcdec563248232dc060ad6a5016e182bb44fa71bb07658d3
+          image: owncloud/server:10.16.3@sha256:688b3b2ca74c1b289a0109f012cabd0acdbacb5eefdd5426fb6f517799c7d50d
           ports:
             - containerPort: 8080
           env:
