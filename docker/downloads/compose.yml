@@ -51,7 +51,7 @@ services:
     restart: unless-stopped
 
   qbitwebui:
-    image: ghcr.io/mkbula/qbitwebui:2.44.1@sha256:e485a06a0806da73d328ef5b94c97a2351eed0b8de270f1ce82a61ed1863860f
+    image: ghcr.io/mkbula/qbitwebui:2.44.2@sha256:75907e7013dedbc87226b9c095ac00b64d4eea814fd5550ccbde114d3f216b22
     container_name: qbitwebui
     security_opt:
       - no-new-privileges:true
