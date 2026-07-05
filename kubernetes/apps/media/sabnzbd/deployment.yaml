@@ -20,7 +20,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: sabnzbd
-          image: ghcr.io/linuxserver/sabnzbd:5.0.4-ls259@sha256:cfdc4199329e1c6a0c1af3335cbb6ab224bd9adaaad1b75bffe5b6e2c77e57c3
+          image: ghcr.io/linuxserver/sabnzbd:5.0.4-ls261@sha256:30cc2eb9e1c8b7c5bb90dbf3c7abb0e66643c21c3710e273a82d2f36239e176d
           ports:
             - containerPort: 8080
           env:
