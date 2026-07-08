@@ -7,6 +7,10 @@ services:
       - no-new-privileges:true
     networks:
       - proxy
+    extra_hosts:
+      # Portainer performs OAuth token exchange server-side; keep that traffic
+      # inside the proxy network instead of the Tailscale-resolved address.
+      - pocket-id.local.elmurphy.com:172.20.1.13
     volumes:
       - portainer-data:/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
