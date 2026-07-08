@@ -38,7 +38,7 @@ services:
         bind:
           propagation: rslave
     tmpfs:
-      - /transcode # ram transcode
+      - /transcode:rw,nosuid,nodev,noexec,uid=1000,gid=1000,mode=1777 # ram transcode
     ports:
       # deliberate direct LAN access; allowlisted in firewall_docker_allowed_ports
       - 8096:8096
