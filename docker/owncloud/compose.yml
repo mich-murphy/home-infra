@@ -1,7 +1,7 @@
 ---
 services:
   owncloud:
-    image: owncloud/server:10.16.3@sha256:488f1b2e2e838b5408f068820ecd6fe2ae02269ff44339742eafbc4b3b6f1ed5
+    image: owncloud/server:10.16.3@sha256:c5d30d2222802754a021f5bbeade7c0530453f8cdd0d1eb3f5591104722dfa9e
     container_name: owncloud
     security_opt:
       - no-new-privileges:true
