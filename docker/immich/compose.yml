@@ -12,6 +12,8 @@ services:
     networks:
       - proxy
       - immich-backend
+    environment:
+      - IMMICH_MACHINE_LEARNING_URL=http://immich-ml:3003
     volumes:
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
