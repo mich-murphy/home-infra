@@ -38,6 +38,7 @@ services:
       - no-new-privileges:true
     networks:
       - immich-backend
+      - immich-ml-egress
     volumes:
       - immich-ml-cache:/cache
     restart: unless-stopped
@@ -96,6 +97,8 @@ volumes:
 networks:
   proxy:
     external: true
+  immich-ml-egress:
+    name: immich-ml-egress
   immich-backend:
     name: immich-backend
     internal: true
