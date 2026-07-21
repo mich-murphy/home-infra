@@ -7,10 +7,6 @@ services:
       - no-new-privileges:true
     networks:
       - proxy
-    extra_hosts:
-      # Portainer performs OAuth token exchange server-side; keep that traffic
-      # inside the proxy network instead of the Tailscale-resolved address.
-      - pocket-id.local.elmurphy.com:172.20.1.13
     volumes:
       - portainer-data:/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -62,8 +58,12 @@ services:
     security_opt:
       - no-new-privileges:true
     networks:
-      - proxy
-      - docker-socket-proxy
+      proxy:
+        aliases:
+          # Portainer exchanges OAuth tokens server-side using the public
+          # issuer URL. Resolve it to Traefik's TLS listener inside Docker.
+          - pocket-id.local.elmurphy.com
+      docker-socket-proxy: {}
     environment:
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
       - CF_API_EMAIL=${CF_API_EMAIL}
