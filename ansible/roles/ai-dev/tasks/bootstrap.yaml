@@ -1,8 +1,21 @@
 ---
 - name: Refresh pacman and upgrade system
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/pacman
+      - --sync
+      - --refresh
+      - --sysupgrade
+      - --noconfirm
+  register: ai_dev_pacman_upgrade
+  changed_when: >-
+    'there is nothing to do' not in
+    ((ai_dev_pacman_upgrade.stdout + ai_dev_pacman_upgrade.stderr) | lower)
+
+- name: Remove the legacy tmux package
   community.general.pacman:
-    update_cache: true
-    upgrade: true
+    name: tmux
+    state: absent
 
 - name: Install official-repo packages and LSPs/formatters
   community.general.pacman:
@@ -23,7 +36,6 @@
       - direnv
       - just
       - fzf
-      - tmux
       - nodejs
       - npm
       - go
@@ -49,7 +61,7 @@
     name: paru
     state: present
   become: true
-  become_user: michael
+  become_user: "{{ username }}"
 
 - name: Install AUR packages
   kewlfft.aur.aur:
@@ -61,7 +73,7 @@
       - fisher
     state: present
   become: true
-  become_user: michael
+  become_user: "{{ username }}"
 
 - name: Install Determinate Nix
   ansible.builtin.shell:
@@ -69,30 +81,16 @@
   args:
     creates: /nix/var/nix/profiles/default/bin/nix
 
-- name: Remove npm-global Claude Code (migrated to native installer)
-  community.general.npm:
-    name: "@anthropic-ai/claude-code"
-    global: true
-    state: absent
-
-- name: Install Claude Code via native installer (per-user, self-updating)
-  ansible.builtin.shell:
-    cmd: curl -fsSL https://claude.ai/install.sh | bash
-  args:
-    creates: /home/michael/.local/bin/claude
-  become: true
-  become_user: michael
-
-- name: Set login shell to fish for michael
+- name: Set login shell to fish
   ansible.builtin.user:
-    name: michael
+    name: "{{ username }}"
     shell: /usr/bin/fish
 
-- name: Enable linger for michael (keeps tmux sessions alive across ssh logout)
+- name: Enable linger for persistent Herdr and Moshi user services
   ansible.builtin.command:
-    cmd: loginctl enable-linger michael
+    cmd: "loginctl enable-linger {{ username }}"
   args:
-    creates: /var/lib/systemd/linger/michael
+    creates: "/var/lib/systemd/linger/{{ username }}"
 
 - name: Ensure systemd-logind drop-in dir exists
   ansible.builtin.file:
@@ -102,7 +100,7 @@
     group: root
     mode: '0755'
 
-- name: Keep user processes alive after ssh logout (mosh-server survival)
+- name: Keep Herdr workspaces and the Moshi user service alive after SSH logout
   ansible.builtin.copy:
     dest: /etc/systemd/logind.conf.d/ai-dev.conf
     content: |

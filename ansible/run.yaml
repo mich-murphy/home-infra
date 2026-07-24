@@ -11,7 +11,7 @@
     - docker
 
 - name: configure ai-dev hosts
-  hosts: ai-dev
+  hosts: ai_dev
   become: true
   vars_files:
     - "group_vars/secrets.yaml"

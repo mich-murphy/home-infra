@@ -4,6 +4,12 @@ variable "docker_host_ssh_public_key" {
   default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
 }
 
+variable "proxmox_host" {
+  type        = string
+  description = "Proxmox API and SSH host; defaults to its Tailscale MagicDNS name."
+  default     = "proxmox"
+}
+
 variable "unifi_ssh_public_key" {
   type        = string
   description = "SSH public key for the mm user on the UniFi OS Server VM."
@@ -12,7 +18,7 @@ variable "unifi_ssh_public_key" {
 
 variable "ai_dev_ssh_public_key" {
   type        = string
-  description = "SSH public key for the michael user on ai-dev VMs (the laptop key)."
+  description = "SSH public key for the michael user on the ai-dev VM (the laptop key)."
   default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
 }
 
@@ -38,16 +44,6 @@ variable "arch_cloud_template_vmid" {
   type        = number
   description = "Proxmox VMID for the arch-cloud cloud-init template."
   default     = 9002
-}
-
-variable "ai_devs" {
-  type = map(object({
-    vmid = number
-  }))
-  description = "AI dev VMs to provision, keyed by hostname."
-  default = {
-    "ai-dev-bgd" = { vmid = 110 }
-  }
 }
 
 variable "enable_talos" {

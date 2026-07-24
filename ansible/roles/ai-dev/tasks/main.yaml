@@ -1,15 +1,21 @@
 ---
-- name: Configure host firewall
-  ansible.builtin.import_tasks: firewall.yaml
+- name: Enforce the ai-dev host and Tailscale identity
+  ansible.builtin.import_tasks: identity.yaml
 
-- name: System bootstrap (packages, paru, AUR, claude-code, LSPs)
+- name: System bootstrap (packages, paru, AUR, LSPs)
   ansible.builtin.import_tasks: bootstrap.yaml
 
 - name: Deploy shell/terminal configuration
   ansible.builtin.import_tasks: config.yaml
 
+- name: Configure host firewall
+  ansible.builtin.import_tasks: firewall.yaml
+
+- name: Install coding agents, Herdr, and Moshi
+  ansible.builtin.import_tasks: tools.yaml
+
 - name: Install Neovim configuration
   ansible.builtin.import_tasks: neovim.yaml
 
-- name: Per-host accounts (git, gh, claude)
+- name: Configure per-host Git identities
   ansible.builtin.import_tasks: accounts.yaml

@@ -1,12 +1,9 @@
 {# Managed by Ansible: ai-dev role. #}
 
-# Native Claude Code installer drops launcher at ~/.local/bin/claude but only
-# wires bash/zsh rc files.
+# Agent, Herdr, and Moshi installers use per-user binary directories. Keep PATH
+# management here so installers never need to rewrite shell configuration.
 fish_add_path -g $HOME/.local/bin
-
-if status is-login
-    set -x BROWSER firefox
-end
+fish_add_path -g $HOME/.opencode/bin
 
 if status is-interactive
     set -g fish_key_bindings fish_vi_key_bindings

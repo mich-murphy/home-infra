@@ -42,6 +42,13 @@
   register: _routeros_verify_forward_filter
   check_mode: false
 
+- name: Verify input filter rules
+  community.routeros.api:
+    path: ip firewall filter
+    query: ".id chain action comment in-interface protocol dst-port WHERE chain == input"
+  register: _routeros_verify_input_filter
+  check_mode: false
+
 - name: Verify dst-nat rules
   community.routeros.api:
     path: ip firewall nat
@@ -172,7 +179,12 @@
       - "_expected_forward_comments | difference(_managed_forward_comments) | length == 0"
     fail_msg: "Missing managed forward rules: {{ _expected_forward_comments | difference(_managed_forward_comments) }}"
   vars:
-    _expected_forward_comments: "{{ (_expected_qbittorrent_forward_comments_yaml | from_yaml) + ['GST drop internal routing (managed: routeros role)'] }}"
+    _expected_forward_comments: >-
+      {{
+        (_expected_qbittorrent_forward_comments_yaml | from_yaml)
+        + ["GST drop internal routing (managed: routeros role)"]
+        + (["DMZ drop internal routing (managed: routeros role)"] if routeros_enable_dmz | bool else [])
+      }}
     _expected_qbittorrent_forward_comments_yaml: |
       {% for protocol in routeros_qbittorrent_peer_protocols %}
       - "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
@@ -187,6 +199,87 @@
         | list
       }}
 
+- name: Assert explicit DMZ input and forwarding containment
+  ansible.builtin.assert:
+    that:
+      - "_expected_dmz_input_comments | difference(_managed_input_comments) | length == 0"
+      - "'DMZ drop internal routing (managed: routeros role)' in _managed_forward_comments"
+      - "_dmz_wan_comment in _managed_forward_comments"
+      - "_managed_forward_comments.index('DMZ drop internal routing (managed: routeros role)') < _managed_forward_comments.index(_dmz_wan_comment)"
+      - "_managed_input_comments.index('DMZ DNS udp to router (managed: routeros role)') < _managed_input_comments.index('DMZ drop other router input (managed: routeros role)')"
+      - "_managed_input_comments.index('DMZ DNS tcp to router (managed: routeros role)') < _managed_input_comments.index('DMZ drop other router input (managed: routeros role)')"
+      - "_managed_input_comments.index('DMZ ICMP to router (managed: routeros role)') < _managed_input_comments.index('DMZ drop other router input (managed: routeros role)')"
+    fail_msg: The ordered DMZ-to-router, DMZ-to-internal, or DMZ-to-WAN policy is incomplete.
+  vars:
+    _expected_dmz_input_comments:
+      - "DHCP to router on {{ routeros_dmz_port }} (managed: routeros role)"
+      - "DMZ DNS udp to router (managed: routeros role)"
+      - "DMZ DNS tcp to router (managed: routeros role)"
+      - "DMZ ICMP to router (managed: routeros role)"
+      - "DMZ drop other router input (managed: routeros role)"
+    _managed_input_comments: >-
+      {{
+        _routeros_verify_input_filter.msg
+        | select('mapping')
+        | selectattr('comment', 'defined')
+        | selectattr('comment', 'search', 'managed: routeros role')
+        | map(attribute='comment')
+        | list
+      }}
+    _managed_forward_comments: >-
+      {{
+        _routeros_verify_forward_filter.msg
+        | select('mapping')
+        | selectattr('comment', 'defined')
+        | selectattr('comment', 'search', 'managed: routeros role')
+        | map(attribute='comment')
+        | list
+      }}
+    _dmz_wan_comment: "{{ routeros_dmz.subnet }} -> WAN (managed: routeros role)"
+  when: routeros_enable_dmz | bool
+
+- name: Assert all managed forward rules are in their final order
+  ansible.builtin.assert:
+    that:
+      - "_managed_forward_comments == _expected_managed_forward_comments"
+    fail_msg: Managed forward rules are not in the final expected order.
+  vars:
+    _managed_forward_comments: >-
+      {{
+        _routeros_verify_forward_filter.msg
+        | select('mapping')
+        | selectattr('comment', 'defined')
+        | selectattr('comment', 'search', 'managed: routeros role')
+        | map(attribute='comment')
+        | list
+      }}
+    _expected_managed_forward_comments: >-
+      {{
+        [
+          "fwd est/rel (managed: routeros role)",
+          "fwd drop invalid (managed: routeros role)",
+          "OOB drop routed traffic (managed: routeros role)"
+        ]
+        + (["DMZ drop internal routing (managed: routeros role)"] if routeros_enable_dmz | bool else [])
+        + [
+          "WAN -> qBittorrent peers tcp (managed: routeros role)",
+          "WAN -> qBittorrent peers udp (managed: routeros role)",
+          "KDS drop DoT (managed: routeros role)",
+          "KDS drop DoQ (managed: routeros role)",
+          "MGMT -> k8s node API (managed: routeros role)",
+          "k8s node mgmt-only drop (managed: routeros role)",
+          "DFLT -> k8s LB https (managed: routeros role)",
+          "KDS -> k8s LB https (managed: routeros role)",
+          "DFLT -> SRV services (managed: routeros role)",
+          "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)",
+          "SRV -> UniFi controller (managed: routeros role)",
+          "GST drop internal routing (managed: routeros role)",
+          "MGMT admins -> WAN (managed: routeros role)"
+        ]
+        + (routeros_wan_egress_subnets | map('regex_replace', '$', ' -> WAN (managed: routeros role)') | list)
+        + (["DEFAULT DROP (managed: routeros role)"] if routeros_enable_default_drop | bool else [])
+      }}
+
 - name: Assert no unmanaged accepts are above default drop
   ansible.builtin.assert:
     that:
@@ -194,7 +287,7 @@
         item.action | default('') != 'accept'
         or (item.comment | default('')) is search('managed: routeros role|defconf')
     fail_msg: "Unmanaged accept rule appears above managed default-drop: {{ item }}"
-  loop: "{{ _forward_filter_records[:(_default_drop_index | int)] if routeros_enable_default_drop | bool else [] }}"
+  loop: "{{ _forward_filter_records[: (_default_drop_index | int)] if routeros_enable_default_drop | bool else [] }}"
   vars:
     _forward_filter_records: "{{ _routeros_verify_forward_filter.msg | select('mapping') | list }}"
     _forward_comments: "{{ _forward_filter_records | map(attribute='comment', default='') | list }}"

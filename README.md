@@ -1,5 +1,7 @@
 # home-infra
 
+<!-- markdownlint-disable MD013 -->
+
 Infrastructure-as-code for a single-server homelab running on Proxmox. Manages VM provisioning, host configuration, containerised application services, and a prepared Talos Kubernetes migration.
 
 ## Hardware
@@ -19,13 +21,13 @@ documented in [docs/truenas-storage.md](docs/truenas-storage.md).
 
 ## Architecture
 
-```
+```text
 Proxmox v9.1.6 (hypervisor)
 ├── TrueNAS VM (SRV VLAN) ─── NFS shares (media, downloads, bulk storage)
 ├── Docker Host VM (Ubuntu 24.04) ─── live services via Docker Compose
 │   └── Traefik → *.local.elmurphy.com (TLS via Cloudflare ACME)
 ├── UniFi OS Server VM (MGMT) ─── Network controller for AP/WLANs
-├── ai-dev-bgd VM (DMZ) ─── Isolated AI development sandbox
+├── ai-dev VM (DMZ) ─── Isolated AI development sandbox
 └── [Talos K8s VM] ─── prepared, gated by enable_talos, pending cutover
 ```
 
@@ -43,20 +45,23 @@ are managed through the UniFi controller API (`terraform/network`).
 | DFLT | VLAN 30 | Main wireless clients (`10.77.30.0/24`) |
 | KDS | VLAN 50 | Kids wireless clients with filtered DNS (`10.77.50.0/24`) |
 | GST | VLAN 60 | Guest wireless clients with UniFi L2 isolation (`10.77.60.0/24`) |
-| DMZ | RB5009 `ether2` / Proxmox `vmbr1` | Isolated ai-dev VMs (`10.77.99.0/24`) |
+| DMZ | RB5009 `ether2` / Proxmox `vmbr1` | Isolated ai-dev VM (`10.77.99.0/24`) |
 | OOB | RB5009 `ether7` | Break-glass router access (`10.66.0.0/30`) |
 
 The server has two ethernet ports: `eno2`/`vmbr0` trunks MGMT/SRV to RB5009
 `ether3`, while `eno1`/`vmbr1` is the untagged DMZ uplink to RB5009 `ether2`.
 The UniFi U7 Pro AP is adopted in the controller. The three managed WLANs are
 attached to the default `All APs` group and mapped to the DFLT/KDS/GST
-VLAN-only networks. The ai-dev VMs are isolated on the physical DMZ
+VLAN-only networks. The ai-dev VM is isolated on the physical DMZ
 (`10.77.99.0/24`), protected by host nftables default-deny input rules, and
-further scoped by an external Tailscale ACL policy managed outside this repo.
+controlled-output rules, and further scoped by an external Tailscale policy
+managed outside this repo.
+Its mobile workflow and deployment checks are documented in
+[docs/ai-dev.md](docs/ai-dev.md).
 
 ## Repository Structure
 
-```
+```text
 .
 ├── terraform/       # Proxmox VM provisioning
 ├── ansible/         # Host configuration (Docker host, game server)
@@ -100,13 +105,13 @@ just edit                   # edit encrypted vault secrets
 Provisions VMs on Proxmox using the [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox) provider. Secrets sourced from 1Password via the `onepassword` provider.
 Run Terraform through the `just` recipes so local state and generated cloud-init files are created with a restrictive umask. Terraform state is secret-bearing because provider data includes Proxmox credentials, WLAN PSKs, and bootstrap auth material.
 
-| VM           | ID  | Spec                          | Purpose                            |
-| ------------ | --- | ----------------------------- | ---------------------------------- |
-| truenas      | 101 | 2 CPU, 10GB RAM, 32GB         | NAS with HBA passthrough           |
-| docker-host  | 102 | 6 CPU, 10GB RAM, 128GB        | Current Docker Compose services    |
-| ai-dev-bgd   | 110 | 2 CPU, 4GB RAM, 150GB         | AI development sandbox             |
-| unifi        | 111 | 2 CPU, 4GB RAM, 40GB          | UniFi OS Server                    |
-| talos-prod-1 | 200 | 8 CPU, 12GB RAM, 100GB+128GB  | Kubernetes, created at cutover only |
+| VM | ID | Spec | Purpose |
+| --- | --- | --- | --- |
+| truenas | 101 | 2 CPU, 10GB RAM, 32GB | NAS with HBA passthrough |
+| docker-host | 102 | 6 CPU, 10GB RAM, 128GB | Current Docker Compose services |
+| ai-dev | 110 | 4 CPU, 4GB RAM, 150GB | AI development sandbox |
+| unifi | 111 | 2 CPU, 4GB RAM, 40GB | UniFi OS Server |
+| talos-prod-1 | 200 | 8 CPU, 12GB RAM, 100GB+128GB | Kubernetes, created at cutover only |
 
 Cloud-init template (`cloud_init.tftpl`) bootstraps the management user, installs qemu-guest-agent, and joins Tailscale.
 TrueNAS and docker-host are managed with `prevent_destroy`; their pinned MAC addresses are supplied through sensitive Terraform variables in the ignored root `.envrc`. The Talos VM is gated by `enable_talos=false` by default; enabling it creates VM 200, stops docker-host, and moves the iGPU passthrough to Talos.
@@ -115,14 +120,15 @@ TrueNAS and docker-host are managed with `prevent_destroy`; their pinned MAC add
 
 Configures provisioned hosts and the RB5009 with these primary roles:
 
-| Role     | Purpose                                     |
-| -------- | ------------------------------------------- |
-| common   | SSH hardening, user management              |
-| firewall | UFW rules                                   |
-| media    | NFS mounts, media user/group (UID/GID 1215) |
-| docker   | Docker engine installation                  |
-| unifi    | UniFi OS Server install                     |
-| routeros | RB5009 VLANs, DHCP, firewall, NAT, OOB port |
+| Role     | Purpose                                                |
+| -------- | ------------------------------------------------------ |
+| common   | SSH hardening, user management                         |
+| ai-dev   | Agents, Herdr/Moshi, nftables, development environment |
+| firewall | UFW rules                                              |
+| media    | NFS mounts, media user/group (UID/GID 1215)            |
+| docker   | Docker engine installation                             |
+| unifi    | UniFi OS Server install                                |
+| routeros | RB5009 VLANs, DHCP, firewall, NAT, OOB port            |
 
 Secrets are managed via ansible-vault (`ansible/group_vars/secrets.yaml`).
 

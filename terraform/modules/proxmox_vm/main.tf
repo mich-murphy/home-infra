@@ -90,5 +90,10 @@ resource "proxmox_virtual_environment_vm" "this" {
   lifecycle {
     ignore_changes  = [clone]
     prevent_destroy = true
+
+    precondition {
+      condition     = !contains(var.forbidden_bridges, var.bridge)
+      error_message = "VM ${var.name} cannot attach to forbidden bridge ${var.bridge}."
+    }
   }
 }

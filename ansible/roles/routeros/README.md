@@ -1,5 +1,7 @@
 # routeros role
 
+<!-- markdownlint-disable MD013 -->
+
 Configures the Mikrotik RB5009 (RouterOS v7) over the API using
 `community.routeros.api_modify`. All data lives in `group_vars/routeros.yaml`.
 
@@ -11,10 +13,12 @@ to be absent from the production bridge.
 ## Prerequisites
 
 1. Restricted API user on the RB5009:
-   ```
+
+   ```routeros
    /user group add name=ansible policy=api,read,write,policy,test,sensitive
    /user add name=ansible group=ansible password=<secret>
    ```
+
    Put `routeros_api_user` / `routeros_api_password` in the vault (`just edit`).
 2. Confirm the OPEN ITEMS in `group_vars/routeros.yaml` (interface names, bridge
    name, admin/IPMI IPs) against the live router.
@@ -34,8 +38,11 @@ just routeros
 ```
 
 It maintains: the out-of-band port, VLAN interfaces + per-VLAN DHCP, DMZ physical
-isolation, the firewall address-lists / **allow** rules / NAT, and management
-services restricted to `routeros_router_admin_sources` (MGMT + OOB subnets).
+isolation, ordered firewall rules / NAT, and management services restricted to
+`routeros_router_admin_sources` (MGMT + OOB subnets). DMZ input is limited to
+DHCP, DNS, and ICMP; an explicit DMZ-to-router drop follows those allows. An
+explicit DMZ-to-internal drop precedes the DMZ-to-WAN allow independently of the
+optional final default drop.
 It also keeps `vlan-filtering` and managed `default-drop` enabled. The live router
 was verified in this state on 2026-06-06.
 
@@ -106,6 +113,6 @@ its NIC with VLAN 20, and this role reserves `10.77.20.246` on `srv-dhcp`. After
 VM reconnects or reboots, verify the guest has a `10.77.20.0/24` lease, then update any
 external DNS records that still point service names at the old `10.77.1.246` address.
 
-The ai-dev guests should land on the physical DMZ (`10.77.99.0/24`) through `vmbr1`.
-If they receive `10.77.1.0/24` leases, the RB5009 DMZ port is still bridged into MGMT
+The ai-dev VM should land on the physical DMZ (`10.77.99.0/24`) through `vmbr1`.
+If it receives a `10.77.1.0/24` lease, the RB5009 DMZ port is still bridged into MGMT
 or the cabling/port map is wrong; do not enable `default-drop` until that is corrected.

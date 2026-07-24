@@ -1,6 +1,11 @@
 ---
 username: michael
+user_shell: /usr/bin/fish
 ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
+ai_dev_hostname: ai-dev
+ai_dev_physical_interface: eth0
+ai_dev_dmz_gateway: 10.77.99.1
+ai_dev_dns_server: 10.77.1.1
 
 swap_mode: zram
 swap_swappiness: 100

@@ -17,11 +17,36 @@
   when: swap_mode == 'none'
 
 # skipped when there's no swap (also unprivileged LXCs can't write kernel sysctls)
-- name: tune swappiness
-  ansible.posix.sysctl:
-    name: vm.swappiness
-    value: "{{ swap_swappiness | string }}"
-    state: present
-    sysctl_set: true
-    reload: true
+- name: remove legacy swappiness entry from sysctl.conf
+  ansible.builtin.lineinfile:
+    path: /etc/sysctl.conf
+    regexp: '^\s*vm\.swappiness\s*='
+    state: absent
   when: swap_mode != 'none'
+
+- name: persist swappiness
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/90-swap.conf
+    content: |
+      vm.swappiness={{ swap_swappiness }}
+    owner: root
+    group: root
+    mode: "0644"
+  register: swappiness_config
+  when: swap_mode != 'none'
+
+- name: read active swappiness
+  ansible.builtin.command:
+    cmd: /usr/bin/sysctl -n vm.swappiness
+  register: active_swappiness
+  changed_when: false
+  check_mode: false
+  when: swap_mode != 'none'
+
+- name: apply swappiness
+  ansible.builtin.command:
+    cmd: "/usr/bin/sysctl -w vm.swappiness={{ swap_swappiness }}"
+  when:
+    - swap_mode != 'none'
+    - swappiness_config.changed or active_swappiness.stdout != (swap_swappiness | string)
+  changed_when: true

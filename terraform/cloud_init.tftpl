@@ -36,5 +36,5 @@ runcmd:
   - pacman -Syu --noconfirm
   - pacman -S --noconfirm tailscale
   - systemctl enable --now tailscaled
-  - tailscale up --ssh --hostname=${hostname} --advertise-tags=tag:ai-dev --auth-key=file:/etc/tailscale/authkey && rm -f /etc/tailscale/authkey
+  - tailscale up --ssh=false --hostname=${hostname} --advertise-tags=tag:ai-dev --auth-key=file:/etc/tailscale/authkey && rm -f /etc/tailscale/authkey
 %{ endif ~}

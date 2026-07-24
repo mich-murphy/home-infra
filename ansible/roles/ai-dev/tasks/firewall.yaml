@@ -4,17 +4,66 @@
     name: nftables
     state: present
 
-- name: Deploy nftables ruleset
+- name: Verify the configured physical DMZ interface exists
+  ansible.builtin.assert:
+    that:
+      - "ai_dev_physical_interface in ansible_facts.interfaces"
+    fail_msg: "Configured DMZ interface {{ ai_dev_physical_interface }} is not present."
+
+- name: Remove the legacy physical-interface IPv6 entry from sysctl.conf
+  ansible.builtin.lineinfile:
+    path: /etc/sysctl.conf
+    regexp: >-
+      ^\s*net\.ipv6\.conf\.{{ ai_dev_physical_interface | regex_escape }}\.disable_ipv6\s*=
+    state: absent
+
+- name: Persist IPv6 disable on the physical DMZ interface
   ansible.builtin.copy:
-    src: nftables.conf
+    dest: /etc/sysctl.d/90-ai-dev-dmz.conf
+    content: |
+      net.ipv6.conf.{{ ai_dev_physical_interface }}.disable_ipv6=1
+    owner: root
+    group: root
+    mode: "0644"
+  register: ai_dev_ipv6_config
+
+- name: Read the physical DMZ interface IPv6 state
+  ansible.builtin.command:
+    cmd: "/usr/bin/sysctl -n net.ipv6.conf.{{ ai_dev_physical_interface }}.disable_ipv6"
+  register: ai_dev_ipv6_state
+  changed_when: false
+  check_mode: false
+
+- name: Disable IPv6 on the physical DMZ interface
+  ansible.builtin.command:
+    cmd: "/usr/bin/sysctl -w net.ipv6.conf.{{ ai_dev_physical_interface }}.disable_ipv6=1"
+  when: ai_dev_ipv6_config.changed or ai_dev_ipv6_state.stdout != "1"
+  changed_when: true
+
+- name: Deploy nftables ruleset
+  ansible.builtin.template:
+    src: nftables.conf.j2
     dest: /etc/nftables.conf
     owner: root
     group: root
     mode: '0644'
   register: nft_ruleset
 
-- name: Enable and start nftables
+- name: Check whether the managed nftables table is loaded
+  ansible.builtin.command:
+    cmd: /usr/bin/nft list table inet filter
+  register: nft_table
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Enable nftables at boot
   ansible.builtin.systemd_service:
     name: nftables
     enabled: true
-    state: "{{ 'restarted' if nft_ruleset.changed else 'started' }}"
+
+- name: Load the nftables ruleset when needed
+  ansible.builtin.command:
+    cmd: /usr/bin/nft -f /etc/nftables.conf
+  when: nft_ruleset.changed or nft_table.rc != 0
+  changed_when: true

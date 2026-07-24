@@ -1,0 +1,47 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority 0; policy drop;
+
+    ct state established,related accept
+    iifname "lo" accept
+
+    # Moshi reaches normal OpenSSH and mosh only through the tailnet.
+    iifname "tailscale0" tcp dport 22 accept
+    iifname "tailscale0" udp dport 60000-61000 accept
+    iifname "tailscale0" drop
+
+    # DHCP is the only unsolicited input accepted from the physical DMZ.
+    iifname "{{ ai_dev_physical_interface }}" ip saddr {{ ai_dev_dmz_gateway }} udp sport 67 udp dport 68 accept
+    iifname "{{ ai_dev_physical_interface }}" drop
+  }
+
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+  }
+
+  chain output {
+    type filter hook output priority 0; policy drop;
+
+    ct state established,related accept
+    oifname "lo" accept
+
+    # The guest may acquire a lease and use only the router-advertised DNS service.
+    oifname "{{ ai_dev_physical_interface }}" ip daddr { {{ ai_dev_dmz_gateway }}, 255.255.255.255 } udp sport 68 udp dport 67 accept
+    oifname "{{ ai_dev_physical_interface }}" ip daddr {{ ai_dev_dns_server }} udp dport 53 accept
+    oifname "{{ ai_dev_physical_interface }}" ip daddr {{ ai_dev_dns_server }} tcp dport 53 accept
+
+    # Tailscale's local MagicDNS resolver is infrastructure, not a peer.
+    oifname "tailscale0" ip daddr 100.100.100.100 udp dport 53 accept
+    oifname "tailscale0" ip daddr 100.100.100.100 tcp dport 53 accept
+
+    # Never initiate sessions to homelab or tailnet peers.
+    ip daddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10 } drop
+
+    # Public IPv4 egress remains available for updates and provider APIs.
+    meta nfproto ipv4 oifname "{{ ai_dev_physical_interface }}" accept
+  }
+}

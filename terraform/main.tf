@@ -14,7 +14,6 @@ locals {
   proxmox_creds = {
     username = local.scp["scp username"].value
     password = local.scp["scp password"].value
-    host     = local.scp["hostname"].value
     # use an ephemeral/tagged single-use key; the previous shared key leaked into
     # cloud-init logs and must be rotated in the Tailscale admin console
     tailscale_auth_key = local.scp["tailscale authkey"].value
@@ -22,7 +21,7 @@ locals {
 }
 
 provider "proxmox" {
-  endpoint  = "https://${local.proxmox_creds.host}:8006"
+  endpoint  = "https://${var.proxmox_host}:8006"
   api_token = "${data.onepassword_item.proxmox.username}=${data.onepassword_item.proxmox.password}"
   insecure  = true
   ssh {
@@ -31,7 +30,7 @@ provider "proxmox" {
     password = local.proxmox_creds.password
     node {
       name    = local.proxmox_node
-      address = local.proxmox_creds.host
+      address = var.proxmox_host
     }
   }
 }
@@ -385,21 +384,26 @@ resource "proxmox_virtual_environment_vm" "talos_control_plane" {
   }
 }
 
+moved {
+  from = module.ai_dev["ai-dev-bgd"]
+  to   = module.ai_dev
+}
+
 module "ai_dev" {
-  for_each            = var.ai_devs
   source              = "./modules/proxmox_vm"
-  name                = each.key
-  vmid                = each.value.vmid
+  name                = "ai-dev"
+  vmid                = 110
   clone_template_vmid = var.arch_cloud_template_vmid
   tags                = ["arch", "ai-dev"]
-  cores               = 2
+  cores               = 4
   memory_mib          = 4096
   disk_size           = 150
   bridge              = "vmbr1"
+  forbidden_bridges   = ["vmbr0"]
   ciuser              = "michael"
   ssh_public_key      = var.ai_dev_ssh_public_key
   cloud_init_content = templatefile("cloud_init.tftpl", {
-    hostname           = each.key
+    hostname           = "ai-dev"
     os_family          = "arch"
     tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
   })

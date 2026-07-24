@@ -1,0 +1,61 @@
+---
+- name: Set the Linux hostname
+  ansible.builtin.hostname:
+    name: "{{ ai_dev_hostname }}"
+    use: systemd
+
+- name: Disable Tailscale SSH and set the tailnet hostname
+  ansible.builtin.command:
+    cmd: "tailscale set --hostname={{ ai_dev_hostname }} --ssh=false"
+  changed_when: false
+
+- name: Read the Tailscale identity
+  ansible.builtin.command:
+    cmd: tailscale status --json
+  register: ai_dev_tailscale_status
+  changed_when: false
+  check_mode: false
+
+- name: Read the Tailscale preferences
+  ansible.builtin.command:
+    cmd: tailscale debug prefs
+  register: ai_dev_tailscale_prefs
+  changed_when: false
+  check_mode: false
+
+- name: Read the static Linux hostname
+  ansible.builtin.command:
+    cmd: hostnamectl --static
+  register: ai_dev_static_hostname
+  changed_when: false
+  check_mode: false
+
+- name: Verify the Linux and MagicDNS identities
+  ansible.builtin.assert:
+    that:
+      - "ai_dev_static_hostname.stdout == ai_dev_hostname"
+      - "(ai_dev_tailscale_status.stdout | from_json).Self.HostName == ai_dev_hostname"
+      - "(ai_dev_tailscale_status.stdout | from_json).Self.DNSName.split('.')[0] == ai_dev_hostname"
+      - "not ((ai_dev_tailscale_prefs.stdout | from_json).RunSSH | bool)"
+    fail_msg: Linux hostname, MagicDNS identity, or Tailscale SSH state does not match the ai-dev policy.
+  when: not ansible_check_mode
+
+- name: Ensure the OpenSSH drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Allow loopback gateway forwarding without exposing remote forwards
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/60-ai-dev-forwarding.conf
+    content: |
+      AllowTcpForwarding local
+      GatewayPorts no
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/sbin/sshd -t -f %s
+  notify: restart ai-dev sshd

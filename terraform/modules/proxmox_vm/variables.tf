@@ -42,6 +42,12 @@ variable "bridge" {
   default     = "vmbr0"
 }
 
+variable "forbidden_bridges" {
+  type        = set(string)
+  description = "Host bridges this VM must never attach to."
+  default     = []
+}
+
 variable "cloud_init_content" {
   type        = string
   description = "Rendered cloud-init vendor-data uploaded as a Proxmox snippet."

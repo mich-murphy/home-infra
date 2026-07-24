@@ -1,5 +1,0 @@
-#!/bin/sh
-# Managed by Ansible: ai-dev role.
-# tmux copy-pipe passes the pane tty as $1.
-tty="${1:-/dev/tty}"
-printf '\033]52;c;%s\a' "$(base64 -w0)" > "$tty"

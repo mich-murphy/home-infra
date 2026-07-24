@@ -6,7 +6,7 @@
     owner: root
     group: root
     mode: "0755"
-  when: ansible_service_mgr == 'systemd'
+  when: ansible_facts["service_mgr"] == "systemd"
 
 - name: configure journald retention
   ansible.builtin.copy:
@@ -18,10 +18,10 @@
       [Journal]
       SystemMaxUse={{ journald_system_max_use }}
   register: journald_retention
-  when: ansible_service_mgr == 'systemd'
+  when: ansible_facts["service_mgr"] == "systemd"
 
 - name: restart journald after retention change
   ansible.builtin.systemd:
     name: systemd-journald
     state: restarted
-  when: ansible_service_mgr == 'systemd' and journald_retention.changed
+  when: ansible_facts["service_mgr"] == "systemd" and journald_retention.changed

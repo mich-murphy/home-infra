@@ -6,7 +6,7 @@
     state: present
     update_cache: true
     lock_timeout: 300
-  when: ansible_os_family == "Debian"
+  when: ansible_facts["os_family"] == "Debian"
 
 - name: ensure wheel group exists
   ansible.builtin.group:
@@ -16,7 +16,7 @@
 - name: create management user
   ansible.builtin.user:
     name: "{{ username }}"
-    shell: /bin/bash
+    shell: "{{ user_shell | default('/bin/bash') }}"
     groups: wheel
     append: true
 
@@ -28,10 +28,23 @@
     group: "{{ username }}"
     mode: "0750"
 
+- name: ensure management user's SSH directory exists
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.ssh"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0700"
+
 - name: add authorised ssh key to user
-  ansible.posix.authorized_key:
-    user: "{{ username }}"
-    key: "{{ ssh_public_key }}"
+  ansible.builtin.lineinfile:
+    path: "/home/{{ username }}/.ssh/authorized_keys"
+    line: "{{ ssh_public_key }}"
+    state: present
+    create: true
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0600"
 
 - name: allow wheel group sudo without password
   ansible.builtin.lineinfile:
