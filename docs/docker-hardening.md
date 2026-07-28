@@ -23,6 +23,8 @@ Applied capability drops:
 - `docker/downloads/compose.yml`: `qbitwebui` with `cap_drop: [ALL]`; `qbittorrent` and `sabnzbd` with LSIO retained init capabilities
 - `docker/immich/compose.yml`: `immich-server` with `cap_drop: [ALL]`; `redis` and `database` with retained init capabilities
 - `docker/jellyfin/compose.yml`: `cap_drop: [ALL]`
+- `docker/jellyplex-watched/compose.yml`: retained init capabilities for its
+  entrypoint to fix ownership and drop to UID/GID 1000
 - `docker/miniflux/compose.yml`: `miniflux` with `cap_drop: [ALL]`; `miniflux-db` with retained init capabilities
 - `docker/owncloud/compose.yml`: `owncloud`, `owncloud-mariadb`, and `owncloud-redis` with retained init capabilities
 - `docker/pinchflat/compose.yml`: `cap_drop: [ALL]`

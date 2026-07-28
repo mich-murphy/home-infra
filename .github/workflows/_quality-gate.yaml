@@ -67,6 +67,8 @@ jobs:
           MAXMIND_LICENSE_KEY: ci-placeholder
           OWNCLOUD_DB_PASSWORD: ci-placeholder
           PLEX_CLAIM: ci-placeholder
+          JELLYPLEX_JELLYFIN_TOKEN: ci-placeholder
+          JELLYPLEX_PLEX_TOKEN: ci-placeholder
           TZ: Australia/Melbourne
           UPLOAD_LOCATION: /tmp/immich-upload
         run: |
