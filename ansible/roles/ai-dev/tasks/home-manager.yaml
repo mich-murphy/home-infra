@@ -256,7 +256,6 @@
       - just
       - fzf
       - npm
-      - go
       - btop
       - sd
       - jq
