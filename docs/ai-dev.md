@@ -79,13 +79,14 @@ changes when the upstream agent versions have not changed.
 
 ## Interactive setup
 
-Home Manager owns OpenCode and the shared Fish, Starship, FZF, Git, Hunk,
-Herdr, Yazi, and portable CLI configuration. Ansible reruns the official
+Home Manager owns OpenCode and the shared Fish, Starship, FZF, Git behavior,
+Hunk, Herdr, Yazi, and portable CLI configuration. Ansible writes ai-dev's
+vaulted personal and BusinessCraft identity fragments with mode `0600`; the Mac
+retains its separate Home Manager-owned identities. Ansible reruns the official
 stable installers for Claude Code, Codex, Pi, Herdr, and Moshi on every
 deployment, comparing versions before and after so unchanged installers remain
-idempotent. The Mac and ai-dev use the same Home Manager-owned personal and
-BusinessCraft Git identities. Ansible does not copy SSH keys, OAuth sessions,
-or API keys. Authenticate each tool interactively:
+idempotent. Ansible does not copy SSH keys, OAuth sessions, or API keys.
+Authenticate each tool interactively:
 
 ```sh
 gh auth login --web --git-protocol ssh

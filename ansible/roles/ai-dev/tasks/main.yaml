@@ -11,6 +11,9 @@
 - name: Build and activate the Home Manager profile
   ansible.builtin.import_tasks: home-manager.yaml
 
+- name: Install the ai-dev Git identity fragments
+  ansible.builtin.import_tasks: accounts.yaml
+
 - name: Install coding agents, Herdr, and Moshi
   ansible.builtin.import_tasks: tools.yaml
 

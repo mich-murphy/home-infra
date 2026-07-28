@@ -1,0 +1,35 @@
+---
+- name: Require the vaulted ai-dev Git identities
+  ansible.builtin.assert:
+    that:
+      - git_user_name is defined
+      - git_user_email is defined
+      - git_businesscraft_email is defined
+      - git_user_email | length > 0
+      - git_businesscraft_email | length > 0
+    fail_msg: The ai-dev personal and BusinessCraft Git identities must be defined.
+  no_log: true
+
+- name: Deploy the personal Git identity
+  ansible.builtin.copy:
+    content: |
+      [user]
+          name = {{ git_user_name }}
+          email = {{ git_user_email }}
+    dest: "/home/{{ username }}/.gitconfig-personal"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0600"
+  no_log: true
+
+- name: Deploy the BusinessCraft Git identity
+  ansible.builtin.copy:
+    content: |
+      [user]
+          name = {{ git_user_name }}
+          email = {{ git_businesscraft_email }}
+    dest: "/home/{{ username }}/.gitconfig-businesscraft"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0600"
+  no_log: true
