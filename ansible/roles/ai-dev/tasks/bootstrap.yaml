@@ -17,38 +17,21 @@
     name: tmux
     state: absent
 
-- name: Install official-repo packages and LSPs/formatters
+- name: Install bootstrap packages and Neovim LSPs/formatters
   community.general.pacman:
     state: present
     name:
       - base-devel
       - git
       - fish
-      - starship
       - neovim
-      - github-cli
-      - lazygit
-      - ripgrep
-      - fd
-      - bat
-      - eza
-      - zoxide
-      - direnv
-      - just
-      - fzf
-      - nodejs
-      - npm
-      - go
       - openssh
       - mosh
-      - btop
-      - sd
-      - jq
-      - tree
-      - procs
       - rsync
       - curl
-      - wget
+      - python
+      # Required by the retained markdownlint-cli editor package.
+      - nodejs
       - stylua
       - gopls
       - delve
@@ -67,10 +50,8 @@
   kewlfft.aur.aur:
     use: paru
     name:
-      - ouch
       - tflint
       - marksman
-      - fisher
     state: present
   become: true
   become_user: "{{ username }}"

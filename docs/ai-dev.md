@@ -13,7 +13,8 @@ Moshi -> Tailscale private network -> OpenSSH -> Mosh when available -> Herdr
 Tailscale SSH stays disabled. Moshi connects to the guest's normal OpenSSH
 server through Tailscale, then uses Mosh's per-connection UDP server when the
 network permits it. Herdr is the only persistent multiplexer and retains its
-default `Ctrl-B` prefix.
+shared `Ctrl-A` prefix. `Ctrl+Shift+L` is encoded as F12 by a supporting
+terminal, forwarded by Herdr, and bound by Fish to clear the focused pane.
 
 ## Deployment
 
@@ -54,20 +55,37 @@ Then stage the guest and router changes:
 
 ```sh
 cd ansible
-ansible-playbook run.yaml --vault-password-file .vaultpass --limit ai-dev --check
+ansible-playbook run.yaml --vault-password-file .vaultpass \
+  --limit ai-dev --check --diff
 ansible-playbook run.yaml --vault-password-file .vaultpass --limit ai-dev
 ansible-playbook run.yaml --vault-password-file .vaultpass --limit ai-dev
 cd ..
 just routeros
 ```
 
-The second live AI host run must report no changes.
+The ai-dev role clones the public `nix-config` repository to
+`/home/michael/dev/nix-config`, fast-forwards it to `origin/main`, builds
+`homeConfigurations."michael@ai-dev"`, and activates it as `michael`. A
+non-fast-forward checkout or conflicting local change stops deployment.
+Check mode builds the activation package but never activates it.
+
+The first activation directly replaces the old Ansible-managed Fish, Starship,
+and global Git files and removes the retired Fisher plugins. It preserves Fish
+variables, histories, credentials, OAuth sessions, OpenCode configuration, and
+other application state. No migration backup is created. After Home Manager is
+active, Ansible removes duplicate Arch CLI packages and the old
+`.opencode/bin/opencode` binary. The second live AI host run must report no
+changes when the upstream agent versions have not changed.
 
 ## Interactive setup
 
-Ansible installs the latest stable Claude Code, Codex, Pi, OpenCode, Herdr, and
-Moshi host tools as `michael`. It does not copy OAuth sessions or export API
-keys. Authenticate each tool interactively:
+Home Manager owns OpenCode and the shared Fish, Starship, FZF, Git, Hunk,
+Herdr, Yazi, and portable CLI configuration. Ansible reruns the official
+stable installers for Claude Code, Codex, Pi, Herdr, and Moshi on every
+deployment, comparing versions before and after so unchanged installers remain
+idempotent. The Mac and ai-dev use the same Home Manager-owned personal and
+BusinessCraft Git identities. Ansible does not copy SSH keys, OAuth sessions,
+or API keys. Authenticate each tool interactively:
 
 ```sh
 gh auth login --web --git-protocol ssh
@@ -114,6 +132,15 @@ Moshi's full agent integration sends limited notification summaries, approval
 details, metadata, pairing, and WebSocket control traffic through Moshi's
 service. Terminal traffic, source files, transcripts, and diffs remain direct.
 
+## Neovim exception
+
+Neovim remains deliberately outside Home Manager on ai-dev. Pacman owns
+`/usr/bin/nvim` and the temporary editor LSP/formatter packages. Ansible clones
+the public Neovim configuration into `~/.config/nvim` only when it is missing,
+with updates disabled; it never pulls, resets, or edits an existing checkout.
+This exception remains until the Neovim/Mason package skip configuration is
+repaired separately.
+
 ## Tailnet policy
 
 The tailnet policy is managed outside this repository. Give only approved user
@@ -148,6 +175,8 @@ ip route
 sudo nft list ruleset
 systemctl --user status moshi-hook
 ss -ltn 'sport = :24543'
+command -v nvim stylua gopls marksman
+fish -c 'type -p opencode hunk yazi btop bat direnv'
 ```
 
 The guest must have one `ens18` address in `10.77.99.0/24`, no route to internal
@@ -155,19 +184,32 @@ VLANs, no physical-interface IPv6 address, and no listener for port 24543 except
 `127.0.0.1`. Test that HTTPS and gateway DNS work, while new connections to
 MGMT, SRV, DFLT, KDS, GST, other DMZ hosts, and tailnet peers fail.
 
+Neovim and its temporary editor tools must resolve from `/usr/bin`; shared CLI
+tools and OpenCode must resolve from the Home Manager profile. Confirm Fish
+colours, the F12 clear binding, Starship, FZF, Git, Hunk, Herdr, Yazi, btop,
+bat, and direnv match the Mac behavior. The shared instruction and skill links
+must exist under `.claude`, `.codex`, `.pi`, and `.agents`. Existing OpenCode
+authentication/plugins and all existing `~/.config/nvim` modifications must
+remain intact.
+
+Herdr does not watch its live configuration. After changing
+`~/dev/nix-config/config/herdr/config.toml`, run
+`herdr server reload-config` in each active session that should receive the
+new settings.
+
 From an unapproved tailnet device, TCP 22 and UDP 60000-61000 must be denied.
 From the approved phone, verify key-based OpenSSH, Mosh and SSH fallback,
 Wi-Fi/cellular roaming, persistent Herdr panes, agent inbox and approval events,
 deep links, and direct OSC52 clipboard copying.
 
-Finally, verify the conditional Git identities:
+Finally, verify the shared Git identities:
 
 ```sh
-mkdir -p ~/work/businesscraft/identity-test ~/work/personal-identity-test
-git -C ~/work/businesscraft/identity-test init
-git -C ~/work/personal-identity-test init
-git -C ~/work/businesscraft/identity-test config user.email
-git -C ~/work/personal-identity-test config user.email
+mkdir -p ~/businesscraft/identity-test ~/personal-identity-test
+git -C ~/businesscraft/identity-test init
+git -C ~/personal-identity-test init
+git -C ~/businesscraft/identity-test config user.email
+git -C ~/personal-identity-test config user.email
 ```
 
 ## References

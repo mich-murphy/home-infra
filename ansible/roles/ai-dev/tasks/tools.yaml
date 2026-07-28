@@ -1,7 +1,12 @@
 ---
 - name: Read the installed Node.js version
   ansible.builtin.command:
-    cmd: node --version
+    argv:
+      - /usr/bin/env
+      - node
+      - --version
+  environment:
+    PATH: "/home/{{ username }}/.nix-profile/bin:/usr/bin"
   register: ai_dev_node_version
   changed_when: false
   check_mode: false
@@ -12,42 +17,106 @@
       - "ai_dev_node_version.stdout | regex_replace('^v', '') is version('22.19.0', '>=')"
     fail_msg: "Pi requires Node.js >=22.19.0; found {{ ai_dev_node_version.stdout }}."
 
+- name: Read coding agent and remote tool versions before installation
+  ansible.builtin.shell:
+    cmd: |
+      if [[ -x "{{ item.executable }}" ]]; then
+        "{{ item.executable }}" --version 2>&1
+      fi
+    executable: /bin/bash
+  become_user: "{{ username }}"
+  environment:
+    HOME: "/home/{{ username }}"
+  loop:
+    - name: Claude Code
+      executable: "/home/{{ username }}/.local/bin/claude"
+    - name: Codex
+      executable: "/home/{{ username }}/.local/bin/codex"
+    - name: Pi
+      executable: "/home/{{ username }}/.local/bin/pi"
+    - name: Herdr
+      executable: "/home/{{ username }}/.local/bin/herdr"
+    - name: Moshi host tooling
+      executable: "/home/{{ username }}/.local/bin/moshi-hook"
+  loop_control:
+    label: "{{ item.name }}"
+  register: ai_dev_agent_versions_before
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
 - name: Install latest stable coding agents and remote tooling
   ansible.builtin.shell:
     cmd: "set -o pipefail && {{ item.command }}"
     executable: /bin/bash
-    creates: "{{ item.creates }}"
   become_user: "{{ username }}"
   environment:
     CODEX_NON_INTERACTIVE: "1"
     HOME: "/home/{{ username }}"
-    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.opencode/bin:/usr/local/sbin:/usr/local/bin:/usr/bin"
+    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/sbin:/usr/local/bin:/usr/bin"
     SHELL: /usr/bin/fish
     USER: "{{ username }}"
   loop:
     - name: Claude Code
       command: curl -fsSL https://claude.ai/install.sh | bash -s stable
-      creates: "/home/{{ username }}/.local/bin/claude"
     - name: Codex
       command: curl -fsSL https://chatgpt.com/codex/install.sh | sh
-      creates: "/home/{{ username }}/.local/bin/codex"
     - name: Pi
       # Pi prompts through /dev/tty when one is available. Detach its controlling
       # terminal so the official installer selects its documented unattended path.
       command: setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
-      creates: "/home/{{ username }}/.local/bin/pi"
-    - name: OpenCode
-      command: curl -fsSL https://opencode.ai/install | bash -s -- --no-modify-path
-      creates: "/home/{{ username }}/.opencode/bin/opencode"
     - name: Herdr
       command: curl -fsSL https://herdr.dev/install.sh | sh
-      creates: "/home/{{ username }}/.local/bin/herdr"
     - name: Moshi host tooling
       command: curl -fsSL https://getmoshi.app/install.sh | sh
-      creates: "/home/{{ username }}/.local/bin/moshi-hook"
   loop_control:
     label: "{{ item.name }}"
   changed_when: false
+  when: not ansible_check_mode
+
+- name: Read coding agent and remote tool versions after installation
+  ansible.builtin.shell:
+    cmd: |
+      if [[ -x "{{ item.executable }}" ]]; then
+        "{{ item.executable }}" --version 2>&1
+      fi
+    executable: /bin/bash
+  become_user: "{{ username }}"
+  environment:
+    HOME: "/home/{{ username }}"
+  loop:
+    - name: Claude Code
+      executable: "/home/{{ username }}/.local/bin/claude"
+    - name: Codex
+      executable: "/home/{{ username }}/.local/bin/codex"
+    - name: Pi
+      executable: "/home/{{ username }}/.local/bin/pi"
+    - name: Herdr
+      executable: "/home/{{ username }}/.local/bin/herdr"
+    - name: Moshi host tooling
+      executable: "/home/{{ username }}/.local/bin/moshi-hook"
+  loop_control:
+    label: "{{ item.name }}"
+  register: ai_dev_agent_versions_after
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Report coding agent and remote tool version changes
+  ansible.builtin.debug:
+    msg: >-
+      {{ item.0.item.name }}:
+      {{ item.0.stdout | default('not installed', true) }} ->
+      {{ item.1.stdout | default('not installed', true) }}
+  loop: >-
+    {{
+      ai_dev_agent_versions_before.results |
+      zip(ai_dev_agent_versions_after.results)
+    }}
+  loop_control:
+    label: "{{ item.0.item.name }}"
+  changed_when: item.0.stdout != item.1.stdout
+  when: not ansible_check_mode
 
 - name: Ensure agent integration directories exist
   ansible.builtin.file:
@@ -68,7 +137,7 @@
   become_user: "{{ username }}"
   environment:
     HOME: "/home/{{ username }}"
-    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.opencode/bin:/usr/local/bin:/usr/bin"
+    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
   loop:
     - claude
     - codex
@@ -83,7 +152,7 @@
   become_user: "{{ username }}"
   environment:
     HOME: "/home/{{ username }}"
-    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.opencode/bin:/usr/local/bin:/usr/bin"
+    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
   changed_when: false
 
 - name: Verify tools resolve in non-interactive Fish
@@ -93,6 +162,9 @@
       - -c
       - "command --search {{ item }}"
   become_user: "{{ username }}"
+  environment:
+    HOME: "/home/{{ username }}"
+    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
   loop:
     - claude
     - codex
@@ -106,6 +178,9 @@
   ansible.builtin.command:
     cmd: "/usr/bin/fish -c '{{ item }} --version'"
   become_user: "{{ username }}"
+  environment:
+    HOME: "/home/{{ username }}"
+    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
   loop:
     - claude
     - codex
