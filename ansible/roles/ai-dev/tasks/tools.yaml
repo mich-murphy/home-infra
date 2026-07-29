@@ -155,6 +155,22 @@
     PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
   changed_when: false
 
+- name: Ensure the Fish configuration directory exists
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.config/fish/conf.d"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Configure unrestricted coding agent aliases
+  ansible.builtin.copy:
+    src: coding-agent-aliases.fish
+    dest: "/home/{{ username }}/.config/fish/conf.d/coding-agent-aliases.fish"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"
+
 - name: Verify tools resolve in non-interactive Fish
   ansible.builtin.command:
     argv:

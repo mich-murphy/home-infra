@@ -149,8 +149,15 @@ Neovim remains deliberately outside Home Manager on ai-dev. Pacman owns
 `/usr/bin/nvim` and the temporary editor LSP/formatter packages. Ansible clones
 the public Neovim configuration into `~/.config/nvim` only when it is missing,
 with updates disabled; it never pulls, resets, or edits an existing checkout.
-This exception remains until the Neovim/Mason package skip configuration is
-repaired separately.
+An Ansible-managed site plugin outside that checkout, at
+`~/.local/share/nvim/site/plugin/osc52.lua`, uses Neovim's built-in OSC 52 copy
+function and makes normal yanks use the system clipboard. Its paste callback
+returns the last local yank immediately because remote terminals commonly block
+OSC 52 clipboard reads, which would otherwise pause Neovim for up to ten
+seconds. The plugin also reapplies `unnamedplus` after LazyVim's deferred
+`VeryLazy` clipboard reset for SSH sessions. Use the terminal's paste action to
+insert device clipboard content. This exception remains until the Neovim/Mason
+package skip configuration is repaired separately.
 
 ## Tailnet policy
 
@@ -188,6 +195,9 @@ systemctl --user status moshi-hook
 ss -ltn 'sport = :24543'
 command -v nvim stylua gopls marksman
 fish -c 'type -p opencode hunk yazi btop bat direnv'
+nvim --headless \
+  '+lua print(vim.g.clipboard.name, vim.o.clipboard)' \
+  +qa
 ```
 
 The guest must have one `ens18` address in `10.77.99.0/24`, no route to internal
@@ -201,7 +211,8 @@ colours, the F12 clear binding, Starship, FZF, Git, Hunk, Herdr, Yazi, btop,
 bat, and direnv match the Mac behavior. The shared instruction and skill links
 must exist under `.claude`, `.codex`, `.pi`, and `.agents`. Existing OpenCode
 authentication/plugins and all existing `~/.config/nvim` modifications must
-remain intact.
+remain intact. The Neovim clipboard check must report `OSC 52 (copy only)` and
+include `unnamedplus`.
 
 Herdr does not watch its live configuration. After changing
 `~/dev/nix-config/config/herdr/config.toml`, run
