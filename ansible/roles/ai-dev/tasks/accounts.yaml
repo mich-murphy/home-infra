@@ -33,6 +33,8 @@
       [user]
           name = {{ git_businesscraft_name }}
           email = {{ git_businesscraft_email }}
+      [core]
+          sshCommand = ssh -i ~/.ssh/github_bc -o IdentitiesOnly=yes
     dest: "/home/{{ username }}/.gitconfig-businesscraft"
     owner: "{{ username }}"
     group: "{{ username }}"
