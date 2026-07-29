@@ -22,6 +22,7 @@
     state: present
     name:
       - base-devel
+      - bubblewrap
       - git
       - fish
       - neovim
