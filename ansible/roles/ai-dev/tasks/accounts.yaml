@@ -4,18 +4,23 @@
     that:
       - git_user_name is defined
       - git_user_email is defined
+      - git_businesscraft_name is defined
       - git_businesscraft_email is defined
+      - git_user_name | length > 0
       - git_user_email | length > 0
+      - git_businesscraft_name | length > 0
       - git_businesscraft_email | length > 0
     fail_msg: The ai-dev personal and BusinessCraft Git identities must be defined.
   no_log: true
 
-- name: Deploy the personal Git identity
+- name: Deploy the personal Git identity and BusinessCraft path selector
   ansible.builtin.copy:
     content: |
       [user]
           name = {{ git_user_name }}
           email = {{ git_user_email }}
+      [includeIf "gitdir:~/businesscraft/"]
+          path = ~/.gitconfig-businesscraft
     dest: "/home/{{ username }}/.gitconfig-personal"
     owner: "{{ username }}"
     group: "{{ username }}"
@@ -26,7 +31,7 @@
   ansible.builtin.copy:
     content: |
       [user]
-          name = {{ git_user_name }}
+          name = {{ git_businesscraft_name }}
           email = {{ git_businesscraft_email }}
     dest: "/home/{{ username }}/.gitconfig-businesscraft"
     owner: "{{ username }}"

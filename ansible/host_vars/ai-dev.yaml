@@ -1,4 +1,5 @@
 ---
 git_user_name: "Michael Murphy"
 git_user_email: "{{ ai_dev_git_user_emails.personal }}"
+git_businesscraft_name: "michaelmbc"
 git_businesscraft_email: "{{ ai_dev_git_user_emails.businesscraft }}"

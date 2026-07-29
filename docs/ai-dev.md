@@ -79,21 +79,31 @@ changes when the upstream agent versions have not changed.
 
 ## Interactive setup
 
-Home Manager owns OpenCode and the shared Fish, Starship, FZF, Git behavior,
-Hunk, Herdr, Yazi, and portable CLI configuration. Ansible writes ai-dev's
-vaulted personal and BusinessCraft identity fragments with mode `0600`; the Mac
-retains its separate Home Manager-owned identities. Ansible reruns the official
-stable installers for Claude Code, Codex, Pi, Herdr, and Moshi on every
-deployment, comparing versions before and after so unchanged installers remain
-idempotent. Ansible does not copy SSH keys, OAuth sessions, or API keys.
-Authenticate each tool interactively:
+Home Manager owns OpenCode and the shared Fish, Starship, FZF, general Git
+behavior, Hunk, Herdr, Yazi, and portable CLI configuration. Ansible writes
+ai-dev's vaulted personal and BusinessCraft identity fragments with mode `0600`
+and selects the BusinessCraft fragment below `~/businesscraft/`; the Mac retains
+its separate Home Manager-owned identities. Ansible reruns the official stable
+installers for Claude Code, Codex, Pi, Herdr, and Moshi on every deployment,
+comparing versions before and after so unchanged installers remain idempotent.
+Ansible does not copy SSH keys, OAuth sessions, or API keys. Authenticate each
+tool interactively:
 
 ```sh
-gh auth login --web --git-protocol ssh
+gh auth login --hostname github.com --web --git-protocol ssh
 claude
 codex login --device-auth
 pi
 opencode auth login
+```
+
+Authenticate the GitHub CLI as both required GitHub accounts. Before running
+GitHub CLI operations for a repository under `~/businesscraft/`, select the
+BusinessCraft account explicitly:
+
+```sh
+gh auth switch --hostname github.com --user michaelmbc
+gh auth status --hostname github.com
 ```
 
 Use `/login` inside Pi if it does not prompt automatically. Select a headless or
@@ -209,9 +219,15 @@ Finally, verify the shared Git identities:
 mkdir -p ~/businesscraft/identity-test ~/personal-identity-test
 git -C ~/businesscraft/identity-test init
 git -C ~/personal-identity-test init
+git -C ~/businesscraft/identity-test config user.name
 git -C ~/businesscraft/identity-test config user.email
+git -C ~/personal-identity-test config user.name
 git -C ~/personal-identity-test config user.email
 ```
+
+The BusinessCraft test must report `michaelmbc` and the vaulted BusinessCraft
+email. The personal test must report `Michael Murphy` and the vaulted personal
+email.
 
 ## References
 
