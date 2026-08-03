@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import textwrap
 import unittest
 from pathlib import Path
 
@@ -10,8 +11,15 @@ REPOSITORY = ROOT.parents[1]
 
 
 class StackPolicyTests(unittest.TestCase):
+    @staticmethod
+    def collector_config() -> str:
+        compose = (ROOT / "compose.yml").read_text()
+        marker = "\nconfigs:\n  otel-collector-config:\n    content: |-\n"
+        content = compose.split(marker, 1)[1]
+        return textwrap.dedent(content)
+
     def test_collector_is_metadata_only_and_retries_asynchronously(self) -> None:
-        config = (ROOT / "collector.yml").read_text()
+        config = self.collector_config()
         for forbidden in (
             "prompt",
             "source",
@@ -34,6 +42,14 @@ class StackPolicyTests(unittest.TestCase):
         self.assertIn("max_elapsed_time: 0s", config)
         self.assertNotIn("tail_sampling", config)
         self.assertNotIn("Authorization:", config)
+
+    def test_collector_config_is_inline(self) -> None:
+        compose = (ROOT / "compose.yml").read_text()
+        self.assertFalse((ROOT / "collector.yml").exists())
+        self.assertIn("source: otel-collector-config", compose)
+        self.assertIn("content: |-", compose)
+        self.assertNotIn("./collector.yml", compose)
+        self.assertIn("$${env:APP_AGENT_SCHEMA_VERSION}", compose)
 
     def test_mlflow_has_one_data_volume_and_no_application_secrets(self) -> None:
         compose = (ROOT / "compose.yml").read_text()
