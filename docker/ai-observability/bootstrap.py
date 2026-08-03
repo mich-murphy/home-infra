@@ -66,7 +66,7 @@ def main() -> int:
     username, password = credentials()
     experiment_ids = dict(replacements)
     replacements["__AUTHORIZATION__"] = "Basic " + base64.b64encode(f"{username}:{password}".encode()).decode()
-    rendered = Path("/templates/collector.yaml").read_text()
+    rendered = Path("/opt/ai-observability/collector.template.yaml").read_text()
     for marker, value in replacements.items():
         rendered = rendered.replace(marker, value)
     # The collector image seeds this volume with its example config.yaml; replace

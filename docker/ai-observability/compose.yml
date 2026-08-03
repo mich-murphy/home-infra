@@ -17,12 +17,10 @@ services:
     env_file: *mlflow-env
     environment:
       MLFLOW_ENABLE_OTEL_GENAI_SEMCONV: "true"
-      MLFLOW_TRACE_ARCHIVAL_CONFIG: /etc/mlflow/trace-archival.yaml
+      MLFLOW_TRACE_ARCHIVAL_CONFIG: /opt/ai-observability/trace-archival.yaml
     command: [python, /opt/ai-observability/start-mlflow.py]
     volumes:
       - mlflow-data:/mlflow
-      - ./start-mlflow.py:/opt/ai-observability/start-mlflow.py:ro
-      - ./trace-archival.yaml:/etc/mlflow/trace-archival.yaml:ro
     labels:
       - traefik.enable=true
       - traefik.http.routers.mlflow.entrypoints=websecure
@@ -49,8 +47,6 @@ services:
     env_file: *mlflow-env
     command: [python, /opt/ai-observability/bootstrap.py]
     volumes:
-      - ./bootstrap.py:/opt/ai-observability/bootstrap.py:ro
-      - ./collector.template.yaml:/templates/collector.yaml:ro
       - collector-config:/generated
     depends_on:
       mlflow: {condition: service_healthy}
@@ -94,7 +90,6 @@ services:
       MLFLOW_RETENTION_INTERVAL_SECONDS: ${MLFLOW_RETENTION_INTERVAL_SECONDS:-86400}
     command: [python, /opt/ai-observability/retention.py]
     volumes:
-      - ./retention.py:/opt/ai-observability/retention.py:ro
       - collector-config:/generated:ro
     depends_on:
       mlflow-bootstrap: {condition: service_completed_successfully}
@@ -113,7 +108,6 @@ services:
       MLFLOW_BACKUP_RETENTION_DAYS: ${MLFLOW_BACKUP_RETENTION_DAYS:-14}
     command: [python, /opt/ai-observability/backup.py]
     volumes:
-      - ./backup.py:/opt/ai-observability/backup.py:ro
       - mlflow-data:/mlflow:ro
       - /mnt/data/backups/mlflow:/backups
     depends_on:
@@ -131,8 +125,6 @@ services:
     networks: [ai-observability]
     env_file: *mlflow-env
     command: [python, /opt/ai-observability/conformance.py]
-    volumes:
-      - ./conformance.py:/opt/ai-observability/conformance.py:ro
     depends_on:
       mlflow-bootstrap: {condition: service_completed_successfully}
       otel-collector: {condition: service_started}
