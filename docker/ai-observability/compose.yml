@@ -135,6 +135,15 @@ configs:
               statements:
                 - keep_keys(resource.attributes, ["service.name", "service.version", "deployment.environment.name", "app.agent.schema.version", "app.agent.collector.version", "app.agent.harness.name", "app.agent.harness.version", "app.agent.repository.hash", "app.agent.repository.base_revision", "app.agent.skill.catalogue_hash"])
 
+        attributes/normalize-agent-details:
+          actions:
+            - key: skill.name
+              from_attribute: skill_name
+              action: upsert
+            - key: tool.type
+              from_attribute: tool_name
+              action: upsert
+
         redaction/metadata-only:
           allow_all_keys: false
           allowed_keys:
@@ -240,6 +249,7 @@ configs:
               - memory_limiter
               - resource/version
               - transform/resource-privacy
+              - attributes/normalize-agent-details
               - redaction/metadata-only
               - batch
             exporters: [otlp_http/mlflow]
