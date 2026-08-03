@@ -63,7 +63,9 @@ services:
     cap_drop:
       - ALL
     networks:
-      - ai-observability
+      ai-observability: {}
+      otlp-ingress:
+        gw_priority: 1
     environment:
       OTELCOL_VERSION: "0.157.0"
       APP_AGENT_SCHEMA_VERSION: "1.0.0"
@@ -95,6 +97,8 @@ networks:
   proxy:
     name: proxy
     external: true
+  otlp-ingress:
+    name: ai-observability-ingress
 
 configs:
   otel-collector-config:

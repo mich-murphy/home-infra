@@ -93,5 +93,20 @@ class StackPolicyTests(unittest.TestCase):
         self.assertNotIn("port: 4318", defaults)
         self.assertNotIn("port: 4318", group_vars)
 
+    def test_collector_has_a_gateway_network_for_published_otlp(self) -> None:
+        compose = (ROOT / "compose.yml").read_text()
+        mlflow = compose.split("  mlflow:\n", 1)[1].split(
+            "\n  otel-collector:\n", 1
+        )[0]
+        collector = compose.split("  otel-collector:\n", 1)[1].split(
+            "\nvolumes:\n", 1
+        )[0]
+        self.assertIn("    internal: true", compose)
+        self.assertNotIn("otlp-ingress", mlflow)
+        self.assertIn("      otlp-ingress:\n        gw_priority: 1", collector)
+        self.assertIn(
+            "\n  otlp-ingress:\n    name: ai-observability-ingress", compose
+        )
+
 if __name__ == "__main__":
     unittest.main()
