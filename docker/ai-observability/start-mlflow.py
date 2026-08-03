@@ -6,6 +6,11 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import deployment_env
+
+
+deployment_env.load()
+
 
 def required(name: str) -> str:
     value = os.environ.get(name, "")

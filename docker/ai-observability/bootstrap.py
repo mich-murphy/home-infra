@@ -12,6 +12,11 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+import deployment_env
+
+
+deployment_env.load()
+
 
 MLFLOW = "http://mlflow:5000"
 EXPERIMENTS = {

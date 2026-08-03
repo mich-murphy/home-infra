@@ -1,8 +1,6 @@
 ---
 x-mlflow-image: &mlflow-image local/mlflow-auth:3.13.0
-x-mlflow-env: &mlflow-env
-  - path: /etc/ai-observability/mlflow.env
-    required: false
+x-mlflow-secret: &mlflow-secret /etc/ai-observability/mlflow.env:/run/secrets/ai-observability.env:ro
 
 services:
   mlflow:
@@ -14,13 +12,13 @@ services:
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
     networks: [ai-observability, proxy]
-    env_file: *mlflow-env
     environment:
       MLFLOW_ENABLE_OTEL_GENAI_SEMCONV: "true"
       MLFLOW_TRACE_ARCHIVAL_CONFIG: /opt/ai-observability/trace-archival.yaml
     command: [python, /opt/ai-observability/start-mlflow.py]
     volumes:
       - mlflow-data:/mlflow
+      - *mlflow-secret
     labels:
       - traefik.enable=true
       - traefik.http.routers.mlflow.entrypoints=websecure
@@ -44,10 +42,10 @@ services:
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
     networks: [ai-observability]
-    env_file: *mlflow-env
     command: [python, /opt/ai-observability/bootstrap.py]
     volumes:
       - collector-config:/generated
+      - *mlflow-secret
     depends_on:
       mlflow: {condition: service_healthy}
     mem_limit: 512m
@@ -85,12 +83,12 @@ services:
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
     networks: [ai-observability]
-    env_file: *mlflow-env
     environment:
       MLFLOW_RETENTION_INTERVAL_SECONDS: ${MLFLOW_RETENTION_INTERVAL_SECONDS:-86400}
     command: [python, /opt/ai-observability/retention.py]
     volumes:
       - collector-config:/generated:ro
+      - *mlflow-secret
     depends_on:
       mlflow-bootstrap: {condition: service_completed_successfully}
     mem_limit: 512m
@@ -123,8 +121,9 @@ services:
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
     networks: [ai-observability]
-    env_file: *mlflow-env
     command: [python, /opt/ai-observability/conformance.py]
+    volumes:
+      - *mlflow-secret
     depends_on:
       mlflow-bootstrap: {condition: service_completed_successfully}
       otel-collector: {condition: service_started}

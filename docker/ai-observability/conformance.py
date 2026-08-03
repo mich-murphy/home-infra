@@ -12,6 +12,11 @@ import urllib.request
 import mlflow
 from mlflow import MlflowClient
 
+import deployment_env
+
+
+deployment_env.load()
+
 
 def attr(key: str, value: str) -> dict[str, object]:
     return {"key": key, "value": {"stringValue": value}}

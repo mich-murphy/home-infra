@@ -10,6 +10,11 @@ import subprocess
 import time
 from pathlib import Path
 
+import deployment_env
+
+
+deployment_env.load()
+
 
 RETENTION_DAYS = {
     "__OPERATIONAL_ID__": 90,
