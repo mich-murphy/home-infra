@@ -1,0 +1,5 @@
+FROM ghcr.io/mlflow/mlflow:v3.13.0@sha256:b2136d49f882fdc9c48bdb95514a8a23804e8756524135c3f09f7a553a3ac58b
+
+COPY auth-requirements.txt /tmp/auth-requirements.txt
+RUN python -m pip install --no-cache-dir --no-deps --require-hashes -r /tmp/auth-requirements.txt \
+    && rm /tmp/auth-requirements.txt

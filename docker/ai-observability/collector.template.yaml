@@ -1,0 +1,138 @@
+---
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+connectors:
+  routing:
+    default_pipelines: [traces/drop]
+    table:
+      - context: resource
+        condition: attributes["app.agent.trace.kind"] == "evaluation"
+        pipelines: [traces/evaluation]
+      - context: resource
+        condition: attributes["app.agent.trace.kind"] == "development"
+        pipelines: [traces/development]
+      - context: resource
+        condition: attributes["app.agent.trace.kind"] == "operational"
+        pipelines: [traces/operational]
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 384
+    spike_limit_mib: 96
+
+  resource/version:
+    attributes:
+      - key: app.agent.schema.version
+        value: ${env:APP_AGENT_SCHEMA_VERSION}
+        action: upsert
+      - key: app.agent.collector.version
+        value: ${env:OTELCOL_VERSION}
+        action: upsert
+
+  transform/privacy:
+    error_mode: ignore
+    trace_statements:
+      - context: resource
+        statements:
+          - keep_keys(resource.attributes, ["service.name", "service.version", "deployment.environment.name", "app.agent.schema.version", "app.agent.collector.version", "app.agent.harness.name", "app.agent.harness.version", "app.agent.repository.hash", "app.agent.repository.base_revision", "app.agent.skill.catalogue_hash", "app.agent.trace.kind", "app.agent.content.capture.approved"])
+      - context: span
+        statements:
+          - delete_key(span.attributes, "user.email")
+          - delete_key(span.attributes, "user.id")
+          - delete_key(span.attributes, "organization.id")
+          - delete_key(span.attributes, "enduser.id")
+          - delete_key(span.attributes, "gen_ai.prompt")
+          - delete_key(span.attributes, "gen_ai.completion")
+          - delete_key(span.attributes, "gen_ai.tool.call.arguments")
+          - delete_key(span.attributes, "gen_ai.tool.call.result")
+          - delete_key(span.attributes, "gen_ai.input.messages") where span.attributes["app.agent.content.capture"] != "metadata" and resource.attributes["app.agent.content.capture.approved"] != "true"
+          - delete_key(span.attributes, "gen_ai.output.messages") where span.attributes["app.agent.content.capture"] != "metadata" and resource.attributes["app.agent.content.capture.approved"] != "true"
+
+  redaction/credentials:
+    allow_all_keys: true
+    blocked_key_patterns:
+      - "(?i).*(authorization|proxy[_-]?authorization|cookie|set[_-]?cookie|credential|secret|password|passwd|api[_-]?key|access[_-]?token|refresh[_-]?token|private[_-]?key).*"
+      - "(?i)^(env|environment|process\\.env|request\\.headers|response\\.headers|http\\.request\\.header\\..*|http\\.response\\.header\\..*)$"
+    blocked_values:
+      - "(?i)(bearer|basic)[[:space:]]+[a-z0-9._~+/=-]{8,}"
+      - "(?i)(api[_-]?key|access[_-]?token|refresh[_-]?token|password|passwd|secret)[[:space:]:=_-]+[a-z0-9._~+/=-]{8,}"
+      - "(?i)sk-(ant-)?[a-z0-9_-]{8,}"
+      - "(?i)gh[pousr]_[a-z0-9]{20,}"
+      - "(?i)github_pat_[a-z0-9_]{20,}"
+      - "AKIA[0-9A-Z]{16}"
+      - "(?s)-----BEGIN[[:space:]][A-Z ]+PRIVATE KEY-----.*-----END[[:space:]][A-Z ]+PRIVATE KEY-----"
+    redact_all_types: true
+    summary: info
+
+  probabilistic_sampler/operational:
+    sampling_percentage: ${env:APP_AGENT_OPERATIONAL_SAMPLING_PERCENTAGE}
+
+  filter/drop_all:
+    error_mode: ignore
+    traces:
+      span: ["true"]
+
+  batch:
+    send_batch_size: 256
+    send_batch_max_size: 512
+    timeout: 2s
+
+exporters:
+  nop: {}
+  otlp_http/mlflow-operational:
+    endpoint: http://mlflow:5000
+    compression: gzip
+    headers: {x-mlflow-experiment-id: "__OPERATIONAL_ID__", authorization: "__AUTHORIZATION__"}
+    timeout: 10s
+    retry_on_failure: {enabled: true, initial_interval: 1s, max_interval: 30s, max_elapsed_time: 0s}
+    sending_queue: {enabled: true, num_consumers: 2, queue_size: 2048}
+  otlp_http/mlflow-development:
+    endpoint: http://mlflow:5000
+    compression: gzip
+    headers: {x-mlflow-experiment-id: "__DEVELOPMENT_ID__", authorization: "__AUTHORIZATION__"}
+    timeout: 10s
+    retry_on_failure: {enabled: true, initial_interval: 1s, max_interval: 30s, max_elapsed_time: 0s}
+    sending_queue: {enabled: true, num_consumers: 2, queue_size: 2048}
+  otlp_http/mlflow-evaluation:
+    endpoint: http://mlflow:5000
+    compression: gzip
+    headers: {x-mlflow-experiment-id: "__EVALUATION_ID__", authorization: "__AUTHORIZATION__"}
+    timeout: 10s
+    retry_on_failure: {enabled: true, initial_interval: 1s, max_interval: 30s, max_elapsed_time: 0s}
+    sending_queue: {enabled: true, num_consumers: 2, queue_size: 2048}
+
+service:
+  pipelines:
+    traces/input:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/version, transform/privacy, redaction/credentials]
+      exporters: [routing]
+    traces/operational:
+      receivers: [routing]
+      processors: [probabilistic_sampler/operational, batch]
+      exporters: [otlp_http/mlflow-operational]
+    traces/drop:
+      receivers: [routing]
+      processors: [filter/drop_all]
+      exporters: [nop]
+    traces/development:
+      receivers: [routing]
+      processors: [batch]
+      exporters: [otlp_http/mlflow-development]
+    traces/evaluation:
+      receivers: [routing]
+      processors: [batch]
+      exporters: [otlp_http/mlflow-evaluation]
+  telemetry:
+    logs: {level: info, encoding: json}
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus: {host: 0.0.0.0, port: 8888, without_type_suffix: true, without_units: true}

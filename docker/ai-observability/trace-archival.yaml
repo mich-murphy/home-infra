@@ -1,0 +1,6 @@
+trace_archival:
+  enabled: true
+  location: file:///mlflow/trace-archive
+  retention: 30d
+  interval_seconds: 300
+  max_traces_per_pass: 1000

@@ -1,36 +1,28 @@
 ---
-x-mlflow-image: &mlflow-image ghcr.io/mlflow/mlflow:v3.13.0@sha256:b2136d49f882fdc9c48bdb95514a8a23804e8756524135c3f09f7a553a3ac58b
+x-mlflow-image: &mlflow-image local/mlflow-auth:3.13.0
+x-mlflow-env: &mlflow-env
+  - path: /etc/ai-observability/mlflow.env
+    required: false
 
 services:
   mlflow:
     image: *mlflow-image
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow-auth
     container_name: mlflow
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    networks:
-      - ai-observability
-      - proxy
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    networks: [ai-observability, proxy]
+    env_file: *mlflow-env
     environment:
       MLFLOW_ENABLE_OTEL_GENAI_SEMCONV: "true"
-    command:
-      - mlflow
-      - server
-      - --host
-      - 0.0.0.0
-      - --port
-      - "5000"
-      - --backend-store-uri
-      - sqlite:////mlflow/mlflow.db
-      - --artifacts-destination
-      - file:///mlflow/artifacts
-      - --allowed-hosts
-      - mlflow.local.elmurphy.com,mlflow:5000,localhost:*,127.0.0.1:*
-      - --cors-allowed-origins
-      - https://mlflow.local.elmurphy.com
+      MLFLOW_TRACE_ARCHIVAL_CONFIG: /etc/mlflow/trace-archival.yaml
+    command: [python, /opt/ai-observability/start-mlflow.py]
     volumes:
       - mlflow-data:/mlflow
+      - ./start-mlflow.py:/opt/ai-observability/start-mlflow.py:ro
+      - ./trace-archival.yaml:/etc/mlflow/trace-archival.yaml:ro
     labels:
       - traefik.enable=true
       - traefik.http.routers.mlflow.entrypoints=websecure
@@ -39,13 +31,7 @@ services:
       - traefik.http.routers.mlflow.tls=true
       - traefik.http.services.mlflow.loadbalancer.server.port=5000
     healthcheck:
-      test:
-        - CMD
-        - python
-        - -c
-        - >-
-          import urllib.request;
-          urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=3)
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=3)"]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -55,156 +41,111 @@ services:
     pids_limit: 256
     restart: unless-stopped
 
+  mlflow-bootstrap:
+    image: *mlflow-image
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    networks: [ai-observability]
+    env_file: *mlflow-env
+    command: [python, /opt/ai-observability/bootstrap.py]
+    volumes:
+      - ./bootstrap.py:/opt/ai-observability/bootstrap.py:ro
+      - ./collector.template.yaml:/templates/collector.yaml:ro
+      - collector-config:/generated
+    depends_on:
+      mlflow: {condition: service_healthy}
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 128
+    restart: "no"
+
   otel-collector:
     image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.157.0@sha256:f2f01157055a9b2aab9df7118e1f1c9abf345e99b23bc7a2bc791db374a7d0f6
     container_name: otel-collector
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
     networks:
       ai-observability: {}
-      otlp-ingress:
-        gw_priority: 1
+      otlp-ingress: {gw_priority: 1}
     environment:
       OTELCOL_VERSION: "0.157.0"
-      APP_AGENT_SCHEMA_VERSION: "1.1.0"
-    command: ["--config=/etc/otelcol-contrib/config.yaml"]
-    configs:
-      - source: otel-collector-config
-        target: /etc/otelcol-contrib/config.yaml
+      APP_AGENT_SCHEMA_VERSION: "1.2.0"
+      APP_AGENT_OPERATIONAL_SAMPLING_PERCENTAGE: ${APP_AGENT_OPERATIONAL_SAMPLING_PERCENTAGE:-100}
+    command: [--config=/etc/otelcol-contrib/config.yaml]
+    volumes:
+      - collector-config:/etc/otelcol-contrib:ro
     ports:
-      # DOCKER-USER blocks the external interface; tailscale0 remains reachable.
       - "4318:4318"
-    expose:
-      - "8888"
+    expose: ["8888"]
     depends_on:
-      mlflow:
-        condition: service_healthy
+      mlflow-bootstrap: {condition: service_completed_successfully}
     mem_limit: 512m
     cpus: 1
     pids_limit: 128
     restart: unless-stopped
 
+  mlflow-retention:
+    image: *mlflow-image
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    networks: [ai-observability]
+    env_file: *mlflow-env
+    environment:
+      MLFLOW_RETENTION_INTERVAL_SECONDS: ${MLFLOW_RETENTION_INTERVAL_SECONDS:-86400}
+    command: [python, /opt/ai-observability/retention.py]
+    volumes:
+      - ./retention.py:/opt/ai-observability/retention.py:ro
+      - collector-config:/generated:ro
+    depends_on:
+      mlflow-bootstrap: {condition: service_completed_successfully}
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 128
+    restart: unless-stopped
+
+  mlflow-backup:
+    image: *mlflow-image
+    user: "${PUID:-1001}:${PGID:-1002}"
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    environment:
+      MLFLOW_BACKUP_INTERVAL_SECONDS: ${MLFLOW_BACKUP_INTERVAL_SECONDS:-86400}
+      MLFLOW_BACKUP_RETENTION_DAYS: ${MLFLOW_BACKUP_RETENTION_DAYS:-14}
+    command: [python, /opt/ai-observability/backup.py]
+    volumes:
+      - ./backup.py:/opt/ai-observability/backup.py:ro
+      - mlflow-data:/mlflow:ro
+      - /mnt/data/backups/mlflow:/backups
+    depends_on:
+      mlflow: {condition: service_healthy}
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 128
+    restart: unless-stopped
+
+  conformance:
+    profiles: [conformance]
+    image: *mlflow-image
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    networks: [ai-observability]
+    env_file: *mlflow-env
+    command: [python, /opt/ai-observability/conformance.py]
+    volumes:
+      - ./conformance.py:/opt/ai-observability/conformance.py:ro
+    depends_on:
+      mlflow-bootstrap: {condition: service_completed_successfully}
+      otel-collector: {condition: service_started}
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 128
+    restart: "no"
+
 volumes:
-  mlflow-data:
-    name: mlflow-data
+  mlflow-data: {name: mlflow-data}
+  collector-config: {name: ai-observability-collector-config}
 
 networks:
-  ai-observability:
-    name: ai-observability
-    internal: true
-  proxy:
-    name: proxy
-    external: true
-  otlp-ingress:
-    name: ai-observability-ingress
-
-configs:
-  otel-collector-config:
-    content: |-
-      ---
-      receivers:
-        otlp:
-          protocols:
-            http:
-              endpoint: 0.0.0.0:4318
-
-      processors:
-        memory_limiter:
-          check_interval: 1s
-          limit_mib: 384
-          spike_limit_mib: 96
-
-        resource/version:
-          attributes:
-            - key: app.agent.schema.version
-              value: $${env:APP_AGENT_SCHEMA_VERSION}
-              action: upsert
-            - key: app.agent.collector.version
-              value: $${env:OTELCOL_VERSION}
-              action: upsert
-            - key: deployment.environment.name
-              value: local
-              action: upsert
-
-        transform/resource-privacy:
-          error_mode: ignore
-          trace_statements:
-            - context: resource
-              statements:
-                - keep_keys(resource.attributes, ["service.name", "service.version", "deployment.environment.name", "app.agent.schema.version", "app.agent.collector.version", "app.agent.harness.name", "app.agent.harness.version", "app.agent.repository.hash", "app.agent.repository.base_revision", "app.agent.skill.catalogue_hash"])
-
-        attributes/normalize-agent-details:
-          actions:
-            - key: skill.name
-              from_attribute: skill_name
-              action: upsert
-            - key: tool.type
-              from_attribute: tool_name
-              action: upsert
-
-        redaction/credentials:
-          allow_all_keys: true
-          blocked_key_patterns:
-            - "(?i).*(authorization|proxy[_-]?authorization|cookie|set[_-]?cookie|credential|secret|password|passwd|api[_-]?key|access[_-]?token|refresh[_-]?token|private[_-]?key).*"
-            - "(?i)^(env|environment|process\\.env|request\\.headers|response\\.headers|http\\.request\\.header\\..*|http\\.response\\.header\\..*)$"
-          blocked_values:
-            - "(?i)(bearer|basic)[[:space:]]+[a-z0-9._~+/=-]{8,}"
-            - "(?i)(api[_-]?key|access[_-]?token|refresh[_-]?token|password|passwd|secret)[[:space:]:=_-]+[a-z0-9._~+/=-]{8,}"
-            - "(?i)sk-(ant-)?[a-z0-9_-]{8,}"
-            - "(?i)gh[pousr]_[a-z0-9]{20,}"
-            - "(?i)github_pat_[a-z0-9_]{20,}"
-            - "AKIA[0-9A-Z]{16}"
-            - "(?s)-----BEGIN[[:space:]][A-Z ]+PRIVATE KEY-----.*-----END[[:space:]][A-Z ]+PRIVATE KEY-----"
-          redact_all_types: true
-          summary: info
-
-        batch:
-          send_batch_size: 256
-          send_batch_max_size: 512
-          timeout: 2s
-
-      exporters:
-        otlp_http/mlflow:
-          endpoint: http://mlflow:5000
-          compression: gzip
-          headers:
-            x-mlflow-experiment-id: "0"
-          timeout: 10s
-          retry_on_failure:
-            enabled: true
-            initial_interval: 1s
-            max_interval: 30s
-            max_elapsed_time: 0s
-          sending_queue:
-            enabled: true
-            num_consumers: 2
-            queue_size: 2048
-
-      service:
-        pipelines:
-          traces:
-            receivers: [otlp]
-            processors:
-              - memory_limiter
-              - resource/version
-              - transform/resource-privacy
-              - attributes/normalize-agent-details
-              - redaction/credentials
-              - batch
-            exporters: [otlp_http/mlflow]
-        telemetry:
-          logs:
-            level: info
-            encoding: json
-          metrics:
-            level: detailed
-            readers:
-              - pull:
-                  exporter:
-                    prometheus:
-                      host: 0.0.0.0
-                      port: 8888
-                      without_type_suffix: true
-                      without_units: true
+  ai-observability: {name: ai-observability, internal: true}
+  proxy: {name: proxy, external: true}
+  otlp-ingress: {name: ai-observability-ingress}

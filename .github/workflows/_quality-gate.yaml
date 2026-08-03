@@ -65,6 +65,9 @@ jobs:
           DB_USERNAME: immich
           ENCRYPTION_KEY: ci-placeholder
           MAXMIND_LICENSE_KEY: ci-placeholder
+          MLFLOW_AUTH_ADMIN_PASSWORD: ci-placeholder
+          MLFLOW_AUTH_ADMIN_USERNAME: ci-placeholder
+          MLFLOW_FLASK_SERVER_SECRET_KEY: ci-placeholder-secret-key
           OWNCLOUD_DB_PASSWORD: ci-placeholder
           PLEX_CLAIM: ci-placeholder
           JELLYPLEX_JELLYFIN_TOKEN: ci-placeholder
