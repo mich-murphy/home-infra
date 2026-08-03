@@ -7,6 +7,7 @@ docs/*
 !docs/docker-hardening.md
 !docs/ai-dev.md
 !docs/k8s-migration.md
+!docs/subtitle-options.md
 !docs/truenas-storage.md
 
 # nix

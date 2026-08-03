@@ -219,6 +219,39 @@ Herdr does not watch its live configuration. After changing
 `herdr server reload-config` in each active session that should receive the
 new settings.
 
+### Proxmox DMZ NIC reliability
+
+The X13SAE-F's Intel I219-LM uses the `e1000e` driver for Proxmox `eno1`.
+Transmit queue hangs on that interface leave the physical carrier up while
+disconnecting `vmbr1` guests from the DMZ gateway. The guest then retains its
+DHCP address and default route, but ARP for `10.77.99.1` remains incomplete and
+Tailscale reports `ai-dev` offline.
+
+Keep TCP segmentation offload disabled on the physical interface. Proxmox
+`/etc/network/interfaces` must contain:
+
+```text
+iface eno1 inet manual
+    post-up /usr/sbin/ethtool -K eno1 tso off
+```
+
+After changing the hook, apply it live with
+`ethtool -K eno1 tso off`. If the transmit queue is already wedged, reset only
+the isolated DMZ link with `ip link set dev eno1 down` followed by
+`ip link set dev eno1 up`; Proxmox management remains on `eno2`/`vmbr0`.
+
+Verify recovery from Proxmox and an approved tailnet device:
+
+```sh
+journalctl -k -g 'eno1: Detected Hardware Unit Hang'
+qm guest exec 110 -- /usr/bin/ping -c 3 1.1.1.1
+tailscale ping ai-dev
+ssh michael@ai-dev 'herdr status server'
+```
+
+The first command may show historical events from the current boot, but its
+latest timestamp must not advance after TSO is disabled and the link is reset.
+
 From an unapproved tailnet device, TCP 22 and UDP 60000-61000 must be denied.
 From the approved phone, verify key-based OpenSSH, Mosh and SSH fallback,
 Wi-Fi/cellular roaming, persistent Herdr panes, agent inbox and approval events,

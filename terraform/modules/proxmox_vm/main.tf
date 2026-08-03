@@ -26,7 +26,7 @@ resource "proxmox_virtual_environment_vm" "this" {
   bios                = "seabios"
   keyboard_layout     = "en-us"
   boot_order          = ["scsi0"]
-  on_boot             = false
+  on_boot             = true
   reboot_after_update = true
   scsi_hardware       = "virtio-scsi-single"
   started             = true
