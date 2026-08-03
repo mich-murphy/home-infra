@@ -216,7 +216,7 @@ configs:
           timeout: 2s
 
       exporters:
-        otlphttp/mlflow:
+        otlp_http/mlflow:
           endpoint: http://mlflow:5000
           compression: gzip
           headers:
@@ -242,7 +242,7 @@ configs:
               - transform/resource-privacy
               - redaction/metadata-only
               - batch
-            exporters: [otlphttp/mlflow]
+            exporters: [otlp_http/mlflow]
         telemetry:
           logs:
             level: info

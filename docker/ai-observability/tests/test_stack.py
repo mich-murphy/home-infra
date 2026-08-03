@@ -42,6 +42,8 @@ class StackPolicyTests(unittest.TestCase):
         self.assertIn("max_elapsed_time: 0s", config)
         self.assertNotIn("tail_sampling", config)
         self.assertNotIn("Authorization:", config)
+        self.assertIn("otlp_http/mlflow", config)
+        self.assertNotIn("otlphttp/mlflow", config)
 
     def test_collector_config_is_inline(self) -> None:
         compose = (ROOT / "compose.yml").read_text()
