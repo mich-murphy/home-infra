@@ -38,6 +38,9 @@ table inet filter {
     oifname "tailscale0" ip daddr 100.100.100.100 udp dport 53 accept
     oifname "tailscale0" ip daddr 100.100.100.100 tcp dport 53 accept
 
+    # Agent telemetry may reach only the collector's OTLP/HTTP listener.
+    oifname "tailscale0" ip daddr {{ ai_dev_otel_collector_address }} tcp dport {{ ai_dev_otel_collector_port }} accept
+
     # Never initiate sessions to homelab or tailnet peers.
     ip daddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10 } drop
 
