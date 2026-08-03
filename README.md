@@ -145,22 +145,23 @@ Apply/verify order for a fresh rebuild is manual: root Terraform →
 
 All services run behind Traefik on the shared `proxy` network (172.20.1.0/24) with TLS via Cloudflare DNS challenge. Services are managed by Portainer.
 
-| Stack              | Services                                       |
-| ------------------ | ---------------------------------------------- |
-| **init**           | Traefik, Portainer, Pocket-ID (SSO)            |
-| **arrs**           | Radarr, Sonarr, Lidarr, Prowlarr               |
-| **downloads**      | qBittorrent, SABnzbd                           |
-| **plex**           | Plex, Tautulli, Overseerr, Maintainerr, Kometa |
-| **jellyfin**       | Jellyfin, Jellyseerr                           |
-| **immich**         | Immich Server, Immich ML, PostgreSQL, Redis    |
-| **owncloud**       | OwnCloud, MariaDB, Redis                       |
-| **miniflux**       | Miniflux, PostgreSQL                           |
-| **couchdb**        | CouchDB (Obsidian sync)                        |
-| **komga**          | Komga (manga/comics)                           |
-| **audiobookshelf** | Audiobookshelf                                 |
-| **wallabag**       | Wallabag, MariaDB, Redis                       |
-| **pinchflat**      | Pinchflat (YouTube archival)                   |
-| **beszel**         | Infrastructure monitoring                      |
+| Stack                | Services                                       |
+| -------------------- | ---------------------------------------------- |
+| **init**             | Traefik, Portainer, Pocket-ID (SSO)            |
+| **arrs**             | Radarr, Sonarr, Lidarr, Prowlarr               |
+| **downloads**        | qBittorrent, SABnzbd                           |
+| **plex**             | Plex, Tautulli, Overseerr, Maintainerr, Kometa |
+| **jellyfin**         | Jellyfin, Jellyseerr                           |
+| **immich**           | Immich Server, Immich ML, PostgreSQL, Redis    |
+| **owncloud**         | OwnCloud, MariaDB, Redis                       |
+| **miniflux**         | Miniflux, PostgreSQL                           |
+| **couchdb**          | CouchDB (Obsidian sync)                        |
+| **komga**            | Komga (manga/comics)                           |
+| **audiobookshelf**   | Audiobookshelf                                 |
+| **wallabag**         | Wallabag, MariaDB, Redis                       |
+| **pinchflat**        | Pinchflat (YouTube archival)                   |
+| **beszel**           | Infrastructure monitoring                      |
+| **ai-observability** | OpenTelemetry Collector, MLflow                |
 
 ### Conventions
 
