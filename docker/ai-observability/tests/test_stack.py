@@ -45,11 +45,15 @@ class StackPolicyTests(unittest.TestCase):
 
     def test_collector_config_is_inline(self) -> None:
         compose = (ROOT / "compose.yml").read_text()
+        collector = compose.split("  otel-collector:\n", 1)[1].split(
+            "\nvolumes:\n", 1
+        )[0]
         self.assertFalse((ROOT / "collector.yml").exists())
         self.assertIn("source: otel-collector-config", compose)
         self.assertIn("content: |-", compose)
         self.assertNotIn("./collector.yml", compose)
         self.assertIn("$${env:APP_AGENT_SCHEMA_VERSION}", compose)
+        self.assertNotIn("read_only: true", collector)
 
     def test_mlflow_has_one_data_volume_and_no_application_secrets(self) -> None:
         compose = (ROOT / "compose.yml").read_text()
