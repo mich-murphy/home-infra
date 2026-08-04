@@ -85,6 +85,7 @@ services:
     networks: [ai-observability]
     environment:
       MLFLOW_RETENTION_INTERVAL_SECONDS: ${MLFLOW_RETENTION_INTERVAL_SECONDS:-86400}
+      MLFLOW_RETENTION_DELETE_ENABLED: ${MLFLOW_RETENTION_DELETE_ENABLED:-false}
     command: [python, /opt/ai-observability/retention.py]
     volumes:
       - collector-config:/generated:ro

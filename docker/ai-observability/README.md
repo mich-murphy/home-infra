@@ -45,13 +45,13 @@ Run a real privacy, routing, session, and task-boundary check:
 docker compose --profile conformance run --rm conformance
 ```
 
-The check sends a canary identity and prompt to the real collector, confirms
-they were removed, and verifies exactly one `agent.task` root in the
-`agent-development` experiment.
+The check sends canary identities and prompts through both development and
+evaluation routes, confirms they were removed, and verifies exactly one
+`agent.task` root in each destination experiment.
 
-Evaluation result files are linked to traces automatically. To also create or
-update the MLflow evaluation dataset, attach assessments, and record a summary
-run, pass `--publish-mlflow` to a repository evaluation runner with
+Evaluation result files are linked to traces automatically. Use the repository
+central evaluator's `publish` or `retry` command to reconcile the MLflow
+dataset, named assessments, and one identity-keyed summary run with
 `MLFLOW_TRACKING_URI`, `MLFLOW_TRACKING_USERNAME`, and
 `MLFLOW_TRACKING_PASSWORD` set.
 
@@ -63,11 +63,18 @@ run, pass `--publish-mlflow` to a repository evaluation runner with
 - Operational sampling is explicitly configured and defaults to 100%. Change
   `APP_AGENT_OPERATIONAL_SAMPLING_PERCENTAGE` only with a documented reason.
 - Span payloads move to the MLflow trace archive after 30 days. Operational
-  and development traces are deleted after 90 days; evaluation traces after
-  365 days.
+  and development traces are eligible after 90 days. Ordinary evaluation
+  evidence is eligible after 365 days; adopted or restricted evidence remains
+  protected until superseded and then receives another 365-day grace period.
+  Missing, duplicate, or malformed protection references cancel the evaluation
+  deletion selection.
 - `mlflow-backup` takes a consistent SQLite backup plus artifacts/archive every
   24 hours to `/mnt/data/backups/mlflow` on TrueNAS and retains daily snapshots
   for 14 days.
+
+Retention starts in dry-run mode. Review its structured selection output after
+backup and conformance checks, then set
+`MLFLOW_RETENTION_DELETE_ENABLED=true` separately when deletion is authorized.
 
 To restore, stop MLflow, copy a chosen snapshot's `mlflow.db` and `auth.db`
 into the `mlflow-data` volume, extract `files.tar.gz` there, then start MLflow
