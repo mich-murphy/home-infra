@@ -8,6 +8,9 @@
 - name: Configure host firewall
   ansible.builtin.import_tasks: firewall.yaml
 
+- name: Provision agent scratch space
+  ansible.builtin.import_tasks: scratch.yaml
+
 - name: Build and activate the Home Manager profile
   ansible.builtin.import_tasks: home-manager.yaml
 

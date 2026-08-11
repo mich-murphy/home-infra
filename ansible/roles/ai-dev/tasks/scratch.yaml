@@ -1,0 +1,16 @@
+---
+- name: Deploy the agent scratch tmpfiles configuration
+  ansible.builtin.template:
+    src: tmpfiles-scratch.conf.j2
+    dest: /etc/tmpfiles.d/ai-dev-scratch.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Ensure the agent scratch directory exists
+  ansible.builtin.file:
+    path: "/var/tmp/{{ username }}"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0700"

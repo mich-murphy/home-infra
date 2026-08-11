@@ -1,0 +1,4 @@
+# Agent TMPDIR; /tmp leftovers reaped early to protect the per-user tmpfs quota.
+d /var/tmp/{{ username }} 0700 {{ username }} {{ username }} 10d
+e /tmp/claude-* - - - 2d
+e /tmp/bunx-* - - - 2d

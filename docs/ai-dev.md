@@ -143,6 +143,36 @@ Moshi's full agent integration sends limited notification summaries, approval
 details, metadata, pairing, and WebSocket control traffic through Moshi's
 service. Terminal traffic, source files, transcripts, and diffs remain direct.
 
+## Agent scratch space
+
+`/tmp` is a RAM-backed tmpfs carrying a per-user hard limit of 80% of its size
+(1153 MiB at 4 GB RAM). Agent scratch exhausts that limit while `df` still shows
+free space, and writes then fail with `EDQUOT`, which Node reports as the
+unmapped `Unknown system error -122, write`.
+
+Home Manager therefore sets `TMPDIR=/var/tmp/michael`, and Ansible provisions
+that directory plus `/etc/tmpfiles.d/ai-dev-scratch.conf`, which ages the
+scratch root at 10d and reaps leftover `/tmp/claude-*` and `/tmp/bunx-*` at 2d.
+Do not raise the quota instead; that keeps gigabytes of scratch in RAM.
+
+`quota` and `repquota` are not installed, so read the live limit through
+`quotactl_fd`:
+
+```sh
+python3 - <<'EOF'
+import ctypes, os, struct
+libc = ctypes.CDLL("libc.so.6", use_errno=True)
+fd = os.open("/tmp", os.O_RDONLY | os.O_DIRECTORY)
+buf = ctypes.create_string_buffer(72)
+libc.syscall(443, fd, 0x80000700, os.getuid(), buf)  # quotactl_fd Q_GETQUOTA/USRQUOTA
+hard, _, used = struct.unpack("<3Q", buf.raw[:24])
+print(f"/tmp user quota: {hard * 1024 // 2**20} MiB limit, {used // 2**20} MiB used")
+EOF
+```
+
+Attribute usage with `du -shx /tmp/* | sort -h | tail` and delete stale session
+scratch directories.
+
 ## Neovim exception
 
 Neovim remains deliberately outside Home Manager on ai-dev. Pacman owns
@@ -194,6 +224,7 @@ sudo nft list ruleset
 systemctl --user status moshi-hook
 ss -ltn 'sport = :24543'
 command -v nvim stylua gopls marksman
+fish -lc 'echo $TMPDIR'
 fish -c 'type -p opencode hunk yazi btop bat direnv'
 nvim --headless \
   '+lua print(vim.g.clipboard.name, vim.o.clipboard)' \
@@ -204,6 +235,9 @@ The guest must have one `ens18` address in `10.77.99.0/24`, no route to internal
 VLANs, no physical-interface IPv6 address, and no listener for port 24543 except
 `127.0.0.1`. Test that HTTPS and gateway DNS work, while new connections to
 MGMT, SRV, DFLT, KDS, GST, other DMZ hosts, and tailnet peers fail.
+
+`$TMPDIR` must report `/var/tmp/michael`, and that directory must be mode `0700`
+and owned by `michael`.
 
 Neovim and its temporary editor tools must resolve from `/usr/bin`; shared CLI
 tools and OpenCode must resolve from the Home Manager profile. Confirm Fish
