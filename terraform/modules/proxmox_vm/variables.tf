@@ -26,8 +26,14 @@ variable "cores" {
 
 variable "memory_mib" {
   type        = number
-  description = "Dedicated memory in MiB."
+  description = "Maximum memory in MiB."
   default     = 8192
+}
+
+variable "memory_min_mib" {
+  type        = number
+  description = "Minimum memory in MiB when ballooning is enabled; zero disables the balloon device."
+  default     = 0
 }
 
 variable "disk_size" {

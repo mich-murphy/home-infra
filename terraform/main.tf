@@ -66,6 +66,7 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   }
   memory {
     dedicated = 10240
+    floating  = 10240
   }
   disk {
     datastore_id = "local-zfs"
@@ -155,6 +156,7 @@ resource "proxmox_virtual_environment_vm" "cloud_init_docker_host" {
   }
   memory {
     dedicated = 10240
+    floating  = 8192
   }
   initialization {
     datastore_id        = "local-zfs"
@@ -247,6 +249,7 @@ resource "proxmox_virtual_environment_vm" "unifi_controller" {
   }
   memory {
     dedicated = 4096
+    floating  = 2048
   }
   initialization {
     datastore_id = "local-zfs"
@@ -397,6 +400,7 @@ module "ai_dev" {
   tags                = ["arch", "ai-dev"]
   cores               = 4
   memory_mib          = 4096
+  memory_min_mib      = 3072
   disk_size           = 150
   bridge              = "vmbr1"
   forbidden_bridges   = ["vmbr0"]

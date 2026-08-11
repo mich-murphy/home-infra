@@ -49,6 +49,7 @@ resource "proxmox_virtual_environment_vm" "this" {
   }
   memory {
     dedicated = var.memory_mib
+    floating  = var.memory_min_mib
   }
   initialization {
     datastore_id        = "local-zfs"
@@ -94,6 +95,11 @@ resource "proxmox_virtual_environment_vm" "this" {
     precondition {
       condition     = !contains(var.forbidden_bridges, var.bridge)
       error_message = "VM ${var.name} cannot attach to forbidden bridge ${var.bridge}."
+    }
+
+    precondition {
+      condition     = var.memory_min_mib == 0 || (var.memory_min_mib <= var.memory_mib && var.memory_min_mib >= 1024)
+      error_message = "VM ${var.name} minimum memory must be zero (ballooning disabled) or between 1024 MiB and its maximum memory."
     }
   }
 }
