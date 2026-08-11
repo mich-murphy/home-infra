@@ -23,12 +23,6 @@ nfs_mounts:
     owner: "media"
     group: "media"
 
-nfs_directories:
-  - path: "/mnt/data/backups/mlflow"
-    owner: "mm"
-    group: "media"
-    mode: "0770"
-
 retired_nfs_mounts:
   - name: "emulators"
     local_path: "/mnt/emulators"

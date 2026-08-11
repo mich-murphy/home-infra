@@ -103,14 +103,3 @@
   loop: "{{ active_nfs_fstab_results.results }}"
   loop_control:
     label: "{{ item.item.name }}"
-
-- name: create managed directories on nfs mounts
-  ansible.builtin.file:
-    path: "{{ item.path }}"
-    state: directory
-    mode: "{{ item.mode }}"
-    owner: "{{ item.owner }}"
-    group: "{{ item.group }}"
-  loop: "{{ nfs_directories }}"
-  loop_control:
-    label: "{{ item.path }}"

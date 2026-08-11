@@ -161,7 +161,6 @@ All services run behind Traefik on the shared `proxy` network (172.20.1.0/24) wi
 | **wallabag**         | Wallabag, MariaDB, Redis                       |
 | **pinchflat**        | Pinchflat (YouTube archival)                   |
 | **beszel**           | Infrastructure monitoring                      |
-| **ai-observability** | OpenTelemetry Collector, MLflow                |
 
 ### Conventions
 

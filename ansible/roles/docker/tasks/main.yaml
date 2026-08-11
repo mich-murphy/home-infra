@@ -150,50 +150,6 @@
          else generated_pocket_id_key.stdout }}
   no_log: true
 
-- name: ensure AI observability secret directory exists
-  ansible.builtin.file:
-    path: "{{ ai_observability_secret_dir }}"
-    state: directory
-    owner: root
-    group: root
-    mode: "0700"
-
-- name: check for AI observability deployment secrets
-  ansible.builtin.stat:
-    path: "{{ ai_observability_env_path }}"
-  register: ai_observability_env_file
-
-- name: generate MLflow admin password
-  ansible.builtin.command:
-    cmd: openssl rand -base64 48
-  register: generated_mlflow_admin_password
-  changed_when: false
-  check_mode: false
-  when: not ai_observability_env_file.stat.exists
-  no_log: true
-
-- name: generate MLflow Flask secret key
-  ansible.builtin.command:
-    cmd: openssl rand -base64 48
-  register: generated_mlflow_flask_secret
-  changed_when: false
-  check_mode: false
-  when: not ai_observability_env_file.stat.exists
-  no_log: true
-
-- name: persist AI observability deployment secrets
-  ansible.builtin.copy:
-    content: |
-      MLFLOW_AUTH_ADMIN_USERNAME=admin
-      MLFLOW_AUTH_ADMIN_PASSWORD={{ generated_mlflow_admin_password.stdout }}
-      MLFLOW_FLASK_SERVER_SECRET_KEY={{ generated_mlflow_flask_secret.stdout }}
-    dest: "{{ ai_observability_env_path }}"
-    owner: root
-    group: root
-    mode: "0600"
-  when: not ai_observability_env_file.stat.exists
-  no_log: true
-
 - name: setup .env file
   ansible.builtin.copy:
     content: |
