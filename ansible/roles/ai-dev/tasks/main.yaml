@@ -10,6 +10,8 @@
 
 - name: Provision agent scratch space
   ansible.builtin.import_tasks: scratch.yaml
+  tags:
+    - scratch
 
 - name: Build and activate the Home Manager profile
   ansible.builtin.import_tasks: home-manager.yaml

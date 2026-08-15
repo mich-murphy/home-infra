@@ -223,10 +223,10 @@ resource "proxmox_virtual_environment_vm" "unifi_controller" {
   bios                = "seabios"
   keyboard_layout     = "en-us"
   boot_order          = ["scsi0"]
-  on_boot             = true
+  on_boot             = false
   reboot_after_update = true
   scsi_hardware       = "virtio-scsi-single"
-  started             = true
+  started             = false
   agent {
     enabled = true
     type    = "virtio"
@@ -399,8 +399,8 @@ module "ai_dev" {
   clone_template_vmid = var.arch_cloud_template_vmid
   tags                = ["arch", "ai-dev"]
   cores               = 4
-  memory_mib          = 4096
-  memory_min_mib      = 3072
+  memory_mib          = 6144
+  memory_min_mib      = 4096
   disk_size           = 150
   bridge              = "vmbr1"
   forbidden_bridges   = ["vmbr0"]

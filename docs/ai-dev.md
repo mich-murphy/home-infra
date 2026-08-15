@@ -86,6 +86,7 @@ and selects the BusinessCraft fragment below `~/businesscraft/`; the Mac retains
 its separate Home Manager-owned identities. Ansible reruns the official stable
 installers for Claude Code, Codex, Pi, Herdr, and Moshi on every deployment,
 comparing versions before and after so unchanged installers remain idempotent.
+It also installs the user-scoped `npm:@plannotator/pi-extension` Pi package.
 Ansible does not copy SSH keys, OAuth sessions, or API keys. Authenticate each
 tool interactively:
 
@@ -150,10 +151,25 @@ service. Terminal traffic, source files, transcripts, and diffs remain direct.
 free space, and writes then fail with `EDQUOT`, which Node reports as the
 unmapped `Unknown system error -122, write`.
 
-Home Manager therefore sets `TMPDIR=/var/tmp/michael`, and Ansible provisions
-that directory plus `/etc/tmpfiles.d/ai-dev-scratch.conf`, which ages the
-scratch root at 10d and reaps leftover `/tmp/claude-*` and `/tmp/bunx-*` at 2d.
-Do not raise the quota instead; that keeps gigabytes of scratch in RAM.
+Home Manager therefore sets `TMPDIR=/var/tmp/michael` for shells, and Ansible
+sets the same value in `~/.config/environment.d/10-ai-dev-scratch.conf` for the
+lingering systemd user manager. Ansible also provisions the directory plus
+`/etc/tmpfiles.d/ai-dev-scratch.conf`, which ages the scratch root at 10d and
+reaps leftover Claude, Bun, and Pi scratch at 2d. Do not raise the quota
+instead; that keeps gigabytes of scratch in RAM.
+
+Existing Herdr panes retain the environment with which their shells started.
+After first deploying this setting, replace the shell in each idle pane with
+`exec fish`. To refresh every pane at once, stop and restart Herdr at a
+controlled time; stopping the server exits its pane processes. New shells then
+inherit the disk-backed `TMPDIR`:
+
+```sh
+exec fish
+# Or, when every pane can be stopped:
+herdr server stop
+herdr
+```
 
 `quota` and `repquota` are not installed, so read the live limit through
 `quotactl_fd`:
@@ -225,6 +241,7 @@ systemctl --user status moshi-hook
 ss -ltn 'sport = :24543'
 command -v nvim stylua gopls marksman
 fish -lc 'echo $TMPDIR'
+systemctl --user show-environment | grep '^TMPDIR='
 fish -c 'type -p opencode hunk yazi btop bat direnv'
 nvim --headless \
   '+lua print(vim.g.clipboard.name, vim.o.clipboard)' \
@@ -236,8 +253,8 @@ VLANs, no physical-interface IPv6 address, and no listener for port 24543 except
 `127.0.0.1`. Test that HTTPS and gateway DNS work, while new connections to
 MGMT, SRV, DFLT, KDS, GST, other DMZ hosts, and tailnet peers fail.
 
-`$TMPDIR` must report `/var/tmp/michael`, and that directory must be mode `0700`
-and owned by `michael`.
+Both `$TMPDIR` checks must report `/var/tmp/michael`, and that directory must be
+mode `0700` and owned by `michael`.
 
 Neovim and its temporary editor tools must resolve from `/usr/bin`; shared CLI
 tools and OpenCode must resolve from the Home Manager profile. Confirm Fish

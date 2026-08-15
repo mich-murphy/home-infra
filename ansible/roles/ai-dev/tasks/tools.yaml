@@ -155,6 +155,19 @@
     PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
   changed_when: false
 
+- name: Install global Pi packages
+  ansible.builtin.command:
+    argv:
+      - "/home/{{ username }}/.local/bin/pi"
+      - install
+      - npm:@plannotator/pi-extension
+  become_user: "{{ username }}"
+  environment:
+    HOME: "/home/{{ username }}"
+    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
+  changed_when: false
+  when: not ansible_check_mode
+
 - name: Ensure the Fish configuration directory exists
   ansible.builtin.file:
     path: "/home/{{ username }}/.config/fish/conf.d"

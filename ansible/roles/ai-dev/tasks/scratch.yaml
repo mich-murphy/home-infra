@@ -14,3 +14,58 @@
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: "0700"
+
+- name: Ensure the user environment directory exists
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.config/environment.d"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Point persistent user services at disk-backed scratch
+  ansible.builtin.copy:
+    dest: "/home/{{ username }}/.config/environment.d/10-ai-dev-scratch.conf"
+    content: "TMPDIR=/var/tmp/{{ username }}\n"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"
+
+- name: Read the scratch user account database entry
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ username }}"
+
+- name: Reload the persistent user manager environment
+  ansible.builtin.systemd_service:
+    scope: user
+    daemon_reload: true
+  become_user: "{{ username }}"
+  environment:
+    XDG_RUNTIME_DIR: >-
+      /run/user/{{ ansible_facts.getent_passwd[username][1] }}
+  when: not ansible_check_mode
+
+- name: Read the persistent user manager environment
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - --user
+      - show-environment
+  become_user: "{{ username }}"
+  environment:
+    XDG_RUNTIME_DIR: >-
+      /run/user/{{ ansible_facts.getent_passwd[username][1] }}
+  register: ai_dev_user_manager_environment
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Require persistent services to use disk-backed scratch
+  ansible.builtin.assert:
+    that:
+      - >-
+        'TMPDIR=/var/tmp/' ~ username in
+        ai_dev_user_manager_environment.stdout_lines
+    fail_msg: >-
+      The persistent user manager did not load the disk-backed TMPDIR.
+  when: not ansible_check_mode
