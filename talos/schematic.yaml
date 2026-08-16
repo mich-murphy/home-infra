@@ -1,9 +1,0 @@
-# id: 97349bd8a02320e952ef34bdc1369278958bf77fb1b1cbddb62ec6719777a7b6
-# Must match talos_schematic_id in terraform/main.tf.
-customization:
-  systemExtensions:
-    officialExtensions:
-      - siderolabs/i915
-      - siderolabs/intel-ucode
-      - siderolabs/qemu-guest-agent
-      - siderolabs/util-linux-tools

@@ -20,27 +20,16 @@
     "automerge": false,
     "dependencyDashboardApproval": true
   },
-  "kubernetes": {
-    "managerFilePatterns": ["/kubernetes/.+\\.ya?ml$/"]
-  },
   "packageRules": [
     {
       "description": "Require approval for high-risk infrastructure updates",
       "matchPackageNames": [
-        "/^cilium$/",
-        "/^cilium\\//",
-        "/^external-secrets$/",
-        "/^external-secrets\\//",
-        "/^fluxcd\\/flux2$/",
-        "/^ghcr\\.io\\/fluxcd\\//",
         "/^ghcr\\.io\\/immich-app\\//",
         "/^hashicorp\\/terraform$/",
         "/^local$/",
         "/^mariadb$/",
         "/^miniflux\\/miniflux$/",
         "/^onepassword$/",
-        "/^openebs$/",
-        "/^openebs\\//",
         "/^postgres$/",
         "/^proxmox$/",
         "/^redis$/",

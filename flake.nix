@@ -47,54 +47,19 @@
         exec ${pkgs.terraform}/bin/terraform "$@"
       '';
 
-    # Keep ansible-core and ansible-lint on one Python interpreter so their
-    # module paths cannot shadow one another. Collections are installed from
-    # ansible/requirements.yaml; including the full `ansible` distribution
-    # here would add a second, unrelated collection tree. pathspec 1.x renamed
-    # its gitwildmatch API, so patch the two pinned lint dependencies that
-    # still use the deprecated spelling.
+    # Keep ansible-core and librouteros on one Python interpreter so RouterOS
+    # API modules can import their controller-side dependency. Collections are
+    # installed from ansible/requirements.yaml.
     ansibleToolingFor = pkgs: let
-      python = pkgs.python3.override {
-        packageOverrides = _pythonFinal: pythonPrev: {
-          black = pythonPrev.black.overridePythonAttrs (old: {
-            postPatch =
-              (old.postPatch or "")
-              + ''
-                substituteInPlace src/black/__init__.py src/black/files.py \
-                  --replace-fail "pathspec.patterns.gitwildmatch" "pathspec.patterns.gitignore" \
-                  --replace-fail "GitWildMatchPatternError" "GitIgnorePatternError"
-                substituteInPlace src/black/files.py \
-                  --replace-fail '"gitwildmatch"' '"gitignore"'
-              '';
-          });
-          yamllint = pythonPrev.yamllint.overridePythonAttrs (old: {
-            postPatch =
-              (old.postPatch or "")
-              + ''
-                substituteInPlace yamllint/config.py \
-                  --replace-fail "'gitwildmatch'" "'gitignore'"
-              '';
-          });
-        };
-      };
+      python = pkgs.python3;
       ansiblePython = python.withPackages (ps: [
         ps.ansible-core
         ps.librouteros
       ]);
-      ansibleLint =
-        (pkgs.ansible-lint.override {
-          python3Packages = python.pkgs;
-          ansible = python.pkgs.ansible-core;
-        }).overridePythonAttrs (old: {
-          postPatch =
-            (old.postPatch or "")
-            + ''
-              substituteInPlace src/ansiblelint/utils.py \
-                --replace-fail \
-                  "from ansible.module_utils._text import to_bytes" \
-                  "from ansible.module_utils.common.text.converters import to_bytes"
-            '';
-        });
+      ansibleLint = pkgs.ansible-lint.override {
+        python3Packages = python.pkgs;
+        ansible = python.pkgs.ansible-core;
+      };
     in
       pkgs.buildEnv {
         name = "ansible-tooling";
@@ -108,11 +73,8 @@
       actionlint = pkgs.actionlint;
       ansible-lint = ansibleToolingFor pkgs;
       docker-compose = pkgs.docker-compose;
-      kubectl = pkgs.kubectl;
-      kubeconform = pkgs.kubeconform;
-      talosctl = pkgs.talosctl;
+      shellcheck = pkgs.shellcheck;
       terraform-ci = terraformCiFor pkgs;
-      yq-go = pkgs.yq-go;
     });
 
     devShells = forAllSystems ({
@@ -129,16 +91,10 @@
           # collection paths and their associated warnings.
           self.packages.${system}.ansible-lint
           pkgs.just
-          pkgs.talosctl
-          pkgs.kubectl
-          pkgs.k9s
-          pkgs.fluxcd
-          pkgs.kubernetes-helm
           pkgs.alejandra
           self.packages.${system}.actionlint
           self.packages.${system}.docker-compose
-          self.packages.${system}.kubeconform
-          self.packages.${system}.yq-go
+          self.packages.${system}.shellcheck
         ];
       };
     });
