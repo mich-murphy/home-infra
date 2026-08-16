@@ -1,0 +1,30 @@
+---
+# Portainer owns every application stack listed here. The init stack is
+# intentionally absent because Ansible bootstraps it before Portainer exists.
+stacks:
+  - name: arrs
+    compose_path: docker/arrs/compose.yml
+  - name: audiobookshelf
+    compose_path: docker/audiobookshelf/compose.yml
+  - name: beszel
+    compose_path: docker/beszel/compose.yml
+  - name: couchdb
+    compose_path: docker/couchdb/compose.yml
+  - name: downloads
+    compose_path: docker/downloads/compose.yml
+  - name: immich
+    compose_path: docker/immich/compose.yml
+  - name: jellyfin
+    compose_path: docker/jellyfin/compose.yml
+  - name: jellyplex-watched
+    compose_path: docker/jellyplex-watched/compose.yml
+  - name: miniflux
+    compose_path: docker/miniflux/compose.yml
+  - name: owncloud
+    compose_path: docker/owncloud/compose.yml
+  - name: pinchflat
+    compose_path: docker/pinchflat/compose.yml
+  - name: plex
+    compose_path: docker/plex/compose.yml
+  - name: wallabag
+    compose_path: docker/wallabag/compose.yml

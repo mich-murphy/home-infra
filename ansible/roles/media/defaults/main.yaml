@@ -22,8 +22,3 @@ nfs_mounts:
     nfs_share: "10.77.20.101:/mnt/slow/media/audiobooks"
     owner: "media"
     group: "media"
-
-retired_nfs_mounts:
-  - name: "emulators"
-    local_path: "/mnt/emulators"
-    nfs_share: "10.77.20.101:/mnt/slow/media/emulators"

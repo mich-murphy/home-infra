@@ -28,6 +28,13 @@
   register: _routeros_verify_bridge
   check_mode: false
 
+- name: Verify bridge VLAN membership
+  community.routeros.api:
+    path: interface bridge vlan
+    query: ".id bridge vlan-ids tagged untagged"
+  register: _routeros_verify_bridge_vlans
+  check_mode: false
+
 - name: Verify LAN interface-list membership
   community.routeros.api:
     path: interface list member
@@ -38,7 +45,7 @@
 - name: Verify forward filter rules
   community.routeros.api:
     path: ip firewall filter
-    query: ".id chain action comment WHERE chain == forward"
+    query: ".id chain action comment src-address dst-address WHERE chain == forward"
   register: _routeros_verify_forward_filter
   check_mode: false
 
@@ -134,6 +141,64 @@
   vars:
     _bridge_record: "{{ _routeros_verify_bridge.msg | select('mapping') | first }}"
     _bridge_filtering_enabled: "{{ _bridge_record['vlan-filtering'] | default(false) }}"
+
+- name: Assert ether6 is an untagged Mad Villainy access port
+  ansible.builtin.assert:
+    that:
+      - "_access_bridge_ports | length == 1"
+      - "(_access_bridge_ports | first).pvid | int == routeros_mad_villainy_vlan.id | int"
+      - "_access_vlan_records | length == 1"
+      - "routeros_mad_villainy_port in ((_access_vlan_records | first).untagged | default('') | split(','))"
+      - "routeros_mad_villainy_port not in routeros_vlan1_untagged_ports"
+      - "_dflt_dhcp_interfaces | length == 1"
+      - "_dflt_wan_comment in _managed_forward_comments"
+      - "_dflt_to_mgmt_accepts | length == 0"
+    fail_msg: ether6 does not have the expected DFLT PVID, VLAN membership, DHCP path, WAN policy, and MGMT isolation.
+  vars:
+    _access_bridge_ports: >-
+      {{
+        _routeros_verify_bridge_ports.msg
+        | select('mapping')
+        | selectattr('interface', 'equalto', routeros_mad_villainy_port)
+        | list
+      }}
+    _access_vlan_records: >-
+      {{
+        _routeros_verify_bridge_vlans.msg
+        | select('mapping')
+        | selectattr('vlan-ids', 'defined')
+        | selectattr('vlan-ids', 'equalto', routeros_mad_villainy_vlan.id)
+        | list
+      }}
+    _dflt_dhcp_interfaces: >-
+      {{
+        _routeros_verify_dhcp_servers.msg
+        | select('mapping')
+        | selectattr('interface', 'equalto', 'vlan' ~ routeros_mad_villainy_vlan.id ~ '-' ~ routeros_mad_villainy_vlan.name)
+        | list
+      }}
+    _managed_forward_comments: >-
+      {{
+        _routeros_verify_forward_filter.msg
+        | select('mapping')
+        | selectattr('comment', 'defined')
+        | selectattr('comment', 'search', 'managed: routeros role')
+        | map(attribute='comment')
+        | list
+      }}
+    _dflt_to_mgmt_accepts: >-
+      {{
+        _routeros_verify_forward_filter.msg
+        | select('mapping')
+        | selectattr('action', 'defined')
+        | selectattr('action', 'equalto', 'accept')
+        | selectattr('src-address', 'defined')
+        | selectattr('src-address', 'equalto', routeros_mad_villainy_vlan.subnet)
+        | selectattr('dst-address', 'defined')
+        | selectattr('dst-address', 'equalto', routeros_mgmt_subnet)
+        | list
+      }}
+    _dflt_wan_comment: "{{ routeros_mad_villainy_vlan.subnet }} -> WAN (managed: routeros role)"
 
 - name: Assert default-drop state matches the enable flag
   ansible.builtin.assert:
@@ -266,10 +331,6 @@
           "WAN -> qBittorrent peers udp (managed: routeros role)",
           "KDS drop DoT (managed: routeros role)",
           "KDS drop DoQ (managed: routeros role)",
-          "MGMT -> k8s node API (managed: routeros role)",
-          "k8s node mgmt-only drop (managed: routeros role)",
-          "DFLT -> k8s LB https (managed: routeros role)",
-          "KDS -> k8s LB https (managed: routeros role)",
           "DFLT -> SRV services (managed: routeros role)",
           "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)",
           "SRV -> UniFi controller (managed: routeros role)",

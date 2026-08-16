@@ -26,6 +26,19 @@
     - /swap/swapfile
     - /swapfile
 
+- name: find stale versioned swapfiles
+  ansible.builtin.find:
+    paths: /swap
+    patterns: swapfile-*g
+    file_type: file
+  register: stale_versioned_swapfiles
+
+- name: delete stale versioned swapfiles
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ stale_versioned_swapfiles.files }}"
+
 - name: stop and disable zram service
   ansible.builtin.systemd:
     name: systemd-zram-setup@zram0.service

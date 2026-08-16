@@ -68,7 +68,9 @@
     - name: Herdr
       command: curl -fsSL https://herdr.dev/install.sh | sh
     - name: Moshi host tooling
-      command: curl -fsSL https://getmoshi.app/install.sh | sh
+      # Ansible can retain a controlling terminal through SSH. Tell the
+      # official installer not to launch its interactive one-time setup.
+      command: curl -fsSL https://getmoshi.app/install.sh | MOSHI_HOOK_SKIP_FIRST_RUN=1 sh
   loop_control:
     label: "{{ item.name }}"
   changed_when: false
@@ -147,7 +149,12 @@
 
 - name: Install Moshi integrations after Herdr
   ansible.builtin.command:
-    cmd: /home/{{ username }}/.local/bin/moshi-hook install
+    # Pi's extension is supplied by Home Manager from the nix-config source
+    # tree. Installing it here would follow that symlink and rewrite tracked
+    # source with a host-specific helper path.
+    cmd: >-
+      /home/{{ username }}/.local/bin/moshi-hook install
+      --target claude,codex,opencode,gemini,antigravity,cursor,kimi,qwen,grok,omp,hermes
     chdir: "/home/{{ username }}"
   become_user: "{{ username }}"
   environment:

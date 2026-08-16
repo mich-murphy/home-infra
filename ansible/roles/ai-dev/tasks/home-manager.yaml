@@ -127,51 +127,6 @@
   changed_when: false
   check_mode: false
 
-- name: Check whether Home Manager has replaced the legacy shell configuration
-  ansible.builtin.stat:
-    path: "/home/{{ username }}/.local/state/home-manager/ai-dev-bootstrapped"
-  register: ai_dev_home_manager_bootstrap
-
-- name: Find legacy Fisher plugin files
-  ansible.builtin.find:
-    paths: "/home/{{ username }}/.config/fish"
-    recurse: true
-    file_type: file
-    hidden: true
-    patterns:
-      - fisher.fish
-      - autopair.fish
-      - _autopair*.fish
-      - sponge*.fish
-      - __sponge*.fish
-  register: ai_dev_legacy_fish_plugins
-  when: not ai_dev_home_manager_bootstrap.stat.exists
-
-- name: Remove legacy Fisher plugin files
-  ansible.builtin.file:
-    path: "{{ item.path }}"
-    state: absent
-  loop: "{{ ai_dev_legacy_fish_plugins.files | default([]) }}"
-  loop_control:
-    label: "{{ item.path }}"
-  when: not ai_dev_home_manager_bootstrap.stat.exists
-
-- name: Remove configuration files replaced by Home Manager
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - "/home/{{ username }}/.config/fish/config.fish"
-    - "/home/{{ username }}/.config/fish/fish_plugins"
-    - "/home/{{ username }}/.config/starship.toml"
-    - "/home/{{ username }}/.gitconfig"
-    - "/home/{{ username }}/.gitconfig-personal"
-    - "/home/{{ username }}/.gitconfig-businesscraft"
-    - "/home/{{ username }}/.tmux.conf"
-    - "/home/{{ username }}/.config/fish/conf.d/anthropic.fish"
-    - /usr/local/bin/osc52-copy
-  when: not ai_dev_home_manager_bootstrap.stat.exists
-
 - name: Activate the ai-dev Home Manager generation when it changed
   ansible.builtin.shell:
     cmd: |
@@ -187,10 +142,7 @@
           true
       )"
 
-      if
-        [[ "$AI_DEV_HOME_MANAGER_BOOTSTRAPPED" == "1" ]] &&
-          [[ "$current" == "$activation" ]]
-      then
+      if [[ "$current" == "$activation" ]]; then
         echo "Home Manager generation is current"
         exit 0
       fi
@@ -202,75 +154,9 @@
   become: true
   become_user: "{{ username }}"
   environment:
-    AI_DEV_HOME_MANAGER_BOOTSTRAPPED: >-
-      {{
-        ai_dev_home_manager_bootstrap.stat.exists |
-        ternary('1', '0')
-      }}
     HOME: "/home/{{ username }}"
   register: ai_dev_home_manager_activation
   changed_when: >-
     'Home Manager generation activated' in
     ai_dev_home_manager_activation.stdout
-  when: not ansible_check_mode
-
-- name: Ensure the Home Manager migration state directory exists
-  ansible.builtin.file:
-    path: "/home/{{ username }}/.local/state/home-manager"
-    state: directory
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    mode: "0700"
-  when: not ansible_check_mode
-
-- name: Record completion of the Home Manager migration
-  ansible.builtin.file:
-    path: "/home/{{ username }}/.local/state/home-manager/ai-dev-bootstrapped"
-    state: touch
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    mode: "0600"
-    modification_time: preserve
-    access_time: preserve
-  when: not ansible_check_mode
-
-- name: Remove the separately installed OpenCode binary
-  ansible.builtin.file:
-    path: "/home/{{ username }}/.opencode/bin/opencode"
-    state: absent
-  when: not ansible_check_mode
-
-- name: Remove CLI packages replaced by Home Manager
-  community.general.pacman:
-    state: absent
-    name:
-      - starship
-      - github-cli
-      - lazygit
-      - ripgrep
-      - fd
-      - bat
-      - eza
-      - zoxide
-      - direnv
-      - just
-      - fzf
-      - npm
-      - btop
-      - sd
-      - jq
-      - tree
-      - procs
-      - wget
-  when: not ansible_check_mode
-
-- name: Remove AUR CLI packages replaced by Home Manager
-  kewlfft.aur.aur:
-    use: paru
-    name:
-      - ouch
-      - fisher
-    state: absent
-  become: true
-  become_user: "{{ username }}"
   when: not ansible_check_mode

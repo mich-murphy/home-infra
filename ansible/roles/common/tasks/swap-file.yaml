@@ -1,59 +1,121 @@
 ---
-# Disable zram if previously configured (mode flip cleanup)
-- name: check for zram-generator config
-  ansible.builtin.stat:
-    path: /etc/systemd/zram-generator.conf
-  register: zram_conf
+- name: set swapfile path
+  ansible.builtin.set_fact:
+    target_swapfile: "/swap/swapfile-{{ swap_size_gb }}g"
 
-- name: stop and disable zram service
-  ansible.builtin.systemd:
-    name: systemd-zram-setup@zram0.service
-    state: stopped
-    enabled: false
-  when: zram_conf.stat.exists
-  failed_when: false
-
-- name: remove zram-generator config
+- name: create swap directory
   ansible.builtin.file:
-    path: /etc/systemd/zram-generator.conf
-    state: absent
-  when: zram_conf.stat.exists
+    path: /swap
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
 
 - name: stat target swapfile
   ansible.builtin.stat:
-    path: /swapfile
+    path: "{{ target_swapfile }}"
   register: target_swap
+
+- name: validate existing target swapfile size
+  ansible.builtin.assert:
+    that:
+      - not target_swap.stat.exists or target_swap.stat.size | int == (swap_size_gb | int) * 1024 * 1024 * 1024
+    fail_msg: >-
+      Existing {{ target_swapfile }} has the wrong size; refusing to replace a
+      potentially active swapfile automatically.
 
 - name: detect root filesystem type
   ansible.builtin.set_fact:
-    root_fstype: "{{ (ansible_mounts | selectattr('mount', 'eq', '/') | list | first).fstype }}"
+    root_fstype: "{{ (ansible_facts.mounts | selectattr('mount', 'eq', '/') | list | first).fstype }}"
 
-# read-only query; must run in --check so the swap state below resolves
-- name: list active swap devices
+# Read-only query; must run in --check so later state decisions are accurate.
+- name: list active swap devices before migration
   ansible.builtin.command:
     cmd: swapon --show=NAME --noheadings
-  register: active_swaps
+  register: active_swaps_before
   changed_when: false
   check_mode: false
 
-- name: compute swap state
-  ansible.builtin.set_fact:
-    swap_rebuild: "{{ (not target_swap.stat.exists) or (target_swap.stat.size | int != (swap_size_gb | int) * 1024 * 1024 * 1024) or ('/swapfile' not in active_swaps.stdout_lines) }}"
+- name: allocate target swapfile on btrfs
+  ansible.builtin.command:
+    cmd: "btrfs filesystem mkswapfile --size {{ swap_size_gb }}g {{ target_swapfile }}"
+  when:
+    - not target_swap.stat.exists
+    - root_fstype == 'btrfs'
 
-- name: disable existing swap devices
+- name: allocate target swapfile on other filesystems
+  ansible.builtin.command:
+    cmd: "fallocate -l {{ swap_size_gb }}G {{ target_swapfile }}"
+  when:
+    - not target_swap.stat.exists
+    - root_fstype != 'btrfs'
+
+- name: secure target swapfile
+  ansible.builtin.file:
+    path: "{{ target_swapfile }}"
+    owner: root
+    group: root
+    mode: "0600"
+  when: target_swap.stat.exists or not ansible_check_mode
+
+- name: format target swapfile on non-btrfs filesystems
+  ansible.builtin.command:
+    cmd: "mkswap {{ target_swapfile }}"
+  when:
+    - not target_swap.stat.exists
+    - root_fstype != 'btrfs'
+
+# The replacement becomes available before any old swap is disabled. This is
+# essential when the old swapfile is full and cannot safely be faulted entirely
+# back into RAM.
+- name: enable target swapfile before migration
+  ansible.builtin.command:
+    cmd: "swapon {{ target_swapfile }}"
+  when: target_swapfile not in active_swaps_before.stdout_lines
+
+- name: list active swap devices after enabling target
+  ansible.builtin.command:
+    cmd: swapon --show=NAME --noheadings
+  register: active_swaps_after
+  changed_when: false
+  check_mode: false
+
+- name: verify replacement swap is active before retiring old swap
+  ansible.builtin.assert:
+    that: target_swapfile in active_swaps_after.stdout_lines
+    fail_msg: "Refusing to disable old swap because {{ target_swapfile }} is not active."
+  when: not ansible_check_mode
+
+- name: disable superseded swap devices
   ansible.builtin.command:
     cmd: "swapoff {{ item }}"
-  loop: "{{ active_swaps.stdout_lines | default([]) }}"
-  when: swap_rebuild and active_swaps.stdout_lines | default([]) | length > 0
+  loop: "{{ active_swaps_after.stdout_lines | default([]) | difference([target_swapfile]) }}"
+  when: not ansible_check_mode
 
-- name: remove stale fstab swap entries
+- name: remove superseded swap fstab entries
   ansible.builtin.lineinfile:
     path: /etc/fstab
-    regexp: '^\S+\s+\S+\s+swap\s'
+    regexp: '^(?!{{ target_swapfile | regex_escape }}\s)\S+\s+\S+\s+swap\s'
     state: absent
-  when: swap_rebuild
 
-- name: remove old swapfile paths
+- name: persist target swapfile
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '^{{ target_swapfile | regex_escape }}\s+none\s+swap\s+'
+    line: "{{ target_swapfile }} none swap sw 0 0"
+    create: true
+
+- name: remove superseded zram-generator config
+  ansible.builtin.file:
+    path: /etc/systemd/zram-generator.conf
+    state: absent
+
+- name: reload systemd after removing zram generator config
+  ansible.builtin.systemd:
+    daemon_reload: true
+  changed_when: false
+
+- name: delete legacy swapfiles after migration
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent
@@ -61,39 +123,18 @@
     - /swap.img
     - /swap/swapfile
     - /swapfile
-  when: swap_rebuild
+  when: not ansible_check_mode
 
-- name: allocate swapfile (btrfs)
-  ansible.builtin.command:
-    cmd: "btrfs filesystem mkswapfile --size {{ swap_size_gb }}g /swapfile"
-  when: swap_rebuild and root_fstype == 'btrfs'
+- name: find superseded versioned swapfiles
+  ansible.builtin.find:
+    paths: /swap
+    patterns: swapfile-*g
+    file_type: file
+  register: versioned_swapfiles
 
-- name: allocate swapfile (generic)
-  ansible.builtin.command:
-    cmd: "fallocate -l {{ swap_size_gb }}G /swapfile"
-  when: swap_rebuild and root_fstype != 'btrfs'
-
-- name: secure swapfile perms
+- name: delete superseded versioned swapfiles after migration
   ansible.builtin.file:
-    path: /swapfile
-    owner: root
-    group: root
-    mode: "0600"
-  when: swap_rebuild
-
-- name: format swapfile (generic)
-  ansible.builtin.command:
-    cmd: mkswap /swapfile
-  when: swap_rebuild and root_fstype != 'btrfs'
-
-- name: enable swapfile
-  ansible.builtin.command:
-    cmd: swapon /swapfile
-  when: swap_rebuild
-
-- name: persist swapfile in fstab
-  ansible.builtin.lineinfile:
-    path: /etc/fstab
-    regexp: '^/swapfile\s+none\s+swap\s+'
-    line: "/swapfile none swap sw 0 0"
-    create: true
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ versioned_swapfiles.files | rejectattr('path', 'equalto', target_swapfile) | list }}"
+  when: not ansible_check_mode

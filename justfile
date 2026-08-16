@@ -34,10 +34,10 @@ reqs:
   cd ansible && ansible-galaxy install -r requirements.yaml
 
 routeros-scaffold:
-  cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros
+  cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros -e routeros_enable_vlan_filtering=false -e routeros_enable_default_drop=false
 
 routeros-verify-scaffold:
-  cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags verify
+  cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags verify -e routeros_enable_vlan_filtering=false -e routeros_enable_default_drop=false
 
 routeros-verify:
   cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true

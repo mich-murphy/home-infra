@@ -67,3 +67,19 @@
     cmd: /usr/bin/nft -f /etc/nftables.conf
   when: nft_ruleset.changed or nft_table.rc != 0
   changed_when: true
+
+- name: Read the active nftables input chain
+  ansible.builtin.command:
+    cmd: /usr/bin/nft list chain inet filter input
+  register: ai_dev_nft_input_chain
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Verify the Plannotator port remains contained
+  ansible.builtin.assert:
+    that:
+      - "'19432' not in ai_dev_nft_input_chain.stdout"
+      - "'iifname \"tailscale0\" drop' in ai_dev_nft_input_chain.stdout"
+      - "('iifname \"' ~ ai_dev_physical_interface ~ '\" drop') in ai_dev_nft_input_chain.stdout"
+    fail_msg: Port 19432 must have no input grant, and tailnet and physical DMZ input must remain default-denied.
+  when: not ansible_check_mode

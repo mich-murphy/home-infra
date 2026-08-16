@@ -59,3 +59,20 @@
     mode: "0644"
     validate: /usr/sbin/sshd -t -f %s
   notify: restart ai-dev sshd
+
+- name: Read the effective OpenSSH server configuration
+  ansible.builtin.command:
+    cmd: /usr/sbin/sshd -T
+  register: ai_dev_sshd_configuration
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Verify OpenSSH permits only local TCP forwarding
+  ansible.builtin.assert:
+    that:
+      - "'allowtcpforwarding local' in _ai_dev_sshd_configuration_lines"
+      - "'gatewayports no' in _ai_dev_sshd_configuration_lines"
+    fail_msg: OpenSSH must permit local TCP forwarding without exposing forwarded listeners.
+  vars:
+    _ai_dev_sshd_configuration_lines: "{{ ai_dev_sshd_configuration.stdout_lines | map('lower') | list }}"
+  when: not ansible_check_mode

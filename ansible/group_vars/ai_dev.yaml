@@ -1,7 +1,7 @@
 ---
 username: michael
 user_shell: /usr/bin/fish
-ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
+ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP9p7ei2QuEPP+ZgzBBSbwH9TZ7JuvYFiMNWMX+guPEq"
 ai_dev_hostname: ai-dev
 ai_dev_physical_interface: eth0
 ai_dev_dmz_gateway: 10.77.99.1
@@ -9,7 +9,7 @@ ai_dev_dns_server: 10.77.1.1
 ai_dev_otel_collector_address: 100.96.174.126
 ai_dev_otel_collector_port: 4318
 
-swap_mode: zram
-swap_swappiness: 100
-zram_size: ram
-zram_compression: zstd
+swap_mode: file
+swap_size_gb: 8
+swap_swappiness: 60
+zswap_enabled: true

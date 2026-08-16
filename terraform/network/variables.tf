@@ -20,17 +20,3 @@ variable "sonos_wlan_psk_field" {
   description = "1Password WLAN field used for the Sonos SSID PSK. Defaults to dflt until a dedicated sonos field exists."
   default     = "dflt"
 }
-
-# Wireless VLANs only (MGMT/SRV/DMZ are wired — see the routeros role). `subnet` (gateway
-# CIDR on the RB5009) is required by the schema but not served by the controller.
-variable "wireless_vlans" {
-  type = map(object({
-    vlan   = number
-    subnet = string
-  }))
-  default = {
-    dflt = { vlan = 30, subnet = "10.77.30.1/24" }
-    kds  = { vlan = 50, subnet = "10.77.50.1/24" }
-    gst  = { vlan = 60, subnet = "10.77.60.1/24" }
-  }
-}

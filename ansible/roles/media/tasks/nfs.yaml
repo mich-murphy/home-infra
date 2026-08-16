@@ -5,46 +5,6 @@
       - nfs-common
     state: present
 
-# read-only query; must run in --check so the unmount loop below resolves
-- name: check retired nfs mount state
-  ansible.builtin.command:
-    cmd: "findmnt -rn --target {{ item.local_path }}"
-  register: retired_nfs_mount_state
-  changed_when: false
-  check_mode: false
-  failed_when: retired_nfs_mount_state.rc not in [0, 1]
-  loop: "{{ retired_nfs_mounts }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: unmount retired nfs mounts
-  ansible.builtin.command:
-    cmd: "umount {{ item.item.local_path }}"
-  register: retired_nfs_unmount_results
-  changed_when: true
-  when: item.rc == 0
-  loop: "{{ retired_nfs_mount_state.results }}"
-  loop_control:
-    label: "{{ item.item.name }}"
-
-- name: remove retired nfs fstab entries
-  ansible.builtin.lineinfile:
-    path: /etc/fstab
-    regexp: "^{{ item.nfs_share | regex_escape }}\\s+{{ item.local_path | regex_escape }}\\s+"
-    state: absent
-  register: retired_nfs_fstab_results
-  loop: "{{ retired_nfs_mounts }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: remove retired nfs mount folders
-  ansible.builtin.file:
-    path: "{{ item.local_path }}"
-    state: absent
-  loop: "{{ retired_nfs_mounts }}"
-  loop_control:
-    label: "{{ item.name }}"
-
 - name: create folders for nfs mounts
   ansible.builtin.file:
     path: "{{ item.local_path }}"
@@ -70,9 +30,7 @@
 - name: reload systemd after nfs fstab changes
   ansible.builtin.systemd:
     daemon_reload: true
-  when: >
-    (retired_nfs_fstab_results is changed)
-    or (active_nfs_fstab_results is changed)
+  when: active_nfs_fstab_results is changed
 
 # read-only query; must run in --check so the mount loop below resolves
 - name: check active nfs mount state

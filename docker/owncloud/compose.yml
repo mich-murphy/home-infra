@@ -123,6 +123,3 @@ networks:
   owncloud-backend:
     name: owncloud-backend
     internal: true
-    ipam:
-      config:
-        - subnet: 172.40.1.0/24

@@ -27,6 +27,19 @@
     - /swap/swapfile
     - /swapfile
 
+- name: find stale versioned swapfiles
+  ansible.builtin.find:
+    paths: /swap
+    patterns: swapfile-*g
+    file_type: file
+  register: stale_versioned_swapfiles
+
+- name: delete stale versioned swapfiles
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ stale_versioned_swapfiles.files }}"
+
 # Install zram-generator (package name differs per distro)
 - name: install zram-generator (Arch)
   community.general.pacman:

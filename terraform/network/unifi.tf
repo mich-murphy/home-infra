@@ -16,7 +16,7 @@ resource "unifi_setting" "mgmt" {
 
 # third_party_gateway = the RB5009 owns L3/DHCP; the controller only tags the VLAN.
 resource "unifi_network" "vlan" {
-  for_each            = var.wireless_vlans
+  for_each            = local.wireless_vlans
   name                = upper(each.key)
   subnet              = each.value.subnet
   vlan                = each.value.vlan

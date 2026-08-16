@@ -13,6 +13,13 @@ data "onepassword_item" "unifi_wlan_psks" {
 }
 
 locals {
+  network = yamldecode(file("${path.module}/../../network/inventory.yaml")).network
+  wireless_vlans = {
+    for vlan in local.network.vlans : vlan.name => {
+      vlan   = vlan.id
+      subnet = "${vlan.gateway}/${split("/", vlan.subnet)[1]}"
+    } if vlan.wireless
+  }
   psk = data.onepassword_item.unifi_wlan_psks.section_map["WLAN"].field_map
 }
 

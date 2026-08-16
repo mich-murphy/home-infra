@@ -4,6 +4,12 @@ swap_mode: file
 swap_size_gb: 4
 swap_swappiness: 60
 
+# zswap is a bounded compressed cache in front of disk-backed swap. It must
+# stay disabled for zram to avoid stacking two compressed RAM swap layers.
+zswap_enabled: false
+zswap_max_pool_percent: 20
+zswap_shrinker_enabled: true
+
 # Used when swap_mode == zram.
 zram_size: ram
 zram_compression: zstd

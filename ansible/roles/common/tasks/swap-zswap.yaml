@@ -1,0 +1,63 @@
+---
+- name: compute desired zswap state
+  ansible.builtin.set_fact:
+    zswap_effective_enabled: "{{ (swap_mode == 'file' and zswap_enabled) | bool }}"
+
+- name: validate zswap configuration
+  ansible.builtin.assert:
+    that:
+      - zswap_max_pool_percent | int >= 1
+      - zswap_max_pool_percent | int <= 100
+    fail_msg: "zswap_max_pool_percent must be between 1 and 100."
+  when: zswap_effective_enabled
+
+- name: detect kernel zswap support
+  ansible.builtin.stat:
+    path: /sys/module/zswap/parameters/enabled
+  register: zswap_kernel
+
+- name: require kernel zswap support when enabled
+  ansible.builtin.assert:
+    that: zswap_kernel.stat.exists
+    fail_msg: "zswap is enabled in configuration but unsupported by the running kernel."
+  when: zswap_effective_enabled
+
+- name: persist zswap runtime parameters
+  ansible.builtin.copy:
+    dest: /etc/tmpfiles.d/zswap.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible. Applied early at boot and safe to reapply at runtime.
+      w /sys/module/zswap/parameters/enabled - - - - {{ 'Y' if zswap_effective_enabled else 'N' }}
+      {% if zswap_effective_enabled %}
+      w /sys/module/zswap/parameters/max_pool_percent - - - - {{ zswap_max_pool_percent }}
+      w /sys/module/zswap/parameters/shrinker_enabled - - - - {{ 'Y' if zswap_shrinker_enabled else 'N' }}
+      {% endif %}
+  register: zswap_config
+  when: zswap_kernel.stat.exists
+
+- name: read active zswap state
+  ansible.builtin.command:
+    cmd: /usr/bin/cat /sys/module/zswap/parameters/enabled
+  register: active_zswap
+  changed_when: false
+  check_mode: false
+  when: zswap_kernel.stat.exists
+
+- name: apply zswap runtime parameters
+  ansible.builtin.command:
+    cmd: /usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/zswap.conf
+  when:
+    - zswap_kernel.stat.exists
+    - >-
+      zswap_config.changed or
+      active_zswap.stdout != ('Y' if zswap_effective_enabled else 'N')
+  changed_when: true
+
+- name: remove stale zswap tmpfiles config on unsupported kernels
+  ansible.builtin.file:
+    path: /etc/tmpfiles.d/zswap.conf
+    state: absent
+  when: not zswap_kernel.stat.exists

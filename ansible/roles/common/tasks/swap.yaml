@@ -4,6 +4,9 @@
     that: swap_mode in ['file', 'zram', 'none']
     fail_msg: "swap_mode must be one of: file, zram, none (got: {{ swap_mode }})"
 
+- name: configure zswap
+  ansible.builtin.include_tasks: swap-zswap.yaml
+
 - name: configure file swap
   ansible.builtin.include_tasks: swap-file.yaml
   when: swap_mode == 'file'
@@ -37,7 +40,7 @@
 
 - name: read active swappiness
   ansible.builtin.command:
-    cmd: /usr/bin/sysctl -n vm.swappiness
+    cmd: sysctl -n vm.swappiness
   register: active_swappiness
   changed_when: false
   check_mode: false
@@ -45,7 +48,7 @@
 
 - name: apply swappiness
   ansible.builtin.command:
-    cmd: "/usr/bin/sysctl -w vm.swappiness={{ swap_swappiness }}"
+    cmd: "sysctl -w vm.swappiness={{ swap_swappiness }}"
   when:
     - swap_mode != 'none'
     - swappiness_config.changed or active_swappiness.stdout != (swap_swappiness | string)

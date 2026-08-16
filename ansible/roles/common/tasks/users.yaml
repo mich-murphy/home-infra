@@ -39,6 +39,8 @@
 - name: add authorised ssh key to user
   ansible.builtin.lineinfile:
     path: "/home/{{ username }}/.ssh/authorized_keys"
+    regexp: >-
+      ^{{ (ssh_public_key.split()[:2] | join(' ')) | regex_escape }}(?:\s.*)?\s*$
     line: "{{ ssh_public_key }}"
     state: present
     create: true

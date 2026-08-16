@@ -7,15 +7,6 @@
     group: "{{ username }}"
     mode: '0755'
 
-- name: Clone neovim config
-  ansible.builtin.git:
-    repo: https://github.com/mich-murphy/neovim.git
-    dest: "/home/{{ username }}/.config/nvim"
-    version: HEAD
-    update: false
-  become: true
-  become_user: "{{ username }}"
-
 - name: Ensure the Neovim site plugin directory exists
   ansible.builtin.file:
     path: "/home/{{ username }}/.local/share/nvim/site/plugin"

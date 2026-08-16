@@ -7,6 +7,12 @@
       - bridge: "{{ routeros_bridge }}"
         vlan-ids: "{{ item.id }}"
         tagged: "{{ ([routeros_bridge] + routeros_trunk_ports) | join(',') }}"
+        untagged: >-
+          {{
+            routeros_mad_villainy_port
+            if item.name == routeros_mad_villainy_vlan.name
+            else omit
+          }}
         comment: "{{ item.name }} (managed: routeros role)"
   loop: "{{ routeros_vlans }}"
   loop_control:
@@ -33,13 +39,21 @@
         pvid: 1
   loop: "{{ routeros_mgmt_untagged_ports }}"
 
-# Lockout risk: requires both the var and explicit `--tags vlan-filtering`.
-- name: Enable bridge VLAN filtering (LOCKOUT RISK)
+- name: Configure ether6 as the untagged Mad Villainy access port
+  community.routeros.api_modify:
+    path: interface bridge port
+    handle_absent_entries: ignore
+    data:
+      - bridge: "{{ routeros_bridge }}"
+        interface: "{{ routeros_mad_villainy_port }}"
+        pvid: "{{ routeros_mad_villainy_vlan.id }}"
+
+# Recovery mode is an explicit variable override; production defaults to true.
+- name: Reconcile bridge VLAN filtering state (LOCKOUT RISK)
   community.routeros.api_modify:
     path: interface bridge
     handle_absent_entries: ignore
     data:
       - name: "{{ routeros_bridge }}"
-        vlan-filtering: true
-  when: routeros_enable_vlan_filtering | bool
-  tags: [never, vlan-filtering]
+        vlan-filtering: "{{ routeros_enable_vlan_filtering | bool }}"
+  tags: [vlan-filtering]

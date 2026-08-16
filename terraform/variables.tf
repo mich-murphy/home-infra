@@ -1,7 +1,7 @@
 variable "docker_host_ssh_public_key" {
   type        = string
   description = "SSH public key for the ansible user on the docker-host VM."
-  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
+  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP9p7ei2QuEPP+ZgzBBSbwH9TZ7JuvYFiMNWMX+guPEq"
 }
 
 variable "proxmox_host" {
@@ -44,10 +44,4 @@ variable "arch_cloud_template_vmid" {
   type        = number
   description = "Proxmox VMID for the arch-cloud cloud-init template."
   default     = 9002
-}
-
-variable "enable_talos" {
-  type        = bool
-  description = "Cut over to Kubernetes: provisions the Talos VM and its install ISO, stops docker-host (disks kept for rollback) and moves the iGPU passthrough to the Talos VM."
-  default     = false
 }

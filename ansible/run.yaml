@@ -35,6 +35,7 @@
   hosts: routeros
   gather_facts: false
   vars_files:
+    - "../network/inventory.yaml"
     - "group_vars/secrets.yaml"
   module_defaults:
     group/community.routeros.api:

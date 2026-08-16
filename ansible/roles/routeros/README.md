@@ -31,7 +31,8 @@ to be absent from the production bridge.
 
 ## Normal run (strict steady state)
 
-`just routeros` maintains the current strict RouterOS state:
+Strict mode is the variable default, so both `just routeros` and a direct
+`ansible-playbook run.yaml --limit routeros` converge to the production posture:
 
 ```sh
 just routeros
@@ -46,6 +47,13 @@ optional final default drop.
 It also keeps `vlan-filtering` and managed `default-drop` enabled. The live router
 was verified in this state on 2026-06-06.
 
+`ether6` is the wired access port for **Mad Villainy**, the existing DFLT
+network (`madviLANy`, VLAN 30). It is untagged with PVID 30 and is not a MGMT
+fallback. `ether7` remains the sole dedicated OOB recovery path. After changing
+the live port, connect a disposable client to `ether6` and verify a DFLT DHCP
+lease, internet access, the expected application routes, and inability to reach
+the MGMT subnet before considering the operation complete.
+
 The run ends with read-only verification. To run only the checks:
 
 ```sh
@@ -54,7 +62,7 @@ just routeros-verify
 
 ## Scaffold / Recovery Run
 
-`just routeros-scaffold` runs the pre-strict scaffold without the hardening flips.
+`just routeros-scaffold` explicitly overrides both strict defaults to false.
 Use it only for bootstrap or recovery work before strict mode is re-enabled:
 
 ```sh
