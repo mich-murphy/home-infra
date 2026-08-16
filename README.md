@@ -2,14 +2,19 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Infrastructure-as-code for a single-server homelab running on Proxmox. Manages VM provisioning, host configuration, containerised application services, and a prepared Talos Kubernetes migration.
+Infrastructure-as-code for a single-server homelab running on Proxmox. Terraform
+provisions infrastructure, Ansible configures hosts and the router, and Docker
+Compose plus Portainer GitOps run application services.
+
+The approved simplification scope and implementation order are recorded in
+[docs/simplification-handover.md](docs/simplification-handover.md).
 
 ## Hardware
 
 | Component   | Specification                                                      |
 | ----------- | ------------------------------------------------------------------ |
 | CPU         | Intel Core i7-14700 (20C/28T)                                      |
-| RAM         | 64GB Micron DDR5 ECC                                               |
+| RAM         | Designed for 64GB Micron DDR5 ECC; 32GB currently installed        |
 | Motherboard | Supermicro X13SAE                                                  |
 | Boot disk   | 250GB NVMe                                                         |
 | VM storage  | 2x 1TB Samsung EVO NVMe (ZFS mirror, Proxmox-managed)              |
@@ -18,6 +23,8 @@ Infrastructure-as-code for a single-server homelab running on Proxmox. Manages V
 
 TrueNAS pool layout, dataset tuning, and the storage change plan are
 documented in [docs/truenas-storage.md](docs/truenas-storage.md).
+One faulty 32GB module has been removed. Current VM sizing and the intentionally
+stopped UniFi controller reflect the installed 32GB constraint.
 
 ## Architecture
 
@@ -26,9 +33,8 @@ Proxmox v9.1.6 (hypervisor)
 ├── TrueNAS VM (SRV VLAN) ─── NFS shares (media, downloads, bulk storage)
 ├── Docker Host VM (Ubuntu 24.04) ─── live services via Docker Compose
 │   └── Traefik → *.local.elmurphy.com (TLS via Cloudflare ACME)
-├── UniFi OS Server VM (MGMT) ─── Network controller for AP/WLANs
+├── UniFi OS Server VM (MGMT) ─── cold controller infrastructure (off normally)
 ├── ai-dev VM (DMZ) ─── Isolated AI development sandbox
-└── [Talos K8s VM] ─── prepared, gated by enable_talos, pending cutover
 ```
 
 ### Network (MikroTik RB5009 + UniFi AP)
@@ -50,7 +56,7 @@ are managed through the UniFi controller API (`terraform/network`).
 
 The server has two ethernet ports: `eno2`/`vmbr0` trunks MGMT/SRV to RB5009
 `ether3`, while `eno1`/`vmbr1` is the untagged DMZ uplink to RB5009 `ether2`.
-The UniFi U7 Pro AP is adopted in the controller. The three managed WLANs are
+The UniFi U6-Pro AP is adopted in the controller. The three managed WLANs are
 attached to the default `All APs` group and mapped to the DFLT/KDS/GST
 VLAN-only networks. The ai-dev VM is isolated on the physical DMZ
 (`10.77.99.0/24`), protected by host nftables default-deny input rules, and
@@ -64,10 +70,9 @@ Its mobile workflow and deployment checks are documented in
 ```text
 .
 ├── terraform/       # Proxmox VM provisioning
-├── ansible/         # Host configuration (Docker host, game server)
-├── docker/          # Docker Compose services (active until cutover)
-├── kubernetes/      # Flux CD manifests (prepared, not live)
-├── talos/           # Talos Linux cluster config (prepared, not live)
+├── ansible/         # Host, bootstrap-stack, and RouterOS configuration
+├── docker/          # Bootstrap and Portainer-owned Compose definitions
+├── network/         # Shared non-secret VLAN, subnet, and address inventory
 ├── docs/            # Documentation
 ├── flake.nix        # Nix dev shell
 └── justfile         # Task runner
@@ -78,7 +83,8 @@ Its mobile workflow and deployment checks are documented in
 - [Nix](https://nixos.org/) with flakes enabled (provides all tooling via `flake.nix`)
 - [direnv](https://direnv.net/) (auto-loads the Nix dev shell)
 
-The dev shell includes: terraform, ansible, just, talosctl, kubectl, k9s, fluxcd, helm, alejandra.
+The dev shell includes Terraform, Ansible, Docker Compose, ShellCheck, `just`,
+Actionlint, and Alejandra.
 
 ## Quick Start
 
@@ -108,13 +114,19 @@ Run Terraform through the `just` recipes so local state and generated cloud-init
 | VM | ID | Spec | Purpose |
 | --- | --- | --- | --- |
 | truenas | 101 | 2 CPU, 10GB RAM, 32GB | NAS with HBA passthrough |
-| docker-host | 102 | 6 CPU, 10GB RAM, 128GB | Current Docker Compose services |
-| ai-dev | 110 | 4 CPU, 4GB RAM, 150GB | AI development sandbox |
-| unifi | 111 | 2 CPU, 4GB RAM, 40GB | UniFi OS Server |
-| talos-prod-1 | 200 | 8 CPU, 12GB RAM, 100GB+128GB | Kubernetes, created at cutover only |
+| docker-host | 102 | 6 CPU, 8GB RAM, 128GB | Docker Compose services |
+| ai-dev | 110 | 4 CPU, 5GB RAM, 150GB | AI development sandbox |
+| unifi-controller | 111 | 2 CPU, 4GB max / 2GB min, 40GB | Cold UniFi OS Server infrastructure |
 
 Cloud-init template (`cloud_init.tftpl`) bootstraps the management user, installs qemu-guest-agent, and joins Tailscale.
-TrueNAS and docker-host are managed with `prevent_destroy`; their pinned MAC addresses are supplied through sensitive Terraform variables in the ignored root `.envrc`. The Talos VM is gated by `enable_talos=false` by default; enabling it creates VM 200, stops docker-host, and moves the iGPU passthrough to Talos.
+TrueNAS, docker-host, ai-dev, and the UniFi controller use `prevent_destroy`.
+Pinned MAC addresses are supplied through sensitive Terraform variables in the
+ignored root `.envrc`. The UniFi controller intentionally has `on_boot = false`
+and `started = false` while the server has 32GB installed; this is not drift.
+Start VM 111 before running the UniFi Ansible role or any `terraform/network`
+plan/apply, and stop it again after controller-dependent work is complete.
+Template build usage and recovery are documented in
+[docs/proxmox-templates.md](docs/proxmox-templates.md).
 
 ## Ansible
 
@@ -126,7 +138,7 @@ Configures provisioned hosts and the RB5009 with these primary roles:
 | ai-dev   | Agents, Herdr/Moshi, nftables, development environment |
 | firewall | UFW rules                                              |
 | media    | NFS mounts, media user/group (UID/GID 1215)            |
-| docker   | Docker engine installation                             |
+| docker   | Docker host policy and `/srv/init` bootstrap deployment |
 | unifi    | UniFi OS Server install                                |
 | routeros | RB5009 VLANs, DHCP, firewall, NAT, OOB port            |
 
@@ -136,27 +148,36 @@ RouterOS strict mode is the current steady state. `just routeros` maintains the
 strict config; `just routeros-scaffold` is only for pre-strict bootstrap or
 recovery work. See `ansible/roles/routeros/README.md`.
 
+The Docker role verifies an existing Docker Engine and Compose plugin; it does
+not install Docker.
+
 ## Network Operations
 
-Apply/verify order for a fresh rebuild is manual: root Terraform →
-`just run unifi-controller` → `terraform/network` → `just routeros`.
+Apply/verify order for a fresh rebuild is manual: root Terraform → start VM 111
+→ `just run unifi-controller` → `terraform/network` → `just routeros` → stop
+VM 111. Shared non-secret network facts live in `network/inventory.yaml` and are
+consumed by both Terraform roots and the RouterOS play.
 
 ## Docker Services
 
-All services run behind Traefik on the shared `proxy` network (172.20.1.0/24) with TLS via Cloudflare DNS challenge. Services are managed by Portainer.
+All services run behind Traefik on the shared `proxy` network with TLS via the
+Cloudflare DNS challenge. Ansible owns the `/srv/init` bootstrap stack because
+Traefik and Portainer must exist before Portainer can operate. Portainer GitOps
+owns every application stack in `docker/portainer-stacks.yaml`. The inventory,
+Git settings, drift check, and removal order are documented in
+[docs/docker-deployment.md](docs/docker-deployment.md).
 
 | Stack                | Services                                       |
 | -------------------- | ---------------------------------------------- |
 | **init**             | Traefik, Portainer, Pocket-ID (SSO)            |
 | **arrs**             | Radarr, Sonarr, Lidarr, Prowlarr               |
 | **downloads**        | qBittorrent, SABnzbd                           |
-| **plex**             | Plex, Tautulli, Overseerr, Maintainerr, Kometa |
+| **plex**             | Plex, Tautulli, Seerr, Maintainerr, Kometa     |
 | **jellyfin**         | Jellyfin, Jellyseerr                           |
 | **immich**           | Immich Server, Immich ML, PostgreSQL, Redis    |
 | **owncloud**         | OwnCloud, MariaDB, Redis                       |
 | **miniflux**         | Miniflux, PostgreSQL                           |
 | **couchdb**          | CouchDB (Obsidian sync)                        |
-| **komga**            | Komga (manga/comics)                           |
 | **audiobookshelf**   | Audiobookshelf                                 |
 | **wallabag**         | Wallabag, MariaDB, Redis                       |
 | **pinchflat**        | Pinchflat (YouTube archival)                   |
@@ -166,16 +187,10 @@ All services run behind Traefik on the shared `proxy` network (172.20.1.0/24) wi
 
 - Images pinned to SHA256 digests (managed by Renovate)
 - `security_opt: no-new-privileges:true` on all containers
-- `cap_drop: [ALL]` is rolled out service-by-service; see [docs/docker-hardening.md](docs/docker-hardening.md)
-- Backend databases use isolated internal networks (e.g., `172.30.1.0/24`)
+- `cap_drop: [ALL]` by default with documented retained init capabilities and exceptions; see [docs/docker-hardening.md](docs/docker-hardening.md)
+- Backend databases use isolated Docker-allocated internal networks
 - GPU passthrough (`/dev/dri`) for Plex, Jellyfin, Immich transcoding
 - NFS mounts at `/mnt/data`, `/mnt/music`, `/mnt/audiobooks`, etc.
-
-## Kubernetes (Prepared)
-
-Talos Linux single-node cluster managed by Flux CD. The manifests are prepared for cutover but are not live while `enable_talos=false`.
-
-Prepared components include Cilium Gateway API, cert-manager, External Secrets backed by 1Password, OpenEBS LocalPV, static TrueNAS NFS PVs, VolSync/restic backups, Intel GPU device plugin, media/tool/auth app migrations, Immich without machine learning, and VictoriaMetrics monitoring. The rollout checklist lives in [docs/k8s-migration.md](docs/k8s-migration.md).
 
 ## CI/CD
 
@@ -183,9 +198,9 @@ Prepared components include Cilium Gateway API, cert-manager, External Secrets b
   - Actions workflow linting for `.github/workflows/**`
   - Nix flake check for `flake.nix` and `flake.lock`
   - Terraform format and validate for `terraform/**`
+  - ShellCheck for Proxmox template scripts
   - Docker Compose render checks for `docker/**`
-  - Offline Kubernetes kustomize builds with kubeconform schema validation for `kubernetes/**`
-  - Talos YAML parsing for `talos/**`
+  - Ansible lint plus syntax-check of the complete `ansible/run.yaml` playbook
 - **Renovate**: Automated dependency updates on schedule (GitHub Actions)
   - Config validation only runs when Renovate config changes
   - Semantic commits with `actions-renovate/` branch prefix

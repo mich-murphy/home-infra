@@ -2,14 +2,6 @@
 .claude
 CLAUDE.md
 
-# docs
-docs/*
-!docs/docker-hardening.md
-!docs/ai-dev.md
-!docs/k8s-migration.md
-!docs/subtitle-options.md
-!docs/truenas-storage.md
-
 # nix
 .direnv
 
@@ -29,9 +21,4 @@ terraform/files
 
 # ansible
 .vaultpass
-
-talos/*.secret.yaml
-talos/secrets.yaml
-talos/controlplane.yaml
-talos/worker.yaml
-talos/talosconfig
+ansible/.ansible/

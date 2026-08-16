@@ -38,6 +38,9 @@ jobs:
       - name: Check Terraform formatting
         if: inputs.check == 'terraform'
         run: nix shell .#terraform-ci --command terraform-ci -chdir=terraform fmt -check -recursive
+      - name: Lint Proxmox template scripts
+        if: inputs.check == 'terraform'
+        run: nix shell .#shellcheck --command shellcheck terraform/scripts/*.sh
       - name: Validate Terraform roots
         if: inputs.check == 'terraform'
         env:
@@ -77,40 +80,18 @@ jobs:
             echo "Checking ${compose_file}"
             docker-compose -f "${compose_file}" config --quiet
           done < <(find docker -name compose.yml -print | sort)
-          SCRIPT
-      - name: Build and validate active kustomizations
-        if: inputs.check == 'kubernetes'
-        run: |
-          nix shell .#kubectl .#kubeconform --command bash -euo pipefail <<'SCRIPT'
-          # Vendored schemas (.github/schemas) take precedence over the
-          # CRDs-catalog — used where the catalog copy is stale (volsync).
-          # The catalog covers Flux, Gateway API, cert-manager, cilium.io and
-          # external-secrets kinds; -ignore-missing-schemas stays as the
-          # fallback for anything neither location has.
-          schema_args=(
-            -schema-location default
-            -schema-location '.github/schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
-            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
-          )
-          while IFS= read -r kustomization; do
-            dir="${kustomization%/*}"
-            echo "Checking ${dir}"
-            kubectl kustomize "${dir}" | kubeconform -summary -strict -ignore-missing-schemas "${schema_args[@]}"
-          done < <(find kubernetes -path kubernetes/archive -prune -o -name kustomization.yaml -print | sort)
-          SCRIPT
-      - name: Render and validate Talos config
-        if: inputs.check == 'talos'
-        run: |
-          nix shell .#talosctl .#yq-go --command bash -euo pipefail <<'SCRIPT'
-          yq eval 'true' talos/schematic.yaml > /dev/null
-          # Throwaway secrets; renders the real machine config so schema errors
-          # in the patch fail the gate instead of surfacing at apply time.
-          talosctl gen config ci https://10.77.20.20:6443 \
-            --config-patch @talos/controlplane-patch.yaml \
-            --config-patch @talos/firewall-patch.yaml \
-            --output-types controlplane --output - | talosctl validate --mode metal --config /dev/stdin
+          scripts/check-portainer-drift.sh --source-only
           SCRIPT
       - name: Lint Ansible
         if: inputs.check == 'ansible'
         # galaxy install: kewlfft.aur is not bundled with nixpkgs ansible
-        run: nix shell .#ansible-lint --command bash -euo pipefail -c 'cd ansible && ansible-galaxy collection install -r requirements.yaml && ansible-lint'
+        run: |
+          nix shell .#ansible-lint --command bash -euo pipefail <<'SCRIPT'
+          cd ansible
+          ansible-galaxy collection install -r requirements.yaml
+          # CI cannot decrypt the real vault; syntax-check needs only the file's
+          # shape to load the complete play composition.
+          printf '%s\n' '---' > group_vars/secrets.yaml
+          ansible-playbook --syntax-check run.yaml
+          ansible-lint
+          SCRIPT

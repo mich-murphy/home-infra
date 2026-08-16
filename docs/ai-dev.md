@@ -1,8 +1,9 @@
 # AI development VM
 
 `ai-dev` is the single AI development VM. It retains Proxmox VMID 110 and its
-150 GB disk, with 4 CPU cores, 4 GB RAM, and RAM-sized zram. Its only NIC is on
-the physical `vmbr1` DMZ.
+150 GB disk, with 4 CPU cores, fixed 5 GiB RAM, and an 8 GiB disk-backed
+swapfile with a bounded zswap cache. Its only NIC is on the physical `vmbr1`
+DMZ.
 
 The supported remote path is:
 
@@ -46,7 +47,8 @@ terraform plan
 
 The plan must report the address move from
 `module.ai_dev["ai-dev-bgd"]` to `module.ai_dev`, followed by an in-place rename
-and CPU update. Stop if VMID 110 or its disk would be destroyed or replaced.
+and CPU/memory update. Stop if VMID 110 or its disk would be destroyed or
+replaced.
 If the plan instead proposes creating all BPG-provider VMs or asks for the
 legacy Telmate provider, stop: the local state predates the earlier provider
 migration and must be reconciled/imported before this rename can be planned.
@@ -69,13 +71,12 @@ The ai-dev role clones the public `nix-config` repository to
 non-fast-forward checkout or conflicting local change stops deployment.
 Check mode builds the activation package but never activates it.
 
-The first activation directly replaces the old Ansible-managed Fish, Starship,
-and global Git files and removes the retired Fisher plugins. It preserves Fish
-variables, histories, credentials, OAuth sessions, OpenCode configuration, and
-other application state. No migration backup is created. After Home Manager is
-active, Ansible removes duplicate Arch CLI packages and the old
-`.opencode/bin/opencode` binary. The second live AI host run must report no
-changes when the upstream agent versions have not changed.
+Home Manager is the steady-state owner of the shared shell and CLI environment.
+Ansible builds the desired activation package, compares it with the current
+Home Manager generation, and activates only when they differ. It does not
+remove legacy files or packages during normal runs. A second live run must
+report no changes when the Nix configuration and upstream agent versions have
+not changed.
 
 ## Interactive setup
 
@@ -143,6 +144,78 @@ projects on the VM.
 Moshi's full agent integration sends limited notification summaries, approval
 details, metadata, pairing, and WebSocket control traffic through Moshi's
 service. Terminal traffic, source files, transcripts, and diffs remain direct.
+
+## Plannotator remote reviews
+
+Plannotator uses the fixed AI-Dev port `19432` with sharing disabled. Herdr
+keeps Pi and its pending review alive, while the browser submits approval or
+annotation feedback directly to Plannotator's HTTP decision interface.
+
+For a laptop review:
+
+1. Run `herdr --remote ai-dev`. The SSH connection creates a laptop-loopback
+   forward from `127.0.0.1:19432` to the same loopback port on AI-Dev.
+2. Start the Plannotator review from Pi. Pi displays a URL based at
+   `http://localhost:19432`.
+3. Ctrl-click the URL in Ghostty to open it in the Mac's default browser.
+4. Approve the plan or submit annotations. Pi receives the decision and
+   resumes automatically.
+
+Opening the browser is deliberately one-click, not automatic. The forwarded
+listener exists only while the laptop's Herdr SSH connection is active.
+Detaching after a review starts leaves Pi waiting in Herdr; reattach and reopen
+the displayed URL to complete it.
+
+For a phone review, connect to the same Herdr session through Moshi and start
+the review from Pi. When Moshi's Browser Preview indicator appears, tap it,
+select the listener on port `19432`, and use the in-app browser to approve or
+annotate the plan. Moshi creates its own per-session SSH forward; Plannotator
+is not published on the tailnet or physical DMZ.
+
+The fixed port supports one active review at a time. A second concurrent
+Plannotator review can fail to bind or interfere with the first; finish or
+cancel the first review before starting another.
+
+### Plannotator troubleshooting
+
+- If `herdr --remote ai-dev` reports that `19432` is already in use,
+  `ExitOnForwardFailure` has stopped the attach rather than leaving reviews
+  silently broken. Run `lsof -nP -iTCP:19432 -sTCP:LISTEN` on the laptop, stop
+  the local process that owns the port, and reconnect.
+- If Moshi does not show Browser Preview, first confirm that a review is still
+  waiting and that `ss -ltn 'sport = :19432'` shows the Plannotator listener on
+  AI-Dev. Then check `moshi-hook status` and
+  `systemctl --user status moshi-hook`; its gateway must remain on
+  `127.0.0.1:24543`.
+- If Pi does not use port `19432` or tries to open a browser on AI-Dev, its
+  process has a stale environment. In an idle Herdr pane run `exec fish`,
+  confirm the variables below, and start a new Pi process. Do not restart the
+  Herdr server merely to refresh the environment: stopping it exits every pane
+  process.
+
+```sh
+fish -lc 'printf "%s\n" "$PLANNOTATOR_REMOTE" "$PLANNOTATOR_PORT" "$PLANNOTATOR_SHARE"'
+# Expected: 1, 19432, disabled
+```
+
+While a review is active, `curl http://127.0.0.1:19432` must work on AI-Dev and
+on the attached laptop. Direct requests to `http://ai-dev:19432` must fail from
+the laptop and every other tailnet peer, and requests to the AI-Dev DMZ address
+on `19432` must fail from the physical DMZ. Confirm that
+`sudo nft list chain inet filter input` has no accept rule for `19432`. Closing
+the laptop Herdr connection must remove the laptop's `127.0.0.1:19432`
+listener.
+
+On the laptop, inspect the effective client policy before the end-to-end test:
+
+```sh
+ssh -G ai-dev | grep -E \
+  '^(user|localforward|exitonforwardfailure|identityagent|hashknownhosts) '
+```
+
+It must report user `michael`, forward-failure handling enabled, the
+loopback-to-loopback `19432` forward, and the existing wildcard 1Password agent
+and hashed-known-host settings.
 
 ## Agent scratch space
 
@@ -237,10 +310,12 @@ sudo tailscale debug prefs
 ip -brief address show ens18
 ip route
 sudo nft list ruleset
+sudo sshd -T | grep -E '^(allowtcpforwarding local|gatewayports no)$'
 systemctl --user status moshi-hook
 ss -ltn 'sport = :24543'
 command -v nvim stylua gopls marksman
 fish -lc 'echo $TMPDIR'
+fish -lc 'env | grep ^PLANNOTATOR_ | sort'
 systemctl --user show-environment | grep '^TMPDIR='
 fish -c 'type -p opencode hunk yazi btop bat direnv'
 nvim --headless \
