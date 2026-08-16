@@ -1,0 +1,40 @@
+---
+- name: Install Docker repository prerequisites
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - python3-debian
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+    lock_timeout: 300
+
+- name: Configure the Docker stable apt repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    architectures:
+      - "{{ docker_apt_architecture }}"
+    components:
+      - stable
+    signed_by: "{{ docker_apt_signing_key }}"
+    suites:
+      - "{{ ansible_facts.distribution_release }}"
+    types:
+      - deb
+    uris:
+      - https://download.docker.com/linux/ubuntu
+    state: present
+  register: docker_apt_repository
+
+- name: Install Docker Engine and Compose
+  ansible.builtin.apt:
+    name: "{{ docker_packages }}"
+    state: present
+    update_cache: "{{ docker_apt_repository.changed }}"
+    lock_timeout: 300
+
+- name: Enable and start Docker Engine
+  ansible.builtin.systemd_service:
+    name: docker
+    enabled: true
+    state: started

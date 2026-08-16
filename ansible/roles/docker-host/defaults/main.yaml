@@ -1,0 +1,45 @@
+---
+docker_apt_architecture: amd64
+docker_apt_signing_key: https://download.docker.com/linux/ubuntu/gpg
+
+docker_packages:
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-ce
+  - docker-ce-cli
+  - docker-compose-plugin
+
+docker_log_driver: json-file
+docker_log_max_size: 20m
+docker_log_max_file: 3
+
+docker_image_prune_enabled: true
+docker_image_prune_until: 168h
+docker_image_prune_calendar: weekly
+docker_image_prune_randomized_delay: 1h
+
+docker_external_interface: "{{ ansible_facts['default_ipv4']['interface'] }}"
+docker_bootstrap_dir: /srv/init
+docker_bootstrap_containers:
+  - docker-socket-proxy
+  - pocket-id
+  - portainer
+  - traefik
+
+pocket_id_encryption_key_dir: /etc/pocket-id
+pocket_id_encryption_key_path: "{{ pocket_id_encryption_key_dir }}/encryption-key"
+
+nfs_mount_opts: "rw,vers=4.2,proto=tcp,hard,_netdev,x-systemd.automount,x-systemd.idle-timeout=600,nofail"
+nfs_mounts:
+  - name: media
+    local_path: /mnt/data
+    nfs_share: 10.77.20.101:/mnt/slow/media
+  - name: photos
+    local_path: /mnt/photos
+    nfs_share: 10.77.20.101:/mnt/slow/photos
+  - name: music
+    local_path: /mnt/music
+    nfs_share: 10.77.20.101:/mnt/slow/media/music
+  - name: audiobooks
+    local_path: /mnt/audiobooks
+    nfs_share: 10.77.20.101:/mnt/slow/media/audiobooks

@@ -71,25 +71,35 @@ The ai-dev role clones the public `nix-config` repository to
 non-fast-forward checkout or conflicting local change stops deployment.
 Check mode builds the activation package but never activates it.
 
-Home Manager is the steady-state owner of the shared shell and CLI environment.
-Ansible builds the desired activation package, compares it with the current
-Home Manager generation, and activates only when they differ. It does not
-remove legacy files or packages during normal runs. A second live run must
-report no changes when the Nix configuration and upstream agent versions have
-not changed.
+Home Manager is the steady-state owner of the shared shell, CLI environment,
+ai-dev maintenance command, and Moshi user unit. Ansible builds the desired
+activation package, compares it with the current Home Manager generation, and
+activates only when they differ. It then runs `ai-dev-maintenance
+ensure-present`, which repairs missing tools without updating installed tools.
+A second live run must report no changes when the Nix configuration has not
+changed.
 
 ## Interactive setup
 
 Home Manager owns OpenCode and the shared Fish, Starship, FZF, general Git
-behavior, Hunk, Herdr, Yazi, and portable CLI configuration. Ansible writes
-ai-dev's vaulted personal and BusinessCraft identity fragments with mode `0600`
-and selects the BusinessCraft fragment below `~/businesscraft/`; the Mac retains
-its separate Home Manager-owned identities. Ansible reruns the official stable
-installers for Claude Code, Codex, Pi, Herdr, and Moshi on every deployment,
-comparing versions before and after so unchanged installers remain idempotent.
-It also installs the user-scoped `npm:@plannotator/pi-extension` Pi package.
-Ansible does not copy SSH keys, OAuth sessions, or API keys. Authenticate each
-tool interactively:
+behavior, Hunk, Herdr, Yazi, portable CLI configuration, and the
+`ai-dev-maintenance` command. Ansible writes ai-dev's vaulted personal and
+BusinessCraft identity fragments with mode `0600` and selects the BusinessCraft
+fragment below `~/businesscraft/`; the Mac retains its separate Home
+Manager-owned identities.
+
+Run ongoing coding-agent updates deliberately on ai-dev:
+
+```sh
+ai-dev-maintenance update
+ai-dev-maintenance status
+```
+
+The update command runs the official stable installers for Claude Code, Codex,
+Pi, Herdr, and Moshi independently, updates the Plannotator Pi package,
+reconciles Herdr before Moshi integrations, and reports all failures together.
+The status command is read-only. Ansible does not copy SSH keys, OAuth sessions,
+or API keys. Authenticate each tool interactively:
 
 ```sh
 gh auth login --hostname github.com --web --git-protocol ssh
@@ -124,22 +134,18 @@ Scan the Easy Pair QR, save the MagicDNS host as `ai-dev`, and leave connection
 mode on `Auto`. The gateway must remain on `127.0.0.1:24543`; OpenSSH permits
 local TCP forwarding but disables gateway and Unix-socket forwarding.
 
-Ansible installs Herdr integrations first and Moshi integrations second so
-their entries coexist. Check them after authentication:
+`ai-dev-maintenance` installs Herdr integrations before Moshi integrations so
+their entries coexist. Check the complete toolchain and loopback-only Moshi
+runtime after authentication:
 
 ```sh
-herdr integration status
-moshi-hook status
-claude --version
-codex --version
-pi --version
-opencode --version
+ai-dev-maintenance status
 ```
 
-Moshi's OpenCode hook is project-local. Ansible installs it in the home
-workspace; run `moshi-hook install` once from each existing OpenCode project
-root that should emit events. This repository does not inventory untracked
-projects on the VM.
+Moshi's OpenCode hook is project-local. The maintenance command installs it in
+the home workspace; run `moshi-hook install` once from each existing OpenCode
+project root that should emit events. This repository does not inventory
+untracked projects on the VM.
 
 Moshi's full agent integration sends limited notification summaries, approval
 details, metadata, pairing, and WebSocket control traffic through Moshi's

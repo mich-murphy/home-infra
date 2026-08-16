@@ -1,0 +1,75 @@
+---
+- name: Sync bootstrap Compose files
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../docker/init/"
+    dest: "{{ docker_bootstrap_dir }}/"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0775"
+
+- name: Ensure Pocket ID secret directory exists
+  ansible.builtin.file:
+    path: "{{ pocket_id_encryption_key_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Check for Pocket ID encryption key
+  ansible.builtin.stat:
+    path: "{{ pocket_id_encryption_key_path }}"
+  register: pocket_id_key_file
+
+- name: Generate Pocket ID encryption key
+  ansible.builtin.command:
+    cmd: openssl rand -hex 32
+  register: generated_pocket_id_key
+  changed_when: false
+  check_mode: false
+  when: not pocket_id_key_file.stat.exists
+  no_log: true
+
+- name: Persist Pocket ID encryption key
+  ansible.builtin.copy:
+    content: "{{ generated_pocket_id_key.stdout }}\n"
+    dest: "{{ pocket_id_encryption_key_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  when: not pocket_id_key_file.stat.exists
+  no_log: true
+
+- name: Read Pocket ID encryption key
+  ansible.builtin.slurp:
+    src: "{{ pocket_id_encryption_key_path }}"
+  register: pocket_id_key
+  check_mode: false
+  when: pocket_id_key_file.stat.exists
+  no_log: true
+
+- name: Set Pocket ID encryption key fact
+  ansible.builtin.set_fact:
+    pocket_id_encryption_key: >-
+      {{ (pocket_id_key.content | b64decode | trim)
+         if pocket_id_key_file.stat.exists
+         else generated_pocket_id_key.stdout }}
+  no_log: true
+
+- name: Configure bootstrap stack environment
+  ansible.builtin.copy:
+    content: |
+      CF_DNS_API_TOKEN={{ CF_DNS_API_TOKEN }}
+      CF_API_EMAIL={{ CF_API_EMAIL }}
+      ENCRYPTION_KEY={{ pocket_id_encryption_key }}
+      MAXMIND_LICENSE_KEY={{ MAXMIND_LICENSE_KEY }}
+    dest: "{{ docker_bootstrap_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Reconcile the bootstrap stack
+  ansible.builtin.command:
+    cmd: docker compose up -d --remove-orphans
+    chdir: "{{ docker_bootstrap_dir }}"
+  changed_when: true

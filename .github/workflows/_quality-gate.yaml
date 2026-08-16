@@ -93,5 +93,6 @@ jobs:
           # shape to load the complete play composition.
           printf '%s\n' '---' > group_vars/secrets.yaml
           ansible-playbook --syntax-check run.yaml
+          ansible-playbook tests/routeros-firewall-policy.yaml
           ansible-lint
           SCRIPT

@@ -6,7 +6,9 @@ Configures the Mikrotik RB5009 (RouterOS v7) over the API using
 `community.routeros.api_modify`. All data lives in `group_vars/routeros.yaml`.
 
 The role reconciles managed entries and leaves unrelated WAN/base rules alone.
-Managed entries carry a `managed: routeros role` comment. The DMZ de-bridge is
+`tasks/firewall-policy.yaml` derives canonical ordered firewall and NAT intent;
+both reconciliation and live verification consume that intent. Managed entries
+carry a `managed: routeros role` comment. The DMZ de-bridge is
 the only managed removal, because physical isolation requires `routeros_dmz_port`
 to be absent from the production bridge.
 
@@ -54,7 +56,15 @@ the live port, connect a disposable client to `ether6` and verify a DFLT DHCP
 lease, internet access, the expected application routes, and inability to reach
 the MGMT subnet before considering the operation complete.
 
-The run ends with read-only verification. To run only the checks:
+The run ends with read-only verification. Test strict and recovery policy
+derivation locally without contacting the router:
+
+```sh
+cd ansible
+ansible-playbook tests/routeros-firewall-policy.yaml
+```
+
+To run only the live checks:
 
 ```sh
 just routeros-verify

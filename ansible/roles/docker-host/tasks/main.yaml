@@ -1,0 +1,23 @@
+---
+- name: Install the Docker runtime
+  ansible.builtin.import_tasks: install.yaml
+
+- name: Configure the host firewall
+  ansible.builtin.import_role:
+    name: firewall
+
+- name: Prepare Docker host storage
+  ansible.builtin.import_tasks: storage.yaml
+
+- name: Enforce Docker published-port policy
+  ansible.builtin.import_tasks: published-ports.yaml
+
+- name: Configure Docker daemon policy
+  ansible.builtin.import_tasks: daemon.yaml
+
+- name: Deploy the Ansible-owned bootstrap stack
+  ansible.builtin.import_tasks: bootstrap-stack.yaml
+
+- name: Verify Docker host provisioning
+  ansible.builtin.import_tasks: verify.yaml
+  when: not ansible_check_mode

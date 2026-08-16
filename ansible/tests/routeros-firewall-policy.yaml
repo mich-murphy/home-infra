@@ -1,0 +1,85 @@
+---
+- name: Test RouterOS firewall policy derivation
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../../network/inventory.yaml
+    - ../group_vars/routeros.yaml
+  tasks:
+    - name: Derive strict firewall policy
+      ansible.builtin.import_tasks: ../roles/routeros/tasks/firewall-policy.yaml
+
+    - name: Verify strict forward policy contract
+      ansible.builtin.assert:
+        that:
+          - _strict_forward_comments == _expected_strict_forward_comments
+          - _strict_forward_comments | unique | length == _strict_forward_comments | length
+          - "_strict_forward_comments[-1] == 'DEFAULT DROP (managed: routeros role)'"
+          - _dmz_drop.action == 'drop'
+          - _dmz_drop['dst-address-list'] == 'internal'
+          - _dmz_drop_index < _dmz_wan_index
+          - _routeros_qbittorrent_dstnat_policy == _expected_qbittorrent_dstnat_policy
+      vars:
+        _strict_forward_comments: "{{ _routeros_forward_policy | map(attribute='comment') | list }}"
+        _expected_strict_forward_comments:
+          - "fwd est/rel (managed: routeros role)"
+          - "fwd drop invalid (managed: routeros role)"
+          - "OOB drop routed traffic (managed: routeros role)"
+          - "DMZ drop internal routing (managed: routeros role)"
+          - "WAN -> qBittorrent peers tcp (managed: routeros role)"
+          - "WAN -> qBittorrent peers udp (managed: routeros role)"
+          - "KDS drop DoT (managed: routeros role)"
+          - "KDS drop DoQ (managed: routeros role)"
+          - "DFLT -> SRV services (managed: routeros role)"
+          - "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)"
+          - "SRV -> UniFi controller (managed: routeros role)"
+          - "GST drop internal routing (managed: routeros role)"
+          - "MGMT admins -> WAN (managed: routeros role)"
+          - "10.77.20.0/24 -> WAN (managed: routeros role)"
+          - "10.77.30.0/24 -> WAN (managed: routeros role)"
+          - "10.77.50.0/24 -> WAN (managed: routeros role)"
+          - "10.77.60.0/24 -> WAN (managed: routeros role)"
+          - "10.77.99.0/24 -> WAN (managed: routeros role)"
+          - "DEFAULT DROP (managed: routeros role)"
+        _dmz_drop: >-
+          {{
+            _routeros_forward_policy
+            | selectattr('comment', 'equalto', 'DMZ drop internal routing (managed: routeros role)')
+            | first
+          }}
+        _dmz_drop_index: "{{ _strict_forward_comments.index('DMZ drop internal routing (managed: routeros role)') }}"
+        _dmz_wan_index: "{{ _strict_forward_comments.index('10.77.99.0/24 -> WAN (managed: routeros role)') }}"
+        _expected_qbittorrent_dstnat_policy:
+          - chain: dstnat
+            in-interface-list: WAN
+            protocol: tcp
+            dst-port: '25565'
+            action: dst-nat
+            to-addresses: 10.77.20.246
+            to-ports: '25565'
+            comment: "WAN -> qBittorrent peers tcp (managed: routeros role)"
+          - chain: dstnat
+            in-interface-list: WAN
+            protocol: udp
+            dst-port: '25565'
+            action: dst-nat
+            to-addresses: 10.77.20.246
+            to-ports: '25565'
+            comment: "WAN -> qBittorrent peers udp (managed: routeros role)"
+
+    - name: Select recovery firewall posture
+      ansible.builtin.set_fact:
+        routeros_enable_default_drop: false
+
+    - name: Derive recovery firewall policy
+      ansible.builtin.include_tasks: ../roles/routeros/tasks/firewall-policy.yaml
+
+    - name: Verify recovery forward policy contract
+      ansible.builtin.assert:
+        that:
+          - "'DEFAULT DROP (managed: routeros role)' not in _recovery_forward_comments"
+          - "_recovery_forward_comments[-1] == '10.77.99.0/24 -> WAN (managed: routeros role)'"
+          - _recovery_forward_comments | length == 18
+      vars:
+        _recovery_forward_comments: "{{ _routeros_forward_policy | map(attribute='comment') | list }}"

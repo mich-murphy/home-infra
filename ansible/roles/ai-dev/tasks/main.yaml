@@ -19,7 +19,7 @@
 - name: Install the ai-dev Git identity fragments
   ansible.builtin.import_tasks: accounts.yaml
 
-- name: Install coding agents, Herdr, and Moshi
+- name: Ensure and verify ai-dev maintenance
   ansible.builtin.import_tasks: tools.yaml
 
 - name: Install Neovim configuration

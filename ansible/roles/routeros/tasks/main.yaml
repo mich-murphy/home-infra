@@ -21,6 +21,10 @@
   ansible.builtin.import_tasks: dhcp.yaml
   tags: [dhcp]
 
+- name: Derive RouterOS firewall and NAT intent
+  ansible.builtin.import_tasks: firewall-policy.yaml
+  tags: [firewall, verify]
+
 - name: Firewall address-lists, filter matrix and NAT
   ansible.builtin.import_tasks: firewall.yaml
   tags: [firewall]

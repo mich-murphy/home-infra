@@ -1,4 +1,21 @@
 ---
+- name: Inspect the legacy Ansible-managed Moshi user unit
+  ansible.builtin.stat:
+    path: "/home/{{ username }}/.config/systemd/user/moshi-hook.service"
+    follow: false
+  register: ai_dev_legacy_moshi_unit
+
+- name: Remove the legacy Moshi user unit before Home Manager takes ownership
+  ansible.builtin.file:
+    path: "/home/{{ username }}/{{ item }}"
+    state: absent
+  loop:
+    - .config/systemd/user/default.target.wants/moshi-hook.service
+    - .config/systemd/user/moshi-hook.service
+  when:
+    - ai_dev_legacy_moshi_unit.stat.exists
+    - not ai_dev_legacy_moshi_unit.stat.islnk
+
 - name: Ensure the development directory exists
   ansible.builtin.file:
     path: "/home/{{ username }}/dev"

@@ -1,6 +1,6 @@
 ---
 # Reconcile managed rules only; leave defconf/WAN rules alone.
-- name: Address-list of all internal subnets ("internal")
+- name: Address-list of all internal subnets
   community.routeros.api_modify:
     path: ip firewall address-list
     handle_absent_entries: ignore
@@ -48,8 +48,7 @@
         comment: "managed: routeros role"
       {% endfor %}
 
-# Defconf drops non-LAN router input, so routed VLANs/DMZ/OOB must be LAN members.
-- name: Add routed VLAN + DMZ interfaces to the LAN interface-list
+- name: Add routed VLAN and DMZ interfaces to the LAN interface-list
   community.routeros.api_modify:
     path: interface list member
     handle_absent_entries: ignore
@@ -70,7 +69,7 @@
         interface: "{{ routeros_oob_port }}"
         comment: "oob in LAN for router input (managed: routeros role)"
 
-- name: Input — ordered router service policy with explicit DMZ containment
+- name: Reconcile ordered router input policy
   community.routeros.api_modify:
     path: ip firewall filter
     handle_absent_entries: remove
@@ -82,72 +81,9 @@
           - input
       - field: comment
         regex: ".*managed: routeros role.*"
-    data: "{{ _routeros_input_policy | from_yaml }}"
-  vars:
-    # DHCP is scoped by ingress interface because DISCOVER starts from 0.0.0.0.
-    _routeros_input_policy: |
-      - chain: input
-        connection-state: established,related
-        action: accept
-        comment: "input est/rel (managed: routeros role)"
-      - chain: input
-        connection-state: invalid
-        action: drop
-        comment: "input drop invalid (managed: routeros role)"
-      {% for interface in routeros_lan_input_interfaces %}
-      - chain: input
-        in-interface: "{{ interface }}"
-        protocol: udp
-        dst-port: 67,68
-        action: accept
-        comment: "DHCP to router on {{ interface }} (managed: routeros role)"
-      {% endfor %}
-      {% if routeros_enable_dmz | bool %}
-      - chain: input
-        in-interface: "{{ routeros_dmz_port }}"
-        protocol: udp
-        dst-port: 53
-        action: accept
-        comment: "DMZ DNS udp to router (managed: routeros role)"
-      - chain: input
-        in-interface: "{{ routeros_dmz_port }}"
-        protocol: tcp
-        dst-port: 53
-        action: accept
-        comment: "DMZ DNS tcp to router (managed: routeros role)"
-      - chain: input
-        in-interface: "{{ routeros_dmz_port }}"
-        protocol: icmp
-        action: accept
-        comment: "DMZ ICMP to router (managed: routeros role)"
-      - chain: input
-        in-interface: "{{ routeros_dmz_port }}"
-        action: drop
-        comment: "DMZ drop other router input (managed: routeros role)"
-      {% endif %}
-      - chain: input
-        src-address-list: internal
-        protocol: udp
-        dst-port: 53
-        action: accept
-        comment: "DNS udp from internal (managed: routeros role)"
-      - chain: input
-        src-address-list: internal
-        protocol: tcp
-        dst-port: 53
-        action: accept
-        comment: "DNS tcp from internal (managed: routeros role)"
-      - chain: input
-        src-address-list: internal
-        protocol: icmp
-        action: accept
-        comment: "ICMP from internal to router (managed: routeros role)"
-      - chain: input
-        src-address-list: router-admin
-        action: accept
-        comment: "MGMT -> router (managed: routeros role)"
+    data: "{{ _routeros_input_policy }}"
 
-- name: Forward — ordered managed policy
+- name: Reconcile ordered router forward policy
   community.routeros.api_modify:
     path: ip firewall filter
     handle_absent_entries: remove
@@ -160,114 +96,14 @@
       - field: comment
         regex: ".*managed: routeros role.*"
     data: "{{ _routeros_forward_policy }}"
-  vars:
-    _net: "{{ routeros_vlans | items2dict(key_name='name', value_name='subnet') }}"
-    _routeros_forward_base_policy: "{{ _routeros_forward_base_policy_yaml | from_yaml }}"
-    _routeros_forward_base_policy_yaml: |
-      - chain: forward
-        connection-state: established,related
-        action: accept
-        comment: "fwd est/rel (managed: routeros role)"
-      - chain: forward
-        connection-state: invalid
-        action: drop
-        comment: "fwd drop invalid (managed: routeros role)"
-      - chain: forward
-        src-address: "{{ routeros_oob_subnet }}"
-        action: drop
-        comment: "OOB drop routed traffic (managed: routeros role)"
-      {% if routeros_enable_dmz | bool %}
-      - chain: forward
-        src-address: "{{ routeros_dmz.subnet }}"
-        dst-address-list: internal
-        action: drop
-        comment: "DMZ drop internal routing (managed: routeros role)"
-      {% endif %}
-      {% for protocol in routeros_qbittorrent_peer_protocols %}
-      - chain: forward
-        in-interface-list: WAN
-        connection-nat-state: dstnat
-        dst-address: "{{ routeros_qbittorrent_peer_target }}"
-        protocol: "{{ protocol }}"
-        dst-port: "{{ routeros_qbittorrent_peer_port }}"
-        action: accept
-        comment: "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
-      {% endfor %}
-      - chain: forward
-        src-address: "{{ _net.kds }}"
-        protocol: tcp
-        dst-port: 853
-        action: drop
-        comment: "KDS drop DoT (managed: routeros role)"
-      - chain: forward
-        src-address: "{{ _net.kds }}"
-        protocol: udp
-        dst-port: 853
-        action: drop
-        comment: "KDS drop DoQ (managed: routeros role)"
-      - chain: forward
-        src-address: "{{ _net.dflt }}"
-        dst-address: "{{ _net.srv }}"
-        action: accept
-        comment: "DFLT -> SRV services (managed: routeros role)"
-      - chain: forward
-        src-address: "{{ _net.kds }}"
-        dst-address: "{{ _net.srv }}"
-        action: accept
-        comment: "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)"
-      - chain: forward
-        src-address: "{{ _net.srv }}"
-        dst-address: "{{ routeros_unifi_ctrl }}"
-        action: accept
-        comment: "SRV -> UniFi controller (managed: routeros role)"
-      - chain: forward
-        src-address: "{{ _net.gst }}"
-        dst-address-list: internal
-        action: drop
-        comment: "GST drop internal routing (managed: routeros role)"
-      - chain: forward
-        src-address-list: admin
-        out-interface-list: WAN
-        action: accept
-        comment: "MGMT admins -> WAN (managed: routeros role)"
-      {% for subnet in routeros_wan_egress_subnets %}
-      - chain: forward
-        src-address: "{{ subnet }}"
-        out-interface-list: WAN
-        action: accept
-        comment: "{{ subnet }} -> WAN (managed: routeros role)"
-      {% endfor %}
-    _routeros_default_drop_rule:
-      - chain: forward
-        action: drop
-        comment: "DEFAULT DROP (managed: routeros role)"
-    _routeros_forward_policy: >-
-      {{
-        _routeros_forward_base_policy
-        + (_routeros_default_drop_rule if routeros_enable_default_drop | bool else [])
-      }}
 
-- name: KDS — redirect plain DNS (53) to the router so the filtered upstream is used
+- name: Redirect KDS plain DNS to the router
   community.routeros.api_modify:
     path: ip firewall nat
     handle_absent_entries: ignore
-    data:
-      - chain: dstnat
-        src-address: "{{ (routeros_vlans | selectattr('name', 'eq', 'kds') | first).subnet }}"
-        protocol: udp
-        dst-port: 53
-        action: redirect
-        to-ports: 53
-        comment: "KDS DNS redirect (managed: routeros role)"
-      - chain: dstnat
-        src-address: "{{ (routeros_vlans | selectattr('name', 'eq', 'kds') | first).subnet }}"
-        protocol: tcp
-        dst-port: 53
-        action: redirect
-        to-ports: 53
-        comment: "KDS TCP DNS redirect (managed: routeros role)"
+    data: "{{ _routeros_kds_dns_redirect_policy }}"
 
-- name: WAN dst-nat — qBittorrent peer traffic to docker-host
+- name: Reconcile qBittorrent peer dst-nat policy
   community.routeros.api_modify:
     path: ip firewall nat
     handle_absent_entries: remove
@@ -278,29 +114,13 @@
           - dstnat
       - field: comment
         regex: ".*qBittorrent peers.*managed: routeros role.*"
-    data: "{{ _routeros_qbittorrent_dstnat | from_yaml }}"
-  vars:
-    _routeros_qbittorrent_dstnat: |
-      {% for protocol in routeros_qbittorrent_peer_protocols %}
-      - chain: dstnat
-        in-interface-list: WAN
-        protocol: "{{ protocol }}"
-        dst-port: "{{ routeros_qbittorrent_peer_port }}"
-        action: dst-nat
-        to-addresses: "{{ routeros_qbittorrent_peer_target }}"
-        to-ports: "{{ routeros_qbittorrent_peer_port }}"
-        comment: "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
-      {% endfor %}
+    data: "{{ _routeros_qbittorrent_dstnat_policy }}"
 
 - name: Masquerade all internal sources out the WAN
   community.routeros.api_modify:
     path: ip firewall nat
     handle_absent_entries: ignore
-    data:
-      - chain: srcnat
-        out-interface-list: WAN
-        action: masquerade
-        comment: "masquerade (managed: routeros role)"
+    data: "{{ _routeros_masquerade_policy }}"
 
 - name: Query managed forward rule order
   community.routeros.api:
@@ -313,14 +133,13 @@
     - not ansible_check_mode
   tags: [default-drop]
 
-- name: Assert managed forward rules end in default drop
+- name: Assert managed forward rules match canonical intent
   ansible.builtin.assert:
     that:
       - "_managed_forward_comments | length > 0"
       - "_managed_forward_comments[-1] == 'DEFAULT DROP (managed: routeros role)'"
-      - "_managed_forward_comments | length == _expected_managed_forward_comments | length"
       - "_managed_forward_comments == _expected_managed_forward_comments"
-    fail_msg: Managed forward rules are not in the expected order; default-drop must be last.
+    fail_msg: Managed forward rules are not in canonical order; default-drop must be last.
   vars:
     _managed_forward_comments: >-
       {{
@@ -331,31 +150,7 @@
         | list
       }}
     _expected_managed_forward_comments: >-
-      {{
-        [
-          "fwd est/rel (managed: routeros role)",
-          "fwd drop invalid (managed: routeros role)",
-          "OOB drop routed traffic (managed: routeros role)",
-        ]
-        + (
-          ["DMZ drop internal routing (managed: routeros role)"]
-          if routeros_enable_dmz | bool
-          else []
-        )
-        + [
-          "WAN -> qBittorrent peers tcp (managed: routeros role)",
-          "WAN -> qBittorrent peers udp (managed: routeros role)",
-          "KDS drop DoT (managed: routeros role)",
-          "KDS drop DoQ (managed: routeros role)",
-          "DFLT -> SRV services (managed: routeros role)",
-          "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)",
-          "SRV -> UniFi controller (managed: routeros role)",
-          "GST drop internal routing (managed: routeros role)",
-          "MGMT admins -> WAN (managed: routeros role)"
-        ]
-        + (routeros_wan_egress_subnets | map('regex_replace', '$', ' -> WAN (managed: routeros role)') | list)
-        + ["DEFAULT DROP (managed: routeros role)"]
-      }}
+      {{ _routeros_forward_policy | map(attribute='comment') | list }}
   when:
     - routeros_enable_default_drop | bool
     - not ansible_check_mode

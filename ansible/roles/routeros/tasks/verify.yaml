@@ -223,11 +223,8 @@
       - "_expected_qbittorrent_dstnat_comments | difference(_managed_dstnat_comments) | length == 0"
     fail_msg: "Missing qBittorrent dst-nat rules: {{ _expected_qbittorrent_dstnat_comments | difference(_managed_dstnat_comments) }}"
   vars:
-    _expected_qbittorrent_dstnat_comments: "{{ _expected_qbittorrent_dstnat_comments_yaml | from_yaml }}"
-    _expected_qbittorrent_dstnat_comments_yaml: |
-      {% for protocol in routeros_qbittorrent_peer_protocols %}
-      - "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
-      {% endfor %}
+    _expected_qbittorrent_dstnat_comments: >-
+      {{ _routeros_qbittorrent_dstnat_policy | map(attribute='comment') | list }}
     _managed_dstnat_comments: >-
       {{
         _routeros_verify_dstnat.msg
@@ -246,14 +243,11 @@
   vars:
     _expected_forward_comments: >-
       {{
-        (_expected_qbittorrent_forward_comments_yaml | from_yaml)
-        + ["GST drop internal routing (managed: routeros role)"]
-        + (["DMZ drop internal routing (managed: routeros role)"] if routeros_enable_dmz | bool else [])
+        _routeros_forward_policy
+        | selectattr('comment', 'search', 'qBittorrent peers|GST drop internal routing|DMZ drop internal routing')
+        | map(attribute='comment')
+        | list
       }}
-    _expected_qbittorrent_forward_comments_yaml: |
-      {% for protocol in routeros_qbittorrent_peer_protocols %}
-      - "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
-      {% endfor %}
     _managed_forward_comments: >-
       {{
         _routeros_verify_forward_filter.msg
@@ -276,12 +270,14 @@
       - "_managed_input_comments.index('DMZ ICMP to router (managed: routeros role)') < _managed_input_comments.index('DMZ drop other router input (managed: routeros role)')"
     fail_msg: The ordered DMZ-to-router, DMZ-to-internal, or DMZ-to-WAN policy is incomplete.
   vars:
-    _expected_dmz_input_comments:
-      - "DHCP to router on {{ routeros_dmz_port }} (managed: routeros role)"
-      - "DMZ DNS udp to router (managed: routeros role)"
-      - "DMZ DNS tcp to router (managed: routeros role)"
-      - "DMZ ICMP to router (managed: routeros role)"
-      - "DMZ drop other router input (managed: routeros role)"
+    _expected_dmz_input_comments: >-
+      {{
+        _routeros_input_policy
+        | selectattr('in-interface', 'defined')
+        | selectattr('in-interface', 'equalto', routeros_dmz_port)
+        | map(attribute='comment')
+        | list
+      }}
     _managed_input_comments: >-
       {{
         _routeros_verify_input_filter.msg
@@ -319,27 +315,7 @@
         | list
       }}
     _expected_managed_forward_comments: >-
-      {{
-        [
-          "fwd est/rel (managed: routeros role)",
-          "fwd drop invalid (managed: routeros role)",
-          "OOB drop routed traffic (managed: routeros role)"
-        ]
-        + (["DMZ drop internal routing (managed: routeros role)"] if routeros_enable_dmz | bool else [])
-        + [
-          "WAN -> qBittorrent peers tcp (managed: routeros role)",
-          "WAN -> qBittorrent peers udp (managed: routeros role)",
-          "KDS drop DoT (managed: routeros role)",
-          "KDS drop DoQ (managed: routeros role)",
-          "DFLT -> SRV services (managed: routeros role)",
-          "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)",
-          "SRV -> UniFi controller (managed: routeros role)",
-          "GST drop internal routing (managed: routeros role)",
-          "MGMT admins -> WAN (managed: routeros role)"
-        ]
-        + (routeros_wan_egress_subnets | map('regex_replace', '$', ' -> WAN (managed: routeros role)') | list)
-        + (["DEFAULT DROP (managed: routeros role)"] if routeros_enable_default_drop | bool else [])
-      }}
+      {{ _routeros_forward_policy | map(attribute='comment') | list }}
 
 - name: Assert no unmanaged accepts are above default drop
   ansible.builtin.assert:

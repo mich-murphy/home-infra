@@ -6,9 +6,7 @@
     - "group_vars/secrets.yaml"
   roles:
     - common
-    - firewall
-    - media
-    - docker
+    - docker-host
 
 - name: configure ai-dev hosts
   hosts: ai_dev

@@ -1,0 +1,12 @@
+---
+- name: Flush Docker published-port policy
+  ansible.builtin.command: iptables -F DOCKER-USER
+  register: docker_user_flush
+  changed_when: docker_user_flush.rc == 0
+  failed_when:
+    - docker_user_flush.rc != 0
+    - "'No chain' not in docker_user_flush.stderr"
+
+- name: Reload UFW after Docker policy changes
+  community.general.ufw:
+    state: reloaded

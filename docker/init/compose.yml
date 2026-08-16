@@ -11,7 +11,7 @@ services:
       - portainer-data:/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
-      # escape hatch when traefik is down; allowlisted in firewall_docker_allowed_ports
+      # escape hatch when traefik is down; allowlisted in docker_published_ports
       - 9443:9443
     labels:
       - traefik.enable=true

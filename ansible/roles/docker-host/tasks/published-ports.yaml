@@ -1,0 +1,24 @@
+---
+# Docker-published ports bypass UFW's INPUT policy and must be filtered before
+# Docker's own FORWARD rules.
+- name: Allowlist Docker published ports in DOCKER-USER
+  ansible.builtin.blockinfile:
+    path: /etc/ufw/after.rules
+    marker: "# {mark} ANSIBLE MANAGED BLOCK: docker published-port allowlist"
+    block: |
+      *filter
+      :DOCKER-USER - [0:0]
+      -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
+      -A DOCKER-USER -m conntrack --ctstate INVALID -j DROP
+      {% for entry in docker_published_ports %}
+      -A DOCKER-USER -i {{ docker_external_interface }} -p {{ entry.proto }} -m conntrack --ctdir ORIGINAL --ctorigdstport {{ entry.port }} -j RETURN
+      {% endfor %}
+      -A DOCKER-USER -i {{ docker_external_interface }} -m conntrack --ctstate NEW -j DROP
+      -A DOCKER-USER -j RETURN
+      COMMIT
+  notify:
+    - Flush Docker published-port policy
+    - Reload UFW after Docker policy changes
+
+- name: Apply Docker published-port policy before exposing containers
+  ansible.builtin.meta: flush_handlers

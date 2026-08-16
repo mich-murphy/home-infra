@@ -132,15 +132,14 @@ Template build usage and recovery are documented in
 
 Configures provisioned hosts and the RB5009 with these primary roles:
 
-| Role     | Purpose                                                |
-| -------- | ------------------------------------------------------ |
-| common   | SSH hardening, user management                         |
-| ai-dev   | Agents, Herdr/Moshi, nftables, development environment |
-| firewall | UFW rules                                              |
-| media    | NFS mounts, media user/group (UID/GID 1215)            |
-| docker   | Docker host policy and `/srv/init` bootstrap deployment |
-| unifi    | UniFi OS Server install                                |
-| routeros | RB5009 VLANs, DHCP, firewall, NAT, OOB port            |
+| Role        | Purpose                                                     |
+| ----------- | ----------------------------------------------------------- |
+| common      | SSH hardening, user management                              |
+| ai-dev      | Host provisioning and Home Manager activation               |
+| firewall    | Reusable UFW policy                                         |
+| docker-host | Docker, NFS, published-port policy, bootstrap deployment    |
+| unifi       | UniFi OS Server install                                     |
+| routeros    | RB5009 VLANs, DHCP, firewall, NAT, OOB port                 |
 
 Secrets are managed via ansible-vault (`ansible/group_vars/secrets.yaml`).
 
@@ -148,8 +147,9 @@ RouterOS strict mode is the current steady state. `just routeros` maintains the
 strict config; `just routeros-scaffold` is only for pre-strict bootstrap or
 recovery work. See `ansible/roles/routeros/README.md`.
 
-The Docker role verifies an existing Docker Engine and Compose plugin; it does
-not install Docker.
+The `docker-host` role installs Docker Engine and Compose from Docker's stable
+Ubuntu repository, prepares NFS storage, enforces published-port policy, and
+deploys the Ansible-owned bootstrap stack.
 
 ## Network Operations
 

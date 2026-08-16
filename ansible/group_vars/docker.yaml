@@ -8,7 +8,7 @@ swap_swappiness: 10
 zswap_enabled: true
 
 # Published Docker ports must be allowlisted in DOCKER-USER.
-firewall_docker_allowed_ports:
+docker_published_ports:
   - {port: 80, proto: tcp}  # traefik
   - {port: 443, proto: tcp}  # traefik
   - {port: 9443, proto: tcp}  # portainer escape hatch

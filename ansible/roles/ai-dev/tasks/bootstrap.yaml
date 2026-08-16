@@ -74,6 +74,16 @@
   args:
     creates: "/var/lib/systemd/linger/{{ username }}"
 
+- name: Read the user account database entry
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ username }}"
+
+- name: Start the persistent user manager
+  ansible.builtin.systemd_service:
+    name: "user@{{ ansible_facts.getent_passwd[username][1] }}.service"
+    state: started
+
 - name: Ensure systemd-logind drop-in dir exists
   ansible.builtin.file:
     path: /etc/systemd/logind.conf.d

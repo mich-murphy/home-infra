@@ -1,16 +1,19 @@
 # Docker deployment ownership
 
+<!-- markdownlint-disable MD013 -->
+
 Docker deployment has two controllers with a deliberate bootstrap seam:
 
 | Owner | Responsibility |
 | --- | --- |
-| Ansible | Docker host configuration and `/srv/init`: Traefik, socket proxy, Portainer, and Pocket ID |
+| Ansible | Docker runtime, host policy, NFS storage, and `/srv/init`: Traefik, socket proxy, Portainer, and Pocket ID |
 | Portainer GitOps | Application stacks listed in `docker/portainer-stacks.yaml` |
 | Git | Compose definitions and the expected active-stack inventory |
 
-Ansible does not install Docker. It verifies that Docker and the Compose plugin
-already exist, configures daemon policy, copies `docker/init` to `/srv/init`,
-and reconciles that bootstrap stack. Portainer then deploys every other stack.
+The Ansible `docker-host` role installs Docker Engine and Compose from Docker's
+stable Ubuntu repository, configures daemon and published-port policy, prepares
+NFS storage, copies `docker/init` to `/srv/init`, and reconciles that bootstrap
+stack. Portainer then deploys every other stack.
 
 ## Portainer Git configuration
 

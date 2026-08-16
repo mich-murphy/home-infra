@@ -1,4 +1,0 @@
----
-# DOCKER-USER filtering applies only to traffic entering here; tailscale0 and
-# docker bridges are unaffected
-firewall_docker_external_interface: "{{ ansible_facts['default_ipv4']['interface'] }}"

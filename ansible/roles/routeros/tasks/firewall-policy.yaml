@@ -1,0 +1,175 @@
+---
+- name: Derive canonical RouterOS firewall and NAT intent
+  ansible.builtin.set_fact:
+    _routeros_input_policy: "{{ _routeros_input_policy_yaml | from_yaml }}"
+    _routeros_forward_policy: "{{ _routeros_forward_policy_yaml | from_yaml }}"
+    _routeros_kds_dns_redirect_policy: "{{ _routeros_kds_dns_redirect_policy_yaml | from_yaml }}"
+    _routeros_qbittorrent_dstnat_policy: "{{ _routeros_qbittorrent_dstnat_policy_yaml | from_yaml }}"
+    _routeros_masquerade_policy:
+      - chain: srcnat
+        out-interface-list: WAN
+        action: masquerade
+        comment: "masquerade (managed: routeros role)"
+  vars:
+    _net: "{{ routeros_vlans | items2dict(key_name='name', value_name='subnet') }}"
+    _routeros_input_policy_yaml: |
+      - chain: input
+        connection-state: established,related
+        action: accept
+        comment: "input est/rel (managed: routeros role)"
+      - chain: input
+        connection-state: invalid
+        action: drop
+        comment: "input drop invalid (managed: routeros role)"
+      {% for interface in routeros_lan_input_interfaces %}
+      - chain: input
+        in-interface: "{{ interface }}"
+        protocol: udp
+        dst-port: 67,68
+        action: accept
+        comment: "DHCP to router on {{ interface }} (managed: routeros role)"
+      {% endfor %}
+      {% if routeros_enable_dmz | bool %}
+      - chain: input
+        in-interface: "{{ routeros_dmz_port }}"
+        protocol: udp
+        dst-port: 53
+        action: accept
+        comment: "DMZ DNS udp to router (managed: routeros role)"
+      - chain: input
+        in-interface: "{{ routeros_dmz_port }}"
+        protocol: tcp
+        dst-port: 53
+        action: accept
+        comment: "DMZ DNS tcp to router (managed: routeros role)"
+      - chain: input
+        in-interface: "{{ routeros_dmz_port }}"
+        protocol: icmp
+        action: accept
+        comment: "DMZ ICMP to router (managed: routeros role)"
+      - chain: input
+        in-interface: "{{ routeros_dmz_port }}"
+        action: drop
+        comment: "DMZ drop other router input (managed: routeros role)"
+      {% endif %}
+      - chain: input
+        src-address-list: internal
+        protocol: udp
+        dst-port: 53
+        action: accept
+        comment: "DNS udp from internal (managed: routeros role)"
+      - chain: input
+        src-address-list: internal
+        protocol: tcp
+        dst-port: 53
+        action: accept
+        comment: "DNS tcp from internal (managed: routeros role)"
+      - chain: input
+        src-address-list: internal
+        protocol: icmp
+        action: accept
+        comment: "ICMP from internal to router (managed: routeros role)"
+      - chain: input
+        src-address-list: router-admin
+        action: accept
+        comment: "MGMT -> router (managed: routeros role)"
+    _routeros_forward_policy_yaml: |
+      - chain: forward
+        connection-state: established,related
+        action: accept
+        comment: "fwd est/rel (managed: routeros role)"
+      - chain: forward
+        connection-state: invalid
+        action: drop
+        comment: "fwd drop invalid (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ routeros_oob_subnet }}"
+        action: drop
+        comment: "OOB drop routed traffic (managed: routeros role)"
+      {% if routeros_enable_dmz | bool %}
+      - chain: forward
+        src-address: "{{ routeros_dmz.subnet }}"
+        dst-address-list: internal
+        action: drop
+        comment: "DMZ drop internal routing (managed: routeros role)"
+      {% endif %}
+      {% for protocol in routeros_qbittorrent_peer_protocols %}
+      - chain: forward
+        in-interface-list: WAN
+        connection-nat-state: dstnat
+        dst-address: "{{ routeros_qbittorrent_peer_target }}"
+        protocol: "{{ protocol }}"
+        dst-port: "{{ routeros_qbittorrent_peer_port }}"
+        action: accept
+        comment: "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
+      {% endfor %}
+      - chain: forward
+        src-address: "{{ _net.kds }}"
+        protocol: tcp
+        dst-port: 853
+        action: drop
+        comment: "KDS drop DoT (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ _net.kds }}"
+        protocol: udp
+        dst-port: 853
+        action: drop
+        comment: "KDS drop DoQ (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ _net.dflt }}"
+        dst-address: "{{ _net.srv }}"
+        action: accept
+        comment: "DFLT -> SRV services (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ _net.kds }}"
+        dst-address: "{{ _net.srv }}"
+        action: accept
+        comment: "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ _net.srv }}"
+        dst-address: "{{ routeros_unifi_ctrl }}"
+        action: accept
+        comment: "SRV -> UniFi controller (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ _net.gst }}"
+        dst-address-list: internal
+        action: drop
+        comment: "GST drop internal routing (managed: routeros role)"
+      - chain: forward
+        src-address-list: admin
+        out-interface-list: WAN
+        action: accept
+        comment: "MGMT admins -> WAN (managed: routeros role)"
+      {% for subnet in routeros_wan_egress_subnets %}
+      - chain: forward
+        src-address: "{{ subnet }}"
+        out-interface-list: WAN
+        action: accept
+        comment: "{{ subnet }} -> WAN (managed: routeros role)"
+      {% endfor %}
+      {% if routeros_enable_default_drop | bool %}
+      - chain: forward
+        action: drop
+        comment: "DEFAULT DROP (managed: routeros role)"
+      {% endif %}
+    _routeros_kds_dns_redirect_policy_yaml: |
+      {% for protocol in ['udp', 'tcp'] %}
+      - chain: dstnat
+        src-address: "{{ (routeros_vlans | selectattr('name', 'eq', 'kds') | first).subnet }}"
+        protocol: "{{ protocol }}"
+        dst-port: 53
+        action: redirect
+        to-ports: 53
+        comment: "KDS {{ 'TCP ' if protocol == 'tcp' else '' }}DNS redirect (managed: routeros role)"
+      {% endfor %}
+    _routeros_qbittorrent_dstnat_policy_yaml: |
+      {% for protocol in routeros_qbittorrent_peer_protocols %}
+      - chain: dstnat
+        in-interface-list: WAN
+        protocol: "{{ protocol }}"
+        dst-port: "{{ routeros_qbittorrent_peer_port }}"
+        action: dst-nat
+        to-addresses: "{{ routeros_qbittorrent_peer_target }}"
+        to-ports: "{{ routeros_qbittorrent_peer_port }}"
+        comment: "WAN -> qBittorrent peers {{ protocol }} (managed: routeros role)"
+      {% endfor %}

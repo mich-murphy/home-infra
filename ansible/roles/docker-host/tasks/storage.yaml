@@ -1,22 +1,40 @@
 ---
-- name: install nfs requirements
+- name: Install NFS requirements
   ansible.builtin.apt:
-    name:
-      - nfs-common
+    name: nfs-common
     state: present
+    lock_timeout: 300
 
-- name: create folders for nfs mounts
+- name: Ensure Docker workload groups exist
+  ansible.builtin.group:
+    name: "{{ item.name }}"
+    gid: "{{ item.gid }}"
+    state: present
+  loop:
+    - { name: photos, gid: 1210 }
+    - { name: media, gid: 1215 }
+
+- name: Ensure Docker workload users exist
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    uid: "{{ item.uid }}"
+    groups: "{{ item.name }}"
+    create_home: false
+    system: true
+    append: true
+  loop:
+    - { name: photos, uid: 1210 }
+    - { name: media, uid: 1215 }
+
+- name: Ensure NFS mount directories exist
   ansible.builtin.file:
     path: "{{ item.local_path }}"
     state: directory
-    mode: "0775"
-    owner: "{{ item.owner }}"
-    group: "{{ item.group }}"
   loop: "{{ nfs_mounts }}"
   loop_control:
     label: "{{ item.name }}"
 
-- name: persist active nfs fstab entries
+- name: Persist active NFS fstab entries
   ansible.builtin.lineinfile:
     path: /etc/fstab
     regexp: "^{{ item.nfs_share | regex_escape }}\\s+{{ item.local_path | regex_escape }}\\s+"
@@ -27,13 +45,12 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: reload systemd after nfs fstab changes
+- name: Reload systemd after NFS fstab changes
   ansible.builtin.systemd:
     daemon_reload: true
   when: active_nfs_fstab_results is changed
 
-# read-only query; must run in --check so the mount loop below resolves
-- name: check active nfs mount state
+- name: Check active NFS mount state
   ansible.builtin.command:
     cmd: "findmnt -rn --target {{ item.local_path }}"
   register: active_nfs_mount_state
@@ -44,7 +61,7 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: mount inactive nfs shares
+- name: Mount inactive NFS shares
   ansible.builtin.command:
     cmd: "mount {{ item.item.local_path }}"
   changed_when: true
@@ -53,7 +70,7 @@
   loop_control:
     label: "{{ item.item.name }}"
 
-- name: remount nfs shares after fstab changes
+- name: Remount NFS shares after fstab changes
   ansible.builtin.command:
     cmd: "mount -o remount {{ item.item.local_path }}"
   changed_when: true

@@ -71,7 +71,7 @@ This is preferable to an archive directory because the inactive platform disappe
 
 ### 2. Preserve the two-stage Docker deployment model, but close its lifecycle gap
 
-The original recommendation to choose exactly one Docker deployment controller was too strong. Portainer cannot bootstrap itself, and its HTTPS route depends on Traefik. The current Ansible-owned `docker/init` stack is therefore a legitimate bootstrap module: [Ansible Docker role](/Users/mm/dev/home-infra/ansible/roles/docker/tasks/main.yaml:96).
+The original recommendation to choose exactly one Docker deployment controller was too strong. Portainer cannot bootstrap itself, and its HTTPS route depends on Traefik. The current Ansible-owned `docker/init` stack is therefore a legitimate bootstrap module, deployed by the `docker-host` role.
 
 The intended ownership should be documented as:
 
@@ -188,7 +188,7 @@ If any check fails, restore that stack's previous Compose definition and redeplo
 - Pin Ansible collection versions rather than using unbounded lower constraints.
 - Remove the generated mocked module under `ansible/.ansible/` and ignore generated lint state.
 - Ensure CI syntax-checks `ansible/run.yaml`; the current lint exclusion misses the actual play composition.
-- Correct the Docker role description: it configures Docker and deploys the bootstrap stack but does not install Docker.
+- Keep Docker installation, host policy, and bootstrap deployment together in the Ansible `docker-host` role.
 - After the Talos/Kubernetes branch split, remove its tools from the Nix shell and its workflows and rules from CI/Renovate.
 - Re-test whether the custom Black, yamllint, and ansible-lint Nix patches remain necessary after the environment shrinks.
 - Stop ignoring `docs/*` by default. Track documentation normally and delete temporary documents deliberately.

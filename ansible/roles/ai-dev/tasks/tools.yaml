@@ -17,290 +17,35 @@
       - "ai_dev_node_version.stdout | regex_replace('^v', '') is version('22.19.0', '>=')"
     fail_msg: "Pi requires Node.js >=22.19.0; found {{ ai_dev_node_version.stdout }}."
 
-- name: Read coding agent and remote tool versions before installation
-  ansible.builtin.shell:
-    cmd: |
-      if [[ -x "{{ item.executable }}" ]]; then
-        "{{ item.executable }}" --version 2>&1
-      fi
-    executable: /bin/bash
+- name: Ensure the ai-dev toolchain is present
+  ansible.builtin.command:
+    argv:
+      - "/home/{{ username }}/.nix-profile/bin/ai-dev-maintenance"
+      - ensure-present
+  become: true
   become_user: "{{ username }}"
   environment:
     HOME: "/home/{{ username }}"
-  loop:
-    - name: Claude Code
-      executable: "/home/{{ username }}/.local/bin/claude"
-    - name: Codex
-      executable: "/home/{{ username }}/.local/bin/codex"
-    - name: Pi
-      executable: "/home/{{ username }}/.local/bin/pi"
-    - name: Herdr
-      executable: "/home/{{ username }}/.local/bin/herdr"
-    - name: Moshi host tooling
-      executable: "/home/{{ username }}/.local/bin/moshi-hook"
-  loop_control:
-    label: "{{ item.name }}"
-  register: ai_dev_agent_versions_before
-  changed_when: false
-  failed_when: false
-  check_mode: false
-
-- name: Install latest stable coding agents and remote tooling
-  ansible.builtin.shell:
-    cmd: "set -o pipefail && {{ item.command }}"
-    executable: /bin/bash
-  become_user: "{{ username }}"
-  environment:
-    CODEX_NON_INTERACTIVE: "1"
-    HOME: "/home/{{ username }}"
-    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/sbin:/usr/local/bin:/usr/bin"
-    SHELL: /usr/bin/fish
     USER: "{{ username }}"
-  loop:
-    - name: Claude Code
-      command: curl -fsSL https://claude.ai/install.sh | bash -s stable
-    - name: Codex
-      command: curl -fsSL https://chatgpt.com/codex/install.sh | sh
-    - name: Pi
-      # Pi prompts through /dev/tty when one is available. Detach its controlling
-      # terminal so the official installer selects its documented unattended path.
-      command: setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
-    - name: Herdr
-      command: curl -fsSL https://herdr.dev/install.sh | sh
-    - name: Moshi host tooling
-      # Ansible can retain a controlling terminal through SSH. Tell the
-      # official installer not to launch its interactive one-time setup.
-      command: curl -fsSL https://getmoshi.app/install.sh | MOSHI_HOOK_SKIP_FIRST_RUN=1 sh
-  loop_control:
-    label: "{{ item.name }}"
-  changed_when: false
-  when: not ansible_check_mode
-
-- name: Read coding agent and remote tool versions after installation
-  ansible.builtin.shell:
-    cmd: |
-      if [[ -x "{{ item.executable }}" ]]; then
-        "{{ item.executable }}" --version 2>&1
-      fi
-    executable: /bin/bash
-  become_user: "{{ username }}"
-  environment:
-    HOME: "/home/{{ username }}"
-  loop:
-    - name: Claude Code
-      executable: "/home/{{ username }}/.local/bin/claude"
-    - name: Codex
-      executable: "/home/{{ username }}/.local/bin/codex"
-    - name: Pi
-      executable: "/home/{{ username }}/.local/bin/pi"
-    - name: Herdr
-      executable: "/home/{{ username }}/.local/bin/herdr"
-    - name: Moshi host tooling
-      executable: "/home/{{ username }}/.local/bin/moshi-hook"
-  loop_control:
-    label: "{{ item.name }}"
-  register: ai_dev_agent_versions_after
-  changed_when: false
-  failed_when: false
-  check_mode: false
-
-- name: Report coding agent and remote tool version changes
-  ansible.builtin.debug:
-    msg: >-
-      {{ item.0.item.name }}:
-      {{ item.0.stdout | default('not installed', true) }} ->
-      {{ item.1.stdout | default('not installed', true) }}
-  loop: >-
-    {{
-      ai_dev_agent_versions_before.results |
-      zip(ai_dev_agent_versions_after.results)
-    }}
-  loop_control:
-    label: "{{ item.0.item.name }}"
-  changed_when: item.0.stdout != item.1.stdout
-  when: not ansible_check_mode
-
-- name: Ensure agent integration directories exist
-  ansible.builtin.file:
-    path: "/home/{{ username }}/{{ item }}"
-    state: directory
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    mode: "0700"
-  loop:
-    - .claude
-    - .codex
-    - .pi/agent/extensions
-    - .config/opencode
-
-- name: Install Herdr integrations
-  ansible.builtin.command:
-    cmd: "/home/{{ username }}/.local/bin/herdr integration install {{ item }}"
-  become_user: "{{ username }}"
-  environment:
-    HOME: "/home/{{ username }}"
     PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
-  loop:
-    - claude
-    - codex
-    - pi
-    - opencode
-  changed_when: false
-
-- name: Install Moshi integrations after Herdr
-  ansible.builtin.command:
-    # Pi's extension is supplied by Home Manager from the nix-config source
-    # tree. Installing it here would follow that symlink and rewrite tracked
-    # source with a host-specific helper path.
-    cmd: >-
-      /home/{{ username }}/.local/bin/moshi-hook install
-      --target claude,codex,opencode,gemini,antigravity,cursor,kimi,qwen,grok,omp,hermes
-    chdir: "/home/{{ username }}"
-  become_user: "{{ username }}"
-  environment:
-    HOME: "/home/{{ username }}"
-    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
-  changed_when: false
-
-- name: Install global Pi packages
-  ansible.builtin.command:
-    argv:
-      - "/home/{{ username }}/.local/bin/pi"
-      - install
-      - npm:@plannotator/pi-extension
-  become_user: "{{ username }}"
-  environment:
-    HOME: "/home/{{ username }}"
-    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
-  changed_when: false
-  when: not ansible_check_mode
-
-- name: Ensure the Fish configuration directory exists
-  ansible.builtin.file:
-    path: "/home/{{ username }}/.config/fish/conf.d"
-    state: directory
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    mode: "0755"
-
-- name: Configure unrestricted coding agent aliases
-  ansible.builtin.copy:
-    src: coding-agent-aliases.fish
-    dest: "/home/{{ username }}/.config/fish/conf.d/coding-agent-aliases.fish"
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    mode: "0644"
-
-- name: Verify tools resolve in non-interactive Fish
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/fish
-      - -c
-      - "command --search {{ item }}"
-  become_user: "{{ username }}"
-  environment:
-    HOME: "/home/{{ username }}"
-    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
-  loop:
-    - claude
-    - codex
-    - pi
-    - opencode
-    - herdr
-    - moshi-hook
-  changed_when: false
-
-- name: Read coding agent versions
-  ansible.builtin.command:
-    cmd: "/usr/bin/fish -c '{{ item }} --version'"
-  become_user: "{{ username }}"
-  environment:
-    HOME: "/home/{{ username }}"
-    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
-  loop:
-    - claude
-    - codex
-    - pi
-    - opencode
-  changed_when: false
-
-- name: Read the user account database entry
-  ansible.builtin.getent:
-    database: passwd
-    key: "{{ username }}"
-
-- name: Start the persistent user manager
-  ansible.builtin.systemd_service:
-    name: "user@{{ ansible_facts.getent_passwd[username][1] }}.service"
-    state: started
-
-- name: Ensure the systemd user directory exists
-  ansible.builtin.file:
-    path: "/home/{{ username }}/.config/systemd/user"
-    state: directory
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    mode: "0755"
-
-- name: Install the loopback-only Moshi hook user service
-  ansible.builtin.copy:
-    dest: "/home/{{ username }}/.config/systemd/user/moshi-hook.service"
-    content: |
-      [Unit]
-      Description=Moshi agent hooks and loopback gateway
-      Wants=network-online.target
-      After=network-online.target
-
-      [Service]
-      Type=simple
-      ExecStart=/home/{{ username }}/.local/bin/moshi-hook serve
-      Restart=on-failure
-      RestartSec=5
-
-      [Install]
-      WantedBy=default.target
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    mode: "0644"
-  register: ai_dev_moshi_service
-
-- name: Enable the Moshi hook user service
-  ansible.builtin.systemd_service:
-    name: moshi-hook.service
-    scope: user
-    enabled: true
-    state: "{{ 'restarted' if ai_dev_moshi_service.changed else 'started' }}"
-    daemon_reload: true
-  become_user: "{{ username }}"
-  environment:
     XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[username][1] }}"
+  register: ai_dev_maintenance_ensure
+  changed_when: >-
+    'not installed ->' in ai_dev_maintenance_ensure.stdout
+    or 'Pi package install' in ai_dev_maintenance_ensure.stdout
   when: not ansible_check_mode
 
-- name: Read Herdr integration status
+- name: Verify the ai-dev toolchain and Moshi runtime
   ansible.builtin.command:
-    cmd: "/home/{{ username }}/.local/bin/herdr integration status"
-  become_user: "{{ username }}"
-  register: ai_dev_herdr_integration_status
-  changed_when: false
-  when: not ansible_check_mode
-
-- name: Read Moshi hook status
-  ansible.builtin.command:
-    cmd: "/home/{{ username }}/.local/bin/moshi-hook status --json"
+    argv:
+      - "/home/{{ username }}/.nix-profile/bin/ai-dev-maintenance"
+      - status
+  become: true
   become_user: "{{ username }}"
   environment:
     HOME: "/home/{{ username }}"
-  register: ai_dev_moshi_status
-  changed_when: false
-  when: not ansible_check_mode
-
-- name: Verify the Moshi gateway listens only on loopback
-  ansible.builtin.shell:
-    cmd: >-
-      set -o pipefail &&
-      ss -H -ltn 'sport = :24543' |
-      awk '{print $4}' |
-      grep -Eq '^127\.0\.0\.1:24543$'
-    executable: /bin/bash
+    USER: "{{ username }}"
+    PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[username][1] }}"
   changed_when: false
   when: not ansible_check_mode

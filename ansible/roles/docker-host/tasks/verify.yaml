@@ -1,0 +1,70 @@
+---
+- name: Verify Docker Engine resolves
+  ansible.builtin.command:
+    cmd: docker version
+  changed_when: false
+
+- name: Verify Docker Compose resolves
+  ansible.builtin.command:
+    cmd: docker compose version
+  changed_when: false
+
+- name: Verify required NFS targets are mounted
+  ansible.builtin.command:
+    cmd: "findmnt -rn --target {{ item.local_path }}"
+  changed_when: false
+  loop: "{{ nfs_mounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Read active Docker published-port policy
+  ansible.builtin.command:
+    cmd: iptables -S DOCKER-USER
+  register: docker_published_port_policy
+  changed_when: false
+
+- name: Verify Docker published-port allowlist entries
+  ansible.builtin.assert:
+    that:
+      - >-
+        docker_published_port_policy.stdout_lines
+        | select('search', '-p ' ~ item.proto ~ ' .*--ctorigdstport ' ~ item.port ~ ' --ctdir ORIGINAL -j RETURN$')
+        | list
+        | length == 1
+    fail_msg: "Docker published port {{ item.port }}/{{ item.proto }} is not allowlisted exactly once."
+  loop: "{{ docker_published_ports }}"
+  loop_control:
+    label: "{{ item.port }}/{{ item.proto }}"
+
+- name: Verify Docker published-port policy ends fail-closed
+  ansible.builtin.assert:
+    that:
+      - "docker_published_port_policy.stdout_lines[-2] is search('--ctstate NEW -j DROP$')"
+      - "docker_published_port_policy.stdout_lines[-1] == '-A DOCKER-USER -j RETURN'"
+    fail_msg: Docker published-port policy must drop unlisted new traffic before its final return.
+
+- name: Verify bootstrap Compose configuration renders
+  ansible.builtin.command:
+    cmd: docker compose config --quiet
+    chdir: "{{ docker_bootstrap_dir }}"
+  changed_when: false
+
+- name: Verify bootstrap containers are ready
+  ansible.builtin.command:
+    argv:
+      - docker
+      - inspect
+      - "{{ item }}"
+  register: docker_bootstrap_container
+  changed_when: false
+  until:
+    - docker_bootstrap_container.rc == 0
+    - (docker_bootstrap_container.stdout | from_json | first).State.Status == 'running'
+    - >-
+      (docker_bootstrap_container.stdout | from_json | first).State.Health is not defined
+      or (docker_bootstrap_container.stdout | from_json | first).State.Health.Status == 'healthy'
+  retries: 36
+  delay: 5
+  loop: "{{ docker_bootstrap_containers }}"
+  loop_control:
+    label: "{{ item }}"
