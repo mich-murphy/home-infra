@@ -87,7 +87,7 @@ services:
   # hostname must be added to host_whitelist in sabnzbd.ini
   # reference: https://sabnzbd.org/wiki/extra/hostname-check.html
   sabnzbd:
-    image: ghcr.io/linuxserver/sabnzbd:5.0.4-ls264@sha256:302be8972d4627222a0701634f2f9025826d760d856414aa6e67c0a66833e5be
+    image: ghcr.io/linuxserver/sabnzbd:5.1.2-ls270@sha256:13d4404f1242f819e0cc2e294def5858def251a3609eb59404dad303075a564a
     container_name: sabnzbd
     security_opt:
       - no-new-privileges:true
