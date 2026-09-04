@@ -62,8 +62,9 @@ Measured file-size distributions (drives the tuning below):
   Compose services use the same hard NFSv4.2 mount policy.
 - NFS server threads: **2**; revisit only if concurrent application I/O
   saturates them.
-- SMB: single `nextcloud` share backed by `slow/owncloud` (desktop use), Apple
-  extensions disabled.
+- SMB: the `nextcloud` share backed by `slow/owncloud` is disabled. Nextcloud's
+  primary data directory is the only active writer; direct SMB changes would
+  bypass its file cache.
 
 ### Protection
 

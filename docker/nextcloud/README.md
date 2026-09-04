@@ -1,16 +1,14 @@
 # Nextcloud deployment
 
-This stack replaces ownCloud with a fresh Nextcloud installation and exposes the
-existing TrueNAS `slow/owncloud` dataset as the system-wide `/data` external
-storage. It does not overwrite that dataset. Nextcloud's application files,
-PostgreSQL database, and Redis state use separate local Docker volumes.
+This stack stores Nextcloud's primary data directory on the existing TrueNAS
+`slow/owncloud` dataset. Ansible mounts the export on the Docker host at
+`/mnt/nextcloud`; Compose bind-mounts `/mnt/nextcloud/nextcloud-data` at
+`/var/www/html/data`. Nextcloud's code and configuration, PostgreSQL database,
+and Redis state remain in separate local Docker volumes.
 
-The live ownCloud inspection on 2026-09-04 found that `/data` is an SMB external
-storage backed by `10.77.20.101/owncloud`. The local `owncloud-data` volume is
-only 80 MB and contains ownCloud configuration, sessions, and its small internal
-data directory. User documents are on the TrueNAS share. The replacement uses
-NFSv4.2 for the same dataset, mapped to TrueNAS's dedicated `nextcloud` user,
-so credentials do not need to be stored in Nextcloud.
+The NFS export maps requests to TrueNAS's dedicated `nextcloud` user and is
+restricted to the Docker host. The old SMB share is disabled so files cannot be
+changed behind Nextcloud's file cache.
 
 ## Storage prerequisite
 
@@ -44,36 +42,29 @@ Set these values on the new `nextcloud` Git stack:
 Use independent random values for each password. Portainer stores them; they do
 not belong in Git.
 
-On first installation, `post-installation.sh` enables local external storage,
-mounts `/mnt/nextcloud` at `/data`, selects cron background jobs, installs
-Nextcloud Office, and points it at `office.local.elmurphy.com`.
+On first installation, `post-installation.sh` verifies the NFS-backed primary
+data directory, selects cron background jobs, installs Nextcloud Office and the
+TOTP provider, and configures Collabora's internal and public URLs.
 
-## Cutover
+## Migration record
 
-1. Snapshot `slow/owncloud`. Back up the ownCloud MariaDB volume and
-   `owncloud-data` volume. Preserve all three old `owncloud-*` volumes.
-2. Create and verify the restricted NFS export and apply the `docker-host`
-   Ansible role.
-3. Stop ownCloud and disable its Portainer Git updates. Do not remove its
-   volumes.
-4. Deploy this stack as `nextcloud`. Both the new hostname and old ownCloud
-   hostname route to Nextcloud, so existing clients can be repointed gradually.
-5. Sign in, open `/data`, create and edit a test file, then open an Office
-   document. Check the Administration overview for warnings.
-6. Re-scan only if files are missing from the external mount:
+The original ownCloud deployment exposed the NAS as `/data` external storage.
+On 2026-09-04, its files and Nextcloud's initial primary data tree were copied
+without filename collisions into the NFS-backed `nextcloud-data` directory.
+A checksum comparison reported zero differences before the old root-level copy
+was removed. A full Nextcloud scan found 686 user files in 85 folders with zero
+errors.
 
-   ```sh
-   docker exec --user www-data nextcloud php occ files:scan --all
-   ```
+Rollback points:
 
-7. Remove the old Portainer stack after the rollback window. Keep its volumes
-   until backups and Nextcloud operation have been verified.
+- TrueNAS snapshot `slow/owncloud@pre-primary-data-20260904T122131Z`;
+- host backup `/srv/migration-backups/owncloud-20260904T074701Z`.
 
-This cutover preserves files, not ownCloud metadata. Shares, comments, tags,
-calendars, contacts, and app state remain in the old database. If those records
-must be retained, use Nextcloud's documented ownCloud migration path instead of
-this fresh-install procedure. ownCloud 10.16 must first migrate to Nextcloud
-25.0.13, followed by one-major-version-at-a-time upgrades.
+Re-scan after any filesystem-level restore:
+
+```sh
+docker exec --user www-data nextcloud php occ files:scan --all
+```
 
 ## Sources
 
