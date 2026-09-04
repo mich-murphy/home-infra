@@ -9,23 +9,23 @@ The live ownCloud inspection on 2026-09-04 found that `/data` is an SMB external
 storage backed by `10.77.20.101/owncloud`. The local `owncloud-data` volume is
 only 80 MB and contains ownCloud configuration, sessions, and its small internal
 data directory. User documents are on the TrueNAS share. The replacement uses
-NFSv4.2 for the same dataset so credentials do not need to be stored in
-Nextcloud.
+NFSv4.2 for the same dataset, mapped to TrueNAS's dedicated `nextcloud` user,
+so credentials do not need to be stored in Nextcloud.
 
 ## Storage prerequisite
 
 Before running the `docker-host` Ansible role, export
 `10.77.20.101:/mnt/slow/owncloud` from TrueNAS to the Docker host at
-`10.77.20.246`. Map access to the dataset-owning `owncloud` user and group, and
+`10.77.20.246`. Map access to the dedicated `nextcloud` user and group, and
 permit read/write access. Do not leave the export open to the whole SRV VLAN.
 
-Ansible mounts it at `/mnt/owncloud` with the repository's hard NFSv4.2 policy.
+Ansible mounts it at `/mnt/nextcloud` with the repository's hard NFSv4.2 policy.
 Confirm this before deploying the stack:
 
 ```sh
-findmnt --target /mnt/owncloud
-sudo -u mm test -r /mnt/owncloud
-sudo -u mm test -w /mnt/owncloud
+findmnt --mountpoint /mnt/nextcloud
+sudo -u mm test -r /mnt/nextcloud
+sudo -u mm test -w /mnt/nextcloud
 ```
 
 Do not run ownCloud and Nextcloud against this dataset at the same time.
@@ -45,7 +45,7 @@ Use independent random values for each password. Portainer stores them; they do
 not belong in Git.
 
 On first installation, `post-installation.sh` enables local external storage,
-mounts `/mnt/owncloud` at `/data`, selects cron background jobs, installs
+mounts `/mnt/nextcloud` at `/data`, selects cron background jobs, installs
 Nextcloud Office, and points it at `office.local.elmurphy.com`.
 
 ## Cutover

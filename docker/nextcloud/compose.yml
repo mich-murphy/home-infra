@@ -8,7 +8,7 @@ x-nextcloud-environment: &nextcloud-environment
   REDIS_HOST_PASSWORD: ${NEXTCLOUD_REDIS_PASSWORD}
   NEXTCLOUD_ADMIN_USER: ${ADMIN_USERNAME}
   NEXTCLOUD_ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-  NEXTCLOUD_TRUSTED_DOMAINS: nextcloud.local.elmurphy.com owncloud.local.elmurphy.com
+  NEXTCLOUD_TRUSTED_DOMAINS: nextcloud.local.elmurphy.com owncloud.local.elmurphy.com nextcloud
   APACHE_DISABLE_REWRITE_IP: "1"
   TRUSTED_PROXIES: 172.20.1.0/24
   OVERWRITEHOST: nextcloud.local.elmurphy.com
@@ -42,7 +42,7 @@ services:
     environment: *nextcloud-environment
     volumes:
       - nextcloud-html:/var/www/html
-      - /mnt/owncloud:/mnt/owncloud
+      - /mnt/nextcloud:/mnt/nextcloud
       - ./post-installation.sh:/docker-entrypoint-hooks.d/post-installation/10-configure.sh:ro
     labels:
       - traefik.enable=true
@@ -57,6 +57,8 @@ services:
       nextcloud-postgres:
         condition: service_healthy
       nextcloud-redis:
+        condition: service_healthy
+      nextcloud-office:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost/status.php"]
@@ -80,7 +82,7 @@ services:
     environment: *nextcloud-environment
     volumes:
       - nextcloud-html:/var/www/html
-      - /mnt/owncloud:/mnt/owncloud
+      - /mnt/nextcloud:/mnt/nextcloud
     entrypoint: /cron.sh
     depends_on:
       nextcloud:
@@ -174,10 +176,11 @@ services:
       - nextcloud-backend
     environment:
       aliasgroup1: https://nextcloud.local.elmurphy.com:443
+      aliasgroup2: http://nextcloud:80
       dictionaries: en_AU en_GB en_US
       username: ${COLLABORA_ADMIN_USERNAME}
       password: ${COLLABORA_ADMIN_PASSWORD}
-      extra_params: --o:ssl.enable=false --o:ssl.termination=true
+      extra_params: --o:ssl.enable=false --o:ssl.termination=true --o:server_name=office.local.elmurphy.com
     labels:
       - traefik.enable=true
       - traefik.http.routers.nextcloud-office.rule=Host(`office.local.elmurphy.com`)

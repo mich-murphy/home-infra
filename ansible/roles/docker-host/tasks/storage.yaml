@@ -52,7 +52,7 @@
 
 - name: Check active NFS mount state
   ansible.builtin.command:
-    cmd: "findmnt -rn --target {{ item.local_path }}"
+    cmd: "findmnt -rn --mountpoint {{ item.local_path }}"
   register: active_nfs_mount_state
   changed_when: false
   check_mode: false

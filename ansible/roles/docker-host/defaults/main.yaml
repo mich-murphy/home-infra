@@ -37,8 +37,8 @@ nfs_mounts:
   - name: photos
     local_path: /mnt/photos
     nfs_share: 10.77.20.101:/mnt/slow/photos
-  - name: owncloud
-    local_path: /mnt/owncloud
+  - name: nextcloud
+    local_path: /mnt/nextcloud
     nfs_share: 10.77.20.101:/mnt/slow/owncloud
   - name: music
     local_path: /mnt/music
