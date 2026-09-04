@@ -20,6 +20,9 @@ occ config:system:set default_phone_region --value=AU
 if ! occ app:install richdocuments; then
   occ app:enable richdocuments
 fi
+if ! occ app:install twofactor_totp; then
+  occ app:enable twofactor_totp
+fi
 occ richdocuments:activate-config \
   --wopi-url=http://nextcloud-office:9980 \
   --callback-url=http://nextcloud

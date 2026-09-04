@@ -16,6 +16,7 @@ x-nextcloud-environment: &nextcloud-environment
   OVERWRITECLIURL: https://nextcloud.local.elmurphy.com
   NEXTCLOUD_INIT_HTACCESS: "true"
   PHP_MEMORY_LIMIT: 1G
+  PHP_OPCACHE_MEMORY_CONSUMPTION: "256"
   PHP_UPLOAD_LIMIT: 10G
   APACHE_BODY_LIMIT: "10737418240"
 
