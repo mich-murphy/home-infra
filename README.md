@@ -175,7 +175,7 @@ Git settings, drift check, and removal order are documented in
 | **plex**             | Plex, Tautulli, Seerr, Maintainerr, Kometa     |
 | **jellyfin**         | Jellyfin, Jellyseerr                           |
 | **immich**           | Immich Server, Immich ML, PostgreSQL, Redis    |
-| **owncloud**         | OwnCloud, MariaDB, Redis                       |
+| **nextcloud**        | Nextcloud, PostgreSQL, Redis, cron, Collabora  |
 | **miniflux**         | Miniflux, PostgreSQL                           |
 | **couchdb**          | CouchDB (Obsidian sync)                        |
 | **audiobookshelf**   | Audiobookshelf                                 |

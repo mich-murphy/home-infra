@@ -116,7 +116,7 @@ services:
       - traefik.http.routers.pocket-id.tls=true
       - traefik.http.services.pocket-id.loadbalancer.server.port=1411
     healthcheck:
-      test: "curl -f http://localhost:1411/healthz"
+      test: "wget --quiet --tries=1 --spider http://localhost:1411/healthz"
       interval: 1m30s
       timeout: 5s
       retries: 2

@@ -60,6 +60,8 @@ jobs:
           ADMIN_USERNAME: ci-placeholder
           CF_API_EMAIL: ci@example.invalid
           CF_DNS_API_TOKEN: ci-placeholder
+          COLLABORA_ADMIN_PASSWORD: ci-placeholder
+          COLLABORA_ADMIN_USERNAME: ci-placeholder
           COUCHDB_PASSWORD: ci-placeholder
           DATABASE_PASSWORD: ci-placeholder
           DB_DATABASE_NAME: immich
@@ -68,7 +70,8 @@ jobs:
           DB_USERNAME: immich
           ENCRYPTION_KEY: ci-placeholder
           MAXMIND_LICENSE_KEY: ci-placeholder
-          OWNCLOUD_DB_PASSWORD: ci-placeholder
+          NEXTCLOUD_DB_PASSWORD: ci-placeholder
+          NEXTCLOUD_REDIS_PASSWORD: ci-placeholder
           PLEX_CLAIM: ci-placeholder
           JELLYPLEX_JELLYFIN_TOKEN: ci-placeholder
           JELLYPLEX_PLEX_TOKEN: ci-placeholder

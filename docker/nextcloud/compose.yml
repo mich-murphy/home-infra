@@ -1,0 +1,212 @@
+---
+x-nextcloud-environment: &nextcloud-environment
+  POSTGRES_DB: nextcloud
+  POSTGRES_USER: nextcloud
+  POSTGRES_PASSWORD: ${NEXTCLOUD_DB_PASSWORD}
+  POSTGRES_HOST: nextcloud-postgres
+  REDIS_HOST: nextcloud-redis
+  REDIS_HOST_PASSWORD: ${NEXTCLOUD_REDIS_PASSWORD}
+  NEXTCLOUD_ADMIN_USER: ${ADMIN_USERNAME}
+  NEXTCLOUD_ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+  NEXTCLOUD_TRUSTED_DOMAINS: nextcloud.local.elmurphy.com owncloud.local.elmurphy.com nextcloud
+  APACHE_DISABLE_REWRITE_IP: "1"
+  TRUSTED_PROXIES: 172.20.1.0/24
+  OVERWRITEHOST: nextcloud.local.elmurphy.com
+  OVERWRITEPROTOCOL: https
+  OVERWRITECLIURL: https://nextcloud.local.elmurphy.com
+  NEXTCLOUD_INIT_HTACCESS: "true"
+  PHP_MEMORY_LIMIT: 1G
+  PHP_UPLOAD_LIMIT: 10G
+  APACHE_BODY_LIMIT: "10737418240"
+
+x-nextcloud-capabilities: &nextcloud-capabilities
+  - CHOWN
+  - SETUID
+  - SETGID
+  - DAC_OVERRIDE
+  - FOWNER
+  - KILL
+
+services:
+  nextcloud:
+    image: nextcloud:32.0.6-apache@sha256:297c6ecc0a94a4bb6e55f12d693a1cf3e5ca24797f70f8570d18cf784f757792
+    container_name: nextcloud
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add: *nextcloud-capabilities
+    networks:
+      - proxy
+      - nextcloud-backend
+    environment: *nextcloud-environment
+    volumes:
+      - nextcloud-html:/var/www/html
+      - /mnt/nextcloud:/mnt/nextcloud
+      - ./post-installation.sh:/docker-entrypoint-hooks.d/post-installation/10-configure.sh:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nextcloud.rule=Host(`nextcloud.local.elmurphy.com`) || Host(`owncloud.local.elmurphy.com`)
+      - traefik.http.routers.nextcloud.tls=true
+      - traefik.http.routers.nextcloud.middlewares=nextcloud-dav,default-headers@file
+      - traefik.http.middlewares.nextcloud-dav.redirectregex.regex=^https://([^/]+)/.well-known/(?:card|cal)dav$$
+      - traefik.http.middlewares.nextcloud-dav.redirectregex.replacement=https://$${1}/remote.php/dav
+      - traefik.http.middlewares.nextcloud-dav.redirectregex.permanent=true
+      - traefik.http.services.nextcloud.loadbalancer.server.port=80
+    depends_on:
+      nextcloud-postgres:
+        condition: service_healthy
+      nextcloud-redis:
+        condition: service_healthy
+      nextcloud-office:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost/status.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 2m
+    restart: unless-stopped
+
+  nextcloud-cron:
+    image: nextcloud:32.0.6-apache@sha256:297c6ecc0a94a4bb6e55f12d693a1cf3e5ca24797f70f8570d18cf784f757792
+    container_name: nextcloud-cron
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add: *nextcloud-capabilities
+    networks:
+      - nextcloud-backend
+      - nextcloud-egress
+    environment: *nextcloud-environment
+    volumes:
+      - nextcloud-html:/var/www/html
+      - /mnt/nextcloud:/mnt/nextcloud
+    entrypoint: /cron.sh
+    depends_on:
+      nextcloud:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nextcloud-postgres:
+    image: postgres:17.11@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675
+    container_name: nextcloud-postgres
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
+    networks:
+      - nextcloud-backend
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: ${NEXTCLOUD_DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: --data-checksums
+    volumes:
+      - nextcloud-db:/var/lib/postgresql/data
+    shm_size: 128mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextcloud -d nextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  nextcloud-redis:
+    image: redis:8.8.0@sha256:234c902a2db49461a129e2d4aeff85b28cf20187ed274a67f6e50995fa713c7b
+    container_name: nextcloud-redis
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+      - KILL
+      - SETPCAP
+    networks:
+      - nextcloud-backend
+    environment:
+      REDIS_PASSWORD: ${NEXTCLOUD_REDIS_PASSWORD}
+    volumes:
+      - nextcloud-cache:/data
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${NEXTCLOUD_REDIS_PASSWORD}"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  nextcloud-office:
+    image: collabora/code:26.04.3.2.1@sha256:379b8f1fc955dd6d01ba24adf61d1b177048ddaae179ae8c1e6a6342daccb282
+    container_name: nextcloud-office
+    # coolforkit relies on setuid/file capabilities; no-new-privileges breaks it.
+    cap_drop:
+      - ALL
+    cap_add:
+      - AUDIT_WRITE
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - FSETID
+      - KILL
+      - MKNOD
+      - NET_BIND_SERVICE
+      - NET_RAW
+      - SETFCAP
+      - SETGID
+      - SETPCAP
+      - SETUID
+      - SYS_CHROOT
+    networks:
+      - proxy
+      - nextcloud-backend
+    environment:
+      aliasgroup1: https://nextcloud.local.elmurphy.com:443
+      aliasgroup2: http://nextcloud:80
+      dictionaries: en_AU en_GB en_US
+      username: ${COLLABORA_ADMIN_USERNAME}
+      password: ${COLLABORA_ADMIN_PASSWORD}
+      extra_params: --o:ssl.enable=false --o:ssl.termination=true --o:server_name=office.local.elmurphy.com
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nextcloud-office.rule=Host(`office.local.elmurphy.com`)
+      - traefik.http.routers.nextcloud-office.tls=true
+      - traefik.http.services.nextcloud-office.loadbalancer.server.port=9980
+    healthcheck:
+      test: ["CMD", "/usr/bin/coolwsd", "--probe", "--use-env-vars"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 2m
+    restart: unless-stopped
+
+volumes:
+  nextcloud-html:
+    name: nextcloud-html
+  nextcloud-db:
+    name: nextcloud-db
+  nextcloud-cache:
+    name: nextcloud-cache
+
+networks:
+  proxy:
+    external: true
+  nextcloud-backend:
+    name: nextcloud-backend
+    internal: true
+  nextcloud-egress:
+    name: nextcloud-egress
