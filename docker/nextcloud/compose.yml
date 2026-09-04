@@ -43,7 +43,7 @@ services:
     environment: *nextcloud-environment
     volumes:
       - nextcloud-html:/var/www/html
-      - /mnt/nextcloud:/mnt/nextcloud
+      - /mnt/nextcloud/nextcloud-data:/var/www/html/data
       - ./post-installation.sh:/docker-entrypoint-hooks.d/post-installation/10-configure.sh:ro
     labels:
       - traefik.enable=true
@@ -83,7 +83,7 @@ services:
     environment: *nextcloud-environment
     volumes:
       - nextcloud-html:/var/www/html
-      - /mnt/nextcloud:/mnt/nextcloud
+      - /mnt/nextcloud/nextcloud-data:/var/www/html/data
     entrypoint: /cron.sh
     depends_on:
       nextcloud:
