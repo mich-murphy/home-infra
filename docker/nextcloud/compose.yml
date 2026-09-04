@@ -181,7 +181,7 @@ services:
       dictionaries: en_AU en_GB en_US
       username: ${COLLABORA_ADMIN_USERNAME}
       password: ${COLLABORA_ADMIN_PASSWORD}
-      extra_params: --o:ssl.enable=false --o:ssl.termination=true --o:server_name=office.local.elmurphy.com
+      extra_params: --o:ssl.enable=false --o:ssl.termination=true --o:server_name=office.local.elmurphy.com --o:mount_jail_tree=false
     labels:
       - traefik.enable=true
       - traefik.http.routers.nextcloud-office.rule=Host(`office.local.elmurphy.com`)
