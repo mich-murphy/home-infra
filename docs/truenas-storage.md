@@ -52,16 +52,18 @@ Measured file-size distributions (drives the tuning below):
 
 ### Shares and services
 
-- NFS exports: `media`, `photos`, `media/music`, and `media/audiobooks`.
-  All have empty host lists (any client that can reach
-  NFS may mount; same-VLAN traffic does not traverse the router firewall,
-  so export ACLs are the only control). `mapall` to `media`/`photos` users.
+- NFS exports: `media`, `photos`, `media/music`, `media/audiobooks`, and
+  `owncloud`. The `owncloud` dataset export is named "Nextcloud data storage",
+  restricted to docker-host (`10.77.20.246`), and maps all requests to the
+  dedicated `nextcloud` user. The older media and photo exports have empty host
+  lists, so their export ACLs remain the only same-VLAN access control.
 - The only active NFS client is docker-host (`10.77.20.246`), NFSv4.2 with
   1M rsize/wsize — matching the 1M recordsize, as recommended. The
   Compose services use the same hard NFSv4.2 mount policy.
 - NFS server threads: **2**; revisit only if concurrent application I/O
   saturates them.
-- SMB: single `owncloud` share (desktop use), Apple extensions disabled.
+- SMB: single `nextcloud` share backed by `slow/owncloud` (desktop use), Apple
+  extensions disabled.
 
 ### Protection
 
