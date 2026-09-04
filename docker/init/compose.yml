@@ -63,6 +63,9 @@ services:
           # Portainer exchanges OAuth tokens server-side using the public
           # issuer URL. Resolve it to Traefik's TLS listener inside Docker.
           - pocket-id.local.elmurphy.com
+          # Collabora fetches per-user settings from Nextcloud's public URL.
+          # Keep that HTTPS request inside Docker instead of hairpinning out.
+          - nextcloud.local.elmurphy.com
       docker-socket-proxy: {}
     environment:
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
