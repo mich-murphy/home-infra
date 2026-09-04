@@ -52,6 +52,11 @@ with disposable empty volumes when their image or capability set changes.
   `su-exec: setgroups(1000): Operation not permitted`.
 - **Immich machine learning** does not drop all capabilities. A live test left
   its health check failing.
+- **Nextcloud Office** cannot use `no-new-privileges`. Collabora's
+  `coolforkit-caps` process failed to spawn in a disposable test when that
+  option was set. The stack drops all capabilities, then restores the Docker
+  default set plus `MKNOD`, matching Collabora's documented container startup
+  requirement.
 
 These are exception records, not patterns for new services. Re-test them when
 their image entrypoints materially change.

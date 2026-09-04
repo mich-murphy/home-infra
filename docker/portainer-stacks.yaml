@@ -20,8 +20,8 @@ stacks:
     compose_path: docker/jellyplex-watched/compose.yml
   - name: miniflux
     compose_path: docker/miniflux/compose.yml
-  - name: owncloud
-    compose_path: docker/owncloud/compose.yml
+  - name: nextcloud
+    compose_path: docker/nextcloud/compose.yml
   - name: pinchflat
     compose_path: docker/pinchflat/compose.yml
   - name: plex
