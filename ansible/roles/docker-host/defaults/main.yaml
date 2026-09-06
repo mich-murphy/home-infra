@@ -12,6 +12,8 @@ docker_packages:
 docker_log_driver: json-file
 docker_log_max_size: 20m
 docker_log_max_file: 3
+# Keep containers running across dockerd restarts and Engine upgrades.
+docker_live_restore: true
 
 docker_image_prune_enabled: true
 docker_image_prune_until: 168h

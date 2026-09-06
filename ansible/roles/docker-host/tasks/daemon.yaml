@@ -7,7 +7,7 @@
     group: root
     mode: "0755"
 
-- name: Configure Docker daemon log rotation
+- name: Configure Docker daemon log rotation and live restore
   ansible.builtin.copy:
     dest: /etc/docker/daemon.json
     owner: root
@@ -19,7 +19,8 @@
         "log-opts": {
           "max-size": "{{ docker_log_max_size }}",
           "max-file": "{{ docker_log_max_file | string }}"
-        }
+        },
+        "live-restore": {{ docker_live_restore | bool | to_json }}
       }
   register: docker_daemon_config
 

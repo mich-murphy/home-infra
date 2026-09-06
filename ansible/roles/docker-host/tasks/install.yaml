@@ -26,11 +26,19 @@
     state: present
   register: docker_apt_repository
 
+# The deb822 source above supersedes the one-line list left by earlier manual
+# installs; both present makes apt warn about duplicate targets.
+- name: Remove the legacy one-line Docker apt source
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/docker.list
+    state: absent
+  register: docker_legacy_apt_list
+
 - name: Install Docker Engine and Compose
   ansible.builtin.apt:
     name: "{{ docker_packages }}"
     state: present
-    update_cache: "{{ docker_apt_repository.changed }}"
+    update_cache: "{{ docker_apt_repository.changed or docker_legacy_apt_list.changed }}"
     lock_timeout: 300
 
 - name: Enable and start Docker Engine
