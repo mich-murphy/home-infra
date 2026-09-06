@@ -181,7 +181,8 @@ services:
       dictionaries: en_AU en_GB en_US
       username: ${COLLABORA_ADMIN_USERNAME}
       password: ${COLLABORA_ADMIN_PASSWORD}
-      extra_params: --o:ssl.enable=false --o:ssl.termination=true --o:server_name=office.local.elmurphy.com --o:mount_jail_tree=false --o:net.frame_ancestors=https://nextcloud.local.elmurphy.com
+      # num_prespawn_children=1: idle kit processes were pushing ~1.5 GiB into swap on the 8 GiB host.
+      extra_params: --o:ssl.enable=false --o:ssl.termination=true --o:server_name=office.local.elmurphy.com --o:mount_jail_tree=false --o:net.frame_ancestors=https://nextcloud.local.elmurphy.com --o:num_prespawn_children=1
     labels:
       - traefik.enable=true
       - traefik.http.routers.nextcloud-office.rule=Host(`office.local.elmurphy.com`)
