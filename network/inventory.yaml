@@ -6,6 +6,7 @@ network:
     gateway: 10.77.1.1
     unifi_controller: 10.77.1.10
     ipmi: 10.77.1.99
+    proxmox: 10.77.1.100
   dmz:
     name: dmz
     subnet: 10.77.99.0/24

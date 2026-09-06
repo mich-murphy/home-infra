@@ -43,7 +43,16 @@ Guest backups are not yet configured: there is no vzdump job and no backup
 storage. The intended target is an NFS export on TrueNAS registered as a PVE
 storage with `content backup`, with a daily snapshot-mode vzdump job for VMIDs
 102, 110 and 111 and a `keep-daily=7,keep-weekly=4,keep-monthly=3` retention.
-The TrueNAS side needs credentials that are not in the shared 1Password vault.
+
+The hypervisor sits on the MGMT VLAN and TrueNAS on SRV, so the RouterOS role
+carries a narrow forward rule (`Proxmox -> TrueNAS NFS`, tcp 111/2049 and
+udp 111 from `network.mgmt.proxmox` to `network.infrastructure.truenas`).
+Applying it from a non-MGMT station needs the API tunnelled through the
+hypervisor: `ssh -L 18729:10.77.1.1:8729 root@proxmox` then
+`-e routeros_api_host=127.0.0.1 -e routeros_api_port=18729`.
+
+TrueNAS-side dataset, export and the vzdump job are still to be created; the
+`truenas_admin` SSH key in 1Password gives a shell but not sudo.
 
 ## Known gaps
 

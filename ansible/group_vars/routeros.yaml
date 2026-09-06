@@ -35,6 +35,7 @@ routeros_admin_station: 10.77.1.241 # this Mac (MGMT) — see note: DHCP, reserv
 routeros_ipmi_host: "{{ network.mgmt.ipmi }}" # Proxmox IPMI/BMC
 routeros_unifi_ctrl: "{{ network.mgmt.unifi_controller }}"
 routeros_truenas_host: "{{ network.infrastructure.truenas }}"
+routeros_proxmox_host: "{{ network.mgmt.proxmox }}"
 routeros_docker_host_srv_ip: "{{ network.infrastructure.docker_host }}"
 routeros_qbittorrent_peer_port: 25565
 routeros_qbittorrent_peer_target: "{{ routeros_docker_host_srv_ip }}"

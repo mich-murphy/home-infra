@@ -130,6 +130,22 @@
         dst-address: "{{ routeros_unifi_ctrl }}"
         action: accept
         comment: "SRV -> UniFi controller (managed: routeros role)"
+      # vzdump backups: the MGMT-side hypervisor mounts a TrueNAS NFSv4 export.
+      # rpcbind (111) is needed for PVE's storage reachability probe.
+      - chain: forward
+        src-address: "{{ routeros_proxmox_host }}"
+        dst-address: "{{ routeros_truenas_host }}"
+        protocol: tcp
+        dst-port: 111,2049
+        action: accept
+        comment: "Proxmox -> TrueNAS NFS tcp (managed: routeros role)"
+      - chain: forward
+        src-address: "{{ routeros_proxmox_host }}"
+        dst-address: "{{ routeros_truenas_host }}"
+        protocol: udp
+        dst-port: 111
+        action: accept
+        comment: "Proxmox -> TrueNAS NFS udp (managed: routeros role)"
       - chain: forward
         src-address: "{{ _net.gst }}"
         dst-address-list: internal
