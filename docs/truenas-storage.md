@@ -69,7 +69,8 @@ Measured file-size distributions (drives the tuning below):
 
 - NFS exports: `media`, `photos`, `media/music`, `media/audiobooks`,
   `owncloud`, and `backups/proxmox` (host `10.77.1.100` only, `mapall` to the
-  `backups` user; added 2026-09-06 for vzdump). The `owncloud` dataset export is named "Nextcloud data storage",
+  `backups` user; added 2026-09-06 for vzdump). The `owncloud` dataset export
+  is named "Nextcloud data storage",
   restricted to docker-host (`10.77.20.246`), and maps all requests to the
   dedicated `nextcloud` user. The older media and photo exports have empty host
   lists, so their export ACLs remain the only same-VLAN access control.
