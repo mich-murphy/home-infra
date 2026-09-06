@@ -21,6 +21,19 @@ The special vdev is pool-critical: losing it loses the pool. Its mirror
 redundancy matches the data vdev, which is the required configuration. The
 DC600M drives have power-loss protection.
 
+### Known hardware fault (2026-08-30)
+
+The special-vdev SSD `50026B7687168A10` (`sde`, HBA PHY 3) reset six times
+between 16:35 and 17:15, then dropped off the bus for 39 s and re-attached as
+a new SCSI target; ZFS marked it FAULTED, then REMOVED, then ONLINE and
+resilvered 4.81 MB in 17 s with no errors. Evidence points at the SATA link,
+not the drive: PHY 3 shows ~16.6k invalid-dword and disparity errors while
+PHYs 0-2 show zero, and the drive logs 9 SATA CRC errors where its twin on
+PHY 2 logs none. Both SSDs run the same firmware (SCEKH5.3) and pass SMART.
+Action: reseat or replace the breakout cable lane / backplane slot feeding
+PHY 3 (or move the SSD to a spare HBA port), then scrub and confirm the PHY
+counters stop climbing.
+
 `special_small_blocks=64K` is inherited pool-wide, but the vdev holds only
 ~2GB of 953GB: allocation classes apply to newly written blocks only, and
 the bulk data predates the vdev. Existing data migrates only when rewritten.
@@ -37,6 +50,8 @@ datasets (including the backup datasets below) benefit immediately.
 | `slow/media/audiobooks` | 31G | 1M | disabled | |
 | `slow/photos` | 104G | 1M | disabled | refquota 512G, immich |
 | `slow/owncloud` | 1.2G | 128K | disabled | SMB, case-insensitive |
+| `slow/backups` | - | 1M | standard | parent for backup targets (added 2026-09-06) |
+| `slow/backups/proxmox` | - | 1M | standard | refquota 1.5T, owner `backups` 1225, Proxmox vzdump |
 
 All datasets: LZ4, `atime=off`, POSIX ACLs except `slow/owncloud` (NFSv4
 ACLs + case-insensitive, correct for its SMB use).
@@ -52,8 +67,9 @@ Measured file-size distributions (drives the tuning below):
 
 ### Shares and services
 
-- NFS exports: `media`, `photos`, `media/music`, `media/audiobooks`, and
-  `owncloud`. The `owncloud` dataset export is named "Nextcloud data storage",
+- NFS exports: `media`, `photos`, `media/music`, `media/audiobooks`,
+  `owncloud`, and `backups/proxmox` (host `10.77.1.100` only, `mapall` to the
+  `backups` user; added 2026-09-06 for vzdump). The `owncloud` dataset export is named "Nextcloud data storage",
   restricted to docker-host (`10.77.20.246`), and maps all requests to the
   dedicated `nextcloud` user. The older media and photo exports have empty host
   lists, so their export ACLs remain the only same-VLAN access control.
@@ -69,7 +85,8 @@ Measured file-size distributions (drives the tuning below):
 ### Protection
 
 - ZFS snapshot tasks: daily, 7d retention, on `photos`, `owncloud`,
-  `media/music`, `media/audiobooks` only.
+  `media/music`, `media/audiobooks`. Daily 06:00, 14d, recursive on
+  `slow/backups` (added 2026-09-06).
 - Cloud sync: daily Backblaze B2 push for `photos`, `owncloud`, `music`
   (task-level encryption off; acceptable for these, not for SQL dumps).
 - No ZFS replication tasks or dedicated application-backup datasets exist yet.
