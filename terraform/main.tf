@@ -340,9 +340,11 @@ resource "proxmox_virtual_environment_vm" "ai_dev" {
     sockets = 1
     type    = "host"
   }
+  # 5 GiB produced ~60 OOM kills/month (tsc, bun, wezterm-mux); 7 GiB leaves the
+  # host ~2 GiB headroom with TrueNAS at 10 GiB, docker-host at 8 GiB and ARC at 3 GiB.
   memory {
-    dedicated = 5120
-    floating  = 5120
+    dedicated = 7168
+    floating  = 7168
   }
   initialization {
     datastore_id        = "local-zfs"

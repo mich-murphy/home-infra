@@ -1,0 +1,7 @@
+---
+# earlyoom sends SIGTERM to the largest process when both available memory and
+# free swap fall below these percentages (SIGKILL at half of each).
+ai_dev_earlyoom_mem_percent: 8
+ai_dev_earlyoom_swap_percent: 8
+ai_dev_earlyoom_avoid: "(^|/)(init|systemd.*|sshd.*|mosh-server|tailscaled|herdr|moshi-hook|wezterm-mux-server|fish|dbus-broker.*)$"
+ai_dev_earlyoom_prefer: "(^|/)(tsc|bun|node|next-build|esbuild|vitest|jest|cargo|rustc|go)$"

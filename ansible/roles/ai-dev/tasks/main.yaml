@@ -8,6 +8,9 @@
 - name: Configure host firewall
   ansible.builtin.import_tasks: firewall.yaml
 
+- name: Memory protection and filesystem maintenance timers
+  ansible.builtin.import_tasks: system-maintenance.yaml
+
 - name: Provision agent scratch space
   ansible.builtin.import_tasks: scratch.yaml
   tags:

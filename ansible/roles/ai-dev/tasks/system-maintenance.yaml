@@ -1,0 +1,41 @@
+---
+# earlyoom acts before the kernel OOM killer thrashes the VM and, unlike
+# systemd-oomd, kills one process rather than a whole session cgroup. Keep the
+# interactive plumbing alive and prefer transient build tooling.
+- name: Install earlyoom and pacman-contrib
+  community.general.pacman:
+    name:
+      - earlyoom
+      - pacman-contrib
+    state: present
+
+- name: Configure earlyoom thresholds and process preferences
+  ansible.builtin.copy:
+    dest: /etc/default/earlyoom
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (ai-dev role). earlyoom kills the single largest offender
+      # before the kernel OOM killer thrashes the whole VM; keep the interactive
+      # plumbing alive and prefer transient build tooling.
+      EARLYOOM_ARGS="-r 3600 -m {{ ai_dev_earlyoom_mem_percent }} -s {{ ai_dev_earlyoom_swap_percent }} -n --avoid '{{ ai_dev_earlyoom_avoid }}' --prefer '{{ ai_dev_earlyoom_prefer }}'"
+  notify: restart earlyoom
+
+- name: Enable earlyoom
+  ansible.builtin.systemd_service:
+    name: earlyoom.service
+    enabled: true
+    state: started
+
+# The root filesystem is btrfs on a discard=on zvol; trim weekly, scrub monthly,
+# and keep the pacman cache to the newest versions.
+- name: Enable filesystem and package-cache maintenance timers
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - fstrim.timer
+    - btrfs-scrub@-.timer
+    - paccache.timer
