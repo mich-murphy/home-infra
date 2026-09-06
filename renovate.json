@@ -17,12 +17,11 @@
   "osvVulnerabilityAlerts": true,
   "dependencyDashboardOSVVulnerabilitySummary": "unresolved",
   "major": {
-    "automerge": false,
-    "dependencyDashboardApproval": true
+    "automerge": false
   },
   "packageRules": [
     {
-      "description": "Require approval for high-risk infrastructure updates",
+      "description": "Never automerge high-risk infrastructure updates; PRs are still raised automatically",
       "matchPackageNames": [
         "/^ghcr\\.io\\/immich-app\\//",
         "/^hashicorp\\/terraform$/",
@@ -36,7 +35,12 @@
         "/^terraform-provider-.*/",
         "/^traefik$/"
       ],
-      "dependencyDashboardApproval": true
+      "automerge": false
+    },
+    {
+      "description": "Nextcloud only supports stepping one major at a time; raise each major separately",
+      "matchPackageNames": ["/^nextcloud$/"],
+      "separateMultipleMajor": true
     },
     {
       "description": "Linuxserver.io Qbittorrent",
