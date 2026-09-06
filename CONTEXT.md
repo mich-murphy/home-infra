@@ -17,7 +17,8 @@ _Avoid_: Ongoing updates, maintenance
 
 **ai-dev maintenance**:
 Ongoing user-tool and Home Manager updates initiated and verified on ai-dev
-after provisioning.
+after provisioning. The Ansible ai-dev role owns and deploys the maintenance
+command even when a human invokes it directly on the host.
 _Avoid_: Provisioning, bootstrap
 
 **Docker host provisioning**:

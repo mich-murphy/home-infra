@@ -85,6 +85,13 @@ jobs:
           done < <(find docker -name compose.yml -print | sort)
           scripts/check-portainer-drift.sh --source-only
           SCRIPT
+      - name: Check ai-dev maintenance command
+        if: inputs.check == 'ansible'
+        run: |
+          nix shell .#shellcheck --command shellcheck \
+            ansible/roles/ai-dev/files/ai-dev-maintenance \
+            ansible/tests/ai-dev-maintenance.sh
+          ansible/tests/ai-dev-maintenance.sh
       - name: Lint Ansible
         if: inputs.check == 'ansible'
         # galaxy install: kewlfft.aur is not bundled with nixpkgs ansible

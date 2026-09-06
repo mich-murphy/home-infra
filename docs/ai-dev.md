@@ -72,21 +72,21 @@ non-fast-forward checkout or conflicting local change stops deployment.
 Check mode builds the activation package but never activates it.
 
 Home Manager is the steady-state owner of the shared shell, CLI environment,
-ai-dev maintenance command, and Moshi user unit. Ansible builds the desired
-activation package, compares it with the current Home Manager generation, and
-activates only when they differ. It then runs `ai-dev-maintenance
-ensure-present`, which repairs missing tools without updating installed tools.
-A second live run must report no changes when the Nix configuration has not
-changed.
+and Moshi user unit. Ansible owns and deploys the ai-dev maintenance command,
+builds the desired Home Manager activation package, compares it with the
+current generation, and activates only when they differ. It then runs
+`ai-dev-maintenance ensure-present`, which repairs missing tools without
+updating installed tools. A second live run must report no changes when neither
+repository's configuration has changed.
 
 ## Interactive setup
 
 Home Manager owns OpenCode and the shared Fish, Starship, FZF, general Git
-behavior, Hunk, Herdr, Yazi, portable CLI configuration, and the
-`ai-dev-maintenance` command. Ansible writes ai-dev's vaulted personal and
-BusinessCraft identity fragments with mode `0600` and selects the BusinessCraft
-fragment below `~/businesscraft/`; the Mac retains its separate Home
-Manager-owned identities.
+behavior, Hunk, Herdr, Yazi, and portable CLI configuration. Ansible deploys
+`ai-dev-maintenance`, writes ai-dev's vaulted personal and BusinessCraft
+identity fragments with mode `0600`, and selects the BusinessCraft fragment
+below `~/businesscraft/`; the Mac retains its separate Home Manager-owned
+identities.
 
 Run ongoing coding-agent updates deliberately on ai-dev:
 
@@ -96,8 +96,10 @@ ai-dev-maintenance status
 ```
 
 The update command runs the official stable installers for Claude Code, Codex,
-Pi, Herdr, and Moshi independently, updates the Plannotator Pi package,
+Pi, Herdr, and Moshi independently, updates the declared Pi packages,
 reconciles Herdr before Moshi integrations, and reports all failures together.
+Its implementation and ai-dev package inventory live in the Ansible role that
+deploys it.
 The status command is read-only. Ansible does not copy SSH keys, OAuth sessions,
 or API keys. Authenticate each tool interactively:
 

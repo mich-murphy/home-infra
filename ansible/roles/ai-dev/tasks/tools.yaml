@@ -17,10 +17,26 @@
       - "ai_dev_node_version.stdout | regex_replace('^v', '') is version('22.19.0', '>=')"
     fail_msg: "Pi requires Node.js >=22.19.0; found {{ ai_dev_node_version.stdout }}."
 
+- name: Ensure the user-local executable directory exists
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.local/bin"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Install the ai-dev maintenance command
+  ansible.builtin.copy:
+    src: ai-dev-maintenance
+    dest: "/home/{{ username }}/.local/bin/ai-dev-maintenance"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
 - name: Ensure the ai-dev toolchain is present
   ansible.builtin.command:
     argv:
-      - "/home/{{ username }}/.nix-profile/bin/ai-dev-maintenance"
+      - "/home/{{ username }}/.local/bin/ai-dev-maintenance"
       - ensure-present
   become: true
   become_user: "{{ username }}"
@@ -38,7 +54,7 @@
 - name: Verify the ai-dev toolchain and Moshi runtime
   ansible.builtin.command:
     argv:
-      - "/home/{{ username }}/.nix-profile/bin/ai-dev-maintenance"
+      - "/home/{{ username }}/.local/bin/ai-dev-maintenance"
       - status
   become: true
   become_user: "{{ username }}"
