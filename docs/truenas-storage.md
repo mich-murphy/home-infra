@@ -51,7 +51,7 @@ datasets (including the backup datasets below) benefit immediately.
 | `slow/photos` | 104G | 1M | disabled | refquota 512G, immich |
 | `slow/owncloud` | 1.2G | 128K | disabled | SMB, case-insensitive |
 | `slow/backups` | - | 1M | standard | parent for backup targets (added 2026-09-06) |
-| `slow/backups/proxmox` | - | 1M | standard | refquota 1.5T, owner `backups` 1225, Proxmox vzdump |
+| `slow/backups/proxmox` | - | 1M | standard | refquota 1.5T, vzdump target |
 
 All datasets: LZ4, `atime=off`, POSIX ACLs except `slow/owncloud` (NFSv4
 ACLs + case-insensitive, correct for its SMB use).
