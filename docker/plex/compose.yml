@@ -24,6 +24,9 @@ services:
       - PGID=1000
       - TZ=${TZ}
       - PLEX_CLAIM=${PLEX_CLAIM}
+      # Advertise the Traefik URL so plex.tv hands native clients (Plexamp,
+      # Google TV) a reachable connection; 32400 is not published.
+      - ADVERTISE_IP=https://plex.local.elmurphy.com:443
     volumes:
       - plex-data:/config
       - plex-transcode:/transcode
