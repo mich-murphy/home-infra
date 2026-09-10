@@ -165,12 +165,15 @@ Cloudflare DNS challenge. Ansible owns the `/srv/init` bootstrap stack because
 Traefik and Portainer must exist before Portainer can operate. Portainer GitOps
 owns every application stack in `docker/portainer-stacks.yaml`. The inventory,
 Git settings, drift check, and removal order are documented in
-[docs/docker-deployment.md](docs/docker-deployment.md).
+[docs/docker-deployment.md](docs/docker-deployment.md). Radarr and Sonarr
+custom formats and quality profiles are managed as code by Recyclarr; see
+[docs/recyclarr.md](docs/recyclarr.md).
 
 | Stack                | Services                                       |
 | -------------------- | ---------------------------------------------- |
 | **init**             | Traefik, Portainer, Pocket-ID (SSO)            |
 | **arrs**             | Radarr, Sonarr, Lidarr, Prowlarr               |
+| **recyclarr**        | Recyclarr (TRaSH sync for Radarr and Sonarr)   |
 | **downloads**        | qBittorrent, SABnzbd                           |
 | **plex**             | Plex, Tautulli, Seerr, Maintainerr, Kometa     |
 | **jellyfin**         | Jellyfin, Jellyseerr                           |

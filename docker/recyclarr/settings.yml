@@ -1,0 +1,17 @@
+---
+# Recyclarr global settings. Auto-discovered from /config/settings.yml; see
+# docs/recyclarr.md.
+#
+# Registers docker/recyclarr/custom-formats/{radarr,sonarr} as local resource
+# providers, so their JSON files can be referenced by trash_id from
+# recyclarr.yml like any guide-provided custom format. Covers the two
+# bespoke "Dual Audio" formats, which TRaSH Guides does not publish.
+resource_providers:
+  - name: local-radarr-cfs
+    type: custom-formats
+    service: radarr
+    path: custom-formats/radarr
+  - name: local-sonarr-cfs
+    type: custom-formats
+    service: sonarr
+    path: custom-formats/sonarr

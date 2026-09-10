@@ -1,0 +1,244 @@
+# yaml-language-server: $schema=https://schemas.recyclarr.dev/v8/config-schema.json
+---
+# Recyclarr configuration for Radarr and Sonarr. See docs/recyclarr.md for how
+# this is deployed, previewed and synced.
+#
+# Profiles are guide-backed: each references a TRaSH Guides quality profile by
+# trash_id, so qualities, cutoff, scores and the guide's default custom format
+# groups (Unwanted Formats, Golden Rule HD, Streaming Services) come from the
+# guide. Only deliberate deviations are written here as overrides. The "(Dual
+# Audio)" profiles are named variants of the same guide profile.
+#
+# reset_unmatched_scores makes this file authoritative: a score set in the UI
+# for a format not listed here is reset to 0 on the next sync.
+#
+# Two custom formats are bespoke (not published by TRaSH Guides) and are
+# supplied from custom-formats/ via the resource providers in settings.yml.
+
+radarr:
+  radarr:
+    base_url: http://radarr:7878
+    api_key: !env_var RADARR_API_KEY
+
+    # Streaming-service formats that score 0 are kept because the file naming
+    # format prints matched custom formats (e.g. "[AMZN]"); never delete.
+    delete_old_custom_formats: false
+
+    quality_definition:
+      type: movie
+
+    media_management:
+      propers_and_repacks: do_not_prefer
+
+    quality_profiles:
+      # TRaSH "WEB 1080p": WEB 1080p only, cutoff WEB 1080p, language Original,
+      # upgrade until custom format score 10000. Used by English-original
+      # movies (169 at the time of writing).
+      - trash_id: e8c5acb741363a0dbda67d3978f4912f # WEB 1080p
+        name: WEB 1080p
+        reset_unmatched_scores:
+          enabled: true
+
+      # Variant for non-English movies. Bluray-1080p is merged into the 1080p
+      # cutoff group so it ranks equal to WEB 1080p: Radarr only compares
+      # custom format scores between equally ranked qualities, so a dual-audio
+      # Bluray can replace an original-only WEB file (and vice versa) without
+      # Bluray ever counting as a plain quality upgrade or downgrade.
+      - trash_id: e8c5acb741363a0dbda67d3978f4912f # WEB 1080p
+        name: WEB 1080p (Dual Audio)
+        reset_unmatched_scores:
+          enabled: true
+        upgrade:
+          allowed: true
+          until_quality: Bluray + WEB 1080p
+          until_score: 10000
+        qualities:
+          - name: Bluray + WEB 1080p
+            qualities:
+              - Bluray-1080p
+              - WEBDL-1080p
+              - WEBRip-1080p
+          - name: WEB 720p
+            enabled: false
+            qualities:
+              - WEBDL-720p
+              - WEBRip-720p
+          - name: WEB 480p
+            enabled: false
+            qualities:
+              - WEBDL-480p
+              - WEBRip-480p
+          - name: Remux-1080p
+            enabled: false
+
+      # Stock catch-all profile (6 movies). Upgrades disabled; only the
+      # language guards are scored on it.
+      - name: Any
+        reset_unmatched_scores:
+          enabled: true
+        upgrade:
+          allowed: false
+        min_format_score: 0
+
+    custom_format_groups:
+      add:
+        # Guide default groups for WEB 1080p (Unwanted Formats, Golden Rule
+        # HD, Streaming Services General) sync automatically. The language
+        # group is opt-in; select only "Wrong Language".
+        - trash_id: 13856622cf7a6c9925d3a83f8812d679 # [Optional] Language Profiles
+          select:
+            - 2051402ee9ca81162017d98cbe1dff2c # Wrong Language
+          assign_scores_to:
+            - name: WEB 1080p
+            - name: WEB 1080p (Dual Audio)
+            - name: Any
+
+    custom_formats:
+      # Bespoke formats (see custom-formats/radarr and settings.yml). No guide
+      # default exists, so the score is explicit.
+      - trash_ids:
+          - local-dual-audio-release-title-radarr # Dual Audio (Release Title)
+        score: 2000
+        assign_scores_to:
+          - name: WEB 1080p
+          - name: WEB 1080p (Dual Audio)
+          - name: Any
+
+      # Only on the Dual Audio variant: on an English-original movie this
+      # format would reward releases bundling foreign dubs.
+      - trash_ids:
+          - local-dual-audio-original-english-radarr # Dual Audio (Original + English)
+        score: 2000
+        assign_scores_to:
+          - name: WEB 1080p (Dual Audio)
+
+    # media_naming intentionally omitted: the live naming formats don't match
+    # any TRaSH Guides preset and syncing would rename the whole library.
+
+sonarr:
+  sonarr:
+    base_url: http://sonarr:8989
+    api_key: !env_var SONARR_API_KEY
+
+    delete_old_custom_formats: false
+
+    quality_definition:
+      type: series
+
+    media_management:
+      propers_and_repacks: do_not_prefer
+
+    quality_profiles:
+      # TRaSH "WEB-1080p" for English-original series (61 at the time of
+      # writing). The guide profile allows WEB 1080p only; the qualities
+      # override keeps the previous guide's fallbacks (Bluray-1080p,
+      # HDTV-1080p, 720p) allowed because 177 existing episode files use them
+      # and disallowing them would queue all of those for re-download. Remove
+      # the `qualities:` block to adopt the pure guide profile.
+      - trash_id: 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
+        name: WEB-1080p
+        reset_unmatched_scores:
+          enabled: true
+        qualities:
+          - name: WEB 1080p
+            qualities:
+              - WEBRip-1080p
+              - WEBDL-1080p
+          - name: Bluray-1080p
+          - name: HDTV-1080p
+          - name: WEB 720p
+            qualities:
+              - WEBRip-720p
+              - WEBDL-720p
+          - name: Bluray-720p
+          - name: HDTV-720p
+
+      # Variant for anime and other non-English series. Bluray-1080p is
+      # merged into the cutoff group (same reasoning as the Radarr variant).
+      - trash_id: 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
+        name: WEB-1080p (Dual Audio)
+        reset_unmatched_scores:
+          enabled: true
+        upgrade:
+          allowed: true
+          until_quality: Bluray + WEB 1080p
+          until_score: 10000
+        qualities:
+          - name: Bluray + WEB 1080p
+            qualities:
+              - Bluray-1080p
+              - WEBRip-1080p
+              - WEBDL-1080p
+          - name: HDTV-1080p
+          - name: WEB 720p
+            qualities:
+              - WEBRip-720p
+              - WEBDL-720p
+          - name: Bluray-720p
+          - name: HDTV-720p
+
+      # Stock profiles still assigned to a few series. Upgrades disabled; only
+      # the language guards (and, on the non-English ones, the dual-audio
+      # bonus) are scored.
+      - name: Any
+        reset_unmatched_scores:
+          enabled: true
+        upgrade:
+          allowed: false
+      - name: Any (Dual Audio)
+        reset_unmatched_scores:
+          enabled: true
+        upgrade:
+          allowed: false
+      - name: HD-1080p
+        reset_unmatched_scores:
+          enabled: true
+        upgrade:
+          allowed: false
+      - name: HD - 720p/1080p
+        reset_unmatched_scores:
+          enabled: true
+        upgrade:
+          allowed: false
+
+    custom_format_groups:
+      add:
+        # The language group is a guide default for WEB-1080p and would add
+        # "Language: Not Original", which duplicates "Wrong Language". Keep
+        # the single format and extend it to the stock profiles.
+        - trash_id: 74aff4168620ed49dcc67e92b2c2a5b4 # [Optional] Language Profiles
+          exclude:
+            - ae575f95ab639ba5d15f663bf019e3e8 # Language: Not Original
+          select:
+            - 1fb6283bd05ab5c6a728cb213e5d07d8 # Wrong Language
+          assign_scores_to:
+            - name: WEB-1080p
+            - name: WEB-1080p (Dual Audio)
+            - name: Any
+            - name: Any (Dual Audio)
+            - name: HD-1080p
+            - name: HD - 720p/1080p
+
+    custom_formats:
+      - trash_ids:
+          - local-dual-audio-release-title-sonarr # Dual Audio (Release Title)
+        score: 2000
+        assign_scores_to:
+          - name: WEB-1080p
+          - name: WEB-1080p (Dual Audio)
+          - name: Any
+          - name: Any (Dual Audio)
+          - name: HD-1080p
+          - name: HD - 720p/1080p
+
+      # Only on profiles holding non-English series (see the Radarr note).
+      - trash_ids:
+          - local-dual-audio-original-english-sonarr # Dual Audio (Original + English)
+        score: 2000
+        assign_scores_to:
+          - name: WEB-1080p (Dual Audio)
+          - name: Any (Dual Audio)
+          - name: HD-1080p
+          - name: HD - 720p/1080p
+
+    # media_naming intentionally omitted (see the Radarr note).
