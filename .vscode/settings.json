@@ -1,0 +1,5 @@
+{
+  // Recyclarr resolves these YAML tags at runtime (docker/recyclarr/recyclarr.yml);
+  // declare them so the YAML language server does not report "Unresolved tag".
+  "yaml.customTags": ["!env_var scalar", "!secret scalar"]
+}
