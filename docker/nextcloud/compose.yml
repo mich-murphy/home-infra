@@ -43,7 +43,11 @@ services:
     environment: *nextcloud-environment
     volumes:
       - nextcloud-html:/var/www/html
-      - /mnt/nextcloud/nextcloud-data:/var/www/html/data
+      - type: bind
+        source: /mnt/nextcloud/nextcloud-data
+        target: /var/www/html/data
+        bind:
+          propagation: rslave
     configs:
       # Inline so Portainer can deploy it without relative-path volumes; the
       # nextcloud image only runs post-installation hooks that are executable.
@@ -88,7 +92,11 @@ services:
     environment: *nextcloud-environment
     volumes:
       - nextcloud-html:/var/www/html
-      - /mnt/nextcloud/nextcloud-data:/var/www/html/data
+      - type: bind
+        source: /mnt/nextcloud/nextcloud-data
+        target: /var/www/html/data
+        bind:
+          propagation: rslave
     entrypoint: /cron.sh
     depends_on:
       nextcloud:
