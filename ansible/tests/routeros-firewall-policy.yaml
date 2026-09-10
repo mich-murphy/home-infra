@@ -34,6 +34,8 @@
           - "DFLT -> SRV services (managed: routeros role)"
           - "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)"
           - "SRV -> UniFi controller (managed: routeros role)"
+          - "Proxmox -> TrueNAS NFS tcp (managed: routeros role)"
+          - "Proxmox -> TrueNAS NFS udp (managed: routeros role)"
           - "GST drop internal routing (managed: routeros role)"
           - "MGMT admins -> WAN (managed: routeros role)"
           - "10.77.20.0/24 -> WAN (managed: routeros role)"
@@ -80,6 +82,6 @@
         that:
           - "'DEFAULT DROP (managed: routeros role)' not in _recovery_forward_comments"
           - "_recovery_forward_comments[-1] == '10.77.99.0/24 -> WAN (managed: routeros role)'"
-          - _recovery_forward_comments | length == 18
+          - _recovery_forward_comments | length == 20
       vars:
         _recovery_forward_comments: "{{ _routeros_forward_policy | map(attribute='comment') | list }}"
