@@ -3,7 +3,6 @@
   "extends": [
     "config:best-practices",
     "docker:enableMajor",
-    "default:automergeDigest",
     "customManagers:githubActionsVersions",
     ":rebaseStalePrs"
   ],
@@ -21,7 +20,7 @@
   },
   "packageRules": [
     {
-      "description": "Never automerge high-risk infrastructure updates; PRs are still raised automatically",
+      "description": "Never automerge major or minor updates to high-risk infrastructure; PRs are still raised automatically. Digest and patch updates are automerged by the final rule",
       "matchPackageNames": [
         "/^ghcr\\.io\\/immich-app\\//",
         "/^hashicorp\\/terraform$/",
@@ -35,6 +34,7 @@
         "/^terraform-provider-.*/",
         "/^traefik$/"
       ],
+      "matchUpdateTypes": ["major", "minor"],
       "automerge": false
     },
     {
@@ -70,18 +70,16 @@
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-(?<revision>.+)$"
     },
     {
-      "description": "Manual Approval for Immich Server and Machine Learning",
-      "matchPackageNames": [
-        "/^ghcr\\.io\\/immich-app\\/(immich-server|immich-machine-learning)/"
-      ],
-      "automerge": false
-    },
-    {
       "description": "Disable Immich Database and Cache Updates",
       "matchPackageNames": [
         "/^(ghcr|docker)\\.io\\/(immich-app|valkey)\\/(postgres|valkey)/"
       ],
       "enabled": false
+    },
+    {
+      "description": "Automerge low-risk updates for every package: digests, pins and patch releases. Must stay last so it overrides the rules above",
+      "matchUpdateTypes": ["digest", "pinDigest", "pin", "patch"],
+      "automerge": true
     }
   ]
 }
