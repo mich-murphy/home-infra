@@ -84,6 +84,10 @@ Required Portainer stack environment values:
 | `SONARR_API_KEY` | Sonarr API key (Settings → General in Sonarr)          |
 | `CRON_SCHEDULE`  | Optional; defaults to `0 4 * * *` (daily at 04:00)      |
 
+The API keys are read with Recyclarr's `!env_var` YAML tag. Editors running
+the YAML language server flag unknown tags as errors, so the repository's
+`.vscode/settings.json` declares `!env_var` and `!secret` as custom tags.
+
 ## Previewing and syncing
 
 Recyclarr runs `sync` automatically on `CRON_SCHEDULE`. To check what a sync
