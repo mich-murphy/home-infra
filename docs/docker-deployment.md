@@ -6,7 +6,7 @@ Docker deployment has two controllers with a deliberate bootstrap seam:
 
 | Owner | Responsibility |
 | --- | --- |
-| Ansible | Docker runtime, host policy, NFS storage, and `/srv/init`: Traefik, socket proxy, Portainer, and Pocket ID |
+| Ansible | Docker runtime, host policy, NFS storage, `/srv/portainer` for relative-path Git stacks, and `/srv/init`: Traefik, socket proxy, Portainer, and Pocket ID |
 | Portainer GitOps | Application stacks listed in `docker/portainer-stacks.yaml` |
 | Git | Compose definitions and the expected active-stack inventory |
 
@@ -32,10 +32,14 @@ A few stacks (`nextcloud`, `recyclarr`) bind-mount a file or directory that
 lives next to their `compose.yml` in Git (for example
 `./post-installation.sh` or `./recyclarr.yml`). Portainer only resolves these
 relative paths when the stack has **"Enable relative path volumes"** turned
-on in its Git stack settings; without it, Portainer clones the repo but does
-not expose it as a build context for bind mounts and the container starts
-with an empty path instead. Turn this on for any stack whose compose file
-uses a `./`-relative bind mount.
+on in its Git stack settings, with **Local filesystem path** set to
+`/srv/portainer` (created by the `docker-host` role). Portainer's unpacker
+clones the repository beneath that directory on the host and rewrites the
+`./` mounts to point into the clone. Without it, the daemon resolves the
+relative path inside Portainer's own data volume, which does not exist on
+the host, and Docker silently creates an empty directory in its place: the
+container starts with a directory where the file should be. Turn this on for
+any stack whose compose file uses a `./`-relative bind mount.
 
 Portainer remains the authoritative record for credential identity, polling
 interval, webhook token, and per-stack environment values because these are

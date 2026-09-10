@@ -7,6 +7,14 @@
     group: "{{ username }}"
     mode: "0775"
 
+- name: Ensure the Portainer relative-path stack directory exists
+  ansible.builtin.file:
+    path: "{{ docker_portainer_stacks_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Ensure Pocket ID secret directory exists
   ansible.builtin.file:
     path: "{{ pocket_id_encryption_key_dir }}"
