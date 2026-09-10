@@ -28,6 +28,15 @@ Configure each inventory entry as a separate Portainer Git stack:
 - update policy: enable Portainer's Git polling or webhook for the stack and
   keep its selected update policy consistent across application stacks.
 
+A few stacks (`nextcloud`, `recyclarr`) bind-mount a file or directory that
+lives next to their `compose.yml` in Git (for example
+`./post-installation.sh` or `./recyclarr.yml`). Portainer only resolves these
+relative paths when the stack has **"Enable relative path volumes"** turned
+on in its Git stack settings; without it, Portainer clones the repo but does
+not expose it as a build context for bind mounts and the container starts
+with an empty path instead. Turn this on for any stack whose compose file
+uses a `./`-relative bind mount.
+
 Portainer remains the authoritative record for credential identity, polling
 interval, webhook token, and per-stack environment values because these are
 secret-bearing or controller-specific. Audit them in the Portainer UI after a

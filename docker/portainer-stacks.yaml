@@ -26,5 +26,7 @@ stacks:
     compose_path: docker/pinchflat/compose.yml
   - name: plex
     compose_path: docker/plex/compose.yml
+  - name: recyclarr
+    compose_path: docker/recyclarr/compose.yml
   - name: wallabag
     compose_path: docker/wallabag/compose.yml

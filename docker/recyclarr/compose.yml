@@ -1,0 +1,45 @@
+---
+services:
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:8.7.2@sha256:6e69e009e1cd7493ff6093e8e187b5d3788c75b4a2c0c5127b6a1beda1c19728
+    container_name: recyclarr
+    security_opt:
+      - no-new-privileges:true
+    # The image runs as a fixed non-root user (1000:1000) baked in at build
+    # time; it never re-execs as root or switches UID/GID, so it needs none
+    # of the CHOWN/SETUID/SETGID/DAC_OVERRIDE/FOWNER/KILL capabilities the
+    # other LinuxServer-style images in this repo retain. PUID/PGID are not
+    # supported by this image (confirmed in upstream docs); UID/GID mapping
+    # is only relevant for the config volume it privately owns, not shared
+    # media, so the image default is used as-is.
+    cap_drop:
+      - ALL
+    # Recyclarr only writes under /config (its cache, logs and repo clones);
+    # everything else is read-only, with a tmpfs for scratch files.
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - proxy
+    environment:
+      - TZ=${TZ}
+      - RADARR_API_KEY=${RADARR_API_KEY}
+      - SONARR_API_KEY=${SONARR_API_KEY}
+      - CRON_SCHEDULE=${CRON_SCHEDULE:-0 4 * * *}
+    volumes:
+      - recyclarr-data:/config
+      - ./recyclarr.yml:/config/recyclarr.yml:ro
+      - ./settings.yml:/config/settings.yml:ro
+      - ./custom-formats:/config/custom-formats:ro
+    # No healthcheck: this is a cron-scheduled batch job with no listening
+    # port or HTTP endpoint (supercronic runs `recyclarr sync` on
+    # CRON_SCHEDULE), and the image does not ship a health-check script.
+    restart: unless-stopped
+
+volumes:
+  recyclarr-data:
+    name: recyclarr-data
+
+networks:
+  proxy:
+    external: true

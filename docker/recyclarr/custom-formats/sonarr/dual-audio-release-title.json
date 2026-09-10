@@ -1,0 +1,45 @@
+{
+  "trash_id": "local-dual-audio-release-title-sonarr",
+  "name": "Dual Audio (Release Title)",
+  "includeCustomFormatWhenRenaming": false,
+  "specifications": [
+    {
+      "name": "Dual audio tag",
+      "implementation": "ReleaseTitleSpecification",
+      "negate": false,
+      "required": true,
+      "fields": {
+        "value": "dual[ ._-]?(audio)|[([]dual[])]|\\b(JA|ZH|KO)(?= ?\\+ ?.*?\\b(EN))|\\b(EN)(?= ?\\+ ?.*?\\b(JA|ZH|KO))|\\b(Japanese|Chinese|Korean) ?[ ._\\+&-] ?\\b(English)|\\b(English) ?[ ._\\+&-] ?\\b(Japanese|Chinese|Korean)|\\b(\\d{3,4}(p|i)|4K|U(ltra)?HD)\\b.*\\b(DUAL)\\b(?!.*\\(|\\))"
+      }
+    },
+    {
+      "name": "Not single-language or Brazilian-dub tagged",
+      "implementation": "ReleaseTitleSpecification",
+      "negate": true,
+      "required": true,
+      "fields": {
+        "value": "\\[(JA|ZH|KO)\\]|\\bDUBLADO\\b|\\bPT[-_. ]?BR\\b|\\bPortugu[e\u00ea]s\\b|\\bLEGENDADO\\b"
+      }
+    },
+    {
+      "name": "English not already parsed (excludes English-original movies)",
+      "implementation": "LanguageSpecification",
+      "negate": true,
+      "required": true,
+      "fields": {
+        "value": 1,
+        "exceptLanguage": false
+      }
+    },
+    {
+      "name": "No language other than the original parsed from title",
+      "implementation": "LanguageSpecification",
+      "negate": true,
+      "required": true,
+      "fields": {
+        "value": -2,
+        "exceptLanguage": true
+      }
+    }
+  ]
+}
