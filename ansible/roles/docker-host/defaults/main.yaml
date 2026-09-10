@@ -22,6 +22,9 @@ docker_image_prune_randomized_delay: 1h
 
 docker_external_interface: "{{ ansible_facts['default_ipv4']['interface'] }}"
 docker_bootstrap_dir: /srv/init
+# Host directory Portainer's Git stacks with "Enable relative path volumes"
+# clone into; entered as the stack's "Local filesystem path" in Portainer.
+docker_portainer_stacks_dir: /srv/portainer
 docker_bootstrap_containers:
   - docker-socket-proxy
   - pocket-id
