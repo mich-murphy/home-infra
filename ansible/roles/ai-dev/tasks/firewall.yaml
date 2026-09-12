@@ -40,6 +40,32 @@
   when: ai_dev_ipv6_config.changed or ai_dev_ipv6_state.stdout != "1"
   changed_when: true
 
+# Resolved at run time, not committed: this repository is public.
+- name: Resolve the docker-host tailnet address
+  ansible.builtin.command:
+    cmd: "tailscale ip -4 {{ ai_dev_docker_proxy_host }}"
+  register: ai_dev_docker_proxy_address
+  changed_when: false
+  check_mode: false
+
+- name: Resolve the Proxmox tailnet address
+  ansible.builtin.command:
+    cmd: "tailscale ip -4 {{ ai_dev_proxmox_api_host }}"
+  register: ai_dev_proxmox_api_address
+  changed_when: false
+  check_mode: false
+
+- name: Verify both Hermes egress peers resolved
+  ansible.builtin.assert:
+    that:
+      - ai_dev_docker_proxy_address.stdout_lines | length == 1
+      - ai_dev_docker_proxy_address.stdout | trim is match('^100\.')
+      - ai_dev_proxmox_api_address.stdout_lines | length == 1
+      - ai_dev_proxmox_api_address.stdout | trim is match('^100\.')
+    fail_msg: >-
+      Each Hermes egress peer must resolve to exactly one Tailscale IPv4
+      address before ai-dev opens egress to it.
+
 - name: Deploy nftables ruleset
   ansible.builtin.template:
     src: nftables.conf.j2
@@ -95,11 +121,11 @@
     that:
       - "'100.64.0.0/10' in ai_dev_nft_output_chain.stdout"
       - >-
-        ai_dev_docker_proxy_address ~ ' tcp dport ' ~ ai_dev_docker_proxy_port
-        ~ ' accept' in ai_dev_nft_output_chain.stdout
+        (ai_dev_docker_proxy_address.stdout | trim) ~ ' tcp dport '
+        ~ ai_dev_docker_proxy_port ~ ' accept' in ai_dev_nft_output_chain.stdout
       - >-
-        ai_dev_proxmox_api_address ~ ' tcp dport ' ~ ai_dev_proxmox_api_port
-        ~ ' accept' in ai_dev_nft_output_chain.stdout
+        (ai_dev_proxmox_api_address.stdout | trim) ~ ' tcp dport '
+        ~ ai_dev_proxmox_api_port ~ ' accept' in ai_dev_nft_output_chain.stdout
     fail_msg: >-
       ai-dev must reach the docker-host socket proxy and the Proxmox API while
       every other tailnet peer stays unreachable from this guest.

@@ -382,13 +382,14 @@ Both destinations are tagged devices (`tag:proxmox` and `tag:server`), but the
 grants below scope by host rather than by tag: `tag:server` covers more than
 docker-host, and this guest should reach exactly one machine on that port. Name
 them in the `hosts` block, since a bare hostname in `dst` does not resolve on
-its own.
+its own. Read each address with `tailscale ip -4 <host>`; they are deliberately
+not recorded here, because this repository is public.
 
 ```json
 {
   "hosts": {
-    "docker-host": "100.96.174.126",
-    "proxmox": "100.106.15.105"
+    "docker-host": "<tailscale ip -4 docker-host>",
+    "proxmox": "<tailscale ip -4 proxmox>"
   },
   "grants": [
     {
