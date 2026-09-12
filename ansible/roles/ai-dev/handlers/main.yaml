@@ -13,3 +13,9 @@
   ansible.builtin.systemd_service:
     name: earlyoom.service
     state: restarted
+
+# systemd holds a mask in memory until it re-reads the unit tree, so removing
+# the mask files leaves the units reporting masked for the rest of the boot.
+- name: reload systemd units
+  ansible.builtin.systemd_service:
+    daemon_reload: true
