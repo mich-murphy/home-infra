@@ -34,9 +34,10 @@ Do not run ownCloud and Nextcloud against this dataset at the same time.
 the `nextcloud` Git stack in Portainer, using independent random values for
 every password. Portainer stores them; they do not belong in Git.
 
-On first installation, `post-installation.sh` verifies the NFS-backed primary
-data directory, selects cron background jobs, installs Nextcloud Office and the
-TOTP provider, and configures Collabora's internal and public URLs.
+On first installation, the post-installation hook that `compose.yml` injects as
+a `configs:` entry verifies the NFS-backed primary data directory, selects cron
+background jobs, installs Nextcloud Office and the TOTP provider, and
+configures Collabora's internal and public URLs.
 
 ## Migration record
 
@@ -51,11 +52,3 @@ Re-scan after any filesystem-level restore:
 ```sh
 docker exec --user www-data nextcloud php occ files:scan --all
 ```
-
-## Sources
-
-- Nextcloud Docker image: https://github.com/nextcloud/docker/
-- Reverse proxy configuration: https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/reverse_proxy_configuration.html
-- Redis caching and file locking: https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/caching_configuration.html
-- Nextcloud Office Docker setup: https://docs.nextcloud.com/server/latest/admin_manual/office/example-docker.html
-- ownCloud migration: https://docs.nextcloud.com/server/stable/admin_manual/maintenance/migrating_owncloud.html

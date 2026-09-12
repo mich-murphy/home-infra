@@ -43,13 +43,12 @@ with disposable empty volumes when their image or capability set changes.
 - **Traefik** retains the capabilities required to bind its entrypoints. It
   discovers services through the restricted Docker socket proxy rather than a
   direct socket mount.
-- **Portainer** is the designated Docker API controller and keeps direct access
-  to `/var/run/docker.sock`; capability dropping does not meaningfully reduce
-  the authority granted by that socket.
-- **Pocket ID** does not drop all capabilities. A live test failed with
-  `su-exec: setgroups(1000): Operation not permitted`.
-- **Immich machine learning** does not drop all capabilities. A live test left
-  its health check failing.
+- **Portainer** is the designated Docker API controller and mounts
+  `/var/run/docker.sock` directly.
+- **Pocket ID** does not drop all capabilities; dropping them fails its
+  privilege-dropping entrypoint.
+- **Immich machine learning** does not drop all capabilities; dropping them
+  leaves its health check failing.
 - **Nextcloud Office** cannot use `no-new-privileges`. Collabora's
   `coolforkit-caps` process failed to spawn in a disposable test when that
   option was set. The stack drops all capabilities, then restores the Docker

@@ -12,7 +12,7 @@ not in Git, so this page is the record of the intended state.
   `{tvdb-…}` for series) and write Kodi/Emby NFO sidecars with the same ids
   (Settings → Metadata → Kodi (XBMC) / Emby, metadata on, images off). The
   media servers read those ids instead of guessing from titles, which is what
-  produced "The Jungle Book (2016)" matched to the 1967 cartoon.
+  produced remakes matched to the original.
 - Both apps have Connect notifications to Plex and Jellyfin with "Update
   Library" on for import, upgrade, rename and delete, so the affected folder is
   rescanned immediately. NFS does not deliver inotify events, so this is the
@@ -29,11 +29,11 @@ not in Git, so this page is the record of the intended state.
 
 Internet providers must stay off for YouTube: Pinchflat writes `tvshow.nfo`
 and per-video NFOs with a `youtube` unique id, and any online provider will
-match a channel name to an unrelated TV series (Boundary became the anime
-"Beyond the Boundary"). Channel items must carry only the `youtube` id.
+match a channel name to an unrelated TV series whose title happens to collide.
+Channel items must carry only the `youtube` id.
 
 The TheTVDB plugin is installed because TheMovieDb has no episode titles for
-several series (One Piece, talk shows). When titles are missing after a
+some long-running series and talk shows. When titles are missing after a
 provider change, refresh the series with "Replace all metadata"; a plain
 refresh keeps the existing placeholder name.
 

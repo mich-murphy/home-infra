@@ -2,7 +2,7 @@
 
 TrueNAS is not managed by IaC. Changes are applied through the UI or API and
 recorded here; this file is the system of record for storage configuration.
-State below was verified live on 2026-06-13 (TrueNAS SCALE 25.04.2.6).
+State below was verified live on 2026-06-13 (TrueNAS SCALE 25.04).
 
 ## Verified current state
 
@@ -11,15 +11,15 @@ State below was verified live on 2026-06-13 (TrueNAS SCALE 25.04.2.6).
 | Item | Value |
 | --- | --- |
 | Pool | `slow`, ONLINE, no alerts, 0 errors |
-| Data vdev | mirror, 2x Seagate IronWolf 10TB |
-| Special vdev | mirror, 2x Kingston DC600M 960GB |
+| Data vdev | mirror, 2x 10TB HDD |
+| Special vdev | mirror, 2x 960GB SSD |
 | Capacity | 52% used (5.2T of 10.9T), 8% fragmentation |
 | Last scrub | 2026-05-16, clean; schedule Sun 01:00, threshold 35d |
 | SMART | weekly SHORT tests, all passing; no LONG tests |
 
 The special vdev is pool-critical: losing it loses the pool. Its mirror
 redundancy matches the data vdev, which is the required configuration. The
-DC600M drives have power-loss protection.
+special-vdev SSDs have power-loss protection.
 
 ### Known hardware fault
 
@@ -61,8 +61,7 @@ the special-vdev opportunity.
   `owncloud`, and `backups/proxmox` (restricted to the hypervisor, `mapall` to
   the `backups` user). The `owncloud` dataset export is named "Nextcloud data
   storage", restricted to docker-host, and maps all requests to the dedicated
-  `nextcloud` user. The older media and photo exports have empty host
-  lists, so their export ACLs remain the only same-VLAN access control.
+  `nextcloud` user.
 - The only active NFS client is docker-host, NFSv4.2 with
   1M rsize/wsize — matching the 1M recordsize, as recommended. The
   Compose services use the same hard NFSv4.2 mount policy.
@@ -77,8 +76,9 @@ the special-vdev opportunity.
 - ZFS snapshot tasks: daily, 7d retention, on `photos`, `owncloud`,
   `media/music`, `media/audiobooks`. Daily 06:00, 14d, recursive on
   `slow/backups` (added 2026-09-06).
-- Cloud sync: daily Backblaze B2 push for `photos`, `owncloud`, `music`
-  (task-level encryption off; acceptable for these, not for SQL dumps).
+- Cloud sync: daily Backblaze B2 push for `photos`, `owncloud`, `music`.
+  Task-level encryption is off; turn it on before any dataset holding plaintext
+  dumps is added to the task.
 - No ZFS replication tasks or dedicated application-backup datasets exist yet.
 
 ## Open items

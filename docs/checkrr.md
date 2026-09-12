@@ -5,8 +5,8 @@
 Checkrr scans the media library for corrupt files and, when it can identify
 the file as a tracked Radarr or Sonarr download, deletes it through that
 app's own API and lets the app re-search and re-download it. It runs as its
-own daemon in the `recyclarr` Portainer stack, on the `proxy` network, talking
-to `http://radarr:7878` and `http://sonarr:8989` the same way Recyclarr does.
+own daemon in the `recyclarr` Portainer stack, on the `proxy` network, reaching
+Radarr and Sonarr the same way Recyclarr does.
 
 ## Why this exists
 

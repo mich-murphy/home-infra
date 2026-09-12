@@ -1,9 +1,8 @@
 # AI development VM
 
-`ai-dev` is the single AI development VM. It retains Proxmox VMID 110 and its
-150 GB disk, with 4 CPU cores, fixed 7 GiB RAM, and an 8 GiB disk-backed
-swapfile with a bounded zswap cache. Its only NIC is on the physical `vmbr1`
-DMZ.
+`ai-dev` is the single AI development VM. Its only NIC is on the physical
+`vmbr1` DMZ, and it carries an 8 GiB disk-backed swapfile with a bounded zswap
+cache. `terraform/main.tf` holds its current spec.
 
 The supported remote path is:
 
@@ -27,22 +26,9 @@ Herdr is the only persistent multiplexer on the guest.
 
 ## Deployment
 
-The existing guest initially advertises the old `ai-dev-bgd` MagicDNS name. For
-the first Ansible run only, temporarily set the inventory line to:
-
-```ini
-ai-dev ansible_host=ai-dev-bgd ansible_user=michael
-```
-
-Run the AI host play, verify that Linux and Tailscale both advertise `ai-dev`,
-then restore the committed inventory line without `ansible_host`. Do not leave
-the migration alias in steady state.
-
-Before planning or applying Terraform, rotate any Tailscale authentication key
-that was rendered into an old local cloud-init file. Remove the old
-`terraform/files/ai-dev-bc.cfg` and `terraform/files/ai-dev-bgd.cfg` files after
-rotation. They are ignored generated artifacts and must not be treated as a
-credential store.
+Generated cloud-init files under `terraform/files/` are ignored build
+artifacts, not a credential store: rotate any Tailscale authentication key that
+was rendered into one.
 
 Run:
 
@@ -53,10 +39,9 @@ terraform validate
 terraform plan
 ```
 
-The plan must report the address move from
-`module.ai_dev["ai-dev-bgd"]` to `module.ai_dev`, followed by an in-place rename
-and CPU/memory update. Stop if VMID 110 or its disk would be destroyed or
-replaced.
+Stop if VMID 110 or its disk would be destroyed or replaced; `main.tf` keeps a
+`moved` block, so an address move is the only structural change a plan should
+ever report here.
 If the plan instead proposes creating all BPG-provider VMs or asks for the
 legacy Telmate provider, stop: the local state predates the earlier provider
 migration and must be reconciled/imported before this rename can be planned.
@@ -120,7 +105,7 @@ GitHub CLI operations for a repository under `~/businesscraft/`, select the
 BusinessCraft account explicitly:
 
 ```sh
-gh auth switch --hostname github.com --user michaelmbc
+gh auth switch --hostname github.com --user <businesscraft-account>
 gh auth status --hostname github.com
 ```
 
@@ -235,8 +220,8 @@ size. Agent scratch exhausts that limit while `df` still shows
 free space, and writes then fail with `EDQUOT`, which Node reports as the
 unmapped `Unknown system error -122, write`.
 
-Home Manager therefore sets `TMPDIR=/var/tmp/michael` for shells, and Ansible
-sets the same value in `~/.config/environment.d/10-ai-dev-scratch.conf` for the
+Home Manager therefore sets `TMPDIR` to a disk-backed path under the
+management user's `/var/tmp` for shells, and Ansible sets the same value in `~/.config/environment.d/10-ai-dev-scratch.conf` for the
 lingering systemd user manager. Ansible also provisions the directory plus
 `/etc/tmpfiles.d/ai-dev-scratch.conf`, which ages the scratch root at 10d and
 reaps leftover Claude, Bun, and Pi scratch at 2d. Do not raise the quota
@@ -358,7 +343,7 @@ only the ones nothing enforces automatically:
 
 ```sh
 tailscale status
-ip -brief address show ens18
+ip -brief address show
 ip route
 systemctl --user status moshi-hook
 ss -ltn 'sport = :24543'
@@ -369,9 +354,9 @@ nvim --headless \
   +qa
 ```
 
-The guest must have one `ens18` address in the DMZ subnet, no route to internal
-VLANs, no physical-interface IPv6 address, and no listener for port 24543 except
-`127.0.0.1`. Test that HTTPS and gateway DNS work, while new connections to
+The guest must have one address on the DMZ interface named by
+`ai_dev_physical_interface`, no route to internal VLANs, no physical-interface
+IPv6 address, and no listener for port 24543 except `127.0.0.1`. Test that HTTPS and gateway DNS work, while new connections to
 MGMT, SRV, DFLT, KDS, GST, other DMZ hosts, and tailnet peers fail.
 
 Neovim and its temporary editor tools must resolve from `/usr/bin`; shared CLI
@@ -390,7 +375,7 @@ new settings.
 
 ### Proxmox DMZ NIC reliability
 
-The X13SAE-F's Intel I219-LM uses the `e1000e` driver for Proxmox `eno1`.
+The Proxmox `eno1` NIC uses the `e1000e` driver.
 Transmit queue hangs on that interface leave the physical carrier up while
 disconnecting `vmbr1` guests from the DMZ gateway. The guest then retains its
 DHCP address and default route, but ARP for the DMZ gateway remains incomplete and
@@ -438,8 +423,8 @@ git -C ~/personal-identity-test config user.name
 git -C ~/personal-identity-test config user.email
 ```
 
-The BusinessCraft test must report `michaelmbc` and the vaulted BusinessCraft
-email. The personal test must report `Michael Murphy` and the vaulted personal
+The BusinessCraft test must report the BusinessCraft account and its vaulted
+email. The personal test must report the personal identity and the vaulted
 email.
 
 ## References
