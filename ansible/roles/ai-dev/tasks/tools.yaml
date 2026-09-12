@@ -46,9 +46,7 @@
     PATH: "/home/{{ username }}/.local/bin:/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin"
     XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[username][1] }}"
   register: ai_dev_maintenance_ensure
-  changed_when: >-
-    'not installed ->' in ai_dev_maintenance_ensure.stdout
-    or 'Pi package install' in ai_dev_maintenance_ensure.stdout
+  changed_when: "'not installed ->' in ai_dev_maintenance_ensure.stdout"
   when: not ansible_check_mode
 
 - name: Verify the ai-dev toolchain and Moshi runtime

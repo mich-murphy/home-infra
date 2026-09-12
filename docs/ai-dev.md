@@ -84,7 +84,7 @@ ai-dev-maintenance status
 ```
 
 The update command runs the official stable installers for Claude Code, Codex,
-Pi, Herdr, and Moshi independently, updates the declared Pi packages,
+Pi, Herdr, and Moshi independently, reconciles the declared Pi packages,
 reconciles Herdr before Moshi integrations, and reports all failures together.
 Its implementation and ai-dev package inventory live in the Ansible role that
 deploys it. Hermes is deliberately absent: it belongs to the separate `hermes`
@@ -97,7 +97,6 @@ gh auth login --hostname github.com --web --git-protocol ssh
 claude
 codex login --device-auth
 pi
-opencode auth login
 ```
 
 Authenticate the GitHub CLI as both required GitHub accounts. Before running
@@ -109,14 +108,11 @@ gh auth switch --hostname github.com --user <businesscraft-account>
 gh auth status --hostname github.com
 ```
 
-Use `/login` inside Pi if it does not prompt automatically. Select a headless or
-device-code provider flow when OpenCode offers one.
+Use `/login` inside Pi if it does not prompt automatically.
 
 Pair Moshi from the phone with `moshi-hook host setup` and `moshi-hook pair`.
 The gateway must remain on `127.0.0.1:24543`: OpenSSH permits local TCP
-forwarding but disables gateway and Unix-socket forwarding. Its OpenCode hook
-is project-local, so run `moshi-hook install` once from each project root that
-should emit events.
+forwarding but disables gateway and Unix-socket forwarding.
 
 ## Hermes infrastructure agent
 
@@ -348,7 +344,7 @@ ip route
 systemctl --user status moshi-hook
 ss -ltn 'sport = :24543'
 command -v nvim stylua gopls marksman
-fish -c 'type -p opencode hunk yazi btop bat direnv'
+fish -c 'type -p hunk yazi btop bat direnv'
 nvim --headless \
   '+lua print(vim.g.clipboard.name, vim.o.clipboard)' \
   +qa
@@ -360,12 +356,11 @@ IPv6 address, and no listener for port 24543 except `127.0.0.1`. Test that HTTPS
 MGMT, SRV, DFLT, KDS, GST, other DMZ hosts, and tailnet peers fail.
 
 Neovim and its temporary editor tools must resolve from `/usr/bin`; shared CLI
-tools and OpenCode must resolve from the Home Manager profile. Confirm Fish,
-Starship, FZF, Git, Hunk, Herdr, Yazi, btop, bat, and direnv match the Mac
-behavior. The shared instruction and skill links
-must exist under `.claude`, `.codex`, `.pi`, and `.agents`. Existing OpenCode
-authentication/plugins and all existing `~/.config/nvim` modifications must
-remain intact. The Neovim clipboard check must report `OSC 52 (copy only)` and
+tools must resolve from the Home Manager profile. Confirm Fish, Starship, FZF,
+Git, Hunk, Herdr, Yazi, btop, bat, and direnv match the Mac behavior. The
+shared instruction and skill links must exist under `.claude`, `.codex`,
+`.pi`, and `.agents`. All existing `~/.config/nvim` modifications must remain
+intact. The Neovim clipboard check must report `OSC 52 (copy only)` and
 include `unnamedplus`.
 
 Herdr does not watch its live configuration. After changing
