@@ -77,6 +77,7 @@
     name: docker
     state: present
 
+# Check mode does not really install the package, so the units do not exist.
 - name: Mask the local Docker daemon and socket
   ansible.builtin.systemd_service:
     name: "{{ item }}"
@@ -86,6 +87,7 @@
   loop:
     - docker.service
     - docker.socket
+  when: not ansible_check_mode
 
 - name: Install the Hermes agent
   ansible.builtin.shell:
@@ -100,6 +102,8 @@
     HOME: "{{ ai_dev_hermes_home }}"
     USER: "{{ ai_dev_hermes_user }}"
     PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  # Check mode does not create the account, so sudo cannot switch to it.
+  when: not ansible_check_mode
 
 - name: Ensure the Hermes configuration directory exists
   ansible.builtin.file:
