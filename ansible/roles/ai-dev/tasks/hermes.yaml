@@ -102,6 +102,8 @@
     HOME: "{{ ai_dev_hermes_home }}"
     USER: "{{ ai_dev_hermes_user }}"
     PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
   # Check mode does not create the account, so sudo cannot switch to it.
   when: not ansible_check_mode
 
@@ -171,6 +173,8 @@
     HOME: "{{ ai_dev_hermes_home }}"
     USER: "{{ ai_dev_hermes_user }}"
     PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
   register: ai_dev_hermes_version
   changed_when: false
   when: not ansible_check_mode
