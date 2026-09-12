@@ -133,12 +133,8 @@ long and the install is the largest on the VM.
 ai-dev carries no Docker client. The socket proxy speaks plain HTTP, so the
 agent queries it directly, and `DOCKER_HOST` records the endpoint. Installing
 the client would drag in `containerd` and `runc`, about 100 MiB of container
-runtime on a guest with no reason to carry it. The role asserts that no
-container runtime is installed, covering `podman`, `crun`, and `lxc` as well
-as Docker's own packages. That is a tripwire against drift, not a
-prohibition: installing one deliberately means removing it from
-`ai_dev_forbidden_container_packages` in the same change, which records the
-reason in Git.
+runtime on a guest with no reason to carry it. Nothing here prevents
+installing one later; the agent simply does not need it.
 The trade-off is `GET /containers/{id}/logs`, which returns a multiplexed
 stream the CLI would otherwise de-multiplex.
 

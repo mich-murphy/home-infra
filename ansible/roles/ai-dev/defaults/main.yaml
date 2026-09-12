@@ -22,14 +22,3 @@ ai_dev_hermes_github_credentials_present: >-
 # Ansible discovers the management user's nix python, which sits inside a 0750
 # home the agent account cannot traverse.
 ai_dev_hermes_python: /usr/bin/python3
-# Runtimes ai-dev has no reason to carry. Installing one should be deliberate,
-# so this list makes it a reviewable change rather than silent drift. libpathrs
-# is omitted: it cannot run a container by itself.
-ai_dev_forbidden_container_packages:
-  - containerd
-  - crun
-  - docker
-  - docker-bin
-  - lxc
-  - podman
-  - runc
