@@ -118,8 +118,7 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  # Manually setup initial config
-  # Reference: https://kometa.wiki/en/latest/kometa/install/walkthroughs/docker/#setting-up-the-initial-config-file
+  # Initial config is created by hand: https://kometa.wiki/en/latest/kometa/install/walkthroughs/docker/#setting-up-the-initial-config-file
   kometa:
     image: kometateam/kometa:v2.4.8@sha256:c58f6d4af511613f218b6dafbfc84078af4e5a6089790c1fdba58fd7c5dad70a
     container_name: kometa

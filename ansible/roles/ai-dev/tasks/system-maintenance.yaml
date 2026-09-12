@@ -1,7 +1,5 @@
 ---
-# earlyoom acts before the kernel OOM killer thrashes the VM and, unlike
-# systemd-oomd, kills one process rather than a whole session cgroup. Keep the
-# interactive plumbing alive and prefer transient build tooling.
+# earlyoom kills one process; systemd-oomd would kill a whole session cgroup.
 - name: Install earlyoom and pacman-contrib
   community.general.pacman:
     name:
@@ -16,9 +14,7 @@
     group: root
     mode: "0644"
     content: |
-      # Managed by Ansible (ai-dev role). earlyoom kills the single largest offender
-      # before the kernel OOM killer thrashes the whole VM; keep the interactive
-      # plumbing alive and prefer transient build tooling.
+      # Managed by Ansible (ai-dev role). Kills the largest offender first.
       EARLYOOM_ARGS="-r 3600 -m {{ ai_dev_earlyoom_mem_percent }} -s {{ ai_dev_earlyoom_swap_percent }} -n --avoid '{{ ai_dev_earlyoom_avoid }}' --prefer '{{ ai_dev_earlyoom_prefer }}'"
   notify: restart earlyoom
 

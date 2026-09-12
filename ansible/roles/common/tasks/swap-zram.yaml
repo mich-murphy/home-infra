@@ -40,7 +40,7 @@
     state: absent
   loop: "{{ stale_versioned_swapfiles.files }}"
 
-# Install zram-generator (package name differs per distro)
+# Package name differs per distro.
 - name: install zram-generator (Arch)
   community.general.pacman:
     name: zram-generator
