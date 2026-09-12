@@ -71,24 +71,6 @@
     group: "{{ ai_dev_hermes_user }}"
     mode: "0755"
 
-# Hermes reads the socket proxy over plain HTTP, so no client is needed here.
-# Absence beats masking: a mask is one systemctl away from being undone.
-- name: Ensure ai-dev carries no container runtime
-  community.general.pacman:
-    name: "{{ ai_dev_forbidden_container_packages }}"
-    state: absent
-
-# Masks left by an earlier revision that installed the client and suppressed
-# its daemon. The units are gone with the package.
-- name: Remove masks for the departed Docker units
-  ansible.builtin.file:
-    path: "/etc/systemd/system/{{ item }}"
-    state: absent
-  loop:
-    - docker.service
-    - docker.socket
-  notify: reload systemd units
-
 - name: Install the Hermes agent
   ansible.builtin.shell:
     cmd: >-
@@ -202,6 +184,6 @@
       - ai_dev_installed_packages.stdout_lines
         | select('in', ai_dev_forbidden_container_packages) | list | length == 0
     fail_msg: >-
-      ai-dev must never be able to run containers; Hermes reads the
-      docker-host socket proxy over HTTP instead.
+      A container runtime is installed on ai-dev without a recorded reason.
+      Hermes reads the docker-host socket proxy over HTTP and needs none.
   when: not ansible_check_mode
