@@ -4,9 +4,9 @@
 
 Recyclarr keeps Radarr and Sonarr custom formats and quality profiles in sync
 with `docker/recyclarr/recyclarr.yml` instead of being hand-edited in each
-app's UI. It runs on a cron schedule inside the `recyclarr` Portainer stack
-and talks to Radarr and Sonarr over the internal `proxy` network
-(`http://radarr:7878`, `http://sonarr:8989`); it has no web UI of its own.
+app's UI. It runs on a cron schedule inside the `recyclarr` Portainer stack and talks to
+Radarr and Sonarr over the internal `proxy` network; it has no web UI of its
+own.
 
 ## What Recyclarr manages
 
@@ -63,8 +63,7 @@ and talks to Radarr and Sonarr over the internal `proxy` network
 The compose file bind-mounts `recyclarr.yml`, `settings.yml`, and
 `custom-formats/` from this directory read-only into `/config`, over the named
 `recyclarr-data` volume that holds Recyclarr's own state (guide cache and
-logs). This follows the same pattern as the `nextcloud` stack's
-`./post-installation.sh` bind mount.
+logs).
 
 **Before the first deploy**, enable **"Enable relative path volumes"** on the
 stack in Portainer — see [docs/docker-deployment.md](docker-deployment.md).

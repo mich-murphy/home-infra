@@ -2,14 +2,12 @@
 
 <!-- markdownlint-disable MD013 -->
 
-The Proxmox node (`proxmox`, Supermicro board, i7-14700, mirrored NVMe `rpool`)
-is not under Ansible. Terraform owns the guests; host-level policy is applied by
+The Proxmox node (mirrored NVMe `rpool`) is not under Ansible. Terraform owns the guests; host-level policy is applied by
 hand and recorded here so it can be re-applied after a reinstall.
 
 ## Access
 
-- SSH accepts public keys only (`PasswordAuthentication no`); root login stays
-  enabled for Terraform's SCP path and for recovery.
+- SSH accepts public keys only (`PasswordAuthentication no`).
 - `en_AU.UTF-8` is generated so forwarded client locales do not trip Perl
   warnings in the PVE tooling.
 
@@ -46,9 +44,7 @@ Daily vzdump to TrueNAS.
 | PVE storage | `truenas-backups`, NFSv4.2, the TrueNAS `slow/backups/proxmox` export, content `backup` |
 | Job | `backup-truenas-daily`, 02:30, all guests except templates 9001-9003, snapshot mode, zstd, `repeat-missed` |
 | Retention | `keep-daily=7,keep-weekly=4,keep-monthly=3` on both job and storage |
-| TrueNAS dataset | `slow/backups/proxmox`, refquota 1.5 TiB, owned by `backups` (uid/gid 1225) |
-| TrueNAS export | the hypervisor only, `mapall` to `backups` |
-| TrueNAS snapshots | `slow/backups` recursive, daily 06:00, 14-day retention |
+| TrueNAS side | dataset, export and snapshot task recorded in [truenas-storage.md](truenas-storage.md) |
 
 Each run is a full image, so the refquota is what stops the retention set
 eating the pool. TrueNAS VM 101 is included deliberately: its boot disk lives
@@ -58,13 +54,12 @@ reinstalling.
 The hypervisor sits on the MGMT VLAN and TrueNAS on SRV, so the RouterOS role
 carries a narrow forward rule (`Proxmox -> TrueNAS NFS`, tcp 111/2049 and
 udp 111 from `network.mgmt.proxmox` to `network.infrastructure.truenas`).
-Applying it from a non-MGMT station requires tunnelling the router API
-through the hypervisor and overriding `routeros_api_host`/`routeros_api_port`
-for that run.
+The role supports overriding the API host and port for the case where it is
+run from outside MGMT.
 
 ## Known gaps
 
-- Notifications route to `root@pam` via a postfix instance with no relayhost,
-  so ZFS and PVE alerts are currently dropped.
+- Host notification delivery is not configured, so ZFS and PVE alerts do not
+  reach anyone. Worth fixing.
 - The TrueNAS guest runs without the QEMU guest agent by design.
-- `unifi-controller` (111) is intentionally stopped and not started on boot.
+- The UniFi controller guest is intentionally stopped and not started on boot.

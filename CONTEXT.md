@@ -6,7 +6,7 @@ this repository.
 ## Language
 
 **RouterOS firewall policy**:
-The ordered traffic rules and NAT intent enforced on the RB5009, including
+The ordered traffic rules and NAT intent enforced on the router, including
 strict and recovery postures.
 _Avoid_: Router rules, firewall config
 

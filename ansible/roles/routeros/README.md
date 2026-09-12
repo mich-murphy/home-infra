@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Configures the Mikrotik RB5009 (RouterOS v7) over the API using
+Configures the RouterOS v7 router over the API using
 `community.routeros.api_modify`. All data lives in `group_vars/routeros.yaml`.
 
 The role reconciles managed entries and leaves unrelated WAN/base rules alone.
@@ -14,16 +14,17 @@ to be absent from the production bridge.
 
 ## Prerequisites
 
-1. Restricted API user on the RB5009:
+1. A restricted API user on the router, in its own group, holding only the
+   policies the role needs:
 
    ```routeros
-   /user group add name=ansible policy=api,read,write,policy,test,sensitive
-   /user add name=ansible group=ansible password=<secret>
+   /user group add name=<api-group> policy=api,read,write,policy,test,sensitive
+   /user add name=<api-user> group=<api-group> password=<secret>
    ```
 
    Put `routeros_api_user` / `routeros_api_password` in the vault (`just edit`).
-2. Confirm the OPEN ITEMS in `group_vars/routeros.yaml` (interface names, bridge
-   name, admin/IPMI IPs) against the live router.
+2. Confirm the interface names, bridge name and management addresses in
+   `group_vars/routeros.yaml` against the live router.
 3. **Out-of-band access staged before any VLAN-filtering work.** The role pulls
    the OOB port out of the bridge and addresses it; `group_vars/routeros.yaml`
    defines both. Confirm you can reach the router over it before going further.
@@ -49,8 +50,8 @@ optional final default drop.
 It also keeps `vlan-filtering` and managed `default-drop` enabled. The live router
 was verified in this state on 2026-06-06.
 
-`ether6` is the wired access port for **Mad Villainy**, the existing DFLT
-network (`madviLANy`, VLAN 30). It is untagged with PVID 30 and is not a MGMT
+`ether6` is the wired access port for the DFLT network. It is untagged with
+its VLAN as PVID and is not a MGMT
 fallback. `ether7` remains the sole dedicated OOB recovery path. After changing
 the live port, connect a disposable client to `ether6` and verify a DFLT DHCP
 lease, internet access, the expected application routes, and inability to reach
@@ -102,7 +103,7 @@ of VLAN 1 in `bridge.yaml` (untagged ports only).
 Adding the bridge to VLAN 1's *tagged* list — the earlier design — is what broke
 dynamic MGMT DHCP under vlan-filtering: the bridge then expected VLAN 1 tagged while the
 raw-bridge IP/DHCP operate untagged, so untagged clients' DISCOVERs went unanswered.
-That was the recurring AP / GL.iNet / docker-host "random" DHCP loss. Static-lease hosts
+That was the recurring AP / travel-router / docker-host "random" DHCP loss. Static-lease hosts
 kept working (which masked it). A later attempt to fix it by moving MGMT onto a dedicated
 `vlan1-mgmt` interface **caused the 2026-06-03 lockout** (creating that interface hijacks
 VLAN 1 CPU delivery from the raw-bridge IP); that approach was abandoned for this one.
@@ -129,5 +130,5 @@ VM reconnects or reboots, verify the guest holds an SRV lease, then update any
 external DNS records still pointing service names at its old MGMT address.
 
 The ai-dev VM should land on the physical DMZ through `vmbr1`. If it receives an
-MGMT lease instead, the RB5009 DMZ port is still bridged into MGMT or the cabling
+MGMT lease instead, the router's DMZ port is still bridged into MGMT or the cabling
 is wrong; do not enable `default-drop` until that is corrected.

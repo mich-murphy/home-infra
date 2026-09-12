@@ -8,15 +8,14 @@ Compose plus Portainer GitOps run application services.
 
 ## Hardware
 
-32GB ECC RAM is installed of the 64GB the board is designed for; VM sizing and
-the intentionally stopped UniFi controller reflect that constraint. TrueNAS
-pool layout and dataset tuning are documented in
+32GB ECC RAM is installed of the 64GB the board is designed for, which is what
+constrains VM sizing. TrueNAS pool layout and dataset tuning are documented in
 [docs/truenas-storage.md](docs/truenas-storage.md).
 
 ## Architecture
 
 ```text
-Proxmox v9.1.6 (hypervisor)
+Proxmox VE (hypervisor)
 ├── TrueNAS VM (SRV VLAN) ─── NFS shares (media, downloads, bulk storage)
 ├── Docker Host VM (Ubuntu 24.04) ─── live services via Docker Compose
 │   └── Traefik → per-service TLS hostnames (Cloudflare ACME)
@@ -24,10 +23,10 @@ Proxmox v9.1.6 (hypervisor)
 ├── ai-dev VM (DMZ) ─── Isolated AI development sandbox
 ```
 
-### Network (MikroTik RB5009 + UniFi AP)
+### Network (MikroTik router + UniFi AP)
 
 Routing, DHCP, firewall policy and inter-VLAN isolation live on the MikroTik
-RB5009 and are managed by the Ansible `routeros` role. The UniFi controller runs
+router and are managed by the Ansible `routeros` role. The UniFi controller runs
 as a dedicated Proxmox VM (`unifi-controller`, VMID 111) and the AP/WLAN objects
 are managed through the UniFi controller API (`terraform/network`).
 
@@ -99,12 +98,14 @@ just edit                   # edit encrypted vault secrets
 Provisions VMs on Proxmox using the [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox) provider. Secrets sourced from 1Password via the `onepassword` provider.
 Terraform state is secret-bearing. Run Terraform through the `just` recipes so local state and generated cloud-init files are created with a restrictive umask.
 
-| VM | ID | Spec | Purpose |
-| --- | --- | --- | --- |
-| truenas | 101 | 2 CPU, 10GB RAM, 32GB | NAS with HBA passthrough |
-| docker-host | 102 | 6 CPU, 8GB RAM, 128GB | Docker Compose services |
-| ai-dev | 110 | 4 CPU, 7GB RAM, 150GB | AI development sandbox |
-| unifi-controller | 111 | 2 CPU, 4GB max / 2GB min, 40GB | Cold UniFi OS Server infrastructure |
+| VM | ID | Purpose |
+| --- | --- | --- |
+| truenas | 101 | NAS with HBA passthrough |
+| docker-host | 102 | Docker Compose services |
+| ai-dev | 110 | AI development sandbox |
+| unifi-controller | 111 | Cold UniFi OS Server infrastructure |
+
+`terraform/main.tf` is authoritative for each VM's CPU, memory and disk.
 
 Cloud-init template (`cloud_init.tftpl`) bootstraps the management user, installs qemu-guest-agent, and joins Tailscale.
 TrueNAS, docker-host, ai-dev, and the UniFi controller use `prevent_destroy`.
@@ -118,7 +119,7 @@ Template build usage and recovery are documented in
 
 ## Ansible
 
-Configures provisioned hosts and the RB5009 with these primary roles:
+Configures provisioned hosts and the router with these primary roles:
 
 | Role        | Purpose                                                     |
 | ----------- | ----------------------------------------------------------- |
@@ -127,7 +128,7 @@ Configures provisioned hosts and the RB5009 with these primary roles:
 | firewall    | Reusable UFW policy                                         |
 | docker-host | Docker, NFS, published-port policy, bootstrap deployment    |
 | unifi       | UniFi OS Server install                                     |
-| routeros    | RB5009 VLANs, DHCP, firewall, NAT, OOB port                 |
+| routeros    | Router VLANs, DHCP, firewall, NAT, OOB port                 |
 
 Secrets are managed via ansible-vault (`ansible/group_vars/secrets.yaml`).
 
@@ -176,6 +177,7 @@ settings are described in [docs/media-metadata.md](docs/media-metadata.md).
 | **wallabag**         | Wallabag, MariaDB, Redis                       |
 | **pinchflat**        | Pinchflat (YouTube archival)                   |
 | **beszel**           | Infrastructure monitoring                      |
+| **jellyplex-watched** | Jellyfin/Plex watched-state sync              |
 
 ### Conventions
 
@@ -188,16 +190,9 @@ settings are described in [docs/media-metadata.md](docs/media-metadata.md).
 
 ## CI/CD
 
-- **Quality Gates**: Path-scoped static validation on pull requests (plus manual dispatch)
-  - Actions workflow linting for `.github/workflows/**`
-  - Nix flake check for `flake.nix` and `flake.lock`
-  - Terraform format and validate for `terraform/**`
-  - ShellCheck for Proxmox template scripts
-  - Docker Compose render checks for `docker/**`
-  - Ansible lint plus syntax-check of the complete `ansible/run.yaml` playbook
-- **Renovate**: Automated dependency updates on schedule (GitHub Actions)
-  - Config validation only runs when Renovate config changes
-  - Semantic commits with `actions-renovate/` branch prefix
-  - Auto-merge for digest updates only; major updates require Dependency Dashboard approval
-  - Custom versioning for Linuxserver.io images
-  - Manual approval required for Immich updates
+- **Quality gates**: path-scoped static validation on pull requests. Each
+  workflow under `.github/workflows/` declares the paths it guards and the
+  checks it runs.
+- **Renovate**: automated dependency updates on a schedule. `renovate.json`
+  carries a `description` on every rule, including which updates auto-merge and
+  which need Dependency Dashboard approval.

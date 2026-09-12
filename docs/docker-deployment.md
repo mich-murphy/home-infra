@@ -28,9 +28,9 @@ Configure each inventory entry as a separate Portainer Git stack:
 - update policy: enable Portainer's Git polling or webhook for the stack and
   keep its selected update policy consistent across application stacks.
 
-A few stacks (`nextcloud`, `recyclarr`) bind-mount a file or directory that
-lives next to their `compose.yml` in Git (for example
-`./post-installation.sh` or `./recyclarr.yml`). Portainer only resolves these
+The `recyclarr` stack bind-mounts files that live next to its `compose.yml` in
+Git (`./recyclarr.yml`, `./settings.yml`, `./custom-formats/`, and Checkrr's
+`./checkrr.yaml.tpl`). Portainer only resolves these
 relative paths when the stack has **"Enable relative path volumes"** turned
 on in its Git stack settings, with **Local filesystem path** set to
 `/srv/portainer` (created by the `docker-host` role). Portainer's unpacker
@@ -50,8 +50,7 @@ restore and whenever repository authentication changes.
 
 The `init` stack runs two instances of the same pinned socket proxy image.
 `docker-socket-proxy` serves Traefik on an internal network with no published
-port. `docker-socket-proxy-agent` serves the ai-dev Hermes agent and is the
-only one that is reachable off the host.
+port. `docker-socket-proxy-agent` serves the ai-dev Hermes agent.
 
 Keep them separate. Widening the agent's read surface must never widen
 Traefik's, and the two have no reason to share a grant.
