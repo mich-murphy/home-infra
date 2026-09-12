@@ -19,6 +19,8 @@ ai_dev_hermes_proxmox_credentials_present: >-
      and hermes_proxmox_token_secret is defined }}
 ai_dev_hermes_github_credentials_present: >-
   {{ hermes_github_token is defined }}
+# Moshi agent integration name, which matches the account name here.
+ai_dev_hermes_moshi_target: hermes
 # Ansible discovers the management user's nix python, which sits inside a 0750
 # home the agent account cannot traverse.
 ai_dev_hermes_python: /usr/bin/python3

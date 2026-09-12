@@ -89,6 +89,57 @@
   # Check mode does not create the account, so sudo cannot switch to it.
   when: not ansible_check_mode
 
+- name: Install Herdr for the Hermes account
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://herdr.dev/install.sh | sh
+  args:
+    creates: "{{ ai_dev_hermes_home }}/.local/bin/herdr"
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  when: not ansible_check_mode
+
+- name: Install Moshi for the Hermes account
+  ansible.builtin.shell:
+    cmd: >-
+      curl -fsSL https://getmoshi.app/install.sh
+      | MOSHI_HOOK_SKIP_FIRST_RUN=1 sh
+  args:
+    creates: "{{ ai_dev_hermes_home }}/.local/bin/moshi-hook"
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  when: not ansible_check_mode
+
+- name: Install the Moshi integration for the Hermes agent
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/moshi-hook"
+      - install
+      - --target
+      - "{{ ai_dev_hermes_moshi_target }}"
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  # Reconciles the hook files on every run, so it reports no change of its own.
+  changed_when: false
+  when: not ansible_check_mode
+
 - name: Ensure the Hermes configuration directory exists
   ansible.builtin.file:
     path: "{{ ai_dev_hermes_home }}/.config/hermes"

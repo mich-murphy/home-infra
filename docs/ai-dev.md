@@ -185,20 +185,59 @@ alive independently of the management user's Herdr, which is the usual case
 for infrastructure monitoring. Use `sudo -u hermes -i` for a quick look from a
 pane that is already open.
 
-Each account runs its own Herdr and Moshi. Reaching the phone from the agent
-account means running the same pairing flow again as `hermes`, not copying a
-key across; that separation is intentional.
+Each account runs its own Herdr and Moshi, both installed by the role.
+Reaching the phone from the agent account means running the same pairing flow
+again as `hermes`, not copying a key across; that separation is intentional.
 
 Authorizing the operator key grants a human entry into the agent account. It
 grants the agent nothing: no key on the agent's side reaches the management
 user, whose home stays mode `0750`.
 
+### First run
+
+Ansible installs the agent, Herdr and Moshi, and deploys the scoped
+credentials. Three steps stay manual because each is interactive or
+secret-bearing.
+
+Give the agent a model. Its `.env` ships as a blank template, so it has no
+provider key until the wizard runs:
+
+```sh
+ssh hermes@ai-dev
+hermes setup
+hermes doctor
+```
+
+Pair the phone to this account. The management user's pairing does not carry
+across:
+
+```sh
+moshi-hook host setup
+moshi-hook pair --token <token-from-Moshi-Hooks-settings>
+systemctl --user enable --now moshi-hook.service
+```
+
+Ansible stops short of starting that service. An unpaired account has no
+credential for it, so starting it early either fails the play or leaves a unit
+crash-looping where a later real failure would hide. Linger is already on, so
+enabling it once after pairing survives logout.
+
+In Moshi, add a second host: MagicDNS name `ai-dev`, username `hermes`,
+connection mode `Auto`.
+
+Start work inside Herdr so a dropped connection does not kill the session:
+
+```sh
+herdr new infra
+hermes chat
+```
+
 ### Operating it
 
 ```sh
-hermes setup
 hermes --version
 hermes update
+moshi-hook status
 ```
 
 Ansible installs the agent but does not update it; `hermes update` follows
