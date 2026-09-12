@@ -2,6 +2,11 @@
 username: michael
 user_shell: /usr/bin/fish
 ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP9p7ei2QuEPP+ZgzBBSbwH9TZ7JuvYFiMNWMX+guPEq"
+# Keys that reach the agent account. The operator key above lives on disk, so
+# SSH offers the 1Password agent's keys first and hits MaxAuthTries before it.
+ai_dev_hermes_authorized_keys:
+  - "{{ ssh_public_key }}"
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF macbook"
 ai_dev_hostname: ai-dev
 ai_dev_physical_interface: eth0
 ai_dev_dmz_gateway: 10.77.99.1
