@@ -57,24 +57,16 @@ matched yet; "Refresh metadata" on the item matches it from the folder id.
 
 ## File integrity
 
-Radarr and Sonarr validate only container headers on import. A 3 GB episode
-with Matroska structural errors scattered through its body imported cleanly
-and only failed a full demux pass:
-
-```console
-ffmpeg -v error -i FILE -c copy -f null -
-```
-
-The `checkrr` stack (see [docs/checkrr.md](checkrr.md)) runs that class of
-check on new files and hands corrupt ones back to Radarr or Sonarr for
-re-download. To fix one by hand: delete the episode or movie file in the app,
+Radarr and Sonarr validate only container headers on import, so body-level
+corruption imports cleanly. The `checkrr` stack (see
+[docs/checkrr.md](checkrr.md)) runs a full demux check on new files and hands
+corrupt ones back to Radarr or Sonarr for re-download. To fix one by hand: delete the episode or movie file in the app,
 mark the grab as failed in History (this blocklists the release) and search
 again, then re-run the demux check on the replacement.
 
 ## Jellyfin container mounts
 
-Music is mounted once, at `/data/music`, which is the library path. An
-earlier duplicate mount of `/mnt/music` at `/data/media/music` was nested
-inside the read-only media bind and depended on an empty `music/` directory
-existing on the NFS share; when that directory disappeared the container could
-not start after a restart. Keep nested bind mounts out of read-only binds.
+Music is mounted once, at `/data/music`, which is the library path. Keep
+nested bind mounts out of read-only binds: a nested mount that depends on a
+directory existing inside the read-only share stops the container starting the
+moment that directory disappears.

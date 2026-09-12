@@ -48,14 +48,8 @@ TOTP provider, and configures Collabora's internal and public URLs.
 
 ## Migration record
 
-The original ownCloud deployment exposed the NAS as `/data` external storage.
-On 2026-09-04, its files and Nextcloud's initial primary data tree were copied
-without filename collisions into the NFS-backed `nextcloud-data` directory.
-A checksum comparison reported zero differences before the old root-level copy
-was removed. A full Nextcloud scan found 686 user files in 85 folders with zero
-errors.
-
-Rollback points:
+Migrated from ownCloud on 2026-09-04, verified by checksum comparison and a
+full Nextcloud scan. Rollback points:
 
 - TrueNAS snapshot `slow/owncloud@pre-primary-data-20260904T122131Z`;
 - host backup `/srv/migration-backups/owncloud-20260904T074701Z`.

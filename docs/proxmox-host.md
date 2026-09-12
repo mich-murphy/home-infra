@@ -39,8 +39,7 @@ grow a guest without shrinking another.
 
 ## Backups
 
-Daily vzdump to TrueNAS, configured 2026-09-06 and verified with a manual run
-(VM 111, 3.3 GB written in 58 s).
+Daily vzdump to TrueNAS.
 
 | Item | Value |
 | --- | --- |
@@ -51,17 +50,17 @@ Daily vzdump to TrueNAS, configured 2026-09-06 and verified with a manual run
 | TrueNAS export | host `10.77.1.100` only, `mapall` to `backups` |
 | TrueNAS snapshots | `slow/backups` recursive, daily 06:00, 14-day retention |
 
-Each run is a full image, so at ~70 GB compressed for the three running guests
-the retention set peaks near 1 TiB; the refquota stops it eating the pool.
-TrueNAS VM 101 is included: its boot disk lives on `rpool`, so a copy on the
-data pool is the only way to rebuild it without reinstalling.
+Each run is a full image, so the refquota is what stops the retention set
+eating the pool. TrueNAS VM 101 is included deliberately: its boot disk lives
+on `rpool`, so a copy on the data pool is the only way to rebuild it without
+reinstalling.
 
 The hypervisor sits on the MGMT VLAN and TrueNAS on SRV, so the RouterOS role
 carries a narrow forward rule (`Proxmox -> TrueNAS NFS`, tcp 111/2049 and
 udp 111 from `network.mgmt.proxmox` to `network.infrastructure.truenas`).
-Applying it from a non-MGMT station needs the API tunnelled through the
-hypervisor: `ssh -L 18729:10.77.1.1:8729 root@proxmox` then
-`-e routeros_api_host=127.0.0.1 -e routeros_api_port=18729`.
+Applying it from a non-MGMT station requires tunnelling the router API
+through the hypervisor and overriding `routeros_api_host`/`routeros_api_port`
+for that run.
 
 ## Known gaps
 

@@ -56,44 +56,23 @@ only one that is reachable off the host.
 Keep them separate. Widening the agent's read surface must never widen
 Traefik's, and the two have no reason to share a grant.
 
-The agent instance sets `POST=0`, which refuses every write route including
-exec and container creation, and allows only the read routes needed to
-diagnose: containers, logs, stats, events, images, networks, volumes, info,
-ping, and version. Three controls stand in front of it:
+The agent instance refuses every write route and allows only the read routes
+needed to diagnose. Independent controls restrict it to the ai-dev tailnet
+address; the `docker-host` role defines them and asserts them on every run,
+including that the container never binds all interfaces. An empty
+`AGENT_PROXY_BIND` would make Compose bind everywhere, so the bind address is
+verified rather than assumed.
 
-1. it publishes on `AGENT_PROXY_BIND`, docker-host's Tailscale address, which
-   the `docker-host` role reads at run time and writes into `/srv/init/.env`,
-   so the LAN cannot reach it;
-2. the tailnet policy grants `tag:ai-dev` alone `tcp:2375`;
-3. `DOCKER-USER` admits that one source address and drops every other client,
-   so a mistake in the tailnet policy is not sufficient to expose the API.
-
-The role asserts the last two, and asserts that the container never binds all
-interfaces. An empty `AGENT_PROXY_BIND` would make Compose bind everywhere,
-so the bind address is verified rather than assumed.
-
-The proxy filters requests, not responses. `GET /containers/{id}/json` returns
-a container's environment block, so the agent can read secrets passed through
-Compose `environment:` entries. Moving those values out of the environment is
-the only fix; no proxy setting achieves it.
+The proxy filters requests, not responses: inspecting a container returns its
+environment block, so any secret passed through a Compose `environment:` entry
+is readable through it. Moving those values out of the environment is the only
+fix; no proxy setting achieves it.
 
 ## Removing a stack
 
-Deleting a Compose directory does not decommission its Portainer stack. Use
-this order:
-
-1. Identify the exact Portainer stack and its persistent volumes or external
-   data dependencies.
-2. Disable automatic Git updates, then remove the stack in Portainer. Preserve
-   volumes unless their deletion is separately approved and backed up.
-3. Confirm its containers and Compose project label are absent from the Docker
-   host.
-4. Remove the matching entry from `docker/portainer-stacks.yaml` and delete its
-   Compose source in the same reviewable change.
-5. Run `scripts/check-portainer-drift.sh` on the Docker host.
-
-The drift check is read-only. It compares expected Portainer-owned project
-names with the `com.docker.compose.project` labels on running containers and
-ignores the Ansible-owned `init` project. A missing project or an unexpected
-project is a deployment discrepancy that must be explained before source is
-deleted.
+Deleting a Compose directory does not decommission its Portainer stack: remove
+the stack in Portainer first, preserving its volumes, then delete the Compose
+source and its `docker/portainer-stacks.yaml` entry in the same change. Run
+`scripts/check-portainer-drift.sh` on the Docker host to confirm. The check is
+read-only, and an unexplained missing or unexpected project must be resolved
+before source is deleted.

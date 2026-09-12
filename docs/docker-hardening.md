@@ -1,9 +1,7 @@
 # Docker hardening policy
 
 This is the steady-state security policy for the Compose services in this
-repository. The last live validation was **2026-08-16**: all 37 running
-containers used `no-new-privileges`, and the expected capability policy below
-was present.
+repository.
 
 ## Defaults
 
