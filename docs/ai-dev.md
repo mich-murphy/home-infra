@@ -23,11 +23,7 @@ public key to the target account's `authorized_keys` during pairing, so no
 private key is ever pasted into the phone. Ansible manages only its own
 operator key line, leaving Moshi's entry intact.
 
-Moshi connects to the guest's normal OpenSSH server through Tailscale, then
-uses Mosh's per-connection UDP server when the network permits it. Herdr is the
-only persistent multiplexer and retains its shared `Ctrl-A` prefix.
-`Ctrl+Shift+L` is encoded as F12 by a supporting terminal, forwarded by Herdr,
-and bound by Fish to clear the focused pane.
+Herdr is the only persistent multiplexer on the guest.
 
 ## Deployment
 
@@ -77,11 +73,9 @@ cd ..
 just routeros
 ```
 
-The ai-dev role clones the public `nix-config` repository to
-`/home/michael/dev/nix-config`, fast-forwards it to `origin/main`, builds
-`homeConfigurations."michael@ai-dev"`, and activates it as `michael`. A
-non-fast-forward checkout or conflicting local change stops deployment.
-Check mode builds the activation package but never activates it.
+The ai-dev role builds and activates Home Manager from the public `nix-config`
+repository. A non-fast-forward checkout or conflicting local change stops
+deployment; check mode builds the activation package but never activates it.
 
 Home Manager is the steady-state owner of the shared shell, CLI environment,
 and Moshi user unit. Ansible owns and deploys the ai-dev maintenance command,
@@ -93,12 +87,9 @@ repository's configuration has changed.
 
 ## Interactive setup
 
-Home Manager owns OpenCode and the shared Fish, Starship, FZF, general Git
-behavior, Hunk, Herdr, Yazi, and portable CLI configuration. Ansible deploys
-`ai-dev-maintenance`, writes ai-dev's vaulted personal and BusinessCraft
-identity fragments with mode `0600`, and selects the BusinessCraft fragment
-below `~/businesscraft/`; the Mac retains its separate Home Manager-owned
-identities.
+Home Manager owns the portable CLI configuration. Ansible deploys
+`ai-dev-maintenance` and writes the vaulted git identity fragments, selecting
+the BusinessCraft one below `~/businesscraft/`.
 
 Run ongoing coding-agent updates deliberately on ai-dev:
 
@@ -136,35 +127,11 @@ gh auth status --hostname github.com
 Use `/login` inside Pi if it does not prompt automatically. Select a headless or
 device-code provider flow when OpenCode offers one.
 
-Install Moshi on the approved phone, enable Tailscale, and run:
-
-```sh
-moshi-hook host setup
-moshi-hook pair --token <token-from-Moshi-Hooks-settings>
-systemctl --user restart moshi-hook
-moshi-hook install
-```
-
-Scan the Easy Pair QR, save the MagicDNS host as `ai-dev`, and leave connection
-mode on `Auto`. The gateway must remain on `127.0.0.1:24543`; OpenSSH permits
-local TCP forwarding but disables gateway and Unix-socket forwarding.
-
-`ai-dev-maintenance` installs Herdr integrations before Moshi integrations so
-their entries coexist. Check the complete toolchain and loopback-only Moshi
-runtime after authentication:
-
-```sh
-ai-dev-maintenance status
-```
-
-Moshi's OpenCode hook is project-local. The maintenance command installs it in
-the home workspace; run `moshi-hook install` once from each existing OpenCode
-project root that should emit events. This repository does not inventory
-untracked projects on the VM.
-
-Moshi's full agent integration sends limited notification summaries, approval
-details, metadata, pairing, and WebSocket control traffic through Moshi's
-service. Terminal traffic, source files, transcripts, and diffs remain direct.
+Pair Moshi from the phone with `moshi-hook host setup` and `moshi-hook pair`.
+The gateway must remain on `127.0.0.1:24543`: OpenSSH permits local TCP
+forwarding but disables gateway and Unix-socket forwarding. Its OpenCode hook
+is project-local, so run `moshi-hook install` once from each project root that
+should emit events.
 
 ## Hermes infrastructure agent
 
@@ -202,32 +169,13 @@ session used to provide.
 
 ### Provisioning the credentials
 
-Mint the Proxmox audit identity on the hypervisor. `PVEAuditor` is read-only by
-construction, and privilege separation keeps the token's grant explicit:
-
-```sh
-ssh root@proxmox
-pveum user add hermes-audit@pve --comment 'Read-only audit for ai-dev Hermes'
-pveum acl modify / --users hermes-audit@pve --roles PVEAuditor
-pveum user token add hermes-audit@pve ai-dev --privsep 1
-pveum acl modify / --tokens 'hermes-audit@pve!ai-dev' --roles PVEAuditor
-```
-
-The token value prints once. Create the GitHub token in the GitHub UI, because
-fine-grained tokens cannot be minted through the API: scope it to
-`mich-murphy/home-infra` alone, grant Contents and Pull requests read/write,
-and grant nothing else. Then store both in the vault:
-
-```sh
-cd ansible
-ansible-vault edit group_vars/secrets.yaml --vault-password-file .vaultpass
-```
-
-```yaml
-hermes_proxmox_token_id: "hermes-audit@pve!ai-dev"
-hermes_proxmox_token_secret: "<token value>"
-hermes_github_token: "<fine-grained token>"
-```
+Two credentials are minted by hand and kept in the Ansible vault: a Proxmox
+API token holding `PVEAuditor` with privilege separation, which is read-only by
+construction, and a fine-grained GitHub token scoped to this repository alone
+with Contents and Pull requests read/write and nothing else. Fine-grained
+tokens cannot be minted through the API, so that one is created in the GitHub
+UI. `ansible/roles/ai-dev/defaults/main.yaml` names the vault keys the role
+reads.
 
 The play installs the agent without these and reports their absence, so the
 host can be provisioned before the tokens exist. With them present it writes
@@ -250,18 +198,9 @@ alive independently of the management user's Herdr, which is the usual case
 for infrastructure monitoring. Use `sudo -u hermes -i` for a quick look from a
 pane that is already open.
 
-Each account runs its own Herdr and Moshi. Pair Moshi separately for `hermes`
-if the agent should reach the phone; the management user's pairing does not
-carry across, and that separation is intentional. Pairing provisions its own
-key, so connecting the phone to the agent account means running the pairing
-flow again as `hermes`, not copying a key between accounts:
-
-```sh
-ssh hermes@ai-dev
-moshi-hook host setup
-moshi-hook pair --token <token-from-Moshi-Hooks-settings>
-systemctl --user restart moshi-hook
-```
+Each account runs its own Herdr and Moshi. Reaching the phone from the agent
+account means running the same pairing flow again as `hermes`, not copying a
+key across; that separation is intentional.
 
 Authorizing the operator key grants a human entry into the agent account. It
 grants the agent nothing: no key on the agent's side reaches the management
@@ -283,14 +222,11 @@ agent lives here rather than on docker-host.
 ### Known exposure
 
 The Docker socket proxy filters which requests are allowed, not what the
-answers contain. `GET /containers/{id}/json` returns a container's environment
-block, so the agent can read the Cloudflare DNS token, the Pocket ID
-encryption key, and application API keys on docker-host. Removing that
-exposure means moving those values out of Compose `environment:` entries, not
-tightening the proxy. Treat the agent's credentials as revocable and rotate
-them if ai-dev is ever suspect: delete the Proxmox token with
-`pveum user token remove hermes-audit@pve ai-dev`, and revoke the GitHub token
-in the GitHub UI.
+answers contain: inspecting a container returns its environment block, so
+every secret passed through a Compose `environment:` entry is readable by the
+agent. Closing that means moving those values out of the environment, not
+tightening the proxy. Treat the agent's credentials as revocable: delete the
+Proxmox token and revoke the GitHub token if ai-dev is ever suspect.
 
 ## Agent scratch space
 
@@ -343,15 +279,10 @@ Neovim remains deliberately outside Home Manager on ai-dev. Pacman owns
 `/usr/bin/nvim` and the temporary editor LSP/formatter packages. Ansible clones
 the public Neovim configuration into `~/.config/nvim` only when it is missing,
 with updates disabled; it never pulls, resets, or edits an existing checkout.
-An Ansible-managed site plugin outside that checkout, at
-`~/.local/share/nvim/site/plugin/osc52.lua`, uses Neovim's built-in OSC 52 copy
-function and makes normal yanks use the system clipboard. Its paste callback
-returns the last local yank immediately because remote terminals commonly block
-OSC 52 clipboard reads, which would otherwise pause Neovim for up to ten
-seconds. The plugin also reapplies `unnamedplus` after LazyVim's deferred
-`VeryLazy` clipboard reset for SSH sessions. Use the terminal's paste action to
-insert device clipboard content. This exception remains until the Neovim/Mason
-package skip configuration is repaired separately.
+An Ansible-managed site plugin outside that checkout,
+`~/.local/share/nvim/site/plugin/osc52.lua`, routes yanks through OSC 52; its
+own comments explain why paste is served from the local yank cache. Use the
+terminal's paste action to insert device clipboard content.
 
 ## Tailnet policy
 
@@ -421,19 +352,17 @@ with no obvious cause.
 
 On the guest, verify identity, network placement, containment, and services:
 
+The ai-dev role already asserts hostname, Tailscale preferences, the nftables
+ruleset and the `sshd` forwarding options on every run, so the checks below are
+only the ones nothing enforces automatically:
+
 ```sh
-hostnamectl --static
 tailscale status
-sudo tailscale debug prefs
 ip -brief address show ens18
 ip route
-sudo nft list ruleset
-sudo sshd -T | grep -E '^(allowtcpforwarding local|gatewayports no)$'
 systemctl --user status moshi-hook
 ss -ltn 'sport = :24543'
 command -v nvim stylua gopls marksman
-fish -lc 'echo $TMPDIR'
-systemctl --user show-environment | grep '^TMPDIR='
 fish -c 'type -p opencode hunk yazi btop bat direnv'
 nvim --headless \
   '+lua print(vim.g.clipboard.name, vim.o.clipboard)' \
@@ -445,13 +374,10 @@ VLANs, no physical-interface IPv6 address, and no listener for port 24543 except
 `127.0.0.1`. Test that HTTPS and gateway DNS work, while new connections to
 MGMT, SRV, DFLT, KDS, GST, other DMZ hosts, and tailnet peers fail.
 
-Both `$TMPDIR` checks must report `/var/tmp/michael`, and that directory must be
-mode `0700` and owned by `michael`.
-
 Neovim and its temporary editor tools must resolve from `/usr/bin`; shared CLI
-tools and OpenCode must resolve from the Home Manager profile. Confirm Fish
-colours, the F12 clear binding, Starship, FZF, Git, Hunk, Herdr, Yazi, btop,
-bat, and direnv match the Mac behavior. The shared instruction and skill links
+tools and OpenCode must resolve from the Home Manager profile. Confirm Fish,
+Starship, FZF, Git, Hunk, Herdr, Yazi, btop, bat, and direnv match the Mac
+behavior. The shared instruction and skill links
 must exist under `.claude`, `.codex`, `.pi`, and `.agents`. Existing OpenCode
 authentication/plugins and all existing `~/.config/nvim` modifications must
 remain intact. The Neovim clipboard check must report `OSC 52 (copy only)` and

@@ -25,11 +25,11 @@ to be absent from the production bridge.
 2. Confirm the OPEN ITEMS in `group_vars/routeros.yaml` (interface names, bridge
    name, admin/IPMI IPs) against the live router.
 3. **Out-of-band access staged before any VLAN-filtering work.** The role pulls
-   `routeros_oob_port` (`ether7`) out of the bridge and gives it `10.66.0.1/30`.
-   Plug a laptop into it with a static `10.66.0.2/30` and confirm you can reach
-   `10.66.0.1` over SSH/WinBox. This is the only fallback that survives
-   vlan-filtering — under filtering, untagged-VLAN1 console access **and**
-   Winbox-by-MAC both stop working (learned the hard way on 2026-06-03).
+   the OOB port out of the bridge and addresses it; `group_vars/routeros.yaml`
+   defines both. Confirm you can reach the router over it before going further.
+   This is the only fallback that survives vlan-filtering — under filtering,
+   untagged-VLAN1 console access **and** Winbox-by-MAC both stop working
+   (learned the hard way on 2026-06-03).
 
 ## Normal run (strict steady state)
 
@@ -112,13 +112,10 @@ filtering from the OOB port and confirm a VLAN 1 client still pulls a DHCP lease
 
 ## Proxmox host topology
 
-The RouterOS port map assumes the Proxmox host is cabled and bridged like this:
-
-- `eno2` -> `vmbr0` -> RB5009 `ether3`: production/MGMT uplink. The host address
-  is `10.77.1.100/24` with gateway `10.77.1.1`; VMs/LXCs without an explicit VLAN tag
-  land on native MGMT.
-- `eno1` -> `vmbr1` -> RB5009 `ether2`: untagged DMZ uplink. The Proxmox host should
-  not have an IP on this bridge; ai-dev guests on `vmbr1` get DHCP from `10.77.99.1`.
+The RouterOS port map assumes a specific cabling and bridge layout on the
+Proxmox host; `group_vars/routeros.yaml` holds it. Two invariants matter: VMs
+without an explicit VLAN tag land on native MGMT, and the Proxmox host must not
+hold an IP on the DMZ bridge.
 
 Keep `vmbr1` as an untagged bridge unless there is a deliberate need to trunk VLANs into
 the DMZ. Allowing all VLAN IDs on the DMZ bridge makes the host side broader than the
@@ -126,11 +123,11 @@ RouterOS model, which treats `ether2` as a single untagged L3 DMZ interface.
 
 ## Service VLAN cutover checks
 
-`docker-host` is a service workload and should not live on native MGMT. Terraform tags
-its NIC with VLAN 20, and this role reserves `10.77.20.246` on `srv-dhcp`. After the
-VM reconnects or reboots, verify the guest has a `10.77.20.0/24` lease, then update any
-external DNS records that still point service names at the old `10.77.1.246` address.
+`docker-host` is a service workload and should not live on native MGMT. Terraform
+tags its NIC with VLAN 20 and this role reserves its lease on `srv-dhcp`. After the
+VM reconnects or reboots, verify the guest holds an SRV lease, then update any
+external DNS records still pointing service names at its old MGMT address.
 
-The ai-dev VM should land on the physical DMZ (`10.77.99.0/24`) through `vmbr1`.
-If it receives a `10.77.1.0/24` lease, the RB5009 DMZ port is still bridged into MGMT
-or the cabling/port map is wrong; do not enable `default-drop` until that is corrected.
+The ai-dev VM should land on the physical DMZ through `vmbr1`. If it receives an
+MGMT lease instead, the RB5009 DMZ port is still bridged into MGMT or the cabling
+is wrong; do not enable `default-drop` until that is corrected.

@@ -6,25 +6,12 @@ Infrastructure-as-code for a single-server homelab running on Proxmox. Terraform
 provisions infrastructure, Ansible configures hosts and the router, and Docker
 Compose plus Portainer GitOps run application services.
 
-The approved simplification scope and implementation order are recorded in
-[docs/simplification-handover.md](docs/simplification-handover.md).
-
 ## Hardware
 
-| Component   | Specification                                                      |
-| ----------- | ------------------------------------------------------------------ |
-| CPU         | Intel Core i7-14700 (20C/28T)                                      |
-| RAM         | Designed for 64GB Micron DDR5 ECC; 32GB currently installed        |
-| Motherboard | Supermicro X13SAE                                                  |
-| Boot disk   | 250GB NVMe                                                         |
-| VM storage  | 2x 1TB Samsung EVO NVMe (ZFS mirror, Proxmox-managed)              |
-| Data SSDs   | 2x Kingston DC600M 960GB (ZFS special vdev mirror, TrueNAS HBA)    |
-| Data HDDs   | 2x Seagate IronWolf 10TB (ZFS mirror, TrueNAS via HBA)             |
-
-TrueNAS pool layout, dataset tuning, and the storage change plan are
-documented in [docs/truenas-storage.md](docs/truenas-storage.md).
-One faulty 32GB module has been removed. Current VM sizing and the intentionally
-stopped UniFi controller reflect the installed 32GB constraint.
+32GB ECC RAM is installed of the 64GB the board is designed for; VM sizing and
+the intentionally stopped UniFi controller reflect that constraint. TrueNAS
+pool layout and dataset tuning are documented in
+[docs/truenas-storage.md](docs/truenas-storage.md).
 
 ## Architecture
 
@@ -109,7 +96,7 @@ just edit                   # edit encrypted vault secrets
 ## Terraform
 
 Provisions VMs on Proxmox using the [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox) provider. Secrets sourced from 1Password via the `onepassword` provider.
-Run Terraform through the `just` recipes so local state and generated cloud-init files are created with a restrictive umask. Terraform state is secret-bearing because provider data includes Proxmox credentials, WLAN PSKs, and bootstrap auth material.
+Terraform state is secret-bearing. Run Terraform through the `just` recipes so local state and generated cloud-init files are created with a restrictive umask.
 
 | VM | ID | Spec | Purpose |
 | --- | --- | --- | --- |

@@ -10,28 +10,16 @@ to `http://radarr:7878` and `http://sonarr:8989` the same way Recyclarr does.
 
 ## Why this exists
 
-An episode file imported cleanly through Sonarr (WEB-DL MKV, 3.1 GB) but had
-about 18 Matroska structural errors ("invalid as first byte of an EBML
-number") scattered through the file body. `ffprobe` against the file's
-headers passed. Only a full packet-level demux
-(`ffmpeg -v error -i FILE -c copy -f null -`) surfaced the errors. Neither
-Radarr nor Sonarr detect this class of corruption on import.
+Matroska structural errors can sit in a file body while the headers stay
+valid, so the file imports cleanly through Sonarr and `ffprobe` passes it.
+Neither Radarr nor Sonarr detect that class of corruption, and Checkrr's
+`ffprobe` check does not either — it reads header and stream metadata only.
 
-Checkrr's `ffprobe` check (upstream `check/checkrr.go`, `ffProbe` branch) only
-calls `ffprobe.ProbeURL`, i.e. header/stream metadata - the same check that
-missed the incident. Checkrr's `ffmpeg-full` check runs:
-
-```console
-ffmpeg -v error -i <file> -hwaccel auto -f null -
-```
-
-a full demux and decode of every frame with no output, which is functionally
-the same check that caught the incident (upstream doesn't pass `-c copy`, so
-it also fully decodes rather than just demuxing - a strictly stronger check).
-This deployment enables `ffmpeg-full` for that reason; see
-`docker/recyclarr/checkrr.yaml.tpl` for the full check rationale.
-`ffmpeg-quick` (first N seconds only) is deliberately left off because the
-incident's errors were scattered through the file body, not the start.
+This deployment therefore enables `ffmpeg-full`, a full demux and decode of
+every frame. `ffmpeg-quick` (first N seconds only) is deliberately left off,
+because the errors this exists to catch are scattered through the file body
+rather than the start. `docker/recyclarr/checkrr.yaml.tpl` carries the full
+check rationale.
 
 ## What it checks and how it decides a file is bad
 
@@ -80,16 +68,10 @@ to remember to set.
 
 ## Secrets
 
-Checkrr has no native environment-variable or `${VAR}`/secrets-file config
-mechanism (confirmed against upstream source: `main.go` only loads config via
-koanf's plain YAML `file.Provider`, no env provider, no `!env_var` tag like
-Recyclarr's). `docker/recyclarr/checkrr.yaml.tpl` is checked into Git with
-`__RADARR_API_KEY__`/`__SONARR_API_KEY__` placeholders instead of real keys.
-`docker/recyclarr/checkrr-entrypoint.sh` substitutes the `RADARR_API_KEY`/
-`SONARR_API_KEY` environment variables (set on the Portainer stack) into
-those placeholders with `sed`, writing the result only to
-`/tmp/checkrr-runtime.yaml` - a tmpfs mount, never the `checkrr-data` volume
-or the repo - before exec'ing `checkrr` against that rendered file.
+Checkrr has no native environment-variable or secrets-file config mechanism,
+so `checkrr.yaml.tpl` is checked in with placeholders and the entrypoint
+substitutes the API keys at start-up, writing the rendered config only to a
+tmpfs path — never to the `checkrr-data` volume or the repo.
 
 Required Portainer stack environment values:
 
@@ -109,17 +91,11 @@ State (the bbolt db and `badfiles.csv`) lives on the named `checkrr-data`
 volume.
 
 **Before the first deploy**, enable **"Enable relative path volumes"** on the
-`recyclarr` stack in Portainer, with **Local filesystem path** `/srv/portainer`
-(see [docs/docker-deployment.md](docker-deployment.md)) - without it the
-`./checkrr.yaml.tpl` and `./entrypoint.sh` bind mounts resolve to nothing and
-the container fails to start (missing config).
+stack in Portainer — see [docs/docker-deployment.md](docker-deployment.md).
 
-The container runs as root (upstream's alpine image has no non-root user);
-`cap_drop: [ALL]`, `no-new-privileges`, and a read-only root filesystem
-contain it. `deploy.resources.limits` (2 CPUs, 1 GiB) and a reduced
-`cpu_shares` keep a full-library `ffmpeg-full` pass from starving other
-containers or the NFS-backed media library; Checkrr itself only ever
-processes one file at a time (its file walk has no worker pool), so these are
+The container's resource limits keep a full-library `ffmpeg-full` pass from
+starving other containers or the NFS-backed media library. Checkrr processes
+one file at a time — its file walk has no worker pool — so the limits are
 upper bounds, not a concurrency setting.
 
 ## Running a one-off scan and reading the report
@@ -150,17 +126,11 @@ sidecar Checkrr didn't recognize).
 
 ## Open questions before first deploy
 
-- **Baseline pass duration**: the first full-library pass runs `ffmpeg-full`
-  against every existing file (nothing has a stored hash yet). At roughly
-  1.5-6 minutes per ~3 GB episode observed in testing (see dry-run notes in
-  the PR/commit that introduced this stack), a 4.4 TB library could take
-  multiple days end-to-end. Subsequent daily runs only re-check new/changed
-  files, so this is a one-time cost, but it competes with the docker-host
-  VM's other workloads (6 vCPU, 8 GB RAM) and the NFS server for that
-  duration. Consider whether to seed the bbolt database or otherwise stage
-  the baseline pass (e.g. temporarily narrowing `checkpath` to one library at
-  a time) rather than letting the full 4.4 TB scan run unattended
-  immediately after first deploy.
+- **Baseline pass duration**: the first full-library pass checks every
+  existing file and can run for days, competing with the docker-host VM's
+  other workloads and the NFS server. Stage it — narrow `checkpath` to one
+  library at a time — rather than letting it run unattended after first
+  deploy. Subsequent daily runs only re-check new or changed files.
 - **`requireaudio`** is left `false` deliberately (a false positive here is a
   deletion, not just a log line). Enable only after confirming the library
   has no legitimate audio-less files.
