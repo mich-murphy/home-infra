@@ -24,3 +24,5 @@ ai_dev_hermes_moshi_target: hermes
 # Ansible discovers the management user's nix python, which sits inside a 0750
 # home the agent account cannot traverse.
 ai_dev_hermes_python: /usr/bin/python3
+# Seconds a detached mosh server waits for a client before exiting.
+ai_dev_hermes_mosh_timeout: 3600

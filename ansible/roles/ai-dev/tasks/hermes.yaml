@@ -222,6 +222,23 @@
     group: "{{ ai_dev_hermes_user }}"
     mode: "0644"
 
+# Each Moshi reconnect spawns a new mosh-server; without a timeout the old ones
+# linger forever. Herdr holds the real session, so mosh need not outlive it.
+# The trailing `Match all` is required: sshd_config includes drop-ins on line 2,
+# so an unclosed Match block would swallow the rest of the hardened config.
+- name: Bound the Hermes mosh server lifetime
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/61-hermes-mosh-timeout.conf
+    content: |
+      Match User {{ ai_dev_hermes_user }}
+          SetEnv MOSH_SERVER_NETWORK_TMOUT={{ ai_dev_hermes_mosh_timeout }}
+      Match all
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/sbin/sshd -t -f %s
+  notify: restart ai-dev sshd
+
 - name: Read the installed Hermes version
   ansible.builtin.command:
     argv:
