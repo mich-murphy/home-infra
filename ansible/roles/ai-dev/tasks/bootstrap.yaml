@@ -30,6 +30,8 @@
       - mosh
       - rsync
       - curl
+      - ripgrep
+      - jq
       - python
       # Required by the retained markdownlint-cli editor package.
       - nodejs
