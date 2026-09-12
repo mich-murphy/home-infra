@@ -7,9 +7,9 @@ ai_dev_physical_interface: eth0
 ai_dev_dmz_gateway: 10.77.99.1
 ai_dev_dns_server: 10.77.1.1
 # The only tailnet peers ai-dev may connect to; other egress is denied.
-ai_dev_docker_proxy_address: 100.96.174.126
+ai_dev_docker_proxy_host: docker-host
 ai_dev_docker_proxy_port: 2375
-ai_dev_proxmox_api_address: 100.106.15.105
+ai_dev_proxmox_api_host: proxmox
 ai_dev_proxmox_api_port: 8006
 
 swap_mode: file

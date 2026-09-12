@@ -39,8 +39,8 @@ table inet filter {
     oifname "tailscale0" ip daddr 100.100.100.100 tcp dport 53 accept
 
     # Hermes: the docker-host socket proxy and the Proxmox API.
-    oifname "tailscale0" ip daddr {{ ai_dev_docker_proxy_address }} tcp dport {{ ai_dev_docker_proxy_port }} accept
-    oifname "tailscale0" ip daddr {{ ai_dev_proxmox_api_address }} tcp dport {{ ai_dev_proxmox_api_port }} accept
+    oifname "tailscale0" ip daddr {{ ai_dev_docker_proxy_address.stdout | trim }} tcp dport {{ ai_dev_docker_proxy_port }} accept
+    oifname "tailscale0" ip daddr {{ ai_dev_proxmox_api_address.stdout | trim }} tcp dport {{ ai_dev_proxmox_api_port }} accept
 
     # Never initiate sessions to any other homelab or tailnet peer.
     ip daddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10 } drop
