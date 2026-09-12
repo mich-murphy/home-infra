@@ -16,7 +16,7 @@ if HOME="$empty_home" PATH=/usr/bin:/bin "$BASH_BIN" "$MAINTENANCE" status >"${T
   echo "status unexpectedly passed without installed tools" >&2
   exit 1
 fi
-for tool in Claude Codex Pi Herdr Moshi OpenCode; do
+for tool in Claude Codex Pi Herdr Moshi; do
   grep -q "$tool" "${TEST_ROOT}/missing.log"
 done
 
@@ -43,7 +43,7 @@ esac
 echo "$(basename "$0") 1.0.0"
 SCRIPT
 chmod +x "${fake_bin}/fake-tool"
-for command in node claude codex pi herdr moshi-hook opencode systemctl ss; do
+for command in node claude codex pi herdr moshi-hook systemctl ss; do
   ln -s fake-tool "${fake_bin}/${command}"
 done
 HOME="$fake_home" PATH="${fake_bin}:/usr/bin:/bin" "$BASH_BIN" "$MAINTENANCE" status >"${TEST_ROOT}/healthy.log"
