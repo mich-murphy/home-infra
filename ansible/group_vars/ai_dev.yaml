@@ -6,8 +6,7 @@ ai_dev_hostname: ai-dev
 ai_dev_physical_interface: eth0
 ai_dev_dmz_gateway: 10.77.99.1
 ai_dev_dns_server: 10.77.1.1
-# Hermes egress. ai-dev denies tailnet egress by default; these are the only
-# two peers it may initiate sessions to, both read-only endpoints.
+# The only tailnet peers ai-dev may connect to; other egress is denied.
 ai_dev_docker_proxy_address: 100.96.174.126
 ai_dev_docker_proxy_port: 2375
 ai_dev_proxmox_api_address: 100.106.15.105
