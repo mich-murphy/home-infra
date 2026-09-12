@@ -135,7 +135,9 @@ agent queries it directly, and `DOCKER_HOST` records the endpoint. Installing
 the client would drag in `containerd` and `runc`, about 100 MiB of container
 runtime on the one guest that must never run containers; masking the daemon
 afterwards only suppresses that, since a mask is one `systemctl unmask` away
-from being undone. The role therefore asserts those packages stay absent.
+from being undone. The role therefore asserts that no container runtime is
+installed, covering `podman`, `crun`, and `lxc` as well as Docker's own
+packages.
 The trade-off is `GET /containers/{id}/logs`, which returns a multiplexed
 stream the CLI would otherwise de-multiplex.
 

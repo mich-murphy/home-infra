@@ -9,8 +9,9 @@ ai_dev_earlyoom_prefer: "(^|/)(tsc|bun|node|next-build|esbuild|vitest|jest|cargo
 # Own account, so the agent cannot read the management user's credentials.
 ai_dev_hermes_user: hermes
 ai_dev_hermes_home: /home/hermes
-# Read-only socket proxy on docker-host.
-ai_dev_hermes_docker_host: tcp://docker-host:2375
+# Read-only socket proxy on docker-host. No client here reads the tcp:// scheme,
+# so the endpoint is spelled the way an HTTP request needs it.
+ai_dev_hermes_docker_host: http://docker-host:2375
 ai_dev_hermes_proxmox_endpoint: https://proxmox:8006
 # Lets the play run before the tokens are minted.
 ai_dev_hermes_proxmox_credentials_present: >-
@@ -21,9 +22,14 @@ ai_dev_hermes_github_credentials_present: >-
 # Ansible discovers the management user's nix python, which sits inside a 0750
 # home the agent account cannot traverse.
 ai_dev_hermes_python: /usr/bin/python3
-# ai-dev must never be able to run containers.
+# ai-dev must never be able to run containers. Every runtime that could launch
+# one, not just Docker's own packages; libpathrs is left alone because pacman
+# itself depends on it and it cannot run a container by itself.
 ai_dev_forbidden_container_packages:
-  - docker
   - containerd
+  - crun
+  - docker
+  - docker-bin
+  - lxc
+  - podman
   - runc
-  - libpathrs

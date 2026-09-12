@@ -87,6 +87,7 @@
   loop:
     - docker.service
     - docker.socket
+  notify: reload systemd units
 
 - name: Install the Hermes agent
   ansible.builtin.shell:
