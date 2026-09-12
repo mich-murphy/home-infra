@@ -46,6 +46,37 @@ interval, webhook token, and per-stack environment values because these are
 secret-bearing or controller-specific. Audit them in the Portainer UI after a
 restore and whenever repository authentication changes.
 
+## Agent socket proxy
+
+The `init` stack runs two instances of the same pinned socket proxy image.
+`docker-socket-proxy` serves Traefik on an internal network with no published
+port. `docker-socket-proxy-agent` serves the ai-dev Hermes agent and is the
+only one that is reachable off the host.
+
+Keep them separate. Widening the agent's read surface must never widen
+Traefik's, and the two have no reason to share a grant.
+
+The agent instance sets `POST=0`, which refuses every write route including
+exec and container creation, and allows only the read routes needed to
+diagnose: containers, logs, stats, events, images, networks, volumes, info,
+ping, and version. Three controls stand in front of it:
+
+1. it publishes on `AGENT_PROXY_BIND`, docker-host's Tailscale address, which
+   the `docker-host` role reads at run time and writes into `/srv/init/.env`,
+   so the LAN cannot reach it;
+2. the tailnet policy grants `tag:ai-dev` alone `tcp:2375`;
+3. `DOCKER-USER` admits that one source address and drops every other client,
+   so a mistake in the tailnet policy is not sufficient to expose the API.
+
+The role asserts the last two, and asserts that the container never binds all
+interfaces. An empty `AGENT_PROXY_BIND` would make Compose bind everywhere,
+so the bind address is verified rather than assumed.
+
+The proxy filters requests, not responses. `GET /containers/{id}/json` returns
+a container's environment block, so the agent can read secrets passed through
+Compose `environment:` entries. Moving those values out of the environment is
+the only fix; no proxy setting achieves it.
+
 ## Removing a stack
 
 Deleting a Compose directory does not decommission its Portainer stack. Use

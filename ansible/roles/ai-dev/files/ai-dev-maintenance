@@ -3,7 +3,6 @@ set -uo pipefail
 
 readonly LOCAL_BIN="${HOME}/.local/bin"
 readonly PI_PACKAGES=(
-  'npm:@plannotator/pi-extension'
   'npm:@gotgenes/pi-subagents'
 )
 readonly MOSHI_TARGETS='claude,codex,pi,opencode,gemini,antigravity,cursor,kimi,qwen,grok,omp,hermes'

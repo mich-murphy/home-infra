@@ -5,3 +5,18 @@ ai_dev_earlyoom_mem_percent: 8
 ai_dev_earlyoom_swap_percent: 8
 ai_dev_earlyoom_avoid: "(^|/)(init|systemd.*|sshd.*|mosh-server|tailscaled|herdr|moshi-hook|wezterm-mux-server|fish|dbus-broker.*)$"
 ai_dev_earlyoom_prefer: "(^|/)(tsc|bun|node|next-build|esbuild|vitest|jest|cargo|rustc|go)$"
+
+# Hermes runs as its own account so the agent cannot reach the management
+# user's GitHub credentials, SSH keys, or coding-agent sessions.
+ai_dev_hermes_user: hermes
+ai_dev_hermes_home: /home/hermes
+# Read-only socket proxy published on docker-host's tailnet address.
+ai_dev_hermes_docker_host: tcp://docker-host:2375
+ai_dev_hermes_proxmox_endpoint: https://proxmox:8006
+# Credentials arrive from group_vars/secrets.yaml; the play installs the agent
+# without them so the host can be provisioned before the tokens are minted.
+ai_dev_hermes_proxmox_credentials_present: >-
+  {{ hermes_proxmox_token_id is defined
+     and hermes_proxmox_token_secret is defined }}
+ai_dev_hermes_github_credentials_present: >-
+  {{ hermes_github_token is defined }}

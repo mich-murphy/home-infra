@@ -75,11 +75,34 @@
   changed_when: false
   when: not ansible_check_mode
 
-- name: Verify the Plannotator port remains contained
+- name: Verify tailnet and DMZ input remain default-denied
   ansible.builtin.assert:
     that:
-      - "'19432' not in ai_dev_nft_input_chain.stdout"
       - "'iifname \"tailscale0\" drop' in ai_dev_nft_input_chain.stdout"
       - "('iifname \"' ~ ai_dev_physical_interface ~ '\" drop') in ai_dev_nft_input_chain.stdout"
-    fail_msg: Port 19432 must have no input grant, and tailnet and physical DMZ input must remain default-denied.
+    fail_msg: Tailnet and physical DMZ input must remain default-denied.
+  when: not ansible_check_mode
+
+- name: Read the active nftables output chain
+  ansible.builtin.command:
+    cmd: /usr/bin/nft list chain inet filter output
+  register: ai_dev_nft_output_chain
+  changed_when: false
+  when: not ansible_check_mode
+
+# Tailnet egress is denied by default. Hermes needs exactly two read-only
+# peers; the blanket drop must survive alongside them.
+- name: Verify tailnet egress stays denied apart from the agent endpoints
+  ansible.builtin.assert:
+    that:
+      - "'100.64.0.0/10' in ai_dev_nft_output_chain.stdout"
+      - >-
+        ai_dev_docker_proxy_address ~ ' tcp dport ' ~ ai_dev_docker_proxy_port
+        ~ ' accept' in ai_dev_nft_output_chain.stdout
+      - >-
+        ai_dev_proxmox_api_address ~ ' tcp dport ' ~ ai_dev_proxmox_api_port
+        ~ ' accept' in ai_dev_nft_output_chain.stdout
+    fail_msg: >-
+      ai-dev must reach the docker-host socket proxy and the Proxmox API while
+      every other tailnet peer stays unreachable from this guest.
   when: not ansible_check_mode

@@ -11,11 +11,23 @@ The supported remote path is:
 Moshi -> Tailscale private network -> OpenSSH -> Mosh when available -> Herdr
 ```
 
-Tailscale SSH stays disabled. Moshi connects to the guest's normal OpenSSH
-server through Tailscale, then uses Mosh's per-connection UDP server when the
-network permits it. Herdr is the only persistent multiplexer and retains its
-shared `Ctrl-A` prefix. `Ctrl+Shift+L` is encoded as F12 by a supporting
-terminal, forwarded by Herdr, and bound by Fish to clear the focused pane.
+Tailscale SSH stays disabled, and this is load-bearing rather than incidental.
+Tailscale SSH is not OpenSSH: it takes over port 22, so Mosh cannot bootstrap
+through it, and it does not implement `-L`/`-R` port forwarding, which Moshi's
+Browser Preview depends on. Moshi's own documentation recommends leaving it off
+so port 22 returns to the OS `sshd`. Enabling it would break the path above and
+fail the identity assertions in the ai-dev role.
+
+Disabling it costs nothing in key handling. Moshi's Easy Pair appends its own
+public key to the target account's `authorized_keys` during pairing, so no
+private key is ever pasted into the phone. Ansible manages only its own
+operator key line, leaving Moshi's entry intact.
+
+Moshi connects to the guest's normal OpenSSH server through Tailscale, then
+uses Mosh's per-connection UDP server when the network permits it. Herdr is the
+only persistent multiplexer and retains its shared `Ctrl-A` prefix.
+`Ctrl+Shift+L` is encoded as F12 by a supporting terminal, forwarded by Herdr,
+and bound by Fish to clear the focused pane.
 
 ## Deployment
 
@@ -99,7 +111,8 @@ The update command runs the official stable installers for Claude Code, Codex,
 Pi, Herdr, and Moshi independently, updates the declared Pi packages,
 reconciles Herdr before Moshi integrations, and reports all failures together.
 Its implementation and ai-dev package inventory live in the Ansible role that
-deploys it.
+deploys it. Hermes is deliberately absent: it belongs to the separate `hermes`
+account described below, not to the management user's toolchain.
 The status command is read-only. Ansible does not copy SSH keys, OAuth sessions,
 or API keys. Authenticate each tool interactively:
 
@@ -153,77 +166,131 @@ Moshi's full agent integration sends limited notification summaries, approval
 details, metadata, pairing, and WebSocket control traffic through Moshi's
 service. Terminal traffic, source files, transcripts, and diffs remain direct.
 
-## Plannotator remote reviews
+## Hermes infrastructure agent
 
-Plannotator uses the fixed AI-Dev port `19432` with sharing disabled. Herdr
-keeps Pi and its pending review alive, while the browser submits approval or
-annotation feedback directly to Plannotator's HTTP decision interface.
+Hermes manages infrastructure, and it reads input nobody controls: web pages
+through its bundled browser, and container logs, which are strings written by
+whatever produced them. It therefore runs as its own `hermes` account, not as
+the management user. `/home/michael` is mode `0750`, so the agent cannot read
+the management user's GitHub tokens, SSH keys, or Claude and Codex sessions.
+That separation is the point: scoping the agent's own credentials achieves
+nothing while broader credentials sit beside it in the same home directory.
 
-For a laptop review:
+Ansible owns the account, installs the agent with `--skip-setup`, and deploys
+its credentials. The installer clones `NousResearch/hermes-agent` into
+`~/.hermes/hermes-agent`, builds a uv virtualenv, links `~/.local/bin/hermes`,
+and pulls a Hermes-managed Node and a Playwright browser, so the first run is
+long and the install is the largest on the VM. ai-dev installs the Docker
+client for `DOCKER_HOST` queries but masks `docker.service` and
+`docker.socket`; it must never run a daemon of its own.
 
-1. Run `herdr --remote ai-dev`. The SSH connection creates a laptop-loopback
-   forward from `127.0.0.1:19432` to the same loopback port on AI-Dev.
-2. Start the Plannotator review from Pi. Pi displays a URL based at
-   `http://localhost:19432`.
-3. Ctrl-click the URL in Ghostty to open it in the Mac's default browser.
-4. Approve the plan or submit annotations. Pi receives the decision and
-   resumes automatically.
+### Access tiers
 
-Opening the browser is deliberately one-click, not automatic. The forwarded
-listener exists only while the laptop's Herdr SSH connection is active.
-Detaching after a review starts leaves Pi waiting in Herdr; reattach and reopen
-the displayed URL to complete it.
+The agent observes broadly, acts narrowly, and proposes everything else.
 
-For a phone review, connect to the same Herdr session through Moshi and start
-the review from Pi. When Moshi's Browser Preview indicator appears, tap it,
-select the listener on port `19432`, and use the in-app browser to approve or
-annotate the plan. Moshi creates its own per-session SSH forward; Plannotator
-is not published on the tailnet or physical DMZ.
+| Tier | Reach | Mechanism |
+| --- | --- | --- |
+| Observe | Proxmox cluster and guest state | `PVEAuditor` API token |
+| Observe | Containers, logs, stats, events | Read-only socket proxy |
+| Propose | Any change to this repository | GitHub token, pull request only |
+| Act | Nothing on a running host | Deliberately absent |
 
-The fixed port supports one active review at a time. A second concurrent
-Plannotator review can fail to bind or interfere with the first; finish or
-cancel the first review before starting another.
+No credential the agent holds can change a running host. Remediation happens
+by pull request, which `main`'s branch protection forces through review, and
+which Portainer then deploys. A merge is the supervision that a watched SSH
+session used to provide.
 
-### Plannotator troubleshooting
+### Provisioning the credentials
 
-- If `herdr --remote ai-dev` reports that `19432` is already in use,
-  `ExitOnForwardFailure` has stopped the attach rather than leaving reviews
-  silently broken. Run `lsof -nP -iTCP:19432 -sTCP:LISTEN` on the laptop, stop
-  the local process that owns the port, and reconnect.
-- If Moshi does not show Browser Preview, first confirm that a review is still
-  waiting and that `ss -ltn 'sport = :19432'` shows the Plannotator listener on
-  AI-Dev. Then check `moshi-hook status` and
-  `systemctl --user status moshi-hook`; its gateway must remain on
-  `127.0.0.1:24543`.
-- If Pi does not use port `19432` or tries to open a browser on AI-Dev, its
-  process has a stale environment. In an idle Herdr pane run `exec fish`,
-  confirm the variables below, and start a new Pi process. Do not restart the
-  Herdr server merely to refresh the environment: stopping it exits every pane
-  process.
+Mint the Proxmox audit identity on the hypervisor. `PVEAuditor` is read-only by
+construction, and privilege separation keeps the token's grant explicit:
 
 ```sh
-fish -lc 'printf "%s\n" "$PLANNOTATOR_REMOTE" "$PLANNOTATOR_PORT" "$PLANNOTATOR_SHARE"'
-# Expected: 1, 19432, disabled
+ssh root@proxmox
+pveum user add hermes-audit@pve --comment 'Read-only audit for ai-dev Hermes'
+pveum acl modify / --users hermes-audit@pve --roles PVEAuditor
+pveum user token add hermes-audit@pve ai-dev --privsep 1
+pveum acl modify / --tokens 'hermes-audit@pve!ai-dev' --roles PVEAuditor
 ```
 
-While a review is active, `curl http://127.0.0.1:19432` must work on AI-Dev and
-on the attached laptop. Direct requests to `http://ai-dev:19432` must fail from
-the laptop and every other tailnet peer, and requests to the AI-Dev DMZ address
-on `19432` must fail from the physical DMZ. Confirm that
-`sudo nft list chain inet filter input` has no accept rule for `19432`. Closing
-the laptop Herdr connection must remove the laptop's `127.0.0.1:19432`
-listener.
-
-On the laptop, inspect the effective client policy before the end-to-end test:
+The token value prints once. Create the GitHub token in the GitHub UI, because
+fine-grained tokens cannot be minted through the API: scope it to
+`mich-murphy/home-infra` alone, grant Contents and Pull requests read/write,
+and grant nothing else. Then store both in the vault:
 
 ```sh
-ssh -G ai-dev | grep -E \
-  '^(user|localforward|exitonforwardfailure|identityagent|hashknownhosts) '
+cd ansible
+ansible-vault edit group_vars/secrets.yaml --vault-password-file .vaultpass
 ```
 
-It must report user `michael`, forward-failure handling enabled, the
-loopback-to-loopback `19432` forward, and the existing wildcard 1Password agent
-and hashed-known-host settings.
+```yaml
+hermes_proxmox_token_id: "hermes-audit@pve!ai-dev"
+hermes_proxmox_token_secret: "<token value>"
+hermes_github_token: "<fine-grained token>"
+```
+
+The play installs the agent without these and reports their absence, so the
+host can be provisioned before the tokens exist. With them present it writes
+`~hermes/.config/hermes/env` at mode `0600`, sourced from the account's
+`.profile`.
+
+### Reaching the agent
+
+The account is a normal login. Ansible authorizes the same operator key that
+reaches the management user and enables linger, so the account can hold its
+own persistent Herdr and Moshi services. Either path works:
+
+```sh
+ssh hermes@ai-dev          # dedicated session, own Herdr and Moshi
+sudo -u hermes -i          # from an existing management-user pane
+```
+
+Prefer the dedicated SSH session when the agent should keep long-running work
+alive independently of the management user's Herdr, which is the usual case
+for infrastructure monitoring. Use `sudo -u hermes -i` for a quick look from a
+pane that is already open.
+
+Each account runs its own Herdr and Moshi. Pair Moshi separately for `hermes`
+if the agent should reach the phone; the management user's pairing does not
+carry across, and that separation is intentional. Pairing provisions its own
+key, so connecting the phone to the agent account means running the pairing
+flow again as `hermes`, not copying a key between accounts:
+
+```sh
+ssh hermes@ai-dev
+moshi-hook host setup
+moshi-hook pair --token <token-from-Moshi-Hooks-settings>
+systemctl --user restart moshi-hook
+```
+
+Authorizing the operator key grants a human entry into the agent account. It
+grants the agent nothing: no key on the agent's side reaches the management
+user, whose home stays mode `0750`.
+
+### Operating it
+
+```sh
+hermes setup
+hermes --version
+hermes update
+```
+
+Ansible installs the agent but does not update it; `hermes update` follows
+`origin/main` of the upstream repository. That is an unpinned, self-updating
+code path, which is acceptable on a disposable DMZ guest and is a reason the
+agent lives here rather than on docker-host.
+
+### Known exposure
+
+The Docker socket proxy filters which requests are allowed, not what the
+answers contain. `GET /containers/{id}/json` returns a container's environment
+block, so the agent can read the Cloudflare DNS token, the Pocket ID
+encryption key, and application API keys on docker-host. Removing that
+exposure means moving those values out of Compose `environment:` entries, not
+tightening the proxy. Treat the agent's credentials as revocable and rotate
+them if ai-dev is ever suspect: delete the Proxmox token with
+`pveum user token remove hermes-audit@pve ai-dev`, and revoke the GitHub token
+in the GitHub UI.
 
 ## Agent scratch space
 
@@ -303,9 +370,51 @@ and iOS device selectors permission to initiate OpenSSH and Mosh traffic:
 }
 ```
 
-Replace `group:ai-dev-users` with the tailnet's approved selectors. Do not add a
-grant with `tag:ai-dev` as a source; grants are additive, so a broader existing
-grant can defeat this containment.
+Replace `group:ai-dev-users` with the tailnet's approved selectors. Grants are
+additive, so a broader existing grant can defeat this containment.
+
+The Hermes agent requires the single exception below: ai-dev as a source,
+reaching one read-only port on docker-host and the Proxmox API. Keep it this
+narrow. Any wider grant with `tag:ai-dev` as a source erases the separation the
+guest exists to provide.
+
+Both destinations are tagged devices (`tag:proxmox` and `tag:server`), but the
+grants below scope by host rather than by tag: `tag:server` covers more than
+docker-host, and this guest should reach exactly one machine on that port. Name
+them in the `hosts` block, since a bare hostname in `dst` does not resolve on
+its own.
+
+```json
+{
+  "hosts": {
+    "docker-host": "100.96.174.126",
+    "proxmox": "100.106.15.105"
+  },
+  "grants": [
+    {
+      "src": ["tag:ai-dev"],
+      "dst": ["docker-host"],
+      "ip": ["tcp:2375"]
+    },
+    {
+      "src": ["tag:ai-dev"],
+      "dst": ["proxmox"],
+      "ip": ["tcp:8006"]
+    }
+  ]
+}
+```
+
+The Docker port is pinned a second time in docker-host's `DOCKER-USER` chain,
+so a mistake in this policy alone does not expose the Docker API.
+
+The tailnet policy is necessary but not sufficient. ai-dev's own nftables
+output chain drops the whole `100.64.0.0/10` range, so the guest cannot
+initiate a tailnet session even where a grant permits it. The two endpoints
+above are the only exceptions, alongside MagicDNS and the telemetry collector,
+and the ai-dev role asserts that the blanket drop survives beside them. Adding
+a grant without the matching egress rule produces a connection that times out
+with no obvious cause.
 
 ## Verification
 
@@ -323,7 +432,6 @@ systemctl --user status moshi-hook
 ss -ltn 'sport = :24543'
 command -v nvim stylua gopls marksman
 fish -lc 'echo $TMPDIR'
-fish -lc 'env | grep ^PLANNOTATOR_ | sort'
 systemctl --user show-environment | grep '^TMPDIR='
 fish -c 'type -p opencode hunk yazi btop bat direnv'
 nvim --headless \

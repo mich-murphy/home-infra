@@ -1,6 +1,26 @@
 ---
 # Docker-published ports bypass UFW's INPUT policy and must be filtered before
 # Docker's own FORWARD rules.
+
+# Tailscale's ACL is the primary control on the agent socket proxy. This pins
+# it a second time at the host firewall so one mistake in the tailnet policy
+# does not expose the Docker API to every node.
+- name: Read the ai-dev tailnet address
+  ansible.builtin.command:
+    cmd: "tailscale ip -4 {{ docker_agent_proxy_client }}"
+  register: docker_agent_proxy_client_address
+  changed_when: false
+  check_mode: false
+
+- name: Verify the ai-dev tailnet address resolved
+  ansible.builtin.assert:
+    that:
+      - docker_agent_proxy_client_address.stdout_lines | length == 1
+      - docker_agent_proxy_client_address.stdout | trim is match('^100\.')
+    fail_msg: >-
+      {{ docker_agent_proxy_client }} must resolve to exactly one Tailscale
+      IPv4 address before the agent socket proxy is exposed.
+
 - name: Allowlist Docker published ports in DOCKER-USER
   ansible.builtin.blockinfile:
     path: /etc/ufw/after.rules
@@ -13,6 +33,8 @@
       {% for entry in docker_published_ports %}
       -A DOCKER-USER -i {{ docker_external_interface }} -p {{ entry.proto }} -m conntrack --ctdir ORIGINAL --ctorigdstport {{ entry.port }} -j RETURN
       {% endfor %}
+      -A DOCKER-USER -s {{ docker_agent_proxy_client_address.stdout | trim }} -p tcp -m conntrack --ctdir ORIGINAL --ctorigdstport {{ docker_agent_proxy_port }} -j RETURN
+      -A DOCKER-USER -p tcp -m conntrack --ctdir ORIGINAL --ctorigdstport {{ docker_agent_proxy_port }} -j DROP
       -A DOCKER-USER -i {{ docker_external_interface }} -m conntrack --ctstate NEW -j DROP
       -A DOCKER-USER -j RETURN
       COMMIT
