@@ -29,8 +29,8 @@ Configure each inventory entry as a separate Portainer Git stack:
   keep its selected update policy consistent across application stacks.
 
 The `recyclarr` stack bind-mounts files that live next to its `compose.yml` in
-Git (`./recyclarr.yml`, `./settings.yml`, `./custom-formats/`, and Checkrr's
-`./checkrr.yaml.tpl`). Portainer only resolves these
+Git (`./recyclarr.yml`, `./settings.yml`, and `./custom-formats/`). Portainer
+only resolves these
 relative paths when the stack has **"Enable relative path volumes"** turned
 on in its Git stack settings, with **Local filesystem path** set to
 `/srv/portainer` (created by the `docker-host` role). Portainer's unpacker
