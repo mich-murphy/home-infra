@@ -198,6 +198,30 @@
     group: "{{ ai_dev_hermes_user }}"
     mode: "0644"
 
+# Bash login shells read .bash_profile and stop, so .profile alone never loads.
+- name: Point the Hermes login shell at the managed profile
+  ansible.builtin.copy:
+    content: |
+      # Managed by Ansible (ai-dev role).
+      [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"
+      [ -f "$HOME/.profile" ] && . "$HOME/.profile"
+    dest: "{{ ai_dev_hermes_home }}/.bash_profile"
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0644"
+
+# Herdr panes are interactive but not login shells, so they miss .bash_profile.
+- name: Load the managed profile in interactive Hermes shells
+  ansible.builtin.blockinfile:
+    path: "{{ ai_dev_hermes_home }}/.bashrc"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK: hermes profile"
+    block: |
+      [ -f "$HOME/.profile" ] && . "$HOME/.profile"
+    create: true
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0644"
+
 - name: Read the installed Hermes version
   ansible.builtin.command:
     argv:
