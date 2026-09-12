@@ -12,35 +12,27 @@ changed behind Nextcloud's file cache.
 
 ## Storage prerequisite
 
-Before running the `docker-host` Ansible role, export
-`10.77.20.101:/mnt/slow/owncloud` from TrueNAS to the Docker host at
-`10.77.20.246`. Map access to the dedicated `nextcloud` user and group, and
-permit read/write access. Do not leave the export open to the whole SRV VLAN.
+Before running the `docker-host` Ansible role, export the TrueNAS
+`slow/owncloud` dataset to the Docker host alone. Map access to the dedicated
+`nextcloud` user and group, and permit read/write access. Do not leave the
+export open to the whole SRV VLAN.
 
 Ansible mounts it at `/mnt/nextcloud` with the repository's hard NFSv4.2 policy.
 Confirm this before deploying the stack:
 
 ```sh
 findmnt --mountpoint /mnt/nextcloud
-sudo -u mm test -r /mnt/nextcloud
-sudo -u mm test -w /mnt/nextcloud
+sudo -u <mgmt-user> test -r /mnt/nextcloud
+sudo -u <mgmt-user> test -w /mnt/nextcloud
 ```
 
 Do not run ownCloud and Nextcloud against this dataset at the same time.
 
 ## Portainer environment
 
-Set these values on the new `nextcloud` Git stack:
-
-- `ADMIN_USERNAME`
-- `ADMIN_PASSWORD`
-- `NEXTCLOUD_DB_PASSWORD`
-- `NEXTCLOUD_REDIS_PASSWORD`
-- `COLLABORA_ADMIN_USERNAME`
-- `COLLABORA_ADMIN_PASSWORD`
-
-Use independent random values for each password. Portainer stores them; they do
-not belong in Git.
+`compose.yml` declares the environment values the stack requires. Set each on
+the `nextcloud` Git stack in Portainer, using independent random values for
+every password. Portainer stores them; they do not belong in Git.
 
 On first installation, `post-installation.sh` verifies the NFS-backed primary
 data directory, selects cron background jobs, installs Nextcloud Office and the

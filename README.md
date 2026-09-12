@@ -19,7 +19,7 @@ pool layout and dataset tuning are documented in
 Proxmox v9.1.6 (hypervisor)
 ├── TrueNAS VM (SRV VLAN) ─── NFS shares (media, downloads, bulk storage)
 ├── Docker Host VM (Ubuntu 24.04) ─── live services via Docker Compose
-│   └── Traefik → *.local.elmurphy.com (TLS via Cloudflare ACME)
+│   └── Traefik → per-service TLS hostnames (Cloudflare ACME)
 ├── UniFi OS Server VM (MGMT) ─── cold controller infrastructure (off normally)
 ├── ai-dev VM (DMZ) ─── Isolated AI development sandbox
 ```
@@ -31,22 +31,23 @@ RB5009 and are managed by the Ansible `routeros` role. The UniFi controller runs
 as a dedicated Proxmox VM (`unifi-controller`, VMID 111) and the AP/WLAN objects
 are managed through the UniFi controller API (`terraform/network`).
 
-| Network | VLAN / link | Purpose |
-| --- | --- | --- |
-| MGMT | native VLAN 1 | Wired-only management plane (`10.77.1.0/24`) |
-| SRV | VLAN 20 | TrueNAS + docker-host services (`10.77.20.0/24`) |
-| DFLT | VLAN 30 | Main wireless clients (`10.77.30.0/24`) |
-| KDS | VLAN 50 | Kids wireless clients with filtered DNS (`10.77.50.0/24`) |
-| GST | VLAN 60 | Guest wireless clients with UniFi L2 isolation (`10.77.60.0/24`) |
-| DMZ | RB5009 `ether2` / Proxmox `vmbr1` | Isolated ai-dev VM (`10.77.99.0/24`) |
-| OOB | RB5009 `ether7` | Break-glass router access (`10.66.0.0/30`) |
+| Network | Purpose |
+| --- | --- |
+| MGMT | Wired-only management plane |
+| SRV | TrueNAS + docker-host services |
+| DFLT | Main wireless clients |
+| KDS | Kids wireless clients with filtered DNS |
+| GST | Guest wireless clients with UniFi L2 isolation |
+| DMZ | Isolated ai-dev VM |
+| OOB | Break-glass router access |
 
-The server has two ethernet ports: `eno2`/`vmbr0` trunks MGMT/SRV to RB5009
-`ether3`, while `eno1`/`vmbr1` is the untagged DMZ uplink to RB5009 `ether2`.
-The UniFi U6-Pro AP is adopted in the controller. The three managed WLANs are
+VLAN IDs, subnets, addresses, and the physical port map are in
+`network/inventory.yaml` and `ansible/group_vars/routeros.yaml`. The server
+trunks MGMT/SRV over one ethernet port and carries the untagged DMZ uplink on
+the other. The UniFi U6-Pro AP is adopted in the controller. The three managed WLANs are
 attached to the default `All APs` group and mapped to the DFLT/KDS/GST
-VLAN-only networks. The ai-dev VM is isolated on the physical DMZ
-(`10.77.99.0/24`), protected by host nftables default-deny input rules, and
+VLAN-only networks. The ai-dev VM is isolated on the physical DMZ,
+protected by host nftables default-deny input rules, and
 controlled-output rules, and further scoped by an external Tailscale policy
 managed outside this repo.
 Its mobile workflow and deployment checks are documented in
@@ -102,7 +103,7 @@ Terraform state is secret-bearing. Run Terraform through the `just` recipes so l
 | --- | --- | --- | --- |
 | truenas | 101 | 2 CPU, 10GB RAM, 32GB | NAS with HBA passthrough |
 | docker-host | 102 | 6 CPU, 8GB RAM, 128GB | Docker Compose services |
-| ai-dev | 110 | 4 CPU, 5GB RAM, 150GB | AI development sandbox |
+| ai-dev | 110 | 4 CPU, 7GB RAM, 150GB | AI development sandbox |
 | unifi-controller | 111 | 2 CPU, 4GB max / 2GB min, 40GB | Cold UniFi OS Server infrastructure |
 
 Cloud-init template (`cloud_init.tftpl`) bootstraps the management user, installs qemu-guest-agent, and joins Tailscale.

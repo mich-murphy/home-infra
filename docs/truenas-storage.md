@@ -58,13 +58,12 @@ the special-vdev opportunity.
 ### Shares and services
 
 - NFS exports: `media`, `photos`, `media/music`, `media/audiobooks`,
-  `owncloud`, and `backups/proxmox` (host `10.77.1.100` only, `mapall` to the
-  `backups` user; added 2026-09-06 for vzdump). The `owncloud` dataset export
-  is named "Nextcloud data storage",
-  restricted to docker-host (`10.77.20.246`), and maps all requests to the
-  dedicated `nextcloud` user. The older media and photo exports have empty host
+  `owncloud`, and `backups/proxmox` (restricted to the hypervisor, `mapall` to
+  the `backups` user). The `owncloud` dataset export is named "Nextcloud data
+  storage", restricted to docker-host, and maps all requests to the dedicated
+  `nextcloud` user. The older media and photo exports have empty host
   lists, so their export ACLs remain the only same-VLAN access control.
-- The only active NFS client is docker-host (`10.77.20.246`), NFSv4.2 with
+- The only active NFS client is docker-host, NFSv4.2 with
   1M rsize/wsize — matching the 1M recordsize, as recommended. The
   Compose services use the same hard NFSv4.2 mount policy.
 - NFS server threads: **2**; revisit only if concurrent application I/O

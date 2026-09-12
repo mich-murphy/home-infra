@@ -69,14 +69,9 @@ logs). This follows the same pattern as the `nextcloud` stack's
 **Before the first deploy**, enable **"Enable relative path volumes"** on the
 stack in Portainer — see [docs/docker-deployment.md](docker-deployment.md).
 
-Required Portainer stack environment values:
-
-| Variable         | Purpose                                              |
-| ---------------- | ----------------------------------------------------- |
-| `TZ`             | Container timezone, matches other stacks               |
-| `RADARR_API_KEY` | Radarr API key (Settings → General in Radarr)          |
-| `SONARR_API_KEY` | Sonarr API key (Settings → General in Sonarr)          |
-| `CRON_SCHEDULE`  | Optional; defaults to `0 4 * * *` (daily at 04:00)      |
+`docker/recyclarr/compose.yml` declares the environment values the stack
+requires: a timezone, the Radarr and Sonarr API keys, and an optional cron
+schedule that defaults to daily at 04:00. Set them on the Portainer stack.
 
 The API keys are read with Recyclarr's `!env_var` YAML tag. Editors running
 the YAML language server flag unknown tags as errors, so the repository's

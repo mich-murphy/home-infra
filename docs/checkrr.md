@@ -73,13 +73,9 @@ so `checkrr.yaml.tpl` is checked in with placeholders and the entrypoint
 substitutes the API keys at start-up, writing the rendered config only to a
 tmpfs path — never to the `checkrr-data` volume or the repo.
 
-Required Portainer stack environment values:
-
-| Variable         | Purpose                                     |
-| ---------------- | -------------------------------------------- |
-| `TZ`             | Container timezone, matches other stacks      |
-| `RADARR_API_KEY` | Radarr API key (Settings → General in Radarr) |
-| `SONARR_API_KEY` | Sonarr API key (Settings → General in Sonarr) |
+`docker/recyclarr/compose.yml` declares the environment values the stack
+requires: a timezone and the Radarr and Sonarr API keys. Set them on the
+Portainer stack.
 
 ## Deployment
 

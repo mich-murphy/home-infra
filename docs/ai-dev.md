@@ -1,7 +1,7 @@
 # AI development VM
 
 `ai-dev` is the single AI development VM. It retains Proxmox VMID 110 and its
-150 GB disk, with 4 CPU cores, fixed 5 GiB RAM, and an 8 GiB disk-backed
+150 GB disk, with 4 CPU cores, fixed 7 GiB RAM, and an 8 GiB disk-backed
 swapfile with a bounded zswap cache. Its only NIC is on the physical `vmbr1`
 DMZ.
 
@@ -230,8 +230,8 @@ Proxmox token and revoke the GitHub token if ai-dev is ever suspect.
 
 ## Agent scratch space
 
-`/tmp` is a RAM-backed tmpfs carrying a per-user hard limit of 80% of its size
-(1153 MiB at 4 GB RAM). Agent scratch exhausts that limit while `df` still shows
+`/tmp` is a RAM-backed tmpfs carrying a per-user hard limit of 80% of its
+size. Agent scratch exhausts that limit while `df` still shows
 free space, and writes then fail with `EDQUOT`, which Node reports as the
 unmapped `Unknown system error -122, write`.
 
@@ -369,7 +369,7 @@ nvim --headless \
   +qa
 ```
 
-The guest must have one `ens18` address in `10.77.99.0/24`, no route to internal
+The guest must have one `ens18` address in the DMZ subnet, no route to internal
 VLANs, no physical-interface IPv6 address, and no listener for port 24543 except
 `127.0.0.1`. Test that HTTPS and gateway DNS work, while new connections to
 MGMT, SRV, DFLT, KDS, GST, other DMZ hosts, and tailnet peers fail.
@@ -393,7 +393,7 @@ new settings.
 The X13SAE-F's Intel I219-LM uses the `e1000e` driver for Proxmox `eno1`.
 Transmit queue hangs on that interface leave the physical carrier up while
 disconnecting `vmbr1` guests from the DMZ gateway. The guest then retains its
-DHCP address and default route, but ARP for `10.77.99.1` remains incomplete and
+DHCP address and default route, but ARP for the DMZ gateway remains incomplete and
 Tailscale reports `ai-dev` offline.
 
 Keep TCP segmentation offload disabled on the physical interface. Proxmox

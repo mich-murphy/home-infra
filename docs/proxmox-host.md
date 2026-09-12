@@ -43,11 +43,11 @@ Daily vzdump to TrueNAS.
 
 | Item | Value |
 | --- | --- |
-| PVE storage | `truenas-backups`, NFSv4.2, `10.77.20.101:/mnt/slow/backups/proxmox`, content `backup` |
+| PVE storage | `truenas-backups`, NFSv4.2, the TrueNAS `slow/backups/proxmox` export, content `backup` |
 | Job | `backup-truenas-daily`, 02:30, all guests except templates 9001-9003, snapshot mode, zstd, `repeat-missed` |
 | Retention | `keep-daily=7,keep-weekly=4,keep-monthly=3` on both job and storage |
 | TrueNAS dataset | `slow/backups/proxmox`, refquota 1.5 TiB, owned by `backups` (uid/gid 1225) |
-| TrueNAS export | host `10.77.1.100` only, `mapall` to `backups` |
+| TrueNAS export | the hypervisor only, `mapall` to `backups` |
 | TrueNAS snapshots | `slow/backups` recursive, daily 06:00, 14-day retention |
 
 Each run is a full image, so the refquota is what stops the retention set
