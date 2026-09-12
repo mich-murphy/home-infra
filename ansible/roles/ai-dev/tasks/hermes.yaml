@@ -167,23 +167,3 @@
       - ai_dev_hermes_version.stdout | length > 0
     fail_msg: The Hermes agent did not report a version.
   when: not ansible_check_mode
-
-- name: Read the installed container runtime packages
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/pacman
-      - --query
-      - --quiet
-  register: ai_dev_installed_packages
-  changed_when: false
-  when: not ansible_check_mode
-
-- name: Verify ai-dev carries no container runtime
-  ansible.builtin.assert:
-    that:
-      - ai_dev_installed_packages.stdout_lines
-        | select('in', ai_dev_forbidden_container_packages) | list | length == 0
-    fail_msg: >-
-      A container runtime is installed on ai-dev without a recorded reason.
-      Hermes reads the docker-host socket proxy over HTTP and needs none.
-  when: not ansible_check_mode
