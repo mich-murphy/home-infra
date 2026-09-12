@@ -38,9 +38,7 @@ table inet filter {
     oifname "tailscale0" ip daddr 100.100.100.100 udp dport 53 accept
     oifname "tailscale0" ip daddr 100.100.100.100 tcp dport 53 accept
 
-    # Hermes reads the docker-host socket proxy and the Proxmox API. Both are
-    # read-only endpoints, and these are the only tailnet peers ai-dev may
-    # initiate sessions to.
+    # Hermes: the docker-host socket proxy and the Proxmox API.
     oifname "tailscale0" ip daddr {{ ai_dev_docker_proxy_address }} tcp dport {{ ai_dev_docker_proxy_port }} accept
     oifname "tailscale0" ip daddr {{ ai_dev_proxmox_api_address }} tcp dport {{ ai_dev_proxmox_api_port }} accept
 

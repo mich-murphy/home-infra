@@ -52,11 +52,7 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  # Second proxy instance for the ai-dev Hermes agent. Kept separate from the
-  # Traefik proxy above so that widening the agent's read surface never widens
-  # Traefik's. POST=0 refuses every write route, including exec and create.
-  # Published only on docker-host's tailnet address (AGENT_PROXY_BIND, written
-  # into .env by the docker-host role) so the LAN cannot see it at all.
+  # Separate from Traefik's proxy so the agent's grant never widens Traefik's.
   docker-socket-proxy-agent:
     image: ghcr.io/tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
     container_name: docker-socket-proxy-agent
@@ -72,8 +68,7 @@ services:
     networks:
       - docker-socket-proxy-agent
     environment:
-      # Read-only diagnostics: ps, logs, stats, inspect, events, images,
-      # networks, volumes. POST=0 is the write barrier.
+      # POST=0 is the write barrier; the rest are read routes.
       - CONTAINERS=1
       - EVENTS=1
       - IMAGES=1
@@ -83,8 +78,7 @@ services:
       - VERSION=1
       - VOLUMES=1
       - POST=0
-      # Explicit denials; the image defaults these off, but the agent's
-      # blast radius is worth stating rather than inheriting.
+      # Already off by default; stated so the limits are explicit.
       - EXEC=0
       - BUILD=0
       - COMMIT=0
@@ -99,8 +93,7 @@ services:
       - SYSTEM=0
       - TASKS=0
     ports:
-      # Tailnet address only; reachability is further pinned to ai-dev in
-      # DOCKER-USER by the docker-host role.
+      # Tailnet address only; also pinned to ai-dev in DOCKER-USER.
       - ${AGENT_PROXY_BIND}:2375:2375
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

@@ -63,8 +63,7 @@
          else generated_pocket_id_key.stdout }}
   no_log: true
 
-# The agent socket proxy binds to this address only, so the LAN never sees it.
-# Read at run time rather than committed: the repository is public.
+# Read at run time, not committed: this repository is public.
 - name: Read the docker-host tailnet address
   ansible.builtin.command:
     cmd: tailscale ip -4

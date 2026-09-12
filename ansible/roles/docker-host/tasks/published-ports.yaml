@@ -2,9 +2,7 @@
 # Docker-published ports bypass UFW's INPUT policy and must be filtered before
 # Docker's own FORWARD rules.
 
-# Tailscale's ACL is the primary control on the agent socket proxy. This pins
-# it a second time at the host firewall so one mistake in the tailnet policy
-# does not expose the Docker API to every node.
+# Second control behind the Tailscale ACL, in case that policy is wrong.
 - name: Read the ai-dev tailnet address
   ansible.builtin.command:
     cmd: "tailscale ip -4 {{ docker_agent_proxy_client }}"

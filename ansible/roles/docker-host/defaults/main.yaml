@@ -53,7 +53,6 @@ nfs_mounts:
     local_path: /mnt/audiobooks
     nfs_share: 10.77.20.101:/mnt/slow/media/audiobooks
 
-# Read-only Docker socket proxy for the ai-dev Hermes agent. Published on the
-# tailnet address only and pinned to this client in DOCKER-USER.
+# Read-only Docker socket proxy for the ai-dev Hermes agent.
 docker_agent_proxy_port: 2375
 docker_agent_proxy_client: ai-dev

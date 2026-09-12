@@ -90,8 +90,6 @@
   changed_when: false
   when: not ansible_check_mode
 
-# Tailnet egress is denied by default. Hermes needs exactly two read-only
-# peers; the blanket drop must survive alongside them.
 - name: Verify tailnet egress stays denied apart from the agent endpoints
   ansible.builtin.assert:
     that:
