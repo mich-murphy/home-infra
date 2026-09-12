@@ -1,0 +1,212 @@
+---
+# Hermes manages infrastructure and reads untrusted input (web pages via its
+# bundled browser, and container logs). It therefore runs as its own account so
+# that a compromised agent cannot reach the management user's GitHub
+# credentials, SSH keys, or coding-agent sessions.
+- name: Create the Hermes agent group
+  ansible.builtin.group:
+    name: "{{ ai_dev_hermes_user }}"
+    state: present
+
+- name: Create the Hermes agent user
+  ansible.builtin.user:
+    name: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    home: "{{ ai_dev_hermes_home }}"
+    shell: /bin/bash
+    create_home: true
+    password_lock: true
+
+# The management user's home is mode 0750 (common role). Hermes is outside that
+# group, so this is the control that keeps the agent away from the human's
+# credentials. Assert it rather than assume it.
+- name: Read the management user home directory state
+  ansible.builtin.stat:
+    path: "/home/{{ username }}"
+  register: ai_dev_management_home
+
+- name: Verify the Hermes user cannot read the management user's home
+  ansible.builtin.assert:
+    that:
+      - ai_dev_management_home.stat.mode is version('0750', '<=')
+      - ai_dev_management_home.stat.pw_name == username
+    fail_msg: >-
+      /home/{{ username }} must stay owner-private so the Hermes account cannot
+      read the management user's GitHub tokens, SSH keys, or agent sessions.
+
+- name: Keep the Hermes home directory owner-private
+  ansible.builtin.file:
+    path: "{{ ai_dev_hermes_home }}"
+    state: directory
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0750"
+
+- name: Ensure the Hermes SSH directory exists
+  ansible.builtin.file:
+    path: "{{ ai_dev_hermes_home }}/.ssh"
+    state: directory
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0700"
+
+# The human authenticates into the agent account; the agent holds no key that
+# reaches back the other way. Managed line by line, not as a whole file, so the
+# key Moshi's Easy Pair appends during pairing survives later runs.
+- name: Authorize the operator key for the Hermes account
+  ansible.builtin.lineinfile:
+    path: "{{ ai_dev_hermes_home }}/.ssh/authorized_keys"
+    regexp: >-
+      ^{{ (ssh_public_key.split()[:2] | join(' ')) | regex_escape }}(?:\s.*)?\s*$
+    line: "{{ ssh_public_key }}"
+    state: present
+    create: true
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0600"
+
+- name: Enable linger for persistent Hermes user services
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger {{ ai_dev_hermes_user }}"
+  args:
+    creates: "/var/lib/systemd/linger/{{ ai_dev_hermes_user }}"
+
+- name: Ensure the Hermes user-local executable directory exists
+  ansible.builtin.file:
+    path: "{{ ai_dev_hermes_home }}/.local/bin"
+    state: directory
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0755"
+
+# Provides the docker client for DOCKER_HOST queries against the docker-host
+# socket proxy. ai-dev must never run its own daemon, so it stays masked.
+- name: Install the Docker client
+  community.general.pacman:
+    name: docker
+    state: present
+
+- name: Mask the local Docker daemon and socket
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: false
+    masked: true
+    state: stopped
+  loop:
+    - docker.service
+    - docker.socket
+
+- name: Install the Hermes agent
+  ansible.builtin.shell:
+    cmd: >-
+      curl -fsSL https://hermes-agent.nousresearch.com/install.sh
+      | bash -s -- --skip-setup
+  args:
+    creates: "{{ ai_dev_hermes_home }}/.local/bin/hermes"
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+
+- name: Ensure the Hermes configuration directory exists
+  ansible.builtin.file:
+    path: "{{ ai_dev_hermes_home }}/.config/hermes"
+    state: directory
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0700"
+
+# Scoped credentials only. The Proxmox token carries PVEAuditor, the GitHub
+# token is resource-scoped to this repository with contents and pull-request
+# write, and the Docker endpoint is a read-only socket proxy. None of them
+# grant write access to a running host.
+- name: Deploy the Hermes scoped credential environment
+  ansible.builtin.copy:
+    content: |
+      DOCKER_HOST={{ ai_dev_hermes_docker_host }}
+      PROXMOX_ENDPOINT={{ ai_dev_hermes_proxmox_endpoint }}
+      {% if ai_dev_hermes_proxmox_credentials_present %}
+      PROXMOX_TOKEN_ID={{ hermes_proxmox_token_id }}
+      PROXMOX_TOKEN_SECRET={{ hermes_proxmox_token_secret }}
+      {% endif %}
+      {% if ai_dev_hermes_github_credentials_present %}
+      GH_TOKEN={{ hermes_github_token }}
+      GITHUB_TOKEN={{ hermes_github_token }}
+      {% endif %}
+    dest: "{{ ai_dev_hermes_home }}/.config/hermes/env"
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0600"
+  no_log: true
+
+- name: Report Hermes credentials still missing from the vault
+  ansible.builtin.debug:
+    msg: >-
+      Hermes is installed without
+      {{ _ai_dev_hermes_missing | join(' and ') }} access. Add the matching
+      variables to group_vars/secrets.yaml and re-run.
+  vars:
+    _ai_dev_hermes_missing: >-
+      {{ (['Proxmox'] if not ai_dev_hermes_proxmox_credentials_present else [])
+         + (['GitHub'] if not ai_dev_hermes_github_credentials_present else []) }}
+  when: _ai_dev_hermes_missing | length > 0
+
+- name: Load the scoped credentials into the Hermes login environment
+  ansible.builtin.copy:
+    content: |
+      # Managed by Ansible (ai-dev role). Scoped agent credentials.
+      if [ -r "$HOME/.config/hermes/env" ]; then
+          set -a
+          . "$HOME/.config/hermes/env"
+          set +a
+      fi
+      PATH="$HOME/.local/bin:$PATH"
+      export PATH
+    dest: "{{ ai_dev_hermes_home }}/.profile"
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0644"
+
+- name: Read the installed Hermes version
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/hermes"
+      - --version
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  register: ai_dev_hermes_version
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Verify the Hermes agent responds
+  ansible.builtin.assert:
+    that:
+      - ai_dev_hermes_version.stdout | length > 0
+    fail_msg: The Hermes agent did not report a version.
+  when: not ansible_check_mode
+
+- name: Read the local Docker daemon state
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - is-enabled
+      - docker.service
+  register: ai_dev_docker_daemon_state
+  changed_when: false
+  failed_when: false
+  when: not ansible_check_mode
+
+- name: Verify ai-dev runs no local Docker daemon
+  ansible.builtin.assert:
+    that:
+      - "'masked' in ai_dev_docker_daemon_state.stdout"
+    fail_msg: >-
+      ai-dev must not run a local Docker daemon; docker.service must stay
+      masked so the client only reaches the docker-host socket proxy.
+  when: not ansible_check_mode

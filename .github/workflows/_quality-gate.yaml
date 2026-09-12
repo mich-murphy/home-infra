@@ -58,6 +58,7 @@ jobs:
         env:
           ADMIN_PASSWORD: ci-placeholder
           ADMIN_USERNAME: ci-placeholder
+          AGENT_PROXY_BIND: 100.64.0.1
           CF_API_EMAIL: ci@example.invalid
           CF_DNS_API_TOKEN: ci-placeholder
           COLLABORA_ADMIN_PASSWORD: ci-placeholder

@@ -38,7 +38,13 @@ table inet filter {
     oifname "tailscale0" ip daddr 100.100.100.100 udp dport 53 accept
     oifname "tailscale0" ip daddr 100.100.100.100 tcp dport 53 accept
 
-    # Never initiate sessions to homelab or tailnet peers.
+    # Hermes reads the docker-host socket proxy and the Proxmox API. Both are
+    # read-only endpoints, and these are the only tailnet peers ai-dev may
+    # initiate sessions to.
+    oifname "tailscale0" ip daddr {{ ai_dev_docker_proxy_address }} tcp dport {{ ai_dev_docker_proxy_port }} accept
+    oifname "tailscale0" ip daddr {{ ai_dev_proxmox_api_address }} tcp dport {{ ai_dev_proxmox_api_port }} accept
+
+    # Never initiate sessions to any other homelab or tailnet peer.
     ip daddr { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10 } drop
 
     # Public IPv4 egress remains available for updates and provider APIs.

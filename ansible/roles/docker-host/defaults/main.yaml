@@ -27,6 +27,7 @@ docker_bootstrap_dir: /srv/init
 docker_portainer_stacks_dir: /srv/portainer
 docker_bootstrap_containers:
   - docker-socket-proxy
+  - docker-socket-proxy-agent
   - pocket-id
   - portainer
   - traefik
@@ -51,3 +52,8 @@ nfs_mounts:
   - name: audiobooks
     local_path: /mnt/audiobooks
     nfs_share: 10.77.20.101:/mnt/slow/media/audiobooks
+
+# Read-only Docker socket proxy for the ai-dev Hermes agent. Published on the
+# tailnet address only and pinned to this client in DOCKER-USER.
+docker_agent_proxy_port: 2375
+docker_agent_proxy_client: ai-dev

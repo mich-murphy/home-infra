@@ -63,6 +63,24 @@
          else generated_pocket_id_key.stdout }}
   no_log: true
 
+# The agent socket proxy binds to this address only, so the LAN never sees it.
+# Read at run time rather than committed: the repository is public.
+- name: Read the docker-host tailnet address
+  ansible.builtin.command:
+    cmd: tailscale ip -4
+  register: docker_host_tailnet_address
+  changed_when: false
+  check_mode: false
+
+- name: Verify the docker-host tailnet address resolved
+  ansible.builtin.assert:
+    that:
+      - docker_host_tailnet_address.stdout_lines | length == 1
+      - docker_host_tailnet_address.stdout | trim is match('^100\.')
+    fail_msg: >-
+      docker-host must report exactly one Tailscale IPv4 address; the agent
+      socket proxy must never fall back to binding every interface.
+
 - name: Configure bootstrap stack environment
   ansible.builtin.copy:
     content: |
@@ -70,6 +88,7 @@
       CF_API_EMAIL={{ CF_API_EMAIL }}
       ENCRYPTION_KEY={{ pocket_id_encryption_key }}
       MAXMIND_LICENSE_KEY={{ MAXMIND_LICENSE_KEY }}
+      AGENT_PROXY_BIND={{ docker_host_tailnet_address.stdout | trim }}
     dest: "{{ docker_bootstrap_dir }}/.env"
     owner: root
     group: root

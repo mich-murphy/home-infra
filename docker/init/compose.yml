@@ -52,6 +52,66 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Second proxy instance for the ai-dev Hermes agent. Kept separate from the
+  # Traefik proxy above so that widening the agent's read surface never widens
+  # Traefik's. POST=0 refuses every write route, including exec and create.
+  # Published only on docker-host's tailnet address (AGENT_PROXY_BIND, written
+  # into .env by the docker-host role) so the LAN cannot see it at all.
+  docker-socket-proxy-agent:
+    image: ghcr.io/tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    container_name: docker-socket-proxy-agent
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    # entrypoint renders haproxy.cfg into /tmp; haproxy writes its pidfile to /run
+    tmpfs:
+      - /tmp
+      - /run
+    networks:
+      - docker-socket-proxy-agent
+    environment:
+      # Read-only diagnostics: ps, logs, stats, inspect, events, images,
+      # networks, volumes. POST=0 is the write barrier.
+      - CONTAINERS=1
+      - EVENTS=1
+      - IMAGES=1
+      - INFO=1
+      - NETWORKS=1
+      - PING=1
+      - VERSION=1
+      - VOLUMES=1
+      - POST=0
+      # Explicit denials; the image defaults these off, but the agent's
+      # blast radius is worth stating rather than inheriting.
+      - EXEC=0
+      - BUILD=0
+      - COMMIT=0
+      - CONFIGS=0
+      - DISTRIBUTION=0
+      - NODES=0
+      - PLUGINS=0
+      - SECRETS=0
+      - SERVICES=0
+      - SESSION=0
+      - SWARM=0
+      - SYSTEM=0
+      - TASKS=0
+    ports:
+      # Tailnet address only; reachability is further pinned to ai-dev in
+      # DOCKER-USER by the docker-host role.
+      - ${AGENT_PROXY_BIND}:2375:2375
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2375/version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
   traefik:
     image: traefik:v3.7.13@sha256:f86a2cab1b5c649070c49f883c743dd32d8485a56e3368c5f93b9e91f1e91259
     container_name: traefik
@@ -145,3 +205,6 @@ networks:
   docker-socket-proxy:
     name: docker-socket-proxy
     internal: true
+  # Not internal: this proxy publishes a port on the tailnet address.
+  docker-socket-proxy-agent:
+    name: docker-socket-proxy-agent

@@ -36,6 +36,41 @@
   loop_control:
     label: "{{ item.port }}/{{ item.proto }}"
 
+- name: Verify the agent socket proxy is pinned to its single client
+  ansible.builtin.assert:
+    that:
+      - >-
+        docker_published_port_policy.stdout_lines
+        | select('search', '^-A DOCKER-USER -s .* --ctorigdstport ' ~ docker_agent_proxy_port ~ ' --ctdir ORIGINAL -j RETURN$')
+        | list | length == 1
+      - >-
+        docker_published_port_policy.stdout_lines
+        | select('search', '^-A DOCKER-USER -p tcp .*--ctorigdstport ' ~ docker_agent_proxy_port ~ ' --ctdir ORIGINAL -j DROP$')
+        | list | length == 1
+    fail_msg: >-
+      The agent socket proxy port must admit exactly one source address and
+      drop every other client.
+
+- name: Read the agent socket proxy bind address
+  ansible.builtin.command:
+    argv:
+      - docker
+      - inspect
+      - "--format={{ '{{json .HostConfig.PortBindings}}' }}"
+      - docker-socket-proxy-agent
+  register: docker_agent_proxy_bindings
+  changed_when: false
+
+- name: Verify the agent socket proxy never binds every interface
+  ansible.builtin.assert:
+    that:
+      - "'0.0.0.0' not in docker_agent_proxy_bindings.stdout"
+      - "'\"HostIp\":\"\"' not in docker_agent_proxy_bindings.stdout"
+      - "'100.' in docker_agent_proxy_bindings.stdout"
+    fail_msg: >-
+      The agent socket proxy must publish only on the docker-host tailnet
+      address, never on all interfaces.
+
 - name: Verify Docker published-port policy ends fail-closed
   ansible.builtin.assert:
     that:

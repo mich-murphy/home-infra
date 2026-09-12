@@ -27,3 +27,8 @@
 
 - name: Install Neovim configuration
   ansible.builtin.import_tasks: neovim.yaml
+
+- name: Provision the isolated Hermes agent account
+  ansible.builtin.import_tasks: hermes.yaml
+  tags:
+    - hermes
