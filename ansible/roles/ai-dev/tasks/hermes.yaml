@@ -45,17 +45,20 @@
     mode: "0700"
 
 # lineinfile, not copy: keeps the key Moshi adds when pairing.
-- name: Authorize the operator key for the Hermes account
+- name: Authorize the operator keys for the Hermes account
   ansible.builtin.lineinfile:
     path: "{{ ai_dev_hermes_home }}/.ssh/authorized_keys"
     regexp: >-
-      ^{{ (ssh_public_key.split()[:2] | join(' ')) | regex_escape }}(?:\s.*)?\s*$
-    line: "{{ ssh_public_key }}"
+      ^{{ (item.split()[:2] | join(' ')) | regex_escape }}(?:\s.*)?\s*$
+    line: "{{ item }}"
     state: present
     create: true
     owner: "{{ ai_dev_hermes_user }}"
     group: "{{ ai_dev_hermes_user }}"
     mode: "0600"
+  loop: "{{ ai_dev_hermes_authorized_keys }}"
+  loop_control:
+    label: "{{ item.split()[2] | default('operator key') }}"
 
 - name: Enable linger for persistent Hermes user services
   ansible.builtin.command:

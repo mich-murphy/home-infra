@@ -189,9 +189,17 @@ Each account runs its own Herdr and Moshi, both installed by the role.
 Reaching the phone from the agent account means running the same pairing flow
 again as `hermes`, not copying a key across; that separation is intentional.
 
-Authorizing the operator key grants a human entry into the agent account. It
+Authorizing the operator keys grants a human entry into the agent account. It
 grants the agent nothing: no key on the agent's side reaches the management
 user, whose home stays mode `0750`.
+
+Two keys are authorized, and the second one matters. SSH offers the keys held
+in the 1Password agent before any key sitting on disk, and `MaxAuthTries` is
+6. Authorizing only the on-disk operator key means the agent's six keys are
+offered and refused first, and the connection is dropped as
+`Too many authentication failures` before the right key is ever tried.
+Authorizing a key the agent holds avoids relying on client-side
+`IdentitiesOnly`.
 
 ### First run
 
