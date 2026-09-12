@@ -84,11 +84,11 @@ ai-dev-maintenance status
 ```
 
 The update command runs the official stable installers for Claude Code, Codex,
-Pi, Herdr, and Moshi independently, reconciles the declared Pi packages,
-reconciles Herdr before Moshi integrations, and reports all failures together.
-Its implementation and ai-dev package inventory live in the Ansible role that
-deploys it. Hermes is deliberately absent: it belongs to the separate `hermes`
-account described below, not to the management user's toolchain.
+Pi, Herdr, and Moshi independently, reconciles Herdr before Moshi
+integrations, and reports all failures together. Its implementation lives in
+the Ansible role that deploys it. Hermes is deliberately absent: it belongs to
+the separate `hermes` account described below, not to the management user's
+toolchain.
 The status command is read-only. Ansible does not copy SSH keys, OAuth sessions,
 or API keys. Authenticate each tool interactively:
 
