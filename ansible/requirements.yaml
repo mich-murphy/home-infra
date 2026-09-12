@@ -4,6 +4,6 @@ collections:
     version: "12.6.5"
   - name: kewlfft.aur
     version: "0.13.0"
-  # MikroTik RouterOS API (routeros role)
+  # Used by the routeros role.
   - name: community.routeros
     version: "3.22.0"
