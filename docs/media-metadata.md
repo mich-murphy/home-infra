@@ -58,11 +58,11 @@ matched yet; "Refresh metadata" on the item matches it from the folder id.
 ## File integrity
 
 Radarr and Sonarr validate only container headers on import, so body-level
-corruption imports cleanly. The `checkrr` stack (see
-[docs/checkrr.md](checkrr.md)) runs a full demux check on new files and hands
-corrupt ones back to Radarr or Sonarr for re-download. To fix one by hand: delete the episode or movie file in the app,
+corruption imports cleanly. There is no automated integrity scan; a corrupt
+file surfaces as playback failure. To fix one by hand: delete the episode or
+movie file in the app,
 mark the grab as failed in History (this blocklists the release) and search
-again, then re-run the demux check on the replacement.
+again, then verify the replacement plays through.
 
 ## Jellyfin container mounts
 

@@ -36,56 +36,9 @@ services:
     # CRON_SCHEDULE), and the image does not ship a health-check script.
     restart: unless-stopped
 
-  checkrr:
-    image: aetaric/checkrr:3.6.1@sha256:c817e081e9397c240e5b13b09363fe26c9f94248489d3b4f0279e67495b1f12e
-    container_name: checkrr
-    security_opt:
-      - no-new-privileges:true
-    # Upstream's image has no non-root user, so this runs as root; cap_drop
-    # ALL, no-new-privileges and a read-only root filesystem contain it. The
-    # only writable paths are the checkrr-data volume and the /tmp tmpfs; the
-    # media library is bind-mounted read-only. See docs/checkrr.md.
-    cap_drop:
-      - ALL
-    read_only: true
-    tmpfs:
-      - /tmp
-    networks:
-      - proxy
-    environment:
-      - TZ=${TZ}
-      - RADARR_API_KEY=${RADARR_API_KEY}
-      - SONARR_API_KEY=${SONARR_API_KEY}
-    # Checkrr has no env-var config support, so the entrypoint renders the
-    # template with the API keys into tmpfs at start (docs/checkrr.md).
-    entrypoint: ["/bin/sh", "/config/entrypoint.sh"]
-    volumes:
-      - checkrr-data:/data
-      - ./checkrr.yaml.tpl:/config/checkrr.yaml.tpl:ro
-      - ./checkrr-entrypoint.sh:/config/entrypoint.sh:ro
-      - type: bind
-        source: /mnt/data/media
-        target: /data/media
-        read_only: true
-        bind:
-          propagation: rslave
-    # Checkrr checks one file at a time; these limits cap ffmpeg's CPU/RAM
-    # during a full decode pass so other containers and the NFS server are
-    # not starved, and cpu_shares yields to every other container.
-    deploy:
-      resources:
-        limits:
-          cpus: "2.0"
-          memory: 1g
-    cpu_shares: 512
-    # No healthcheck: cron-scheduled batch job with no listening port.
-    restart: unless-stopped
-
 volumes:
   recyclarr-data:
     name: recyclarr-data
-  checkrr-data:
-    name: checkrr-data
 
 networks:
   proxy:
