@@ -71,23 +71,22 @@
     group: "{{ ai_dev_hermes_user }}"
     mode: "0755"
 
-# Installed for the client only; ai-dev must not run a daemon.
-- name: Install the Docker client
+# Hermes reads the socket proxy over plain HTTP, so no client is needed here.
+# Absence beats masking: a mask is one systemctl away from being undone.
+- name: Ensure ai-dev carries no container runtime
   community.general.pacman:
-    name: docker
-    state: present
+    name: "{{ ai_dev_forbidden_container_packages }}"
+    state: absent
 
-# Check mode does not really install the package, so the units do not exist.
-- name: Mask the local Docker daemon and socket
-  ansible.builtin.systemd_service:
-    name: "{{ item }}"
-    enabled: false
-    masked: true
-    state: stopped
+# Masks left by an earlier revision that installed the client and suppressed
+# its daemon. The units are gone with the package.
+- name: Remove masks for the departed Docker units
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ item }}"
+    state: absent
   loop:
     - docker.service
     - docker.socket
-  when: not ansible_check_mode
 
 - name: Install the Hermes agent
   ansible.builtin.shell:
@@ -186,22 +185,22 @@
     fail_msg: The Hermes agent did not report a version.
   when: not ansible_check_mode
 
-- name: Read the local Docker daemon state
+- name: Read the installed container runtime packages
   ansible.builtin.command:
     argv:
-      - /usr/bin/systemctl
-      - is-enabled
-      - docker.service
-  register: ai_dev_docker_daemon_state
+      - /usr/bin/pacman
+      - --query
+      - --quiet
+  register: ai_dev_installed_packages
   changed_when: false
-  failed_when: false
   when: not ansible_check_mode
 
-- name: Verify ai-dev runs no local Docker daemon
+- name: Verify ai-dev carries no container runtime
   ansible.builtin.assert:
     that:
-      - "'masked' in ai_dev_docker_daemon_state.stdout"
+      - ai_dev_installed_packages.stdout_lines
+        | select('in', ai_dev_forbidden_container_packages) | list | length == 0
     fail_msg: >-
-      ai-dev must not run a local Docker daemon; docker.service must stay
-      masked so the client only reaches the docker-host socket proxy.
+      ai-dev must never be able to run containers; Hermes reads the
+      docker-host socket proxy over HTTP instead.
   when: not ansible_check_mode

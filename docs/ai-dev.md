@@ -128,9 +128,16 @@ Ansible owns the account, installs the agent with `--skip-setup`, and deploys
 its credentials. The installer clones `NousResearch/hermes-agent` into
 `~/.hermes/hermes-agent`, builds a uv virtualenv, links `~/.local/bin/hermes`,
 and pulls a Hermes-managed Node and a Playwright browser, so the first run is
-long and the install is the largest on the VM. ai-dev installs the Docker
-client for `DOCKER_HOST` queries but masks `docker.service` and
-`docker.socket`; it must never run a daemon of its own.
+long and the install is the largest on the VM.
+
+ai-dev carries no Docker client. The socket proxy speaks plain HTTP, so the
+agent queries it directly, and `DOCKER_HOST` records the endpoint. Installing
+the client would drag in `containerd` and `runc`, about 100 MiB of container
+runtime on the one guest that must never run containers; masking the daemon
+afterwards only suppresses that, since a mask is one `systemctl unmask` away
+from being undone. The role therefore asserts those packages stay absent.
+The trade-off is `GET /containers/{id}/logs`, which returns a multiplexed
+stream the CLI would otherwise de-multiplex.
 
 ### Access tiers
 
