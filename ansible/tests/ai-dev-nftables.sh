@@ -18,6 +18,7 @@ grep -q 'nft -c -f /run/ai-dev-nftables-root.conf' "${tasks}"
 grep -q 'ai_dev_allow_legacy_nft_migration' "${tasks}"
 grep -q "'tailscale0' in nft_legacy" "${tasks}" && exit 1
 grep -q 'ExecReload=' "${tasks}"
+grep -q '^      RemainAfterExit=yes$' "${tasks}"
 grep -q 'cat /etc/nftables.d/ai-dev.nft' "${reload_helper}"
 grep -q 'cat /etc/nftables.conf' "${reload_helper}" && exit 1
 grep -q 'delete table inet ai_dev' "${reload_helper}"

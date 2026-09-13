@@ -300,6 +300,7 @@
     dest: /etc/systemd/system/nftables.service.d/ai-dev.conf
     content: |
       [Service]
+      RemainAfterExit=yes
       ExecStop=
       ExecStop=/bin/sh -c '/usr/bin/nft delete table inet ai_dev 2>/dev/null || true'
       ExecReload=
