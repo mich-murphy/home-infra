@@ -21,6 +21,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.miniflux.rule=Host(`miniflux.local.elmurphy.com`)
       - traefik.http.routers.miniflux.tls=true
+      - traefik.http.routers.miniflux.middlewares=kds-media-only@file
       - traefik.http.services.miniflux.loadbalancer.server.port=8080
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthcheck"]

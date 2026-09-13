@@ -22,7 +22,8 @@ to be absent from the production bridge.
    /user add name=<api-user> group=<api-group> password=<secret>
    ```
 
-   Put `routeros_api_user` / `routeros_api_password` in the vault (`just edit`).
+   Put `routeros_api_user` / `routeros_api_password` in the vault with
+   `ansible-vault edit group_vars/secrets.yaml --vault-password-file .vaultpass`.
 2. Confirm the interface names, bridge name and management addresses in
    `group_vars/routeros.yaml` against the live router.
 3. **Out-of-band access staged before any VLAN-filtering work.** The role pulls
@@ -34,11 +35,12 @@ to be absent from the production bridge.
 
 ## Normal run (strict steady state)
 
-Strict mode is the variable default, so both `just routeros` and a direct
-`ansible-playbook run.yaml --limit routeros` converge to the production posture:
+Strict mode is the variable default, so a direct
+`ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros`
+converges to the production posture:
 
 ```sh
-just routeros
+ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros
 ```
 
 It maintains: the out-of-band port, VLAN interfaces + per-VLAN DHCP, DMZ physical
@@ -65,19 +67,21 @@ cd ansible
 ansible-playbook tests/routeros-firewall-policy.yaml
 ```
 
-To run only the live checks:
+To run only the live checks, use the role's `verify` tags:
 
 ```sh
-just routeros-verify
+ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags verify
 ```
 
 ## Scaffold / Recovery Run
 
-`just routeros-scaffold` explicitly overrides both strict defaults to false.
+A scaffold/recovery run explicitly overrides both strict defaults to false.
 Use it only for bootstrap or recovery work before strict mode is re-enabled:
 
 ```sh
-just routeros-scaffold
+ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros \
+  -e routeros_enable_vlan_filtering=false \
+  -e routeros_enable_default_drop=false
 ```
 
 ⚠️ A 2026-06-03 apply that enabled vlan-filtering with MGMT bound to the raw bridge
@@ -85,11 +89,8 @@ caused a full management lockout that needed a physical reset. Strict mode is no
 validated, but any scaffold/recovery work should still start from verified OOB access
 (prereq 3).
 
-To verify a scaffold/non-strict state only:
-
-```sh
-just routeros-verify-scaffold
-```
+To verify a scaffold/non-strict state only, use the same playbook with
+`--tags verify` and the two strict-mode overrides above.
 
 Also inspect `/interface bridge vlan print`, `/interface bridge port print`,
 `/ip dhcp-server print`, and `/ip firewall filter print` if a check fails.

@@ -12,9 +12,10 @@ locals {
   proxmox_creds = {
     username = local.scp["scp username"].value
     password = local.scp["scp password"].value
-    # use an ephemeral/tagged single-use key; the previous shared key leaked into
-    # cloud-init logs and must be rotated in the Tailscale admin console
-    tailscale_auth_key = local.scp["tailscale authkey"].value
+    # Each guest has a distinct ephemeral/tagged single-use key. These fields
+    # are created manually in 1Password; Terraform only reads them.
+    tailscale_auth_key_docker_host = local.scp["tailscale docker-host authkey"].value
+    tailscale_auth_key_ai_dev      = local.scp["tailscale ai-dev authkey"].value
   }
 }
 
@@ -96,7 +97,7 @@ resource "local_sensitive_file" "cloud_init_agents" {
   content = sensitive(templatefile("cloud_init.tftpl", {
     hostname           = "docker-host"
     os_family          = "debian"
-    tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
+    tailscale_auth_key = local.proxmox_creds.tailscale_auth_key_docker_host
   }))
   filename        = "${path.module}/files/agents.cfg"
   file_permission = "0600"
@@ -291,7 +292,7 @@ resource "local_sensitive_file" "cloud_init_ai_dev" {
   content = sensitive(templatefile("cloud_init.tftpl", {
     hostname           = "ai-dev"
     os_family          = "arch"
-    tailscale_auth_key = local.proxmox_creds.tailscale_auth_key
+    tailscale_auth_key = local.proxmox_creds.tailscale_auth_key_ai_dev
   }))
   filename        = "${path.module}/files/ai-dev.cfg"
   file_permission = "0600"
@@ -356,9 +357,6 @@ resource "proxmox_virtual_environment_vm" "ai_dev" {
     }
     ip_config {
       ipv4 {
-        address = "dhcp"
-      }
-      ipv6 {
         address = "dhcp"
       }
     }

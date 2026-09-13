@@ -61,8 +61,7 @@ Its mobile workflow and deployment checks are documented in
 ├── docker/          # Bootstrap and Portainer-owned Compose definitions
 ├── network/         # Shared non-secret VLAN, subnet, and address inventory
 ├── docs/            # Documentation
-├── flake.nix        # Nix dev shell
-└── justfile         # Task runner
+└── flake.nix        # Nix dev shell
 ```
 
 ## Prerequisites
@@ -70,7 +69,7 @@ Its mobile workflow and deployment checks are documented in
 - [Nix](https://nixos.org/) with flakes enabled (provides all tooling via `flake.nix`)
 - [direnv](https://direnv.net/) (auto-loads the Nix dev shell)
 
-The dev shell includes Terraform, Ansible, Docker Compose, ShellCheck, `just`,
+The dev shell includes Terraform, Ansible, Docker Compose, ShellCheck, `yq`,
 Actionlint, and Alejandra.
 
 ## Quick Start
@@ -79,24 +78,25 @@ Actionlint, and Alejandra.
 # Enter the dev shell (automatic with direnv, or manually)
 nix develop
 
-# Terraform
-just init       # terraform init
-just apply      # terraform apply
-just destroy    # terraform destroy
-just network-init && just network-apply   # UniFi VLAN-only networks + WLANs
+# Terraform (restrict generated state and cloud-init artifacts)
+(umask 077; cd terraform && terraform init)
+(umask 077; cd terraform && terraform apply)
+(umask 077; cd terraform && terraform destroy)
+(umask 077; cd terraform/network && terraform init)
+(umask 077; cd terraform/network && terraform apply -parallelism=1)
 
 # Ansible
-just reqs                   # install galaxy requirements
-just run docker-host        # run playbook against a host
-just run unifi-controller   # configure UniFi OS Server VM
-just routeros               # steady-state strict RouterOS config
-just edit                   # edit encrypted vault secrets
+(cd ansible && ansible-galaxy install -r requirements.yaml)
+(cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit docker-host)
+(cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit unifi-controller)
+(cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags services,oob,vlans,dmz,dhcp,firewall,bridge,vlan-filtering,default-drop,verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true)
+(cd ansible && ansible-vault edit group_vars/secrets.yaml --vault-password-file .vaultpass)
 ```
 
 ## Terraform
 
 Provisions VMs on Proxmox using the [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox) provider. Secrets sourced from 1Password via the `onepassword` provider.
-Terraform state is secret-bearing. Run Terraform through the `just` recipes so local state and generated cloud-init files are created with a restrictive umask.
+Terraform state is secret-bearing. Run Terraform in a shell with `umask 077` so local state and generated cloud-init files are created with restrictive permissions.
 
 | VM | ID | Purpose |
 | --- | --- | --- |
@@ -132,9 +132,10 @@ Configures provisioned hosts and the router with these primary roles:
 
 Secrets are managed via ansible-vault (`ansible/group_vars/secrets.yaml`).
 
-RouterOS strict mode is the current steady state. `just routeros` maintains the
-strict config; `just routeros-scaffold` is only for pre-strict bootstrap or
-recovery work. See `ansible/roles/routeros/README.md`.
+RouterOS strict mode is the current steady state. The direct RouterOS command
+above maintains the strict config; recovery explicitly sets both
+`routeros_enable_vlan_filtering=false` and `routeros_enable_default_drop=false`.
+See `ansible/roles/routeros/README.md`.
 
 The `docker-host` role installs Docker Engine and Compose from Docker's stable
 Ubuntu repository, prepares NFS storage, enforces published-port policy, and
@@ -143,7 +144,8 @@ deploys the Ansible-owned bootstrap stack.
 ## Network Operations
 
 Apply/verify order for a fresh rebuild is manual: root Terraform → start VM 111
-→ `just run unifi-controller` → `terraform/network` → `just routeros` → stop
+→ run the direct Ansible command above for `unifi-controller` → run Terraform
+from `terraform/network` → run the direct strict RouterOS command above → stop
 VM 111. Shared non-secret network facts live in `network/inventory.yaml` and are
 consumed by both Terraform roots and the RouterOS play.
 

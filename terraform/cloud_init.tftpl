@@ -10,7 +10,6 @@ write_files:
     owner: "root:root"
     permissions: "0600"
     content: "${tailscale_auth_key}"
-
 %{ if os_family == "debian" ~}
 package_update: true
 packages:
@@ -23,7 +22,15 @@ runcmd:
   - apt-get update
   - apt-get install -y tailscale
   - systemctl enable --now tailscaled
-  - tailscale up --ssh --hostname=${hostname} --auth-key=file:/etc/tailscale/authkey && rm -f /etc/tailscale/authkey
+  - |
+      tailscale_status=0
+      tailscale up --ssh --hostname=${hostname} --auth-key=file:/etc/tailscale/authkey || tailscale_status=$?
+      cleanup_status=0
+      rm -f /etc/tailscale/authkey || cleanup_status=$?
+      if [ "$${tailscale_status}" -ne 0 ]; then
+        exit "$${tailscale_status}"
+      fi
+      exit "$${cleanup_status}"
 %{ endif ~}
 %{ if os_family == "arch" ~}
 packages:
@@ -36,5 +43,13 @@ runcmd:
   - pacman -Syu --noconfirm
   - pacman -S --noconfirm tailscale
   - systemctl enable --now tailscaled
-  - tailscale up --ssh=false --hostname=${hostname} --advertise-tags=tag:ai-dev --auth-key=file:/etc/tailscale/authkey && rm -f /etc/tailscale/authkey
+  - |
+      tailscale_status=0
+      tailscale up --ssh=false --hostname=${hostname} --advertise-tags=tag:ai-dev --auth-key=file:/etc/tailscale/authkey || tailscale_status=$?
+      cleanup_status=0
+      rm -f /etc/tailscale/authkey || cleanup_status=$?
+      if [ "$${tailscale_status}" -ne 0 ]; then
+        exit "$${tailscale_status}"
+      fi
+      exit "$${cleanup_status}"
 %{ endif ~}

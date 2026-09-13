@@ -31,7 +31,16 @@
       {% for entry in docker_published_ports %}
       -A DOCKER-USER -i {{ docker_external_interface }} -p {{ entry.proto }} -m conntrack --ctdir ORIGINAL --ctorigdstport {{ entry.port }} -j RETURN
       {% endfor %}
-      -A DOCKER-USER -s {{ docker_agent_proxy_client_address.stdout | trim }} -p tcp -m conntrack --ctdir ORIGINAL --ctorigdstport {{ docker_agent_proxy_port }} -j RETURN
+      {% for entry in docker_tailscale_fallback_ports %}
+      {{ '-A DOCKER-USER -i tailscale0 -s 100.64.0.0/10 -p ' ~
+         entry.proto ~
+         ' -m conntrack --ctdir ORIGINAL --ctorigdstport ' ~
+         entry.port ~ ' -j RETURN' }}
+      {% endfor %}
+      {{ '-A DOCKER-USER -s ' ~
+         (docker_agent_proxy_client_address.stdout | trim) ~
+         ' -p tcp -m conntrack --ctdir ORIGINAL --ctorigdstport ' ~
+         docker_agent_proxy_port ~ ' -j RETURN' }}
       -A DOCKER-USER -p tcp -m conntrack --ctdir ORIGINAL --ctorigdstport {{ docker_agent_proxy_port }} -j DROP
       -A DOCKER-USER -i {{ docker_external_interface }} -m conntrack --ctstate NEW -j DROP
       -A DOCKER-USER -j RETURN

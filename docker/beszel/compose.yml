@@ -17,6 +17,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.beszel.rule=Host(`beszel.local.elmurphy.com`)
       - traefik.http.routers.beszel.tls=true
+      - traefik.http.routers.beszel.middlewares=kds-media-only@file
       - traefik.http.services.beszel.loadbalancer.server.port=8090
     healthcheck:
       test: ["CMD", "/beszel", "health", "--url", "http://127.0.0.1:8090"]

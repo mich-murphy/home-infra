@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+apply_file=$(mktemp)
+trap 'rm -f -- "${apply_file}"' EXIT
+if /usr/bin/nft list table inet ai_dev >/dev/null 2>&1; then
+  printf '%s\n' 'delete table inet ai_dev' >>"${apply_file}"
+fi
+cat /etc/nftables.d/ai-dev.nft >>"${apply_file}"
+/usr/bin/nft -c -f "${apply_file}"
+/usr/bin/nft -f "${apply_file}"

@@ -41,6 +41,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.local.elmurphy.com`)
       - traefik.http.routers.qbittorrent.tls=true
+      - traefik.http.routers.qbittorrent.middlewares=kds-media-only@file
       - traefik.http.services.qbittorrent.loadbalancer.server.port=8080
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/"]
@@ -74,6 +75,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.qbitwebui.rule=Host(`qbitwebui.local.elmurphy.com`)
       - traefik.http.routers.qbitwebui.tls=true
+      - traefik.http.routers.qbitwebui.middlewares=kds-media-only@file
       - traefik.http.services.qbitwebui.loadbalancer.server.port=3000
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
@@ -117,6 +119,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.local.elmurphy.com`)
       - traefik.http.routers.sabnzbd.tls=true
+      - traefik.http.routers.sabnzbd.middlewares=kds-media-only@file
       - traefik.http.services.sabnzbd.loadbalancer.server.port=8080
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/"]

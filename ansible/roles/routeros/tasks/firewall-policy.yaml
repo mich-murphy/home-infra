@@ -117,14 +117,18 @@
         comment: "KDS drop DoQ (managed: routeros role)"
       - chain: forward
         src-address: "{{ _net.dflt }}"
-        dst-address: "{{ _net.srv }}"
+        dst-address: "{{ routeros_docker_host_srv_ip }}"
+        protocol: tcp
+        dst-port: 443
         action: accept
-        comment: "DFLT -> SRV services (managed: routeros role)"
+        comment: "DFLT -> Docker host HTTPS (managed: routeros role)"
       - chain: forward
         src-address: "{{ _net.kds }}"
-        dst-address: "{{ _net.srv }}"
+        dst-address: "{{ routeros_docker_host_srv_ip }}"
+        protocol: tcp
+        dst-port: 443
         action: accept
-        comment: "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)"
+        comment: "KDS -> Docker host media HTTPS (managed: routeros role)"
       - chain: forward
         src-address: "{{ _net.srv }}"
         dst-address: "{{ routeros_unifi_ctrl }}"

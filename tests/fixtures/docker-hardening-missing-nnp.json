@@ -1,0 +1,7 @@
+{
+  "services": {
+    "traefik": {
+      "security_opt": []
+    }
+  }
+}

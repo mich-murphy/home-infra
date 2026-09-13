@@ -21,6 +21,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.immich.rule=Host(`immich.local.elmurphy.com`)
       - traefik.http.routers.immich.tls=true
+      - traefik.http.routers.immich.middlewares=kds-media-only@file
       - traefik.http.services.immich.loadbalancer.server.port=2283
     depends_on:
       redis:

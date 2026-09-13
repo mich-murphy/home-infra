@@ -36,6 +36,31 @@
   loop_control:
     label: "{{ item.port }}/{{ item.proto }}"
 
+- name: Verify direct fallback ports require Tailscale ingress
+  ansible.builtin.assert:
+    that:
+      - _fallback_returns | length == 1
+      - _fallback_returns | select('search', ' -i tailscale0 ') | list | length == 1
+      - _fallback_returns | select('search', ' -s 100\\.64\\.0\\.0/10 ') | list | length == 1
+      - _fallback_returns | select('search', ' --ctdir ORIGINAL ') | list | length == 1
+      - >-
+        docker_published_port_policy.stdout_lines
+        | select('search', ' -i ' ~ docker_external_interface ~ ' .*--ctstate NEW -j DROP$')
+        | list | length == 1
+    fail_msg: >-
+      Direct fallback {{ item.port }}/{{ item.proto }} must have exactly one
+      allow rule, restricted to tailscale0 and the tailnet IPv4 range; unlisted
+      new traffic on the external interface must remain dropped.
+  vars:
+    _fallback_returns: >-
+      {{ docker_published_port_policy.stdout_lines
+         | select('search', ' -p ' ~ item.proto ~ ' ')
+         | select('search', ' --ctorigdstport ' ~ item.port ~ ' ')
+         | select('search', ' -j RETURN$') | list }}
+  loop: "{{ docker_tailscale_fallback_ports }}"
+  loop_control:
+    label: "{{ item.port }}/{{ item.proto }}"
+
 - name: Verify the agent socket proxy is pinned to its single client
   ansible.builtin.assert:
     that:

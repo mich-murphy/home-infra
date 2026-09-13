@@ -67,6 +67,12 @@ environment block, so any secret passed through a Compose `environment:` entry
 is readable through it. Moving those values out of the environment is the only
 fix; no proxy setting achieves it.
 
+The router permits DFLT and KDS to the Docker host only on TCP 443. Traefik's
+`kds-media-only` IP allow-list middleware is attached to every non-media router,
+including the TrueNAS, Portainer, and dashboard routes; only Plex and Jellyfin
+are intentionally reachable from KDS. Jellyfin's direct TCP 8096 fallback is
+allow-listed for the Tailscale range only, not DFLT or KDS.
+
 ## Removing a stack
 
 Deleting a Compose directory does not decommission its Portainer stack: remove

@@ -2,7 +2,9 @@
 
 TrueNAS is not managed by IaC. Changes are applied through the UI or API and
 recorded here; this file is the system of record for storage configuration.
-State below was verified live on 2026-06-13 (TrueNAS SCALE 25.04).
+TrueNAS export and service endpoint state was verified live on 2026-09-13
+(TrueNAS 25.04.2.6). Pool and dataset metrics below remain the prior
+2026-06-13 audit unless explicitly noted; this update did not re-audit them.
 
 ## Verified current state
 
@@ -57,16 +59,19 @@ the special-vdev opportunity.
 
 ### Shares and services
 
-- NFS exports: `media`, `photos`, `media/music`, `media/audiobooks`,
-  `owncloud`, and `backups/proxmox` (restricted to the hypervisor, `mapall` to
-  the `backups` user). The `owncloud` dataset export is named "Nextcloud data
-  storage", restricted to docker-host, and maps all requests to the dedicated
-  `nextcloud` user.
-- The only active NFS client is docker-host, NFSv4.2 with
-  1M rsize/wsize — matching the 1M recordsize, as recommended. The
-  Compose services use the same hard NFSv4.2 mount policy.
-- NFS server threads: **2**; revisit only if concurrent application I/O
-  saturates them.
+- NFS is v4-only, with `allow_nonroot=true` and **2** server threads. The
+  effective export options are `sec=sys,rw,root_squash,all_squash`, mapping
+  media to UID/GID 1215, photos to 1210, Nextcloud data (`owncloud`) to 1205,
+  and backups to 1225. The `owncloud` dataset export is named "Nextcloud data
+  storage" and maps all requests to the dedicated `nextcloud` user.
+- Export host restrictions currently set `hosts=[10.77.20.246]` for media,
+  photos, music, audiobooks, and `owncloud`; `backups/proxmox` is restricted to
+  `hosts=[10.77.1.100]`. Export `networks` fields are empty. Removal of the
+  authorized legacy Talos host `10.77.20.20` was completed for export IDs
+  1 (media), 4 (photos), 7 (music), and 8 (audiobooks).
+- Active NFS client sessions remained for docker-host (`10.77.20.246`) and
+  Proxmox (`10.77.1.100`). Application I/O was not tested as part of this
+  record update. The Compose services use the same hard NFSv4.2 mount policy.
 - SMB: the `nextcloud` share backed by `slow/owncloud` is disabled. Nextcloud's
   primary data directory is the only active writer; direct SMB changes would
   bypass its file cache.
@@ -86,6 +91,6 @@ the special-vdev opportunity.
 - `special_small_blocks` must stay strictly below `recordsize`. At `ssb=1M` on
   a 1M-recordsize dataset every block qualifies and the whole dataset lands on
   the SSD, starving metadata.
-- The media and photo NFS exports still have empty host lists, leaving their
-  export ACLs as the only same-VLAN access control. Host-restrict them to
-  docker-host one share at a time, verifying I/O after each.
+- Application I/O after the completed host-list change still needs an authorized
+  operator to verify one share at a time. Dataset metrics were not re-audited
+  during this documentation update.

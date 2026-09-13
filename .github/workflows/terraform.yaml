@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "terraform/**"
+      - "network/**"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/terraform.yaml"
       - "flake.lock"
