@@ -36,6 +36,7 @@ pocket_id_encryption_key_dir: /etc/pocket-id
 pocket_id_encryption_key_path: "{{ pocket_id_encryption_key_dir }}/encryption-key"
 
 nfs_mount_opts: "rw,vers=4.2,proto=tcp,hard,_netdev,x-systemd.automount,x-systemd.idle-timeout=600,nofail"
+nfs_findmnt_command: findmnt
 # Explicit retired entries are removed from fstab without unmounting active data.
 # Do not add an entry until a real retired mount has been identified.
 nfs_retired_mounts: []

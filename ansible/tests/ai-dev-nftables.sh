@@ -23,4 +23,9 @@ grep -q 'cat /etc/nftables.conf' "${reload_helper}" && exit 1
 grep -q 'delete table inet ai_dev' "${reload_helper}"
 grep -q 'delete table inet filter' "${reload_helper}" && exit 1
 
-echo "ai-dev nftables ownership checks passed."
+grep -Fq '10-cloud-init-{{ ai_dev_physical_interface }}.network.d/90-ai-dev-ipv4-only.conf' "${tasks}"
+grep -q '^      DHCP=ipv4$' "${tasks}"
+grep -q '^      LinkLocalAddressing=no$' "${tasks}"
+grep -q '^      IPv6AcceptRA=no$' "${tasks}"
+
+echo "ai-dev nftables ownership and physical-interface IPv6 checks passed."

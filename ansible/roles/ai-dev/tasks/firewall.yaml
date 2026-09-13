@@ -17,6 +17,42 @@
       ^\s*net\.ipv6\.conf\.{{ ai_dev_physical_interface | regex_escape }}\.disable_ipv6\s*=
     state: absent
 
+# networkd can re-enable IPv6 after systemd-sysctl has run. Keep the
+# cloud-init network definition intact and override only physical IPv6 policy.
+- name: Check the physical interface cloud-init network definition
+  ansible.builtin.stat:
+    path: "/etc/systemd/network/10-cloud-init-{{ ai_dev_physical_interface }}.network"
+  register: ai_dev_network_definition
+
+- name: Require the supported networkd configuration before adding its override
+  ansible.builtin.assert:
+    that:
+      - ai_dev_network_definition.stat.exists
+      - ai_dev_network_definition.stat.isreg | default(false)
+    fail_msg: >-
+      Expected the cloud-init networkd definition for {{ ai_dev_physical_interface }}.
+      Inspect the active network manager before changing physical IPv6 policy.
+
+- name: Ensure the physical interface networkd override directory exists
+  ansible.builtin.file:
+    path: "/etc/systemd/network/10-cloud-init-{{ ai_dev_physical_interface }}.network.d"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Keep physical networking IPv4-only across reboots
+  ansible.builtin.copy:
+    dest: "/etc/systemd/network/10-cloud-init-{{ ai_dev_physical_interface }}.network.d/90-ai-dev-ipv4-only.conf"
+    content: |
+      [Network]
+      DHCP=ipv4
+      LinkLocalAddressing=no
+      IPv6AcceptRA=no
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Persist IPv6 disable on the physical DMZ interface
   ansible.builtin.copy:
     dest: /etc/sysctl.d/90-ai-dev-dmz.conf

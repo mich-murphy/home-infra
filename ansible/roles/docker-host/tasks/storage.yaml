@@ -47,27 +47,8 @@
     label: "{{ item.name }}"
   register: retired_nfs_fstab_results
 
-- name: Read active NFS mount sources before changing fstab
-  ansible.builtin.command:
-    cmd: "findmnt -rn --output SOURCE --mountpoint {{ item.local_path }}"
-  register: active_nfs_mount_state
-  changed_when: false
-  check_mode: false
-  failed_when: active_nfs_mount_state.rc not in [0, 1]
-  loop: "{{ nfs_mounts }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: Refuse to replace an active NFS source
-  ansible.builtin.assert:
-    that:
-      - item.rc == 1 or (item.stdout | trim) == item.item.nfs_share
-    fail_msg: >-
-      {{ item.item.local_path }} is mounted from {{ item.stdout | trim }}, not
-      the configured {{ item.item.nfs_share }}; refusing an unsafe source swap.
-  loop: "{{ active_nfs_mount_state.results }}"
-  loop_control:
-    label: "{{ item.item.name }}"
+- name: Read NFS mount state before changing fstab
+  ansible.builtin.include_tasks: storage-state.yaml
 
 - name: Persist active NFS fstab entries
   ansible.posix.mount:
@@ -111,6 +92,7 @@
   when:
     - active_nfs_fstab_results is changed
     - item.rc == 0
+    - (item.stdout | trim) is search('\\s+nfs4?$')
   loop: "{{ active_nfs_mount_state.results }}"
   loop_control:
     label: "{{ item.item.name }}"

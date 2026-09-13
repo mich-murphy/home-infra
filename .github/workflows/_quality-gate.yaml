@@ -98,7 +98,8 @@ jobs:
           nix shell .#shellcheck --command shellcheck \
             ansible/roles/ai-dev/files/ai-dev-maintenance \
             ansible/tests/ai-dev-maintenance.sh \
-            ansible/tests/ai-dev-nftables.sh
+            ansible/tests/ai-dev-nftables.sh \
+            ansible/tests/docker-host-storage.sh
           ansible/tests/ai-dev-maintenance.sh
           ansible/tests/ai-dev-nftables.sh
       - name: Lint Ansible
@@ -113,5 +114,6 @@ jobs:
           printf '%s\n' '---' > group_vars/secrets.yaml
           ansible-playbook --syntax-check run.yaml
           ansible-playbook tests/routeros-firewall-policy.yaml
+          ./tests/docker-host-storage.sh
           ansible-lint
           SCRIPT

@@ -74,8 +74,11 @@ cd ..
 ```
 
 The Proxmox IP configuration does not request guest IPv6, and the ai-dev role
-persists the physical DMZ IPv6 disablement after networking is available. This
-cloud-init template cannot guarantee first-boot isolation: its `runcmd` phase
+persists the physical DMZ IPv6 disablement after networking is available. A
+per-interface networkd drop-in disables DHCPv6, IPv6 link-local addresses, and
+router advertisements so networkd cannot undo the sysctl policy at reboot.
+The existing cloud-init IPv4 configuration and Tailscale interface are preserved.
+This cloud-init template cannot guarantee first-boot isolation: its `runcmd` phase
 runs after networking. Do not treat a fresh ai-dev guest as isolated until an
 image/bootstrap mechanism that disables physical-interface IPv6 before network
 startup has been verified. Any such mechanism must leave Tailscale IPv6

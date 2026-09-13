@@ -1,0 +1,124 @@
+---
+- name: Exercise idle autofs state decisions
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    nfs_findmnt_command: "{{ lookup('ansible.builtin.env', 'FAKE_FINDMNT') }}"
+    nfs_mounts:
+      - name: idle
+        local_path: /mnt/idle
+        nfs_share: nas:/idle
+  tasks:
+    - name: Include storage state decisions
+      ansible.builtin.include_tasks: ../roles/docker-host/tasks/storage-state.yaml
+
+    - name: Confirm idle automount is accepted without an NFS source match
+      ansible.builtin.assert:
+        that:
+          - active_nfs_mount_state.results[0].stdout | trim == '/mnt/idle systemd-1 autofs'
+
+- name: Exercise active NFS over a shadowed automount
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    nfs_findmnt_command: "{{ lookup('ansible.builtin.env', 'FAKE_FINDMNT') }}"
+    nfs_mounts:
+      - name: active
+        local_path: /mnt/active
+        nfs_share: nas:/active
+  tasks:
+    - name: Include storage state decisions
+      ansible.builtin.include_tasks: ../roles/docker-host/tasks/storage-state.yaml
+
+    - name: Confirm mounted NFS with the configured source is accepted
+      ansible.builtin.assert:
+        that:
+          - active_nfs_mount_state.results[0].stdout | trim == '/mnt/active nas:/active nfs4'
+
+- name: Exercise wrong NFS source protection
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    nfs_findmnt_command: "{{ lookup('ansible.builtin.env', 'FAKE_FINDMNT') }}"
+    nfs_mounts:
+      - name: wrong
+        local_path: /mnt/wrong
+        nfs_share: nas:/configured
+  tasks:
+    - name: Expect unsafe source decision to fail
+      block:
+        - name: Include storage state decisions
+          ansible.builtin.include_tasks: ../roles/docker-host/tasks/storage-state.yaml
+        - name: Fail if unsafe storage was accepted
+          ansible.builtin.fail:
+            msg: Unsafe source unexpectedly passed
+      rescue:
+        - name: Confirm wrong active NFS source is rejected
+          ansible.builtin.assert:
+            that:
+              - ansible_failed_task.name == 'Refuse unsafe NFS source changes'
+
+- name: Exercise unsafe automount protection
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    nfs_findmnt_command: "{{ lookup('ansible.builtin.env', 'FAKE_FINDMNT') }}"
+  tasks:
+    - name: Reject an idle automount with the wrong backing source
+      block:
+        - name: Include idle wrong-source decisions
+          ansible.builtin.include_tasks: ../roles/docker-host/tasks/storage-state.yaml
+          vars:
+            nfs_mounts:
+              - name: idle-wrong
+                local_path: /mnt/idle-wrong
+                nfs_share: nas:/configured
+        - name: Fail if wrong backing source was accepted
+          ansible.builtin.fail:
+            msg: Wrong automount backing source unexpectedly passed
+      rescue:
+        - name: Confirm backing-source guard rejected the mount
+          ansible.builtin.assert:
+            that:
+              - ansible_failed_task.name == 'Refuse unsafe NFS source changes'
+
+    - name: Reject an unknown automounter even with a matching fstab entry
+      block:
+        - name: Include foreign automounter decisions
+          ansible.builtin.include_tasks: ../roles/docker-host/tasks/storage-state.yaml
+          vars:
+            nfs_mounts:
+              - name: foreign-autofs
+                local_path: /mnt/foreign-autofs
+                nfs_share: nas:/configured
+        - name: Fail if unknown automounter was accepted
+          ansible.builtin.fail:
+            msg: Unknown automounter unexpectedly passed
+      rescue:
+        - name: Confirm automounter guard rejected the mount
+          ansible.builtin.assert:
+            that:
+              - ansible_failed_task.name == 'Refuse unsafe NFS source changes'
+
+- name: Exercise absent mount state decisions
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    nfs_findmnt_command: "{{ lookup('ansible.builtin.env', 'FAKE_FINDMNT') }}"
+    nfs_mounts:
+      - name: absent
+        local_path: /mnt/absent
+        nfs_share: nas:/absent
+  tasks:
+    - name: Include storage state decisions
+      ansible.builtin.include_tasks: ../roles/docker-host/tasks/storage-state.yaml
+
+    - name: Confirm absent mount is accepted for later mounting
+      ansible.builtin.assert:
+        that:
+          - active_nfs_mount_state.results[0].rc == 1
