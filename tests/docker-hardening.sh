@@ -93,14 +93,14 @@ check_normalized_file() {
   return "${failed}"
 }
 
-for compose_file in "${repo_root}"/docker/*/compose.yml; do
+while IFS= read -r compose_file; do
   stack=$(basename "$(dirname "${compose_file}")")
   normalized=${tmp_dir}/${stack}.json
   docker-compose -f "${compose_file}" config --format json >"${normalized}"
   if ! check_normalized_file "${stack}" "${normalized}"; then
     exit 1
   fi
-done
+done < <(find "${repo_root}/docker" -name compose.yml -print | sort)
 
 # Negative fixtures ensure each required field is checked independently rather
 # than allowing a service to bypass both assertions as one exception.
