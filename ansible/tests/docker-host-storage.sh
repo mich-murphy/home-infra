@@ -45,4 +45,5 @@ fi
 SCRIPT
 chmod 0755 "${fake_bin}/findmnt"
 
-FAKE_FINDMNT="${fake_bin}/findmnt" ansible-playbook tests/docker-host-storage.yaml
+FAKE_FINDMNT="${fake_bin}/findmnt" ansible-playbook \
+  -i 'localhost,wrong,idle-wrong,foreign-autofs,' tests/docker-host-storage.yaml

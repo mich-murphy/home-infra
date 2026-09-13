@@ -8,7 +8,6 @@ on:
       - "docker/**"
       - "network/**"
       - "scripts/check-portainer-drift.sh"
-      - "tests/check-portainer-drift.sh"
       - "tests/docker-hardening.sh"
       - "tests/fixtures/**"
       - "docs/docker-hardening.md"
