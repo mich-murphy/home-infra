@@ -79,20 +79,29 @@ jobs:
           TZ: Australia/Melbourne
           UPLOAD_LOCATION: /tmp/immich-upload
         run: |
-          nix shell .#docker-compose --command bash -euo pipefail <<'SCRIPT'
+          nix shell .#shellcheck --command shellcheck \
+            scripts/check-portainer-drift.sh \
+            tests/check-portainer-drift.sh \
+            tests/docker-hardening.sh
+          nix shell .#docker-compose .#portainer-drift-tools --command bash -euo pipefail <<'SCRIPT'
           while IFS= read -r compose_file; do
             echo "Checking ${compose_file}"
             docker-compose -f "${compose_file}" config --quiet
           done < <(find docker -name compose.yml -print | sort)
           scripts/check-portainer-drift.sh --source-only
+          tests/check-portainer-drift.sh
+          tests/docker-hardening.sh
           SCRIPT
       - name: Check ai-dev maintenance command
         if: inputs.check == 'ansible'
         run: |
           nix shell .#shellcheck --command shellcheck \
             ansible/roles/ai-dev/files/ai-dev-maintenance \
-            ansible/tests/ai-dev-maintenance.sh
+            ansible/tests/ai-dev-maintenance.sh \
+            ansible/tests/ai-dev-nftables.sh \
+            ansible/tests/docker-host-storage.sh
           ansible/tests/ai-dev-maintenance.sh
+          ansible/tests/ai-dev-nftables.sh
       - name: Lint Ansible
         if: inputs.check == 'ansible'
         # galaxy install: kewlfft.aur is not bundled with nixpkgs ansible
@@ -105,5 +114,6 @@ jobs:
           printf '%s\n' '---' > group_vars/secrets.yaml
           ansible-playbook --syntax-check run.yaml
           ansible-playbook tests/routeros-firewall-policy.yaml
+          ./tests/docker-host-storage.sh
           ansible-lint
           SCRIPT

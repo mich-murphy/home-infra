@@ -1,14 +1,23 @@
 ---
 # Reconcile managed rules only; leave defconf/WAN rules alone.
-- name: Address-list of all internal subnets
+- name: Reconcile the complete role-owned internal address-list
   community.routeros.api_modify:
     path: ip firewall address-list
-    handle_absent_entries: ignore
-    data:
+    handle_absent_entries: remove
+    restrict:
+      - field: list
+        values:
+          - internal
+      - field: comment
+        regex: ".*managed: routeros role.*"
+    data: "{{ _routeros_internal_address_list | from_yaml }}"
+  vars:
+    _routeros_internal_address_list: |
+      {% for subnet in routeros_internal_subnets %}
       - list: internal
-        address: "{{ item }}"
+        address: "{{ subnet }}"
         comment: "managed: routeros role"
-  loop: "{{ routeros_internal_subnets }}"
+      {% endfor %}
 
 - name: Address-list for router management sources
   community.routeros.api_modify:

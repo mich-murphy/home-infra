@@ -27,6 +27,22 @@ these to initialise volumes, repair ownership, switch users, and supervise
 processes. Database and cache images that initialise data directories as root
 use the same set.
 
+The retained six-capability class is explicitly limited to these current
+services:
+
+- `arrs`: `radarr`, `sonarr`, `lidarr`, `prowlarr`
+- `downloads`: `qbittorrent`, `sabnzbd`
+- `immich`: `redis`, `database`
+- `jellyplex-watched`: `jellyplex-watched`
+- `miniflux`: `miniflux-db`
+- `nextcloud`: `nextcloud`, `nextcloud-cron`, `nextcloud-postgres`, `nextcloud-redis`
+- `plex`: `plex`, `tautulli`
+- `wallabag`: `wallabag`, `db`, `redis`
+
+A service outside this list must not regain any of these capabilities merely
+because it uses `cap_drop: ALL`; add a named, tested exception here and in the
+offline hardening check if that changes.
+
 Service-specific additions are limited to:
 
 - `NET_BIND_SERVICE` for hardened processes that bind below port 1024, such as

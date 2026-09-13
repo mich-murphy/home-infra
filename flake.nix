@@ -73,6 +73,7 @@
       actionlint = pkgs.actionlint;
       ansible-lint = ansibleToolingFor pkgs;
       docker-compose = pkgs.docker-compose;
+      portainer-drift-tools = pkgs.yq-go;
       shellcheck = pkgs.shellcheck;
       terraform-ci = terraformCiFor pkgs;
     });
@@ -90,7 +91,7 @@
           # The same environment carries ansible-lint to avoid duplicate
           # collection paths and their associated warnings.
           self.packages.${system}.ansible-lint
-          pkgs.just
+          self.packages.${system}.portainer-drift-tools
           pkgs.alejandra
           self.packages.${system}.actionlint
           self.packages.${system}.docker-compose

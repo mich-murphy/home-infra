@@ -1,8 +1,8 @@
-#!/usr/sbin/nft -f
-
-flush ruleset
-
-table inet filter {
+# This native fragment is included by /etc/nftables.conf. Only this named table
+# is owned by the ai-dev role. Other nftables tables are intentionally left
+# untouched during reload and service stop. The deployment transaction removes
+# an existing copy before loading this table.
+table inet ai_dev {
   chain input {
     type filter hook input priority 0; policy drop;
 

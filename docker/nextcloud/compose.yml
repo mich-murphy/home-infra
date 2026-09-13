@@ -58,7 +58,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.nextcloud.rule=Host(`nextcloud.local.elmurphy.com`) || Host(`owncloud.local.elmurphy.com`)
       - traefik.http.routers.nextcloud.tls=true
-      - traefik.http.routers.nextcloud.middlewares=nextcloud-dav,default-headers@file
+      - traefik.http.routers.nextcloud.middlewares=kds-media-only@file,nextcloud-dav,default-headers@file
       - traefik.http.middlewares.nextcloud-dav.redirectregex.regex=^https://([^/]+)/.well-known/(?:card|cal)dav$$
       - traefik.http.middlewares.nextcloud-dav.redirectregex.replacement=https://$${1}/remote.php/dav
       - traefik.http.middlewares.nextcloud-dav.redirectregex.permanent=true
@@ -200,6 +200,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.nextcloud-office.rule=Host(`office.local.elmurphy.com`)
       - traefik.http.routers.nextcloud-office.tls=true
+      - traefik.http.routers.nextcloud-office.middlewares=kds-media-only@file
       - traefik.http.services.nextcloud-office.loadbalancer.server.port=9980
     healthcheck:
       test: ["CMD", "/usr/bin/coolwsd", "--probe", "--use-env-vars"]

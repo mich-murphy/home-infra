@@ -12,6 +12,9 @@ docker_published_ports:
   - {port: 80, proto: tcp}  # traefik
   - {port: 443, proto: tcp}  # traefik
   - {port: 9443, proto: tcp}  # portainer escape hatch
-  - {port: 8096, proto: tcp}  # jellyfin
   - {port: 25565, proto: tcp}  # qbittorrent peers
   - {port: 25565, proto: udp}  # qbittorrent peers
+
+# Jellyfin's direct fallback remains reachable from the tailnet only.
+docker_tailscale_fallback_ports:
+  - {port: 8096, proto: tcp}

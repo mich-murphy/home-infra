@@ -34,7 +34,8 @@ services:
     tmpfs:
       - /transcode:rw,nosuid,nodev,noexec,uid=1000,gid=1000,mode=1777,size=2g # ram transcode
     ports:
-      # deliberate direct LAN access; allowlisted in docker_published_ports
+      # Direct fallback over Tailscale when Traefik is unavailable.
+      # Docker-host filters ingress; the external Tailscale ACL controls clients.
       - 8096:8096
     labels:
       - traefik.enable=true

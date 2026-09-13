@@ -95,7 +95,7 @@
   no_log: true
 
 - name: Reconcile the bootstrap stack
-  ansible.builtin.command:
-    cmd: docker compose up -d --remove-orphans
-    chdir: "{{ docker_bootstrap_dir }}"
-  changed_when: true
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker_bootstrap_dir }}"
+    state: present
+    remove_orphans: true

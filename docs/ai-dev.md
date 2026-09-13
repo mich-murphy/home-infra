@@ -30,6 +30,21 @@ Generated cloud-init files under `terraform/files/` are ignored build
 artifacts, not a credential store: rotate any Tailscale authentication key that
 was rendered into one.
 
+Before an approved Terraform run, create two distinct, short-lived, tagged,
+single-use fields in the existing 1Password `proxmox_creds` item under the
+`Terraform SCP` section: `tailscale docker-host authkey` and `tailscale ai-dev
+authkey`. Do not reuse the old shared `tailscale authkey` field. The fields must
+be present before `terraform plan` can render either guest's vendor data; this
+repository does not create or revoke keys.
+
+If bootstrap fails, inspect cloud-init status and the guest's Tailscale state
+without retrying blindly. A key that was consumed, exposed in logs/artifacts,
+expired, or is no longer needed must be revoked in the Tailscale admin console
+and replaced with a newly scoped key in the matching 1Password field. Record
+which guest was affected, remove stale generated files, and rerun only after the
+new field is available. On expiry or revocation, expect that guest to require
+an explicit rejoin; never copy the other guest's key as a recovery shortcut.
+
 Run:
 
 ```sh
@@ -55,8 +70,22 @@ ansible-playbook run.yaml --vault-password-file .vaultpass \
 ansible-playbook run.yaml --vault-password-file .vaultpass --limit ai-dev
 ansible-playbook run.yaml --vault-password-file .vaultpass --limit ai-dev
 cd ..
-just routeros
+(cd ansible && ansible-playbook run.yaml --vault-password-file .vaultpass --limit routeros --tags services,oob,vlans,dmz,dhcp,firewall,bridge,vlan-filtering,default-drop,verify -e routeros_enable_vlan_filtering=true -e routeros_enable_default_drop=true)
 ```
+
+The Proxmox IP configuration does not request guest IPv6, and the ai-dev role
+persists the physical DMZ IPv6 disablement after networking is available. A
+per-interface networkd drop-in disables DHCPv6, IPv6 link-local addresses, and
+router advertisements so networkd cannot undo the sysctl policy at reboot.
+The existing cloud-init IPv4 configuration and Tailscale interface are preserved.
+This cloud-init template cannot guarantee first-boot isolation: its `runcmd` phase
+runs after networking. Do not treat a fresh ai-dev guest as isolated until an
+image/bootstrap mechanism that disables physical-interface IPv6 before network
+startup has been verified. Any such mechanism must leave Tailscale IPv6
+available. Legacy `inet filter` removal is disabled by default; only set
+`ai_dev_allow_legacy_nft_migration=true` after an operator has confirmed that
+table is role-owned. Verify generated vendor data in a temporary render before
+an approved provisioning run.
 
 The ai-dev role builds and activates Home Manager from the public `nix-config`
 repository. A non-fast-forward checkout or conflicting local change stops
@@ -381,6 +410,27 @@ above are the only exceptions, alongside MagicDNS and the telemetry collector,
 and the ai-dev role asserts that the blanket drop survives beside them. Adding
 a grant without the matching egress rule produces a connection that times out
 with no obvious cause.
+
+### Persistent nftables migration
+
+The ai-dev role owns only `/etc/nftables.d/ai-dev.nft`, which is included by the
+administrator-owned `/etc/nftables.conf`. On a fresh host the role creates the
+small root configuration; an existing root configuration is preserved and gets
+one include line (or uses an existing `/etc/nftables.d/*.nft` include). The role
+validates the fragment, the staged root configuration, and the live replacement
+transaction before changing either persistent file. Reload and stop operate on
+only the `inet ai_dev` table; the distro service still loads the complete root
+configuration at boot.
+
+A previously deployed role file containing `flush ruleset` or `table inet filter`
+is ambiguous and fails closed. Migrate it manually before rerunning the role:
+make a root-only backup, copy any unrelated tables/rules into the administrator's
+persistent configuration, remove the legacy global flush and old role table,
+then validate `/etc/nftables.conf` with `nft -c`. Only after that conversion,
+and after confirming that any active `inet filter` table is legacy ai-dev state,
+set `ai_dev_allow_legacy_nft_migration=true` once to remove that active table.
+The role never parses, overwrites, or automatically backs up an ambiguous root
+file, so unrelated persistent rules cannot be silently discarded or resurrected.
 
 ## Verification
 

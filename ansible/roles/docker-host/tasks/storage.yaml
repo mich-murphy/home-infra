@@ -34,12 +34,31 @@
   loop_control:
     label: "{{ item.name }}"
 
-- name: Persist active NFS fstab entries
+# Entries are removed from fstab only; active storage is never unmounted here.
+# Keep retired records explicit so an address or dataset cannot disappear from
+# fstab merely because the active list changed.
+- name: Remove explicitly retired NFS fstab entries
   ansible.builtin.lineinfile:
     path: /etc/fstab
     regexp: "^{{ item.nfs_share | regex_escape }}\\s+{{ item.local_path | regex_escape }}\\s+"
-    line: "{{ item.nfs_share }} {{ item.local_path }} nfs4 {{ nfs_mount_opts }} 0 0"
-    create: true
+    state: absent
+  loop: "{{ nfs_retired_mounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: retired_nfs_fstab_results
+
+- name: Read NFS mount state before changing fstab
+  ansible.builtin.include_tasks: storage-state.yaml
+
+- name: Persist active NFS fstab entries
+  ansible.posix.mount:
+    path: "{{ item.local_path }}"
+    src: "{{ item.nfs_share }}"
+    fstype: nfs4
+    opts: "{{ nfs_mount_opts }}"
+    dump: "0"
+    passno: "0"
+    state: present
   register: active_nfs_fstab_results
   loop: "{{ nfs_mounts }}"
   loop_control:
@@ -48,33 +67,32 @@
 - name: Reload systemd after NFS fstab changes
   ansible.builtin.systemd:
     daemon_reload: true
-  when: active_nfs_fstab_results is changed
+  when: >-
+    retired_nfs_fstab_results is changed or active_nfs_fstab_results is changed
 
-- name: Check active NFS mount state
-  ansible.builtin.command:
-    cmd: "findmnt -rn --mountpoint {{ item.local_path }}"
-  register: active_nfs_mount_state
-  changed_when: false
-  check_mode: false
-  failed_when: active_nfs_mount_state.rc not in [0, 1]
-  loop: "{{ nfs_mounts }}"
-  loop_control:
-    label: "{{ item.name }}"
-
-- name: Mount inactive NFS shares
-  ansible.builtin.command:
-    cmd: "mount {{ item.item.local_path }}"
-  changed_when: true
+- name: Mount inactive NFS shares without replacing active mounts
+  ansible.posix.mount:
+    path: "{{ item.item.local_path }}"
+    src: "{{ item.item.nfs_share }}"
+    fstype: nfs4
+    opts: "{{ nfs_mount_opts }}"
+    state: mounted
   when: item.rc == 1
   loop: "{{ active_nfs_mount_state.results }}"
   loop_control:
     label: "{{ item.item.name }}"
 
-- name: Remount NFS shares after fstab changes
-  ansible.builtin.command:
-    cmd: "mount -o remount {{ item.item.local_path }}"
-  changed_when: true
-  when: item.changed
-  loop: "{{ active_nfs_fstab_results.results }}"
+- name: Remount existing NFS shares after fstab changes
+  ansible.posix.mount:
+    path: "{{ item.item.local_path }}"
+    src: "{{ item.item.nfs_share }}"
+    fstype: nfs4
+    opts: "{{ nfs_mount_opts }}"
+    state: remounted
+  when:
+    - active_nfs_fstab_results is changed
+    - item.rc == 0
+    - (item.stdout | trim) is search('\\s+nfs4?$')
+  loop: "{{ active_nfs_mount_state.results }}"
   loop_control:
     label: "{{ item.item.name }}"

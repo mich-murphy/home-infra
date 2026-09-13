@@ -17,6 +17,42 @@
       ^\s*net\.ipv6\.conf\.{{ ai_dev_physical_interface | regex_escape }}\.disable_ipv6\s*=
     state: absent
 
+# networkd can re-enable IPv6 after systemd-sysctl has run. Keep the
+# cloud-init network definition intact and override only physical IPv6 policy.
+- name: Check the physical interface cloud-init network definition
+  ansible.builtin.stat:
+    path: "/etc/systemd/network/10-cloud-init-{{ ai_dev_physical_interface }}.network"
+  register: ai_dev_network_definition
+
+- name: Require the supported networkd configuration before adding its override
+  ansible.builtin.assert:
+    that:
+      - ai_dev_network_definition.stat.exists
+      - ai_dev_network_definition.stat.isreg | default(false)
+    fail_msg: >-
+      Expected the cloud-init networkd definition for {{ ai_dev_physical_interface }}.
+      Inspect the active network manager before changing physical IPv6 policy.
+
+- name: Ensure the physical interface networkd override directory exists
+  ansible.builtin.file:
+    path: "/etc/systemd/network/10-cloud-init-{{ ai_dev_physical_interface }}.network.d"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Keep physical networking IPv4-only across reboots
+  ansible.builtin.copy:
+    dest: "/etc/systemd/network/10-cloud-init-{{ ai_dev_physical_interface }}.network.d/90-ai-dev-ipv4-only.conf"
+    content: |
+      [Network]
+      DHCP=ipv4
+      LinkLocalAddressing=no
+      IPv6AcceptRA=no
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Persist IPv6 disable on the physical DMZ interface
   ansible.builtin.copy:
     dest: /etc/sysctl.d/90-ai-dev-dmz.conf
@@ -66,18 +102,222 @@
       Each Hermes egress peer must resolve to exactly one Tailscale IPv4
       address before ai-dev opens egress to it.
 
-- name: Deploy nftables ruleset
+# The distro unit's ExecStart loads /etc/nftables.conf. Keep that root-owned
+# file as the administrator's persistent configuration and add only a native
+# include for the fragment owned by this role.
+- name: Check whether the persistent nftables configuration exists
+  ansible.builtin.stat:
+    path: /etc/nftables.conf
+  register: nftables_root_config
+
+- name: Reject an unconverted nftables root configuration
+  ansible.builtin.command:
+    cmd: >-
+      /usr/bin/grep -Eq
+      '^[[:space:]]*(flush[[:space:]]+ruleset|table[[:space:]]+inet[[:space:]]+(ai_dev|filter)([[:space:]]|\{))'
+      /etc/nftables.conf
+  register: nftables_legacy_config
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: nftables_root_config.stat.exists
+
+- name: Require manual conversion before touching an ambiguous root config
+  ansible.builtin.assert:
+    that:
+      - not nftables_root_config.stat.exists or (nftables_legacy_config.rc | default(1)) != 0
+    fail_msg: >-
+      /etc/nftables.conf contains flush ruleset or an inet ai_dev/filter table.
+      Back it up, remove the legacy role definition and any global flush, merge
+      unrelated rules manually, and rerun with ai_dev_allow_legacy_nft_migration=true
+      only if the active inet filter table is confirmed to be legacy ai-dev state.
+      The role will not parse or overwrite an ambiguous persistent file.
+
+- name: Check whether the root configuration already includes nftables.d
+  ansible.builtin.command:
+    cmd: >-
+      /usr/bin/grep -Eq
+      '^[[:space:]]*include[[:space:]]+"/etc/nftables\.d/(\*\.nft|ai-dev\.nft)"[[:space:]]*$'
+      /etc/nftables.conf
+  register: nftables_root_include
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: nftables_root_config.stat.exists
+
+- name: Reject an unrecognised nftables.d include form
+  ansible.builtin.command:
+    cmd: >-
+      /usr/bin/grep -Eq
+      '^[[:space:]]*include[[:space:]]+.*\/etc\/nftables\.d\/'
+      /etc/nftables.conf
+  register: nftables_any_include
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: nftables_root_config.stat.exists
+
+- name: Require manual integration for an unrecognised nftables.d include
+  ansible.builtin.assert:
+    that:
+      - not nftables_root_config.stat.exists
+        or (nftables_root_include.rc | default(1)) == 0
+        or (nftables_any_include.rc | default(1)) != 0
+    fail_msg: >-
+      /etc/nftables.conf has an nftables.d include in an unsupported form.
+      Add the native /etc/nftables.d/ai-dev.nft or *.nft include manually,
+      validate it with nft -c, and rerun the role.
+
+- name: Record the root configuration integration state
+  ansible.builtin.set_fact:
+    ai_dev_nftables_root_has_include: >-
+      {{ nftables_root_config.stat.exists
+         and (nftables_root_include.rc | default(1)) == 0 }}
+
+- name: Ensure the native nftables fragment directory exists
+  ansible.builtin.file:
+    path: /etc/nftables.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# Render and validate away from both persistent paths. A failed validation must
+# not replace the last known-good fragment or root configuration.
+- name: Render candidate nftables fragment
   ansible.builtin.template:
     src: nftables.conf.j2
-    dest: /etc/nftables.conf
+    dest: /run/ai-dev-nftables.nft
+    owner: root
+    group: root
+    mode: '0600'
+  register: nft_candidate
+
+- name: Stage the root nftables configuration with the candidate include
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if [ -f /etc/nftables.conf ]; then
+      cp -- /etc/nftables.conf /run/ai-dev-nftables-root.conf
+    else
+      printf '%s\n' '#!/usr/sbin/nft -f' > /run/ai-dev-nftables-root.conf
+    fi
+    if [ "{{ ai_dev_nftables_root_has_include | bool | ternary('1', '0') }}" -eq 0 ]; then
+      printf '%s\n' 'include "/run/ai-dev-nftables.nft"' >> /run/ai-dev-nftables-root.conf
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Validate the candidate nftables fragment
+  ansible.builtin.command:
+    cmd: /usr/bin/nft -c -f /run/ai-dev-nftables.nft
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Validate the staged persistent nftables configuration
+  ansible.builtin.command:
+    cmd: /usr/bin/nft -c -f /run/ai-dev-nftables-root.conf
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Validate the candidate nftables transaction before installation
+  ansible.builtin.shell: |
+    set -euo pipefail
+    apply_file=$(mktemp)
+    trap 'rm -f -- "${apply_file}"' EXIT
+    if /usr/bin/nft list table inet ai_dev >/dev/null 2>&1; then
+      printf '%s\n' 'delete table inet ai_dev' >>"${apply_file}"
+    fi
+    if [ "{{ ai_dev_allow_legacy_nft_migration | bool | ternary('1', '0') }}" -eq 1 ] \
+      && /usr/bin/nft list table inet filter >/dev/null 2>&1; then
+      printf '%s\n' 'delete table inet filter' >>"${apply_file}"
+    fi
+    cat /run/ai-dev-nftables.nft >>"${apply_file}"
+    /usr/bin/nft -c -f "${apply_file}"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Install the validated nftables fragment
+  ansible.builtin.copy:
+    src: /run/ai-dev-nftables.nft
+    dest: /etc/nftables.d/ai-dev.nft
+    remote_src: true
     owner: root
     group: root
     mode: '0644'
   register: nft_ruleset
+  when: not ansible_check_mode
+
+- name: Create the root nftables configuration on a fresh host
+  ansible.builtin.copy:
+    content: |
+      #!/usr/sbin/nft -f
+      include "/etc/nftables.d/ai-dev.nft"
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - not nftables_root_config.stat.exists
+    - not ansible_check_mode
+  register: nftables_root_file
+
+- name: Add the owned fragment to an existing root configuration
+  ansible.builtin.lineinfile:
+    path: /etc/nftables.conf
+    line: include "/etc/nftables.d/ai-dev.nft"
+    insertafter: EOF
+    owner: root
+    group: root
+    mode: '0644'
+  when:
+    - nftables_root_config.stat.exists
+    - not ai_dev_nftables_root_has_include
+    - not ansible_check_mode
+  register: nftables_root_file
+
+- name: Ensure nftables unit override directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/system/nftables.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the nftables reload helper
+  ansible.builtin.copy:
+    src: reload-nftables
+    dest: /usr/local/sbin/reload-ai-dev-nftables
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Prevent the distro nftables unit from flushing unrelated tables
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/nftables.service.d/ai-dev.conf
+    content: |
+      [Service]
+      RemainAfterExit=yes
+      ExecStop=
+      ExecStop=/bin/sh -c '/usr/bin/nft delete table inet ai_dev 2>/dev/null || true'
+      ExecReload=
+      ExecReload=/usr/local/sbin/reload-ai-dev-nftables
+    owner: root
+    group: root
+    mode: "0644"
+  register: nft_service_override
+
+- name: Reload systemd after nftables unit ownership change
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  changed_when: false
 
 - name: Check whether the managed nftables table is loaded
   ansible.builtin.command:
-    cmd: /usr/bin/nft list table inet filter
+    cmd: /usr/bin/nft list table inet ai_dev
   register: nft_table
   changed_when: false
   failed_when: false
@@ -88,15 +328,35 @@
     name: nftables
     enabled: true
 
-- name: Load the nftables ruleset when needed
-  ansible.builtin.command:
-    cmd: /usr/bin/nft -f /etc/nftables.conf
-  when: nft_ruleset.changed or nft_table.rc != 0
+# nft -c validates the complete transaction before nft applies it atomically.
+# Existing managed tables are deleted inside that transaction; unrelated tables
+# are never addressed. Deleting the legacy generic table is an explicit,
+# operator-gated migration and is disabled by default.
+- name: Validate and atomically load the owned nftables table
+  ansible.builtin.shell: |
+    set -euo pipefail
+    apply_file=$(mktemp)
+    trap 'rm -f -- "${apply_file}"' EXIT
+    if /usr/bin/nft list table inet ai_dev >/dev/null 2>&1; then
+      printf '%s\n' 'delete table inet ai_dev' >>"${apply_file}"
+    fi
+    if [ "{{ ai_dev_allow_legacy_nft_migration | bool | ternary('1', '0') }}" -eq 1 ] \
+      && /usr/bin/nft list table inet filter >/dev/null 2>&1; then
+      printf '%s\n' 'delete table inet filter' >>"${apply_file}"
+    fi
+    cat /run/ai-dev-nftables.nft >>"${apply_file}"
+    /usr/bin/nft -c -f "${apply_file}"
+    /usr/bin/nft -f "${apply_file}"
+  args:
+    executable: /bin/bash
+  when:
+    - not ansible_check_mode
+    - nft_ruleset.changed or nft_table.rc != 0 or (ai_dev_allow_legacy_nft_migration | bool)
   changed_when: true
 
 - name: Read the active nftables input chain
   ansible.builtin.command:
-    cmd: /usr/bin/nft list chain inet filter input
+    cmd: /usr/bin/nft list chain inet ai_dev input
   register: ai_dev_nft_input_chain
   changed_when: false
   when: not ansible_check_mode
@@ -111,7 +371,7 @@
 
 - name: Read the active nftables output chain
   ansible.builtin.command:
-    cmd: /usr/bin/nft list chain inet filter output
+    cmd: /usr/bin/nft list chain inet ai_dev output
   register: ai_dev_nft_output_chain
   changed_when: false
   when: not ansible_check_mode

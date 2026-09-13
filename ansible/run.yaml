@@ -3,6 +3,7 @@
   hosts: docker
   become: true
   vars_files:
+    - "../network/inventory.yaml"
     - "group_vars/secrets.yaml"
   roles:
     - common

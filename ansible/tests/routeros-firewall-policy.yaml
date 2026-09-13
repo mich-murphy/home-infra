@@ -19,6 +19,12 @@
           - _dmz_drop.action == 'drop'
           - _dmz_drop['dst-address-list'] == 'internal'
           - _dmz_drop_index < _dmz_wan_index
+          - _dflt_srv_rule['dst-address'] == '10.77.20.246'
+          - _dflt_srv_rule.protocol == 'tcp'
+          - _dflt_srv_rule['dst-port'] == 443
+          - _kds_srv_rule['dst-address'] == '10.77.20.246'
+          - _kds_srv_rule.protocol == 'tcp'
+          - _kds_srv_rule['dst-port'] == 443
           - _routeros_qbittorrent_dstnat_policy == _expected_qbittorrent_dstnat_policy
       vars:
         _strict_forward_comments: "{{ _routeros_forward_policy | map(attribute='comment') | list }}"
@@ -31,8 +37,8 @@
           - "WAN -> qBittorrent peers udp (managed: routeros role)"
           - "KDS drop DoT (managed: routeros role)"
           - "KDS drop DoQ (managed: routeros role)"
-          - "DFLT -> SRV services (managed: routeros role)"
-          - "KDS -> SRV (Plex/Jellyfin) (managed: routeros role)"
+          - "DFLT -> Docker host HTTPS (managed: routeros role)"
+          - "KDS -> Docker host media HTTPS (managed: routeros role)"
           - "SRV -> UniFi controller (managed: routeros role)"
           - "Proxmox -> TrueNAS NFS tcp (managed: routeros role)"
           - "Proxmox -> TrueNAS NFS udp (managed: routeros role)"
@@ -52,6 +58,10 @@
           }}
         _dmz_drop_index: "{{ _strict_forward_comments.index('DMZ drop internal routing (managed: routeros role)') }}"
         _dmz_wan_index: "{{ _strict_forward_comments.index('10.77.99.0/24 -> WAN (managed: routeros role)') }}"
+        _dflt_srv_rule: >-
+          {{ _routeros_forward_policy | selectattr('comment', 'equalto', 'DFLT -> Docker host HTTPS (managed: routeros role)') | first }}
+        _kds_srv_rule: >-
+          {{ _routeros_forward_policy | selectattr('comment', 'equalto', 'KDS -> Docker host media HTTPS (managed: routeros role)') | first }}
         _expected_qbittorrent_dstnat_policy:
           - chain: dstnat
             in-interface-list: WAN

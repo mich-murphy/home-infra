@@ -1,0 +1,69 @@
+---
+- name: Read active NFS mount state before changing fstab
+  ansible.builtin.command:
+    argv:
+      - "{{ nfs_findmnt_command | default('findmnt') }}"
+      - -rn
+      # Ignore the shadowed autofs layer when its NFS mount is active.
+      - --uniq
+      - --output
+      - TARGET,SOURCE,FSTYPE
+      - --mountpoint
+      - "{{ item.local_path }}"
+  register: active_nfs_mount_state
+  changed_when: false
+  check_mode: false
+  failed_when: active_nfs_mount_state.rc not in [0, 1]
+  loop: "{{ nfs_mounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Read configured NFS sources for idle automounts
+  ansible.builtin.command:
+    argv:
+      - "{{ nfs_findmnt_command | default('findmnt') }}"
+      - -rn
+      - --fstab
+      - --output
+      - SOURCE,FSTYPE
+      - --target
+      - "{{ item.local_path }}"
+  register: configured_nfs_mount_state
+  changed_when: false
+  check_mode: false
+  failed_when: configured_nfs_mount_state.rc not in [0, 1]
+  loop: "{{ nfs_mounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Refuse unsafe NFS source changes
+  ansible.builtin.assert:
+    that:
+      - >-
+        active_state.rc == 1 or
+        (active_is_nfs and active_source_matches) or
+        (active_is_autofs and configured_source_matches)
+    fail_msg: >-
+      {{ item.local_path }} has state {{ active_output | default('absent') }};
+      configured source {{ item.nfs_share }} does not match its active or
+      automount backing configuration, so refusing an unsafe source swap.
+  vars:
+    active_state: "{{ active_nfs_mount_state.results[ansible_loop.index0] }}"
+    configured_state: "{{ configured_nfs_mount_state.results[ansible_loop.index0] }}"
+    active_output: "{{ active_state.stdout | trim }}"
+    configured_output: "{{ configured_state.stdout | trim }}"
+    active_is_nfs: "{{ active_output is search('\\s+nfs4?$') }}"
+    active_is_autofs: "{{ active_output == item.local_path ~ ' systemd-1 autofs' }}"
+    active_source_matches: >-
+      {{ active_output in [
+           item.local_path ~ ' ' ~ item.nfs_share ~ ' nfs',
+           item.local_path ~ ' ' ~ item.nfs_share ~ ' nfs4'
+         ] }}
+    configured_source_matches: >-
+      {{ configured_state.rc | int == 0 and configured_output in [
+           item.nfs_share ~ ' nfs', item.nfs_share ~ ' nfs4'
+         ] }}
+  loop: "{{ nfs_mounts }}"
+  loop_control:
+    extended: true
+    label: "{{ item.name }}"

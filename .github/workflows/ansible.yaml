@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "ansible/**"
+      - "network/**"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/ansible.yaml"
       - "flake.nix"
