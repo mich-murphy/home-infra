@@ -166,10 +166,11 @@ runtime on a guest with no reason to carry it. Nothing here prevents
 installing one later; the agent simply does not need it.
 The endpoint is intentionally a reduced status projection rather than a
 Docker API: it supports only ping, version, container listing, and strict-name
-or ID inspection. It returns safe IDs, names, image references, state, status,
-exit codes, and health status. It does not support logs, stats, events, archive
-operations, or full `docker inspect`; commands depending on those routes must
-use an approved, separately protected diagnostic path.
+or ID inspection, and bounded tail-only container logs (no follow). It returns
+safe IDs, names, image references, state, status, exit codes, health status,
+and demultiplexed container log text. It does not support stats, events,
+archive operations, or full `docker inspect`; commands depending on those
+routes must use an approved, separately protected diagnostic path.
 
 ### Access tiers
 

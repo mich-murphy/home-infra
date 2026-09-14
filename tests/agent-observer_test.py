@@ -101,7 +101,13 @@ class ObserverTest(unittest.TestCase):
     def test_denied_routes_and_ambiguous_requests_never_hit_backend(self):
         for method, path, expected in (
             ("POST", "/containers/json", 405),
-            ("GET", "/containers/name/logs", 404),
+            ("POST", "/containers/name/logs", 405),
+            ("GET", "/containers/name/logs?follow=1", 400),
+            ("GET", "/containers/name/logs?tail=all", 400),
+            ("GET", "/containers/name/logs?tail=99999", 400),
+            ("GET", "/containers/name/logs?since=1700000000", 400),
+            ("GET", "/containers/name/logs?stdout=1&stdout=0", 400),
+            ("GET", "/containers/name/archive", 404),
             ("GET", "/events", 404),
             ("GET", "/containers/json?labels=secret", 400),
             ("GET", "/containers/json?all=1&all=0", 400),
@@ -112,6 +118,38 @@ class ObserverTest(unittest.TestCase):
             status, _ = self.request(method, path)
             self.assertEqual(status, expected, path)
         self.assertEqual(self.backend.requests, [])
+
+    def test_logs_route_demuxes_and_defaults_tail(self):
+        def frame(stream: int, payload: bytes) -> bytes:
+            return bytes([stream, 0, 0, 0]) + len(payload).to_bytes(4, "big") + payload
+
+        body = (
+            frame(1, b"stdout line\n")
+            + frame(2, b"stderr OBSERVER_CANARY_SECRET\n")
+            + frame(1, b"\xff\xfe invalid utf-8\n")
+            # Final frame claims 40 payload bytes but delivers 9.
+            + bytes([1, 0, 0, 0]) + (40).to_bytes(4, "big") + b"truncated"
+        )
+        self.backend.responses["/containers/media-server/logs?stdout=1&stderr=1&tail=100&timestamps=0"] = (200, body)
+        self.backend.responses["/containers/media-server/logs?stdout=1&stderr=1&tail=50&timestamps=0"] = (200, body)
+
+        status, result = self.request("GET", "/containers/media-server/logs")
+        self.assertEqual(status, 200)
+        self.assertIn(b"stdout line\n", result)
+        self.assertIn(b"stderr OBSERVER_CANARY_SECRET\n", result)
+        # Invalid UTF-8 is replaced, and a truncated final frame is dropped.
+        self.assertIn("\ufffd\ufffd invalid utf-8\n".encode(), result)
+        self.assertNotIn(b"truncated", result)
+
+        status, _ = self.request("GET", "/containers/media-server/logs?stdout=1&stderr=1&tail=50&timestamps=0")
+        self.assertEqual(status, 200)
+        self.assertEqual(self.backend.requests[-1], "/containers/media-server/logs?stdout=1&stderr=1&tail=50&timestamps=0")
+
+        # Unknown container surfaces the backend's 404.
+        self.backend.responses["/containers/missing/logs?stdout=1&stderr=1&tail=100&timestamps=0"] = (404, b"nope")
+        status, result = self.request("GET", "/containers/missing/logs")
+        self.assertEqual(status, 404)
+        self.assertEqual(json.loads(result), {"error": "container not found"})
 
     def test_version_prefix_and_head(self):
         self.backend.responses["/version"] = (200, json.dumps({
