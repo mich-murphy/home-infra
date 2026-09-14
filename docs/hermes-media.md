@@ -98,14 +98,26 @@ read-only filesystem and has no Docker socket or media mounts.
 
    Stop on build failure. Portainer does not run preflight, and a cached image
    does not prove that changed source was rebuilt.
-5. Authenticate to Portainer and update only `media-broker` using the canonical
-   Compose content from that same reviewed revision and its nonsecret settings.
-   Keep image pulling disabled, pruning disabled, and automatic updates/webhooks
-   absent. Use the host-built `home-infra/media-broker:candidate` image; it is
-   local to docker-host, not a public registry image. The prebuilt image is
-   required: do not rely on Portainer retaining a Git build context after detach.
+5. Prepare an **image-only deployment copy** of the canonical Compose content
+   from that same reviewed revision. Remove only `services.media-broker.build`
+   and its `context`/`dockerfile` children from the copy. Keep the build block in
+   Git and in the host checkout for step 4. Preserve every other service setting,
+   including the image, security controls, ports, environment, and secret mounts.
+   Authenticate to Portainer and update only `media-broker` with this deployment
+   copy and its existing nonsecret settings. Keep image pulling disabled,
+   pruning disabled, and automatic updates/webhooks absent.
+
+   Use the host-built `home-infra/media-broker:candidate` image; it is local to
+   docker-host, not a public registry image. Record its image ID before updating.
+   Portainer 2.45 can rebuild from its retained old Git context when the build
+   block is present, even with `PullImage: false`. This happened during the SDK
+   patch rollout and replaced the freshly built image with old source. Removing
+   the build block from Portainer's copy prevents that controller-side build.
 6. Wait for the controller operation to finish and the container to be healthy.
-   An accepted API request is not proof of completed deployment. Retest
+   Verify that the running container's image ID equals the recorded host-built
+   image ID, and verify the installed SDK version inside the running container.
+   An accepted API request or healthy container alone does not prove that the
+   intended source was deployed. Retest
    authenticated reads from Hermes, all four tools, unauthenticated rejection,
    and denial from a different client. Retain the existing ACL and token.
    Ownership or image updates alone do not require restarting the Hermes user
