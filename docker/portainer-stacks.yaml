@@ -1,6 +1,7 @@
 ---
-# Portainer owns every application stack listed here. The init stack is
-# intentionally absent because Ansible bootstraps it before Portainer exists.
+# Expected Portainer ownership; verify live controller state separately.
+# media-broker is Portainer-managed with manual updates, not shared Git polling.
+# The init stack is absent because Ansible bootstraps it before Portainer exists.
 stacks:
   - name: arrs
     compose_path: docker/arrs/compose.yml
@@ -18,6 +19,8 @@ stacks:
     compose_path: docker/jellyfin/compose.yml
   - name: jellyplex-watched
     compose_path: docker/jellyplex-watched/compose.yml
+  - name: media-broker
+    compose_path: services/media-broker/deploy/compose.yml
   - name: miniflux
     compose_path: docker/miniflux/compose.yml
   - name: nextcloud

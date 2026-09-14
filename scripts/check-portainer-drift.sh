@@ -59,9 +59,15 @@ done
 # Paths in the inventory are repository-relative, as are the paths from find.
 while IFS= read -r compose_file; do
   printf '%s\n' "${compose_file#"${repo_root}/"}"
-done < <(find "${repo_root}/docker" -mindepth 2 -maxdepth 2 -name compose.yml \
-  ! -path "${repo_root}/docker/init/compose.yml" -print | sort) \
-  | sort > "${tmp_dir}/actual-paths"
+done < <(
+  {
+    find "${repo_root}/docker" -mindepth 2 -maxdepth 2 -name compose.yml \
+      ! -path "${repo_root}/docker/init/compose.yml" \
+      ! -path "*/fixtures/*" -print
+    find "${repo_root}/services" -mindepth 3 -maxdepth 3 \
+      -path '*/deploy/compose.yml' ! -path '*/fixtures/*' -print
+  } | sort
+) | sort > "${tmp_dir}/actual-paths"
 
 missing_paths=$(comm -23 "${tmp_dir}/inventory-paths" "${tmp_dir}/actual-paths")
 unexpected_paths=$(comm -13 "${tmp_dir}/inventory-paths" "${tmp_dir}/actual-paths")

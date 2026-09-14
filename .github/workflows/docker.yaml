@@ -6,11 +6,15 @@ on:
       - main
     paths:
       - "docker/**"
+      - "services/media-broker/**"
       - "network/**"
       - "scripts/check-portainer-drift.sh"
       - "tests/docker-hardening.sh"
+      - "tests/media-broker-*.sh"
       - "tests/fixtures/**"
       - "docs/docker-hardening.md"
+      - "docs/docker-deployment.md"
+      - "docs/hermes-media.md"
       - "docker/portainer-stacks.yaml"
       - ".github/workflows/_quality-gate.yaml"
       - ".github/workflows/docker.yaml"

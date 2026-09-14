@@ -32,6 +32,16 @@ endpoint=$(docker_cmd context inspect --format '{{(index .Endpoints "docker").Ho
 }
 tmp_dir=$(mktemp -d)
 trap 'rm -rf -- "${tmp_dir}"' EXIT
+# Source-only discovery covers the canonical services/* deployment path and
+# rejects an inventory declaration whose Compose file is absent.
+"${repo_root}/scripts/check-portainer-drift.sh" --source-only
+missing_inventory=${tmp_dir}/missing-inventory.yaml
+sed 's#services/media-broker/deploy/compose.yml#services/media-broker/deploy/missing.yml#' \
+  "${repo_root}/docker/portainer-stacks.yaml" >"${missing_inventory}"
+if "${repo_root}/scripts/check-portainer-drift.sh" --source-only "${missing_inventory}" >/dev/null 2>&1; then
+  echo 'missing declared Compose fixture unexpectedly passed' >&2
+  exit 1
+fi
 for secret in broker-token sonarr-api-key radarr-api-key lidarr-api-key tautulli-api-key; do
   : >"${tmp_dir}/${secret}"
 done
