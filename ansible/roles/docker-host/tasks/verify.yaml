@@ -86,15 +86,57 @@
   register: docker_agent_proxy_bindings
   changed_when: false
 
-- name: Verify the agent socket proxy never binds every interface
+- name: Verify the agent observer never binds every interface
   ansible.builtin.assert:
     that:
       - "'0.0.0.0' not in docker_agent_proxy_bindings.stdout"
       - "'\"HostIp\":\"\"' not in docker_agent_proxy_bindings.stdout"
       - "'100.' in docker_agent_proxy_bindings.stdout"
     fail_msg: >-
-      The agent socket proxy must publish only on the docker-host tailnet
-      address, never on all interfaces.
+      The agent observer must publish only on the docker-host tailnet address,
+      never on all interfaces.
+
+- name: Read agent observer mounts
+  ansible.builtin.command:
+    argv:
+      - docker
+      - inspect
+      - "--format={{ '{{json .Mounts}}' }}"
+      - docker-socket-proxy-agent
+  register: docker_agent_observer_mounts
+  changed_when: false
+
+- name: Verify the agent observer has no Docker socket
+  ansible.builtin.assert:
+    that:
+      - "'docker.sock' not in docker_agent_observer_mounts.stdout"
+    fail_msg: The exposed agent observer must not have a Docker socket mount.
+
+- name: Read deployed observer source checksum
+  ansible.builtin.stat:
+    path: "{{ docker_bootstrap_dir }}/agent-observer/observer.py"
+    checksum_algorithm: sha256
+  register: docker_agent_observer_deployed_source
+
+- name: Read observer service configuration checksum
+  ansible.builtin.command:
+    argv:
+      - docker
+      - inspect
+      - "--format={{ '{{json .Config.Env}}' }}"
+      - docker-socket-proxy-agent
+  register: docker_agent_observer_environment
+  changed_when: false
+
+- name: Verify running observer matches deployed source
+  ansible.builtin.assert:
+    that:
+      - >-
+        ('OBSERVER_SOURCE_SHA256=' ~ docker_agent_observer_deployed_source.stat.checksum)
+        in docker_agent_observer_environment.stdout
+    fail_msg: >-
+      The running observer must carry the deployed source checksum so Compose
+      cannot retain a stale process after a bind-mounted source update.
 
 - name: Verify Docker published-port policy ends fail-closed
   ansible.builtin.assert:
@@ -128,3 +170,29 @@
   loop: "{{ docker_bootstrap_containers }}"
   loop_control:
     label: "{{ item }}"
+
+- name: Probe agent observer denied routes after readiness
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - docker-socket-proxy-agent
+      - python3
+      - -c
+      - |
+        import http.client
+        checks = [
+            ("POST", "/containers/json", 405),
+            ("GET", "/containers/json?labels=probe", 400),
+            ("GET", "/containers/name/logs", 404),
+        ]
+        for method, path, expected in checks:
+            connection = http.client.HTTPConnection("127.0.0.1", 2375, timeout=5)
+            connection.request(method, path)
+            response = connection.getresponse()
+            assert response.status == expected, (method, path, response.status)
+            response.read()
+            connection.close()
+  register: docker_agent_observer_denied_routes
+  changed_when: false
+  no_log: true

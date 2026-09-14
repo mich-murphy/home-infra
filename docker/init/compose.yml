@@ -53,10 +53,45 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  # Separate from Traefik's proxy so the agent's grant never widens Traefik's.
+  # The agent-facing name and tailnet port remain stable, but this service is
+  # now a projection and never has access to the Docker socket.
   docker-socket-proxy-agent:
-    image: ghcr.io/tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    image: python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
     container_name: docker-socket-proxy-agent
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    networks:
+      - docker-socket-proxy-agent
+      - docker-socket-proxy-agent-backend
+    ports:
+      # Tailnet address only; also pinned to ai-dev in DOCKER-USER.
+      - ${AGENT_PROXY_BIND}:2375:2375
+    environment:
+      # Changes the service config when the root-controlled source changes,
+      # forcing Compose to replace the process rather than retain stale code.
+      - OBSERVER_SOURCE_SHA256=${AGENT_OBSERVER_SOURCE_SHA256}
+    volumes:
+      - ./agent-observer/observer.py:/observer.py:ro
+    command: ["python3", "/observer.py"]
+    depends_on:
+      - docker-socket-proxy-agent-backend
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; s=socket.create_connection(('127.0.0.1',2375),2); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # Unexposed backend: the socket is available only to this pinned, reduced
+  # proxy, and the observer above can reach only this fixed service name.
+  docker-socket-proxy-agent-backend:
+    image: ghcr.io/tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    container_name: docker-socket-proxy-agent-backend
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -67,35 +102,12 @@ services:
       - /tmp
       - /run
     networks:
-      - docker-socket-proxy-agent
+      - docker-socket-proxy-agent-backend
     environment:
-      # POST=0 is the write barrier; the rest are read routes.
       - CONTAINERS=1
-      - EVENTS=1
-      - IMAGES=1
-      - INFO=1
-      - NETWORKS=1
       - PING=1
       - VERSION=1
-      - VOLUMES=1
       - POST=0
-      # Already off by default; stated so the limits are explicit.
-      - EXEC=0
-      - BUILD=0
-      - COMMIT=0
-      - CONFIGS=0
-      - DISTRIBUTION=0
-      - NODES=0
-      - PLUGINS=0
-      - SECRETS=0
-      - SERVICES=0
-      - SESSION=0
-      - SWARM=0
-      - SYSTEM=0
-      - TASKS=0
-    ports:
-      # Tailnet address only; also pinned to ai-dev in DOCKER-USER.
-      - ${AGENT_PROXY_BIND}:2375:2375
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
@@ -201,6 +213,10 @@ networks:
   docker-socket-proxy:
     name: docker-socket-proxy
     internal: true
-  # Not internal: this proxy publishes a port on the tailnet address.
+  # The observer needs a non-internal frontend for Docker's published port;
+  # only the observer attaches to it. Its backend path remains private.
   docker-socket-proxy-agent:
     name: docker-socket-proxy-agent
+  docker-socket-proxy-agent-backend:
+    name: docker-socket-proxy-agent-backend
+    internal: true

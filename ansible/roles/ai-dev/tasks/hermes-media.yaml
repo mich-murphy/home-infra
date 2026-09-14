@@ -1,0 +1,196 @@
+---
+# This integration is opt-in. Its helper owns only the marked media entry and
+# token; disabled fresh/unowned hosts never probe Hermes runtimes or run the
+# merge helper. Ownership metadata is read with the system Python as Hermes.
+- name: Check whether the Hermes account exists
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ ai_dev_hermes_user }}"
+    fail_key: false
+
+- name: Determine whether the Hermes account is available
+  ansible.builtin.set_fact:
+    ai_dev_hermes_media_user_exists: "{{ ansible_facts.getent_passwd[ai_dev_hermes_user] is not none }}"
+
+- name: Require the Hermes account outside check mode
+  ansible.builtin.assert:
+    that:
+      - ai_dev_hermes_media_user_exists | bool or ansible_check_mode
+    fail_msg: Provision the Hermes account before enabling its media integration.
+  when: ai_dev_hermes_media_broker_enabled | bool
+
+- name: Read bounded media ownership metadata as Hermes
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_python }}"
+      - -I
+      - -c
+      - |
+        import json, os, stat, sys
+        owned = False
+        try:
+            fd = os.open(sys.argv[1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+            try:
+                info = os.fstat(fd)
+                if stat.S_ISREG(info.st_mode) and info.st_uid == os.getuid() and info.st_size <= 256:
+                    owned = os.read(fd, 257).startswith(b'ansible-managed-hermes-media-broker-v1\n')
+            finally:
+                os.close(fd)
+        except OSError:
+            pass
+        print(json.dumps({'owned': owned}))
+      - "{{ ai_dev_hermes_media_broker_marker }}"
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_media_marker_probe
+  changed_when: false
+  check_mode: false
+  timeout: 10
+  no_log: true
+  when: ai_dev_hermes_media_user_exists | bool
+
+- name: Determine whether Hermes media files require reconciliation
+  ansible.builtin.set_fact:
+    ai_dev_hermes_media_owned: >-
+      {{ ((ai_dev_hermes_media_marker_probe.stdout | default('{"owned": false}') | from_json).owned) | bool }}
+    ai_dev_hermes_media_runtime_needed: >-
+      {{ (ai_dev_hermes_media_user_exists | bool)
+         and ((ai_dev_hermes_media_broker_enabled | bool)
+           or ((ai_dev_hermes_media_marker_probe.stdout | default('{"owned": false}') | from_json).owned | bool)) }}
+
+- name: Validate the optional media-broker port
+  ansible.builtin.assert:
+    that:
+      - ai_dev_hermes_media_broker_port | string is match('^[0-9]+$')
+      - ai_dev_hermes_media_broker_port | int >= 1
+      - ai_dev_hermes_media_broker_port | int <= 65535
+      - ai_dev_hermes_media_broker_port | int not in [443, 2375, 8006]
+    fail_msg: >-
+      The media-broker port must be numeric and distinct from HTTPS, the Docker
+      observer port, and the Proxmox API port.
+
+- name: Require the operator media-broker token when enabled
+  ansible.builtin.assert:
+    that:
+      - hermes_media_broker_token is defined
+      - hermes_media_broker_token | string is match('^[A-Za-z0-9_-]{32,256}$')
+    fail_msg: >-
+      An operator-supplied media-broker token of 32-256 URL-safe characters is
+      required when enabled.
+  no_log: true
+  when: ai_dev_hermes_media_broker_enabled | bool
+
+- name: Require the fixed media-broker endpoint when enabled
+  ansible.builtin.assert:
+    that:
+      - ai_dev_hermes_media_broker_host == ai_dev_docker_proxy_host
+      - ai_dev_hermes_media_broker_url == ('http://' ~ ai_dev_docker_proxy_host ~ ':' ~ (ai_dev_hermes_media_broker_port | string) ~ '/mcp')
+      - ai_dev_docker_proxy_address.stdout | trim is match('^100\\.[0-9.]+$')
+    fail_msg: >-
+      The media broker must use the resolved docker-host Tailscale endpoint and
+      its dedicated port.
+  when: ai_dev_hermes_media_broker_enabled | bool
+
+- name: Select a Hermes Python with YAML support
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_python }}"
+      - -I
+      - -c
+      - |
+        import subprocess, sys
+        try:
+            result = subprocess.run([sys.argv[1], '-I', '-c', 'import yaml'],
+                                    timeout=5, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            sys.exit(result.returncode)
+        except (OSError, subprocess.TimeoutExpired):
+            sys.exit(1)
+      - "{{ item }}"
+  loop: "{{ ai_dev_hermes_config_python_candidates }}"
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_media_python_probes
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  timeout: 10
+  no_log: true
+  when: ai_dev_hermes_media_runtime_needed | bool
+
+- name: Set the verified Hermes media helper interpreter
+  ansible.builtin.set_fact:
+    ai_dev_hermes_media_config_python: >-
+      {{ (ai_dev_hermes_media_python_probes.results
+          | selectattr('rc', 'defined')
+          | selectattr('rc', 'equalto', 0)
+          | map(attribute='item') | list | first) | default('') }}
+  when: ai_dev_hermes_media_runtime_needed | bool
+
+- name: Require a verified Hermes YAML interpreter
+  ansible.builtin.assert:
+    that:
+      - ai_dev_hermes_media_config_python | length > 0
+    fail_msg: >-
+      No candidate Hermes Python interpreter with YAML support was found. Install
+      YAML in the existing Hermes environment or set the approved candidate list;
+      no package was installed automatically.
+  when: ai_dev_hermes_media_runtime_needed | bool
+
+- name: Install the Hermes media integration helper
+  ansible.builtin.copy:
+    src: manage-hermes-media.py
+    dest: "{{ ai_dev_hermes_home }}/.local/bin/manage-hermes-media.py"
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0700"
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  when: ai_dev_hermes_media_runtime_needed | bool
+
+- name: Reconcile the optional Hermes media integration
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_media_config_python }}"
+      - "{{ ai_dev_hermes_home }}/.local/bin/manage-hermes-media.py"
+      - --config
+      - "{{ ai_dev_hermes_media_broker_config }}"
+      - --env
+      - "{{ ai_dev_hermes_media_broker_env }}"
+      - --marker
+      - "{{ ai_dev_hermes_media_broker_marker }}"
+      - --url
+      - "{{ ai_dev_hermes_media_broker_url }}"
+      - --allowed-host
+      - "{{ ai_dev_docker_proxy_host }}"
+      - --allowed-port
+      - "{{ ai_dev_hermes_media_broker_port }}"
+      - --mode
+      - "{{ 'enabled' if ai_dev_hermes_media_broker_enabled | bool else 'disabled' }}"
+      - --takeover
+      - "{{ 'true' if ai_dev_hermes_media_broker_takeover | bool else 'false' }}"
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    MEDIA_BROKER_TOKEN: "{{ hermes_media_broker_token | default('') }}"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_media_reconcile
+  changed_when: >-
+    ai_dev_hermes_media_reconcile.rc == 0
+    and (ai_dev_hermes_media_reconcile.stdout | from_json).changed | bool
+  no_log: true
+  timeout: 20
+  when:
+    - not ansible_check_mode
+    - ai_dev_hermes_media_runtime_needed | bool

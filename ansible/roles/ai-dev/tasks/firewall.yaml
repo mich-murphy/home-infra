@@ -102,6 +102,17 @@
       Each Hermes egress peer must resolve to exactly one Tailscale IPv4
       address before ai-dev opens egress to it.
 
+- name: Validate the optional media-broker port is separate
+  ansible.builtin.assert:
+    that:
+      - ai_dev_hermes_media_broker_port | string is match('^[0-9]+$')
+      - ai_dev_hermes_media_broker_port | int >= 1
+      - ai_dev_hermes_media_broker_port | int <= 65535
+      - ai_dev_hermes_media_broker_port | int not in [443, 2375, 8006]
+    fail_msg: >-
+      The optional media-broker port must be numeric and distinct from HTTPS,
+      Docker observer, and Proxmox API ports.
+
 # The distro unit's ExecStart loads /etc/nftables.conf. Keep that root-owned
 # file as the administrator's persistent configuration and add only a native
 # include for the fragment owned by this role.
@@ -192,6 +203,25 @@
     group: root
     mode: '0600'
   register: nft_candidate
+
+- name: Read rendered media-broker firewall candidate
+  ansible.builtin.slurp:
+    src: /run/ai-dev-nftables.nft
+  register: ai_dev_nftables_candidate_content
+  check_mode: false
+  when: not ansible_check_mode
+
+- name: Verify rendered media-broker firewall state
+  ansible.builtin.assert:
+    that:
+      - >-
+        (ai_dev_hermes_media_broker_enabled | bool)
+        == (('tcp dport ' ~ (ai_dev_hermes_media_broker_port | string) ~ ' accept')
+            in (ai_dev_nftables_candidate_content.content | b64decode))
+    fail_msg: >-
+      The rendered nftables candidate must include the media-broker allow only
+      when the opt-in integration is enabled.
+  when: not ansible_check_mode
 
 - name: Stage the root nftables configuration with the candidate include
   ansible.builtin.shell: |

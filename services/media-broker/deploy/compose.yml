@@ -1,0 +1,90 @@
+# Production CANDIDATE only. This file is intentionally outside the active
+# Portainer inventory; promotion is a separately approved rollout step.
+services:
+  media-broker:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: home-infra/media-broker:candidate
+    container_name: media-broker-candidate
+    user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    networks:
+      - proxy
+    # MEDIA_BROKER_BIND is supplied only by the preflight after it verifies
+    # this host's local Tailscale address. It has no fallback value.
+    ports:
+      - "${MEDIA_BROKER_BIND:?run deploy/preflight.sh and set MEDIA_BROKER_BIND}:8765:8000"
+    environment:
+      SONARR_URL: "${SONARR_URL:?set Sonarr URL}"
+      RADARR_URL: "${RADARR_URL:?set Radarr URL}"
+      LIDARR_URL: "${LIDARR_URL:?set Lidarr URL}"
+      TAUTULLI_URL: "${TAUTULLI_URL:?set Tautulli URL}"
+      SONARR_API_KEY_FILE: /run/secrets/sonarr_api_key
+      RADARR_API_KEY_FILE: /run/secrets/radarr_api_key
+      LIDARR_API_KEY_FILE: /run/secrets/lidarr_api_key
+      TAUTULLI_API_KEY_FILE: /run/secrets/tautulli_api_key
+      MEDIA_BROKER_TOKEN_FILE: /run/secrets/media_broker_token
+      MEDIA_BROKER_BIND_HOST: "${MEDIA_BROKER_BIND_HOST:?set 0.0.0.0 only with explicit opt-in}"
+      MEDIA_BROKER_ALLOW_PUBLIC_BIND: "${MEDIA_BROKER_ALLOW_PUBLIC_BIND:?set true only with exact allow-lists}"
+      # Hermes uses this fixed authority over the Tailscale endpoint.
+      MEDIA_BROKER_ALLOWED_HOSTS: docker-host:8765
+      MEDIA_BROKER_ALLOWED_ORIGINS: http://docker-host:8765
+      # Lidarr's observed inventory is about 2.27 MB; keep a 5 MB hard bound.
+      MEDIA_BROKER_MAX_RESPONSE_BYTES: "5242880"
+    secrets:
+      - source: media_broker_token
+        target: media_broker_token
+        uid: "65532"
+        gid: "65532"
+        mode: 0440
+      - source: sonarr_api_key
+        target: sonarr_api_key
+        uid: "65532"
+        gid: "65532"
+        mode: 0440
+      - source: radarr_api_key
+        target: radarr_api_key
+        uid: "65532"
+        gid: "65532"
+        mode: 0440
+      - source: lidarr_api_key
+        target: lidarr_api_key
+        uid: "65532"
+        gid: "65532"
+        mode: 0440
+      - source: tautulli_api_key
+        target: tautulli_api_key
+        uid: "65532"
+        gid: "65532"
+        mode: 0440
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; s=socket.create_connection(('127.0.0.1', 8000), 2); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+secrets:
+  media_broker_token:
+    file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/broker-token"
+  sonarr_api_key:
+    file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/sonarr-api-key"
+  radarr_api_key:
+    file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/radarr-api-key"
+  lidarr_api_key:
+    file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/lidarr-api-key"
+  tautulli_api_key:
+    file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/tautulli-api-key"
+
+networks:
+  # The existing application network provides reachability to the four
+  # upstreams; no media or Docker socket mount is needed.
+  proxy:
+    external: true
+    name: proxy
