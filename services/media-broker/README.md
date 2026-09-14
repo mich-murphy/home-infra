@@ -56,8 +56,10 @@ Run checks with `uv run --dev pytest` and `uv run --dev ruff check .`.
 
 ## Local-only container example
 
-This is intentionally not wired into the repository's deployment inventory and
-must not be used as a production deployment. Secret files should be mounted by
+This local-only example is intentionally not wired into the repository's
+production deployment and must not be used as a production deployment. The
+production candidate Compose file is the inventoried
+`deploy/compose.yml`; secret files should be mounted by
 the operator; this example has no media or Docker socket mounts. The image runs
 as UID/GID 65532, so host-mounted secret files must be readable by that numeric
 identity without becoming world-readable (for example, root-owned `0640` files
@@ -82,8 +84,9 @@ consent or authorization for a particular media action. The broker is read-only
 but upstream credentials and playback titles remain sensitive household data;
 keep it on a trusted loopback or private network and review client access.
 The production candidate configuration lives at
-[`deploy/compose.yml`](deploy/compose.yml); its supported preflight/launcher
-and staged rollout are documented in
+[`deploy/compose.yml`](deploy/compose.yml). Portainer owns the live stack with
+manual updates, no Git workflow, and no automatic redeployment. The required
+host preflight, explicit image build, and authenticated update procedure are in
 [`docs/hermes-media.md`](../../docs/hermes-media.md). Direct Compose invocation
 is unsupported because it bypasses the preflight; this is operational policy,
 not a security boundary against root.

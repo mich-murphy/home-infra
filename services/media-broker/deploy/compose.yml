@@ -1,5 +1,5 @@
-# Production CANDIDATE only. This file is intentionally outside the active
-# Portainer inventory; promotion is a separately approved rollout step.
+# Canonical source for the Portainer-managed broker. Updates require host
+# preflight and an explicit image build; do not attach shared Git polling.
 services:
   media-broker:
     build:

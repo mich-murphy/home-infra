@@ -58,6 +58,7 @@ jobs:
         env:
           ADMIN_PASSWORD: ci-placeholder
           ADMIN_USERNAME: ci-placeholder
+          AGENT_OBSERVER_SOURCE_SHA256: e522cce75cee8e596b4bec51119582e4c6ce9c0d12668c79ae593c7852399adb
           AGENT_PROXY_BIND: 100.64.0.1
           CF_API_EMAIL: ci@example.invalid
           CF_DNS_API_TOKEN: ci-placeholder
@@ -71,10 +72,18 @@ jobs:
           DB_USERNAME: immich
           ENCRYPTION_KEY: ci-placeholder
           MAXMIND_LICENSE_KEY: ci-placeholder
+          MEDIA_BROKER_ALLOW_PUBLIC_BIND: "true"
+          MEDIA_BROKER_BIND: 100.64.0.2
+          MEDIA_BROKER_BIND_HOST: 0.0.0.0
+          MEDIA_BROKER_SECRETS_DIR: /tmp/media-broker-secrets
           NEXTCLOUD_DB_PASSWORD: ci-placeholder
           NEXTCLOUD_REDIS_PASSWORD: ci-placeholder
           PLEX_CLAIM: ci-placeholder
           JELLYPLEX_JELLYFIN_TOKEN: ci-placeholder
+          RADARR_URL: http://radarr:7878
+          LIDARR_URL: http://lidarr:8686
+          SONARR_URL: http://sonarr:8989
+          TAUTULLI_URL: http://tautulli:8181
           JELLYPLEX_PLEX_TOKEN: ci-placeholder
           TZ: Australia/Melbourne
           UPLOAD_LOCATION: /tmp/immich-upload
@@ -87,6 +96,18 @@ jobs:
           # The hardening check renders and validates every Compose file once.
           tests/docker-hardening.sh
           SCRIPT
+      - name: Test media broker source and fixtures
+        if: inputs.check == 'docker'
+        run: |
+          uv_home="${RUNNER_TEMP}/media-broker-uv"
+          python3 -m venv "${uv_home}"
+          "${uv_home}/bin/pip" install --disable-pip-version-check --no-cache-dir uv==0.12.5
+          export UV_PROJECT_ENVIRONMENT="${RUNNER_TEMP}/media-broker-python"
+          "${uv_home}/bin/uv" sync --locked --all-groups --directory services/media-broker
+          "${uv_home}/bin/uv" run --locked --all-groups --directory services/media-broker pytest -q
+          "${uv_home}/bin/uv" run --locked --all-groups --directory services/media-broker ruff check .
+          # This fixture suite is secret-free and does not contact Docker or a host.
+          tests/media-broker-preflight.sh
       - name: Check ai-dev maintenance command
         if: inputs.check == 'ansible'
         run: |

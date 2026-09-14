@@ -104,6 +104,16 @@ while IFS= read -r compose_file; do
   fi
 done < <(find "${repo_root}/docker" -name compose.yml -print | sort)
 
+# Canonical service deployments live outside docker/, but use the same
+# hardening policy. Keep the service name explicit rather than deriving
+# "deploy" from the Compose file's parent directory.
+canonical_compose=${repo_root}/services/media-broker/deploy/compose.yml
+canonical_normalized=${tmp_dir}/media-broker.json
+docker-compose -f "${canonical_compose}" config --format json >"${canonical_normalized}"
+if ! check_normalized_file media-broker "${canonical_normalized}"; then
+  exit 1
+fi
+
 # The exposed name is now a projection, while the socket proxy remains an
 # unexposed backend. Keep these topology assertions next to the generic
 # container hardening checks.
