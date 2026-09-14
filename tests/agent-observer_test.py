@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 import pathlib
+import re
 import socket
 import sys
 import threading
@@ -57,6 +58,14 @@ class ObserverTest(unittest.TestCase):
         response = self.connection.getresponse()
         body = response.read()
         return response.status, body
+
+    def backend_log_path(self, container, parameters):
+        resolved = {"stdout": "1", "stderr": "1", "tail": "100", "timestamps": "0"}
+        resolved.update(parameters)
+        return "/containers/{container}/logs?{query}".format(
+            container=container,
+            query="&".join(f"{key}={resolved[key]}" for key in ("stdout", "stderr", "tail", "timestamps")),
+        )
 
     def test_projection_drops_sensitive_fields(self):
         canary = "OBSERVER_CANARY_SECRET"
@@ -119,37 +128,84 @@ class ObserverTest(unittest.TestCase):
             self.assertEqual(status, expected, path)
         self.assertEqual(self.backend.requests, [])
 
-    def test_logs_route_demuxes_and_defaults_tail(self):
-        def frame(stream: int, payload: bytes) -> bytes:
-            return bytes([stream, 0, 0, 0]) + len(payload).to_bytes(4, "big") + payload
+    def make_log_stream(self, lines):
+        """Backend-style multiplexed frames from (stream, payload) pairs."""
+        import struct
 
-        body = (
-            frame(1, b"stdout line\n")
-            + frame(2, b"stderr OBSERVER_CANARY_SECRET\n")
-            + frame(1, b"\xff\xfe invalid utf-8\n")
-            # Final frame claims 40 payload bytes but delivers 9.
-            + bytes([1, 0, 0, 0]) + (40).to_bytes(4, "big") + b"truncated"
+        return b"".join(
+            struct.pack(">Bxxx", stream) + len(payload).to_bytes(4, "big") + payload
+            for stream, payload in lines
         )
-        self.backend.responses["/containers/media-server/logs?stdout=1&stderr=1&tail=100&timestamps=0"] = (200, body)
-        self.backend.responses["/containers/media-server/logs?stdout=1&stderr=1&tail=50&timestamps=0"] = (200, body)
 
-        status, result = self.request("GET", "/containers/media-server/logs")
+    def get_logs(self, container, query=""):
+        path = "/containers/" + container + "/logs" + ("?" + query if query else "")
+        return self.request("GET", path)
+
+    def test_logs_are_readable_as_plain_text(self):
+        self.backend.responses[self.backend_log_path("media-server", {})] = (200, self.make_log_stream([
+            (1, b"stdout line\n"),
+            (2, b"stderr line\n"),
+        ]))
+
+        status, body = self.get_logs("media-server")
+
         self.assertEqual(status, 200)
-        self.assertIn(b"stdout line\n", result)
-        self.assertIn(b"stderr OBSERVER_CANARY_SECRET\n", result)
-        # Invalid UTF-8 is replaced, and a truncated final frame is dropped.
-        self.assertIn("\ufffd\ufffd invalid utf-8\n".encode(), result)
-        self.assertNotIn(b"truncated", result)
+        self.assertEqual(body, b"stdout line\nstderr line\n")
 
-        status, _ = self.request("GET", "/containers/media-server/logs?stdout=1&stderr=1&tail=50&timestamps=0")
-        self.assertEqual(status, 200)
-        self.assertEqual(self.backend.requests[-1], "/containers/media-server/logs?stdout=1&stderr=1&tail=50&timestamps=0")
+    def test_logs_of_unknown_container_report_not_found(self):
+        status, body = self.get_logs("missing")
 
-        # Unknown container surfaces the backend's 404.
-        self.backend.responses["/containers/missing/logs?stdout=1&stderr=1&tail=100&timestamps=0"] = (404, b"nope")
-        status, result = self.request("GET", "/containers/missing/logs")
         self.assertEqual(status, 404)
-        self.assertEqual(json.loads(result), {"error": "container not found"})
+        self.assertEqual(json.loads(body), {"error": "container not found"})
+
+    def test_logs_stream_filtering_and_timestamps_are_forwarded(self):
+        for query in ("stdout=0", "stderr=0", "timestamps=1", "tail=50"):
+            with self.subTest(query=query):
+                parameters = dict(part.split("=") for part in query.split("&"))
+                self.backend.responses[self.backend_log_path("media-server", parameters)] = (
+                    200, self.make_log_stream([(2, b"only stderr\n")])
+                )
+
+                status, body = self.get_logs("media-server", query)
+
+                self.assertEqual(status, 200)
+                self.assertEqual(body, b"only stderr\n")
+                self.assertEqual(
+                    self.backend.requests[-1],
+                    self.backend_log_path("media-server", parameters),
+                )
+
+    def test_logs_default_to_a_bounded_tail(self):
+        self.backend.responses[self.backend_log_path("media-server", {})] = (200, b"")
+
+        status, _ = self.get_logs("media-server")
+
+        self.assertEqual(status, 200)
+        requested_tail = re.search(r"tail=([0-9]+)", self.backend.requests[-1]).group(1)
+        self.assertTrue(requested_tail.isdigit() and 0 < int(requested_tail) <= 1000)
+
+    def test_logs_never_follow_or_window_by_time(self):
+        # Reading logs must always terminate: whatever the caller sends,
+        # follow/since/until must not reach the backend.
+        for query in ("follow=1", "since=1700000000", "until=1700000000"):
+            with self.subTest(query=query):
+                status, _ = self.get_logs("media-server", query)
+
+                self.assertEqual(status, 400)
+                self.assertNotIn(query.split("=")[0], self.backend.requests[-1] if self.backend.requests else "")
+
+    def test_logs_replace_undecodable_bytes_and_drop_incomplete_frames(self):
+        self.backend.responses[self.backend_log_path("media-server", {})] = (
+            200,
+            self.make_log_stream([(1, b"\xff\xfe not utf-8\n")])
+            + self.make_log_stream([(1, b"complete\n")])[:8]  # header claims more bytes than follow
+        )
+
+        status, body = self.get_logs("media-server")
+
+        self.assertEqual(status, 200)
+        self.assertIn("\ufffd\ufffd not utf-8\n".encode(), body)
+        self.assertNotIn(b"complete", body)
 
     def test_version_prefix_and_head(self):
         self.backend.responses["/version"] = (200, json.dumps({
