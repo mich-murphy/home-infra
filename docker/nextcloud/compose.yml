@@ -125,7 +125,9 @@ services:
       POSTGRES_PASSWORD: ${NEXTCLOUD_DB_PASSWORD}
       POSTGRES_INITDB_ARGS: --data-checksums
     volumes:
-      - nextcloud-db:/var/lib/postgresql/data
+      # postgres 18+ images require the mount at /var/lib/postgresql, with data in a
+      # major-version subdirectory.
+      - nextcloud-db:/var/lib/postgresql
     shm_size: 128mb
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nextcloud -d nextcloud"]
