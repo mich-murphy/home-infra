@@ -29,3 +29,19 @@ ai_dev_hermes_moshi_target: hermes
 ai_dev_hermes_python: /usr/bin/python3
 # Seconds a detached mosh server waits for a client before exiting.
 ai_dev_hermes_mosh_timeout: 3600
+
+# Optional, read-only media-broker MCP integration. It is deliberately disabled
+# on fresh hosts and requires an operator-supplied vaulted token when enabled.
+ai_dev_hermes_media_broker_enabled: false
+ai_dev_hermes_media_broker_host: "{{ ai_dev_docker_proxy_host }}"
+ai_dev_hermes_media_broker_port: 8765
+ai_dev_hermes_media_broker_url: "http://{{ ai_dev_hermes_media_broker_host }}:{{ ai_dev_hermes_media_broker_port }}/mcp"
+ai_dev_hermes_media_broker_takeover: false
+ai_dev_hermes_media_broker_config: "{{ ai_dev_hermes_home }}/.hermes/config.yaml"
+ai_dev_hermes_media_broker_env: "{{ ai_dev_hermes_home }}/.hermes/.env"
+ai_dev_hermes_media_broker_marker: "{{ ai_dev_hermes_home }}/.config/hermes/media-broker.managed"
+ai_dev_hermes_media_broker_marker_prefix: ansible-managed-hermes-media-broker-v1
+ai_dev_hermes_config_python_candidates:
+  - "{{ ai_dev_hermes_home }}/.hermes/hermes-agent/venv/bin/python"
+  - "{{ ai_dev_hermes_home }}/.hermes/hermes-agent/.venv/bin/python"
+  - /usr/bin/python3

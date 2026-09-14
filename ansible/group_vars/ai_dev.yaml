@@ -16,6 +16,9 @@ ai_dev_docker_proxy_host: docker-host
 ai_dev_docker_proxy_port: 2375
 ai_dev_proxmox_api_host: proxmox
 ai_dev_proxmox_api_port: 8006
+# Live read-only broker. Supply its existing token through protected Ansible vars
+# as hermes_media_broker_token when reconciling this host; never commit the value.
+ai_dev_hermes_media_broker_enabled: true
 
 swap_mode: file
 swap_size_gb: 8

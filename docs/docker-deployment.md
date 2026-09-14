@@ -46,32 +46,61 @@ interval, webhook token, and per-stack environment values because these are
 secret-bearing or controller-specific. Audit them in the Portainer UI after a
 restore and whenever repository authentication changes.
 
-## Agent socket proxy
+## Agent Docker observer
 
-The `init` stack runs two instances of the same pinned socket proxy image.
-`docker-socket-proxy` serves Traefik on an internal network with no published
-port. `docker-socket-proxy-agent` serves the ai-dev Hermes agent.
+The `init` stack runs Traefik's pinned socket proxy on an internal network and a
+separate two-service path for the ai-dev Hermes agent. The
+`docker-socket-proxy-agent` container keeps the existing tailnet address and
+port 2375, but is now a small read-only HTTP projection with no Docker socket.
+It talks only to the fixed, unexposed
+`docker-socket-proxy-agent-backend` service on a private internal network. The
+observer also attaches to a dedicated non-internal frontend solely because
+Docker cannot publish a port from an internal-only network; no other service
+attaches to that frontend. The backend is the pinned Tecnativa proxy with only
+`CONTAINERS`, `VERSION`, and `PING` reads enabled and `POST=0`.
 
-Keep them separate. Widening the agent's read surface must never widen
-Traefik's, and the two have no reason to share a grant.
+The observer permits only `GET`/`HEAD` `/_ping`, `/version`,
+`/containers/json` (with only `all=0` or `all=1`), and
+`/containers/{strict-name-or-id}/json`, with an optional Docker API version
+prefix. It rejects writes, encoded or ambiguous paths, and all other Docker
+routes including logs, archives, events, images, volumes, and configuration
+reads. Responses contain only IDs, names, image references, state, status, exit
+codes, and health `Status`; environment, labels, commands, mount paths,
+networks, health logs, arbitrary nested data, and backend errors are not
+returned. The observer has finite request, concurrency, upstream header/body, and
+upstream time limits and does not follow redirects or environment proxies.
+It resolves the fixed backend once at startup, before accepting clients, and
+uses the cached numeric address thereafter; startup DNS follows the container
+OS resolver's own timeout and is intentionally outside the request deadline.
+If the backend address changes, restart/reconcile the observer so it resolves
+again. Docker inspect and CLI compatibility is deliberately reduced: this endpoint
+is for safe status observation, not full `docker inspect`, and it provides no
+logs.
 
-The agent instance refuses every write route and allows only the read routes
-needed to diagnose. Independent controls restrict it to the ai-dev tailnet
-address; the `docker-host` role defines them and asserts them on every run,
-including that the container never binds all interfaces. An empty
-`AGENT_PROXY_BIND` would make Compose bind everywhere, so the bind address is
-verified rather than assumed.
-
-The proxy filters requests, not responses: inspecting a container returns its
-environment block, so any secret passed through a Compose `environment:` entry
-is readable through it. Moving those values out of the environment is the only
-fix; no proxy setting achieves it.
+Independent controls restrict the existing port to the ai-dev tailnet address;
+the `docker-host` role defines them and asserts them on every run, including
+that the container never binds all interfaces. An empty `AGENT_PROXY_BIND`
+would make Compose bind everywhere, so the bind address is verified rather than
+assumed. Only the backend mounts `/var/run/docker.sock`; both services drop
+all capabilities and the observer runs read-only as an unprivileged user. The
+root-controlled observer source is hashed into the Compose service
+configuration during bootstrap, so a source update recreates the observer
+instead of leaving an old process behind a replaced bind-mounted inode.
 
 The router permits DFLT and KDS to the Docker host only on TCP 443. Traefik's
 `kds-media-only` IP allow-list middleware is attached to every non-media router,
 including the TrueNAS, Portainer, and dashboard routes; only Plex and Jellyfin
 are intentionally reachable from KDS. Jellyfin's direct TCP 8096 fallback is
 allow-listed for the Tailscale range only, not DFLT or KDS.
+
+## Hermes media-broker candidate
+
+The read-only media broker is a staged production candidate, not an active
+Portainer stack. Its Compose packaging, Tailscale-only host policy, preflight,
+secret file modes, and promotion sequence are documented in
+[`docs/hermes-media.md`](hermes-media.md). Keep
+`services/media-broker/deploy/compose.yml` outside the active inventory until
+that rollout is separately approved.
 
 ## Removing a stack
 

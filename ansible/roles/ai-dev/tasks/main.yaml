@@ -32,3 +32,9 @@
   ansible.builtin.import_tasks: hermes.yaml
   tags:
     - hermes
+
+- name: Configure optional Hermes media-broker integration
+  ansible.builtin.import_tasks: hermes-media.yaml
+  tags:
+    - hermes
+    - hermes-media

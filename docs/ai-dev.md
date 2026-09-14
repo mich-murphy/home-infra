@@ -159,13 +159,17 @@ its credentials. The installer clones `NousResearch/hermes-agent` into
 and pulls a Hermes-managed Node and a Playwright browser, so the first run is
 long and the install is the largest on the VM.
 
-ai-dev carries no Docker client. The socket proxy speaks plain HTTP, so the
+ai-dev carries no Docker client. The observer speaks plain HTTP, so the
 agent queries it directly, and `DOCKER_HOST` records the endpoint. Installing
 the client would drag in `containerd` and `runc`, about 100 MiB of container
 runtime on a guest with no reason to carry it. Nothing here prevents
 installing one later; the agent simply does not need it.
-The trade-off is `GET /containers/{id}/logs`, which returns a multiplexed
-stream the CLI would otherwise de-multiplex.
+The endpoint is intentionally a reduced status projection rather than a
+Docker API: it supports only ping, version, container listing, and strict-name
+or ID inspection. It returns safe IDs, names, image references, state, status,
+exit codes, and health status. It does not support logs, stats, events, archive
+operations, or full `docker inspect`; commands depending on those routes must
+use an approved, separately protected diagnostic path.
 
 ### Access tiers
 
@@ -174,7 +178,7 @@ The agent observes broadly, acts narrowly, and proposes everything else.
 | Tier | Reach | Mechanism |
 | --- | --- | --- |
 | Observe | Proxmox cluster and guest state | `PVEAuditor` API token |
-| Observe | Containers, logs, stats, events | Read-only socket proxy |
+| Observe | Sanitized container status | Read-only Docker observer |
 | Propose | Any change to this repository | GitHub token, pull request only |
 | Act | Nothing on a running host | Deliberately absent |
 
@@ -284,12 +288,37 @@ agent lives here rather than on docker-host.
 
 ### Known exposure
 
-The Docker socket proxy filters which requests are allowed, not what the
-answers contain: inspecting a container returns its environment block, so
-every secret passed through a Compose `environment:` entry is readable by the
-agent. Closing that means moving those values out of the environment, not
-tightening the proxy. Treat the agent's credentials as revocable: delete the
-Proxmox token and revoke the GitHub token if ai-dev is ever suspect.
+The observer is deliberately narrower than the Docker API. Its fixed backend
+is not exposed and is the only service with a read-only Docker socket mount;
+the observer projects fields instead of relaying Docker responses. It resolves
+the backend once before serving requests, so a backend address change requires
+an observer reconciliation/restart; a stale or unavailable backend fails closed
+with a generic response. This does not make status values trustworthy: names,
+image references, status text, and
+health status are written by workloads and should be treated as untrusted
+input. Treat the agent's credentials as revocable: delete the Proxmox token
+and revoke the GitHub token if ai-dev is ever suspect.
+
+### Optional media-broker connection
+
+The staged production-candidate rollout is documented in
+[`docs/hermes-media.md`](hermes-media.md). The Hermes media-broker MCP
+connection is opt-in and disabled in the role defaults. The live ai-dev host
+group explicitly enables it. When enabled, Ansible adds only the managed `mcp_servers.media_broker`
+entry and `MEDIA_BROKER_TOKEN` reference in `~/.hermes/.env`; it preserves the
+Photon, Moshi, and other MCP settings. The operator-supplied token must be a
+single-line 32-256 character URL-safe value (`A-Z`, `a-z`, `0-9`, `_`, or `-`).
+It is never generated, logged, or copied into YAML. An unowned same-name entry fails
+closed unless an operator explicitly enables the takeover setting. Disabling
+removes only the managed entry and token, without requiring the token variable.
+
+The live endpoint is `http://docker-host:8765/mcp`, reached over Tailscale.
+The sanitized Docker observer, broker, and source-pinned access controls have
+been deployed and tested. Backend keys stay on docker-host in restricted
+files. The broker uses a 5 MiB response bound for the observed 2.27 MB Lidarr
+inventory. Ansible does not restart the Hermes gateway. After subsequent
+approved configuration changes, restart the Hermes user service explicitly
+and verify its four read-only tools.
 
 ## Agent scratch space
 

@@ -2,11 +2,45 @@
 # Docker-published ports bypass UFW's INPUT policy and must be filtered before
 # Docker's own FORWARD rules.
 
+- name: Validate the reserved media-broker port
+  ansible.builtin.assert:
+    that:
+      - docker_media_broker_port | string is match('^[0-9]+$')
+      - docker_media_broker_port | int >= 1
+      - docker_media_broker_port | int <= 65535
+      - docker_media_broker_port | int not in [443, 2375, 8006]
+      - >-
+        docker_published_ports
+        | selectattr('port', 'equalto', docker_media_broker_port | int)
+        | list | length == 0
+      - >-
+        docker_tailscale_fallback_ports
+        | selectattr('port', 'equalto', docker_media_broker_port | int)
+        | list | length == 0
+    fail_msg: >-
+      The media-broker port must be numeric, distinct from HTTPS, the observer,
+      and Proxmox, and absent from all general or fallback published-port lists.
+
 # Second control behind the Tailscale ACL, in case that policy is wrong.
-- name: Read the ai-dev tailnet address
+- name: Read the ai-dev tailnet address for the observer
   ansible.builtin.command:
     cmd: "tailscale ip -4 {{ docker_agent_proxy_client }}"
   register: docker_agent_proxy_client_address
+  changed_when: false
+  check_mode: false
+
+- name: Verify the ai-dev tailnet address is in the Tailscale IPv4 range
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - |
+        import ipaddress
+        import sys
+        address = ipaddress.ip_address(sys.argv[1])
+        if address.version != 4 or address not in ipaddress.ip_network('100.64.0.0/10'):
+            raise SystemExit('address is not in 100.64.0.0/10')
+      - "{{ docker_agent_proxy_client_address.stdout | trim }}"
   changed_when: false
   check_mode: false
 
@@ -14,10 +48,45 @@
   ansible.builtin.assert:
     that:
       - docker_agent_proxy_client_address.stdout_lines | length == 1
-      - docker_agent_proxy_client_address.stdout | trim is match('^100\.')
+      - >-
+        docker_agent_proxy_client_address.stdout | trim is match(
+        '^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]{1,3}\.[0-9]{1,3}$')
     fail_msg: >-
       {{ docker_agent_proxy_client }} must resolve to exactly one Tailscale
       IPv4 address before the agent socket proxy is exposed.
+
+- name: Read the ai-dev tailnet address for the media broker
+  ansible.builtin.command:
+    cmd: "tailscale ip -4 {{ docker_media_broker_client }}"
+  register: docker_media_broker_client_address
+  changed_when: false
+  check_mode: false
+
+- name: Verify the media broker client address is in the Tailscale IPv4 range
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - |
+        import ipaddress
+        import sys
+        address = ipaddress.ip_address(sys.argv[1])
+        if address.version != 4 or address not in ipaddress.ip_network('100.64.0.0/10'):
+            raise SystemExit('address is not in 100.64.0.0/10')
+      - "{{ docker_media_broker_client_address.stdout | trim }}"
+  changed_when: false
+  check_mode: false
+
+- name: Verify the media broker client address resolved
+  ansible.builtin.assert:
+    that:
+      - docker_media_broker_client_address.stdout_lines | length == 1
+      - >-
+        docker_media_broker_client_address.stdout | trim is match(
+        '^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]{1,3}\.[0-9]{1,3}$')
+    fail_msg: >-
+      {{ docker_media_broker_client }} must resolve to exactly one Tailscale
+      IPv4 address before the media broker is exposed.
 
 - name: Allowlist Docker published ports in DOCKER-USER
   ansible.builtin.blockinfile:
@@ -26,6 +95,13 @@
     block: |
       *filter
       :DOCKER-USER - [0:0]
+      {% if docker_media_broker_enabled | bool %}
+      {{ '-A DOCKER-USER -s ' ~
+         (docker_media_broker_client_address.stdout | trim) ~
+         '/32 -i tailscale0 -p tcp -m conntrack --ctorigdstport ' ~
+         docker_media_broker_port ~ ' --ctdir ORIGINAL -j RETURN' }}
+      {% endif %}
+      {{ '-A DOCKER-USER -p tcp -m conntrack --ctorigdstport ' ~ docker_media_broker_port ~ ' --ctdir ORIGINAL -j DROP' }}
       -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
       -A DOCKER-USER -m conntrack --ctstate INVALID -j DROP
       {% for entry in docker_published_ports %}

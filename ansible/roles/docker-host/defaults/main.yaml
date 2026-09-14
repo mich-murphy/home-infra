@@ -28,6 +28,7 @@ docker_portainer_stacks_dir: /srv/portainer
 docker_bootstrap_containers:
   - docker-socket-proxy
   - docker-socket-proxy-agent
+  - docker-socket-proxy-agent-backend
   - pocket-id
   - portainer
   - traefik
@@ -60,3 +61,9 @@ nfs_mounts:
 # Read-only Docker socket proxy for the ai-dev Hermes agent.
 docker_agent_proxy_port: 2375
 docker_agent_proxy_client: ai-dev
+
+# Production media-broker candidate policy. The stack remains outside the
+# Portainer inventory and is never activated by Docker host provisioning.
+docker_media_broker_enabled: false
+docker_media_broker_port: 8765
+docker_media_broker_client: "{{ docker_agent_proxy_client }}"

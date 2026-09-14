@@ -12,6 +12,8 @@ for command in docker-compose yq; do
   fi
 done
 
+python3 "${repo_root}/tests/agent-observer_test.py"
+
 # yq expressions intentionally use single quotes so the shell does not expand them.
 # shellcheck disable=SC2016
 check_normalized_file() {
@@ -101,6 +103,59 @@ while IFS= read -r compose_file; do
     exit 1
   fi
 done < <(find "${repo_root}/docker" -name compose.yml -print | sort)
+
+# The exposed name is now a projection, while the socket proxy remains an
+# unexposed backend. Keep these topology assertions next to the generic
+# container hardening checks.
+init_normalized=${tmp_dir}/init-observer.json
+docker-compose -f "${repo_root}/docker/init/compose.yml" config --format json >"${init_normalized}"
+if yq -e '.services["docker-socket-proxy-agent"].volumes // [] | any_c(.source == "/var/run/docker.sock")' "${init_normalized}" >/dev/null 2>&1; then
+  echo "init/docker-socket-proxy-agent: observer must not mount docker.sock" >&2
+  exit 1
+fi
+if ! yq -e '.services["docker-socket-proxy-agent"].user == "65532:65532"' "${init_normalized}" >/dev/null 2>&1; then
+  echo "init/docker-socket-proxy-agent: observer must run as its dedicated unprivileged user" >&2
+  exit 1
+fi
+if ! yq -e '.services["docker-socket-proxy-agent-backend"].ports // [] | length == 0' "${init_normalized}" >/dev/null 2>&1; then
+  echo "init/docker-socket-proxy-agent-backend: backend must not publish a port" >&2
+  exit 1
+fi
+if ! yq -e '.networks["docker-socket-proxy-agent-backend"].internal == true' "${init_normalized}" >/dev/null 2>&1; then
+  echo "init/docker-socket-proxy-agent-backend: backend network must be internal" >&2
+  exit 1
+fi
+if ! yq -e '(.services["docker-socket-proxy-agent"].networks | has("docker-socket-proxy-agent")) and (.services["docker-socket-proxy-agent"].networks | has("docker-socket-proxy-agent-backend"))' "${init_normalized}" >/dev/null 2>&1; then
+  echo "init/docker-socket-proxy-agent: observer must attach to frontend and private backend networks" >&2
+  exit 1
+fi
+if yq -e '.networks["docker-socket-proxy-agent"].internal == true' "${init_normalized}" >/dev/null 2>&1; then
+  echo "init/docker-socket-proxy-agent: published observer frontend must not be internal" >&2
+  exit 1
+fi
+
+# The source checksum must participate in the normalized service configuration;
+# changing it is the Compose recreation trigger for the bind-mounted process.
+observer_source_hash=$(sha256sum "${repo_root}/docker/init/agent-observer/observer.py" | cut -d' ' -f1)
+observer_changed_hash=$(printf '%s' changed-source | sha256sum | cut -d' ' -f1)
+config_with_source_hash=${tmp_dir}/init-observer-source-hash.json
+config_with_changed_hash=${tmp_dir}/init-observer-changed-hash.json
+AGENT_OBSERVER_SOURCE_SHA256=${observer_source_hash} docker-compose -f "${repo_root}/docker/init/compose.yml" config --format json >"${config_with_source_hash}"
+AGENT_OBSERVER_SOURCE_SHA256=${observer_changed_hash} docker-compose -f "${repo_root}/docker/init/compose.yml" config --format json >"${config_with_changed_hash}"
+if [[ $(yq -r '.services["docker-socket-proxy-agent"].environment.OBSERVER_SOURCE_SHA256' "${config_with_source_hash}") != "${observer_source_hash}" ]]; then
+  echo "init/docker-socket-proxy-agent: source checksum missing from service config" >&2
+  exit 1
+fi
+if [[ $(yq -r '.services["docker-socket-proxy-agent"].environment.OBSERVER_SOURCE_SHA256' "${config_with_source_hash}") == "$(yq -r '.services["docker-socket-proxy-agent"].environment.OBSERVER_SOURCE_SHA256' "${config_with_changed_hash}")" ]]; then
+  echo "init/docker-socket-proxy-agent: changed source checksum must change service config" >&2
+  exit 1
+fi
+source_service_hash=$(AGENT_OBSERVER_SOURCE_SHA256=${observer_source_hash} docker-compose -f "${repo_root}/docker/init/compose.yml" config --hash docker-socket-proxy-agent | awk '{print $2}')
+changed_service_hash=$(AGENT_OBSERVER_SOURCE_SHA256=${observer_changed_hash} docker-compose -f "${repo_root}/docker/init/compose.yml" config --hash docker-socket-proxy-agent | awk '{print $2}')
+if [[ -z "${source_service_hash}" || "${source_service_hash}" == "${changed_service_hash}" ]]; then
+  echo "init/docker-socket-proxy-agent: changed source checksum must change Compose service hash" >&2
+  exit 1
+fi
 
 # Negative fixtures ensure each required field is checked independently rather
 # than allowing a service to bypass both assertions as one exception.

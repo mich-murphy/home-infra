@@ -7,6 +7,9 @@ swap_size_gb: 8
 swap_swappiness: 10
 zswap_enabled: true
 
+# Preserve the live, source-pinned read-only broker rule during reconciliation.
+docker_media_broker_enabled: true
+
 # Published Docker ports must be allowlisted in DOCKER-USER.
 docker_published_ports:
   - {port: 80, proto: tcp}  # traefik
