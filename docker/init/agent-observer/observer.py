@@ -31,10 +31,16 @@ MAX_LIST_ITEMS = 1024
 MAX_STRING_BYTES = 4096
 CONTAINER_REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
 API_VERSION = re.compile(r"^v[0-9]+\.[0-9]+$")
+# The logs backend path is always reconstructed from validated parts; the
+# pattern below only admits exactly that construction.
 BACKEND_PATH = re.compile(
     r"^/(?:_ping|version|containers/json(?:\?all=[01])?|containers/"
-    r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}/json)$"
+    r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}/json|containers/"
+    r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}/logs\?stdout=[01]&stderr=[01]"
+    r"&tail=[0-9]{1,4}&timestamps=[01])$"
 )
+LOG_TAIL_DEFAULT = 100
+LOG_TAIL_MAX = 1000
 
 
 class BodyLimitExceeded(Exception):
@@ -332,6 +338,65 @@ def project_version(value: object) -> dict:
     return output
 
 
+def project_container_logs(body: bytes) -> bytes:
+    """Decode the backend's multiplexed container log stream to plain text.
+
+    The backend is always queried with follow disabled, so the body is a
+    finite sequence of 8-byte frame headers (1 byte stream type, 3 padding
+    bytes, 4-byte big-endian payload length) each followed by its payload.
+    Payloads are coerced to UTF-8 rather than relayed verbatim, and a
+    truncated final frame is dropped.
+    """
+    chunks: list[bytes] = []
+    offset = 0
+    limit = len(body)
+    while offset + 8 <= limit:
+        length = int.from_bytes(body[offset + 4 : offset + 8], "big")
+        offset += 8
+        if offset + length > limit:
+            # Incomplete final frame: drop it rather than relay a partial line.
+            break
+        chunks.append(body[offset : offset + length].decode("utf-8", "replace").encode("utf-8"))
+        offset += length
+    return b"".join(chunks)
+
+
+def build_logs_backend_path(ref: str, query: str) -> str | None:
+    """Rebuild the logs query from strictly validated parameters."""
+    if "%" in query or "+" in query:
+        return None
+    parameters: dict[str, str] = {}
+    for part in query.split("&") if query else []:
+        if "=" not in part:
+            return None
+        key, value = part.split("=", 1)
+        if key in parameters:
+            return None
+        parameters[key] = value
+    stdout = parameters.pop("stdout", "1")
+    stderr = parameters.pop("stderr", "1")
+    timestamps = parameters.pop("timestamps", "0")
+    tail = parameters.pop("tail", str(LOG_TAIL_DEFAULT))
+    if parameters or stdout not in ("0", "1") or stderr not in ("0", "1"):
+        return None
+    if timestamps not in ("0", "1") or not tail.isdigit() or len(tail) > 4:
+        return None
+    if int(tail) > LOG_TAIL_MAX:
+        return None
+    return (
+        "/containers/"
+        + ref
+        + "/logs?stdout="
+        + stdout
+        + "&stderr="
+        + stderr
+        + "&tail="
+        + tail
+        + "&timestamps="
+        + timestamps
+    )
+
+
 class ObserverHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
@@ -418,6 +483,9 @@ class ObserverHandler(BaseHTTPRequestHandler):
         if len(parts) == 4 and parts[1] == "containers" and parts[3] == "json":
             if CONTAINER_REF.fullmatch(parts[2]):
                 return ("inspect", parts[2] + ("?" + parsed.query if parsed.query else ""))
+        if len(parts) == 4 and parts[1] == "containers" and parts[3] == "logs":
+            if CONTAINER_REF.fullmatch(parts[2]):
+                return ("logs", parts[2] + ("?" + parsed.query if parsed.query else ""))
         return None
 
     def _query_for_list(self, query: str) -> str | None:
@@ -460,6 +528,20 @@ class ObserverHandler(BaseHTTPRequestHandler):
                 return
             backend_path = "/containers/" + (query_or_ref or "") + "/json"
             projection = project_container_inspect
+        elif kind == "logs":
+            ref, _, query = (query_or_ref or "").partition("?")
+            backend_path = build_logs_backend_path(ref, query)
+            if backend_path is None:
+                self._reject(HTTPStatus.BAD_REQUEST)
+                return
+            status, body = self.server.backend.get(backend_path)  # type: ignore[attr-defined]
+            if status == HTTPStatus.NOT_FOUND:
+                self._send_json(HTTPStatus.NOT_FOUND, {"error": "container not found"})
+            elif status is None or body is None or status < 200 or status >= 300:
+                self._send_json(HTTPStatus.BAD_GATEWAY, {"error": "observer backend unavailable"})
+            else:
+                self._send_text(HTTPStatus.OK, project_container_logs(body))
+            return
         else:
             backend_path = "/version"
             projection = project_version

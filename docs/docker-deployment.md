@@ -73,25 +73,31 @@ It talks only to the fixed, unexposed
 observer also attaches to a dedicated non-internal frontend solely because
 Docker cannot publish a port from an internal-only network; no other service
 attaches to that frontend. The backend is the pinned Tecnativa proxy with only
-`CONTAINERS`, `VERSION`, and `PING` reads enabled and `POST=0`.
+`CONTAINERS`, `LOGS`, `VERSION`, and `PING` reads enabled and `POST=0`.
 
 The observer permits only `GET`/`HEAD` `/_ping`, `/version`,
-`/containers/json` (with only `all=0` or `all=1`), and
-`/containers/{strict-name-or-id}/json`, with an optional Docker API version
-prefix. It rejects writes, encoded or ambiguous paths, and all other Docker
-routes including logs, archives, events, images, volumes, and configuration
-reads. Responses contain only IDs, names, image references, state, status, exit
-codes, and health `Status`; environment, labels, commands, mount paths,
-networks, health logs, arbitrary nested data, and backend errors are not
-returned. The observer has finite request, concurrency, upstream header/body, and
+`/containers/json` (with only `all=0` or `all=1`),
+`/containers/{strict-name-or-id}/json`, and
+`/containers/{strict-name-or-id}/logs` (with only `stdout`, `stderr`,
+`timestamps` as 0/1 and decimal `tail` capped at 1000; `follow`, `since`,
+`until`, and every other logs parameter are rejected, and the query is
+rebuilt from the validated parts rather than relayed), each with an optional
+Docker API version prefix. It rejects writes, encoded or ambiguous paths, and all
+other Docker routes including archives, events, images, volumes, and
+configuration reads. Responses contain only IDs, names, image references,
+state, status, exit codes, and health `Status`; environment, labels,
+commands, mount paths, networks, health logs, arbitrary nested data, and
+backend errors are not returned. Log responses are bounded finite reads
+(follow disabled upstream), demultiplexed server-side, coerced to UTF-8,
+and subject to the same 1 MiB body cap as every other response. The
+observer has finite request, concurrency, upstream header/body, and
 upstream time limits and does not follow redirects or environment proxies.
 It resolves the fixed backend once at startup, before accepting clients, and
 uses the cached numeric address thereafter; startup DNS follows the container
 OS resolver's own timeout and is intentionally outside the request deadline.
 If the backend address changes, restart/reconcile the observer so it resolves
 again. Docker inspect and CLI compatibility is deliberately reduced: this endpoint
-is for safe status observation, not full `docker inspect`, and it provides no
-logs.
+is for safe status observation, not full `docker inspect`.
 
 Independent controls restrict the existing port to the ai-dev tailnet address;
 the `docker-host` role defines them and asserts them on every run, including
