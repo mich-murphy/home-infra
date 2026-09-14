@@ -41,22 +41,16 @@ BACKEND_PATH = re.compile(
 )
 LOG_TAIL_DEFAULT = 100
 LOG_TAIL_MAX = 1000
-# Declarative contract for the container-logs query: every accepted
-# parameter, the exact values it may take, and the value substituted when
-# the caller omits it. Anything outside this table is rejected rather than
-# forwarded, so the backend request is fully described by validated parts.
-LOGS_QUERY_PARAMETERS = {
-    "stdout": frozenset(("0", "1")),
-    "stderr": frozenset(("0", "1")),
-    "timestamps": frozenset(("0", "1")),
-}
-LOGS_QUERY_DEFAULTS = {
-    "stdout": "1",
-    "stderr": "1",
-    # Iteration order defines the rebuilt query's parameter order, which
-    # BACKEND_PATH matches exactly.
-    "tail": str(LOG_TAIL_DEFAULT),
-    "timestamps": "0",
+# The container-logs query contract: parameter -> (allowed value pattern,
+# default when omitted). Iteration order is the rebuilt query's parameter
+# order, which BACKEND_PATH matches exactly. Anything outside this table is
+# rejected rather than forwarded, so the backend request is fully described
+# by validated parts.
+LOGS_PARAMETERS = {
+    "stdout": (r"[01]", "1"),
+    "stderr": (r"[01]", "1"),
+    "tail": (r"[0-9]{1,4}", str(LOG_TAIL_DEFAULT)),
+    "timestamps": (r"[01]", "0"),
 }
 
 
@@ -356,62 +350,50 @@ def project_version(value: object) -> dict:
 
 
 def project_container_logs(body: bytes) -> bytes:
-    """Decode the backend's multiplexed container log stream to plain text.
+    """Decode the backend's finite (never followed) multiplexed log stream.
 
-    The backend is always queried with follow disabled, so the body is a
-    finite sequence of 8-byte frame headers (1 byte stream type, 3 padding
-    bytes, 4-byte big-endian payload length) each followed by its payload.
-    Payloads are coerced to UTF-8 rather than relayed verbatim, and a
-    truncated final frame is dropped.
+    Frames are an 8-byte header (stream byte, 3 padding, big-endian length)
+    plus payload; payloads are coerced to UTF-8 rather than relayed verbatim,
+    and an incomplete final frame is dropped instead of relayed as a partial
+    line.
     """
-    chunks: list[bytes] = []
+    chunks: list[str] = []
     offset = 0
-    limit = len(body)
-    while offset + 8 <= limit:
-        length = int.from_bytes(body[offset + 4 : offset + 8], "big")
-        offset += 8
-        if offset + length > limit:
-            # Incomplete final frame: drop it rather than relay a partial line.
+    while offset + 8 <= len(body):
+        end = offset + 8 + int.from_bytes(body[offset + 4 : offset + 8], "big")
+        if end > len(body):
             break
-        chunks.append(body[offset : offset + length].decode("utf-8", "replace").encode("utf-8"))
-        offset += length
-    return b"".join(chunks)
+        chunks.append(body[offset + 8 : end].decode("utf-8", "replace"))
+        offset = end
+    return "".join(chunks).encode("utf-8")
 
 
 def build_logs_backend_path(ref: str, query: str) -> str | None:
-    """Rebuild the logs query from the validated parameter contract.
+    """Rebuild the logs query from the LOGS_PARAMETERS contract.
 
-    Returns None when the query contains anything the contract in
-    LOGS_QUERY_PARAMETERS / LOGS_QUERY_DEFAULTS does not describe exactly.
+    Returns None unless the contract fully describes the query. Encoded
+    bytes ('%'/'+') are rejected because the contract matches literal
+    values: anything encoded is a parameter the validation never saw, and
+    the backend must receive exactly the string that was validated. A
+    repeated key is likewise rejected: it is ambiguous on re-parse, so it
+    is not a value this function can vouch for.
     """
-    # '%' and '+' are how percent- or form-encoded characters reach the
-    # query. The contract below matches literal values only, so any encoded
-    # byte is an attempt to smuggle a parameter the validation never saw.
-    # Rejecting them up front guarantees the string the backend receives is
-    # the string that was validated.
     if "%" in query or "+" in query:
         return None
-    supplied: dict[str, str] = {}
-    for part in query.split("&") if query else []:
-        key, separator, value = part.partition("=")
-        # A repeated key is ambiguous: the backend (or any intermediary
-        # re-parsing) could pick either occurrence, so it is not a value
-        # this function can vouch for.
-        if not separator or key in supplied:
-            return None
-        supplied[key] = value
-    resolved = dict(LOGS_QUERY_DEFAULTS)
-    for key, value in supplied.items():
-        allowed = LOGS_QUERY_PARAMETERS.get(key)
-        if key == "tail":
-            if not (value.isdigit() and len(value) <= 4 and int(value) <= LOG_TAIL_MAX):
-                return None
-        elif allowed is None or value not in allowed:
+    parts = [part.partition("=") for part in query.split("&")] if query else []
+    keys = [key for key, _, _ in parts]
+    if len(keys) != len(set(keys)):
+        return None
+    resolved = {key: default for key, (_, default) in LOGS_PARAMETERS.items()}
+    for key, separator, value in parts:
+        allowed = LOGS_PARAMETERS.get(key) if separator else None
+        if allowed is None or not re.fullmatch(allowed[0], value):
             return None
         resolved[key] = value
-    return "/containers/{ref}/logs?{query}".format(
-        ref=ref,
-        query="&".join(f"{key}={resolved[key]}" for key in LOGS_QUERY_DEFAULTS),
+    if int(resolved["tail"]) > LOG_TAIL_MAX:
+        return None
+    return f"/containers/{ref}/logs?" + "&".join(
+        f"{key}={resolved[key]}" for key in LOGS_PARAMETERS
     )
 
 
@@ -492,12 +474,9 @@ class ObserverHandler(BaseHTTPRequestHandler):
         if len(parts) > 1 and API_VERSION.fullmatch(parts[1]):
             parts.pop(1)
             path = "/" + "/".join(parts[1:])
-        if path == "/_ping":
-            return ("ping", parsed.query)
-        if path == "/version":
-            return ("version", parsed.query)
-        if path == "/containers/json":
-            return ("list", parsed.query)
+        kind = {"_ping": "ping", "version": "version", "containers/json": "list"}.get(path[1:])
+        if kind:
+            return (kind, parsed.query)
         # /containers/{ref}/{subresource}: the ref must be a strict name or
         # ID and the subresource must be one this observer serves.
         if len(parts) == 4 and parts[1] == "containers":
@@ -552,24 +531,19 @@ class ObserverHandler(BaseHTTPRequestHandler):
             if backend_path is None:
                 self._reject(HTTPStatus.BAD_REQUEST)
                 return
-            status, body = self.server.backend.get(backend_path)  # type: ignore[attr-defined]
-            if status == HTTPStatus.NOT_FOUND:
-                self._send_json(HTTPStatus.NOT_FOUND, {"error": "container not found"})
-            elif status is None or body is None or status < 200 or status >= 300:
-                self._send_json(HTTPStatus.BAD_GATEWAY, {"error": "observer backend unavailable"})
-            else:
-                self._send_text(HTTPStatus.OK, project_container_logs(body))
-            return
         else:
             backend_path = "/version"
             projection = project_version
 
         status, body = self.server.backend.get(backend_path)  # type: ignore[attr-defined]
         if status is None or body is None or status < 200 or status >= 300:
-            if status == HTTPStatus.NOT_FOUND and kind == "json":
+            if status == HTTPStatus.NOT_FOUND and kind in ("json", "logs"):
                 self._send_json(HTTPStatus.NOT_FOUND, {"error": "container not found"})
             else:
                 self._send_json(HTTPStatus.BAD_GATEWAY, {"error": "observer backend unavailable"})
+            return
+        if kind == "logs":
+            self._send_text(HTTPStatus.OK, project_container_logs(body))
             return
         try:
             value = projection(json.loads(body))
