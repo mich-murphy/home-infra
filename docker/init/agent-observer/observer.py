@@ -41,6 +41,23 @@ BACKEND_PATH = re.compile(
 )
 LOG_TAIL_DEFAULT = 100
 LOG_TAIL_MAX = 1000
+# Declarative contract for the container-logs query: every accepted
+# parameter, the exact values it may take, and the value substituted when
+# the caller omits it. Anything outside this table is rejected rather than
+# forwarded, so the backend request is fully described by validated parts.
+LOGS_QUERY_PARAMETERS = {
+    "stdout": frozenset(("0", "1")),
+    "stderr": frozenset(("0", "1")),
+    "timestamps": frozenset(("0", "1")),
+}
+LOGS_QUERY_DEFAULTS = {
+    "stdout": "1",
+    "stderr": "1",
+    # Iteration order defines the rebuilt query's parameter order, which
+    # BACKEND_PATH matches exactly.
+    "tail": str(LOG_TAIL_DEFAULT),
+    "timestamps": "0",
+}
 
 
 class BodyLimitExceeded(Exception):
@@ -362,38 +379,39 @@ def project_container_logs(body: bytes) -> bytes:
 
 
 def build_logs_backend_path(ref: str, query: str) -> str | None:
-    """Rebuild the logs query from strictly validated parameters."""
+    """Rebuild the logs query from the validated parameter contract.
+
+    Returns None when the query contains anything the contract in
+    LOGS_QUERY_PARAMETERS / LOGS_QUERY_DEFAULTS does not describe exactly.
+    """
+    # '%' and '+' are how percent- or form-encoded characters reach the
+    # query. The contract below matches literal values only, so any encoded
+    # byte is an attempt to smuggle a parameter the validation never saw.
+    # Rejecting them up front guarantees the string the backend receives is
+    # the string that was validated.
     if "%" in query or "+" in query:
         return None
-    parameters: dict[str, str] = {}
+    supplied: dict[str, str] = {}
     for part in query.split("&") if query else []:
-        if "=" not in part:
+        key, separator, value = part.partition("=")
+        # A repeated key is ambiguous: the backend (or any intermediary
+        # re-parsing) could pick either occurrence, so it is not a value
+        # this function can vouch for.
+        if not separator or key in supplied:
             return None
-        key, value = part.split("=", 1)
-        if key in parameters:
+        supplied[key] = value
+    resolved = dict(LOGS_QUERY_DEFAULTS)
+    for key, value in supplied.items():
+        allowed = LOGS_QUERY_PARAMETERS.get(key)
+        if key == "tail":
+            if not (value.isdigit() and len(value) <= 4 and int(value) <= LOG_TAIL_MAX):
+                return None
+        elif allowed is None or value not in allowed:
             return None
-        parameters[key] = value
-    stdout = parameters.pop("stdout", "1")
-    stderr = parameters.pop("stderr", "1")
-    timestamps = parameters.pop("timestamps", "0")
-    tail = parameters.pop("tail", str(LOG_TAIL_DEFAULT))
-    if parameters or stdout not in ("0", "1") or stderr not in ("0", "1"):
-        return None
-    if timestamps not in ("0", "1") or not tail.isdigit() or len(tail) > 4:
-        return None
-    if int(tail) > LOG_TAIL_MAX:
-        return None
-    return (
-        "/containers/"
-        + ref
-        + "/logs?stdout="
-        + stdout
-        + "&stderr="
-        + stderr
-        + "&tail="
-        + tail
-        + "&timestamps="
-        + timestamps
+        resolved[key] = value
+    return "/containers/{ref}/logs?{query}".format(
+        ref=ref,
+        query="&".join(f"{key}={resolved[key]}" for key in LOGS_QUERY_DEFAULTS),
     )
 
 
@@ -480,12 +498,12 @@ class ObserverHandler(BaseHTTPRequestHandler):
             return ("version", parsed.query)
         if path == "/containers/json":
             return ("list", parsed.query)
-        if len(parts) == 4 and parts[1] == "containers" and parts[3] == "json":
-            if CONTAINER_REF.fullmatch(parts[2]):
-                return ("inspect", parts[2] + ("?" + parsed.query if parsed.query else ""))
-        if len(parts) == 4 and parts[1] == "containers" and parts[3] == "logs":
-            if CONTAINER_REF.fullmatch(parts[2]):
-                return ("logs", parts[2] + ("?" + parsed.query if parsed.query else ""))
+        # /containers/{ref}/{subresource}: the ref must be a strict name or
+        # ID and the subresource must be one this observer serves.
+        if len(parts) == 4 and parts[1] == "containers":
+            ref, subresource = parts[2], parts[3]
+            if CONTAINER_REF.fullmatch(ref) and subresource in ("json", "logs"):
+                return (subresource, ref + ("?" + parsed.query if parsed.query else ""))
         return None
 
     def _query_for_list(self, query: str) -> str | None:
@@ -522,7 +540,7 @@ class ObserverHandler(BaseHTTPRequestHandler):
                 return
             backend_path = "/containers/json" + query
             projection = project_container_list
-        elif kind == "inspect":
+        elif kind == "json":
             if query_or_ref and "?" in query_or_ref:
                 self._reject(HTTPStatus.BAD_REQUEST)
                 return
@@ -548,7 +566,7 @@ class ObserverHandler(BaseHTTPRequestHandler):
 
         status, body = self.server.backend.get(backend_path)  # type: ignore[attr-defined]
         if status is None or body is None or status < 200 or status >= 300:
-            if status == HTTPStatus.NOT_FOUND and kind == "inspect":
+            if status == HTTPStatus.NOT_FOUND and kind == "json":
                 self._send_json(HTTPStatus.NOT_FOUND, {"error": "container not found"})
             else:
                 self._send_json(HTTPStatus.BAD_GATEWAY, {"error": "observer backend unavailable"})
