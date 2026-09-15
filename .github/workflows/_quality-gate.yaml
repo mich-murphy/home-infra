@@ -90,24 +90,13 @@ jobs:
         run: |
           nix shell .#shellcheck --command shellcheck \
             scripts/check-portainer-drift.sh \
-            tests/docker-hardening.sh
+            tests/docker-hardening.sh \
+            tests/media-broker-stack.sh
           nix shell .#docker-compose .#portainer-drift-tools --command bash -euo pipefail <<'SCRIPT'
           scripts/check-portainer-drift.sh --source-only
           # The hardening check renders and validates every Compose file once.
           tests/docker-hardening.sh
           SCRIPT
-      - name: Test media broker source and fixtures
-        if: inputs.check == 'docker'
-        run: |
-          uv_home="${RUNNER_TEMP}/media-broker-uv"
-          python3 -m venv "${uv_home}"
-          "${uv_home}/bin/pip" install --disable-pip-version-check --no-cache-dir uv==0.12.5
-          export UV_PROJECT_ENVIRONMENT="${RUNNER_TEMP}/media-broker-python"
-          "${uv_home}/bin/uv" sync --locked --all-groups --directory services/media-broker
-          "${uv_home}/bin/uv" run --locked --all-groups --directory services/media-broker pytest -q
-          "${uv_home}/bin/uv" run --locked --all-groups --directory services/media-broker ruff check .
-          # This fixture suite is secret-free and does not contact Docker or a host.
-          tests/media-broker-preflight.sh
       - name: Check ai-dev maintenance command
         if: inputs.check == 'ansible'
         run: |

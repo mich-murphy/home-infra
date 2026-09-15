@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - "docker/**"
-      - "services/media-broker/**"
       - "network/**"
       - "scripts/check-portainer-drift.sh"
       - "tests/docker-hardening.sh"

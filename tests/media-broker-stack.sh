@@ -1,28 +1,32 @@
 #!/usr/bin/env bash
+# Infra-side assertions for the media-broker Portainer stack: the canonical
+# Compose contract (image-only, no build block), the Ansible published-port
+# policy, and the stack inventory. Application source tests live in the
+# dedicated mich-murphy/media-broker repository.
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-compose=${repo_root}/services/media-broker/deploy/compose.yml
+compose=${repo_root}/docker/media-broker/compose.yml
 policy=${repo_root}/ansible/roles/docker-host/tasks/published-ports.yaml
-
+# Provisioning defaults never activate the stack; Portainer owns deployment.
 grep -q 'docker_media_broker_enabled: false' "${repo_root}/ansible/roles/docker-host/defaults/main.yaml"
 grep -q 'docker_media_broker_port: 8765' "${repo_root}/ansible/roles/docker-host/defaults/main.yaml"
-grep -q 'MEDIA_BROKER_BIND_HOST' "${compose}"
-grep -q 'MEDIA_BROKER_ALLOW_PUBLIC_BIND' "${compose}"
-grep -q 'MEDIA_BROKER_ALLOWED_HOSTS' "${compose}"
-grep -q 'MEDIA_BROKER_ALLOWED_ORIGINS' "${compose}"
-grep -q 'context: \.\.' "${compose}"
-grep -q 'python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea' "${repo_root}/services/media-broker/Dockerfile"
-grep -q 'uv==0.12.5' "${repo_root}/services/media-broker/Dockerfile"
-for variable in DOCKER_HOST DOCKER_CONTEXT DOCKER_TLS_VERIFY DOCKER_CERT_PATH; do
-  [[ -z "${!variable+x}" ]] || {
-    echo "media-broker packaging test rejects ${variable} overrides" >&2
+
+for command in docker python3; do
+  if ! command -v "${command}" >/dev/null 2>&1; then
+    echo "ERROR: required command not found: ${command}" >&2
     exit 2
-  }
+  fi
+done
+for variable in DOCKER_HOST DOCKER_CONTEXT DOCKER_TLS_VERIFY DOCKER_CERT_PATH; do
+  if [[ -n "${!variable:-}" ]]; then
+    echo "media-broker stack test rejects ${variable} overrides" >&2
+    exit 2
+  fi
 done
 docker_cmd() { docker --context desktop-linux "$@"; }
 [[ "$(docker_cmd context show)" == desktop-linux ]] || {
-  echo 'media-broker packaging test requires Docker context desktop-linux' >&2
+  echo 'media-broker stack test requires Docker context desktop-linux' >&2
   exit 2
 }
 endpoint=$(docker_cmd context inspect --format '{{(index .Endpoints "docker").Host}}' desktop-linux)
@@ -32,11 +36,11 @@ endpoint=$(docker_cmd context inspect --format '{{(index .Endpoints "docker").Ho
 }
 tmp_dir=$(mktemp -d)
 trap 'rm -rf -- "${tmp_dir}"' EXIT
-# Source-only discovery covers the canonical services/* deployment path and
+# Source-only discovery covers the canonical docker/* deployment path and
 # rejects an inventory declaration whose Compose file is absent.
 "${repo_root}/scripts/check-portainer-drift.sh" --source-only
 missing_inventory=${tmp_dir}/missing-inventory.yaml
-sed 's#services/media-broker/deploy/compose.yml#services/media-broker/deploy/missing.yml#' \
+sed 's#docker/media-broker/compose.yml#docker/media-broker/missing.yml#' \
   "${repo_root}/docker/portainer-stacks.yaml" >"${missing_inventory}"
 if "${repo_root}/scripts/check-portainer-drift.sh" --source-only "${missing_inventory}" >/dev/null 2>&1; then
   echo 'missing declared Compose fixture unexpectedly passed' >&2
@@ -57,8 +61,8 @@ env "${compose_env[@]}" docker --context desktop-linux compose -f "${compose}" c
 if env -u MEDIA_BROKER_BIND \
   MEDIA_BROKER_BIND_HOST=0.0.0.0 MEDIA_BROKER_ALLOW_PUBLIC_BIND=true \
   MEDIA_BROKER_SECRETS_DIR="${tmp_dir}" SONARR_URL=http://sonarr:8989 \
-  RADARR_URL=http://radarr:7878 LIDARR_URL=http://lidarr:8686 \
-  TAUTULLI_URL=http://tautulli:8181 \
+  RADARR_URL=http://radarr:7878 \
+  LIDARR_URL=http://lidarr:8686 TAUTULLI_URL=http://tautulli:8181 \
   docker --context desktop-linux compose -f "${compose}" config --quiet >/dev/null 2>&1; then
   echo 'missing MEDIA_BROKER_BIND unexpectedly rendered' >&2
   exit 1
@@ -82,8 +86,11 @@ assert service["user"] == "65532:65532"
 assert service["cap_drop"] == ["ALL"]
 assert service["read_only"] is True
 assert service["security_opt"] == ["no-new-privileges:true"]
-assert service["build"]["context"] == ".."
-assert service["ports"] == ["${MEDIA_BROKER_BIND:?run deploy/preflight.sh and set MEDIA_BROKER_BIND}:8765:8000"]
+# The image is published by the dedicated repository; Portainer must never
+# build. A build block here reintroduces the stale-context rebuild trap.
+assert "build" not in service, "media-broker compose must not contain a build block"
+assert service["image"] == "ghcr.io/mich-murphy/media-broker:main"
+assert service["ports"] == ["${MEDIA_BROKER_BIND:?set MEDIA_BROKER_BIND in Portainer stack variables}:8765:8000"]
 assert len(service["secrets"]) == 5
 assert set(service["environment"]) >= {
     "SONARR_URL", "RADARR_URL", "LIDARR_URL", "TAUTULLI_URL",
@@ -128,4 +135,4 @@ for enabled in (False, True):
     assert (allow in lines) is enabled
 PY
 
-echo 'Media-broker packaging and policy assertions passed.'
+echo 'Media-broker stack, Compose contract, and policy assertions passed.'
