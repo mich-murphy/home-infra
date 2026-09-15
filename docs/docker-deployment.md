@@ -116,8 +116,9 @@ allow-listed for the Tailscale range only, not DFLT or KDS.
 
 The read-only media broker is an ordinary Git-polled Portainer stack. Its
 image is built and published by the dedicated `mich-murphy/media-broker`
-repository; Renovate pins and updates the image digest in the inventoried
-`docker/media-broker/compose.yml`, and Portainer polling redeploys on change.
+repository; the inventoried `docker/media-broker/compose.yml` tracks the
+published `:main` tag unpinned, and an Ansible-managed auto-update timer on
+the Docker host pulls new digests and redeploys through Portainer's webhook.
 The deployment pipeline, rollback, and the history of the earlier manual
 ownership are documented in
 [`docs/hermes-media.md`](hermes-media.md).
