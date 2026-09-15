@@ -302,7 +302,7 @@ and revoke the GitHub token if ai-dev is ever suspect.
 
 ### Optional media-broker connection
 
-The staged production-candidate rollout is documented in
+The production deployment is documented in
 [`docs/hermes-media.md`](hermes-media.md). The Hermes media-broker MCP
 connection is opt-in and disabled in the role defaults. The live ai-dev host
 group explicitly enables it. When enabled, Ansible adds only the managed `mcp_servers.media_broker`

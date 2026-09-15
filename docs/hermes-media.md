@@ -2,132 +2,114 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Portainer now owns the live read-only broker as stack `media-broker`, container
-`media-broker-candidate`. The handoff assigned stack ID 39; look up the stack by
-name after a restore rather than assuming that ID is permanent. The repository
-remains the source of its canonical Compose definition and application code.
+Portainer owns the live read-only broker as an **ordinary Git-connected
+stack** named `media-broker`, using the same repository source and polling as
+every other inventoried stack. The application source and its container image
+live in the dedicated [`mich-murphy/media-broker`](https://github.com/mich-murphy/media-broker)
+repository; this repository owns only the stack definition at
+`docker/media-broker/compose.yml` and the host policy around it.
 
-The stack is **manually updated, not connected to Portainer's shared Git
-source**. Its Git workflow, AutoUpdate, and webhook are absent. Authenticated
-reads from Hermes, four-tool discovery, unauthenticated rejection, and an actual
-historical Tautulli read passed after handoff. Backend credentials, the existing
-Tailscale grant, and Hermes configuration were retained without rotation or a
-new gateway restart.
+## Deployment pipeline
 
-## Why this stack does not use Git polling
+Merging to `main` in either repository deploys without manual host steps:
 
-Portainer 2.45 schedules polling by Git source, not independently by stack.
-Creating this stack with `AutoUpdate: null` reused the repository's existing
-five-minute polling source. That source tried an unwanted image pull, despite
-the requested manual policy. The running broker remained healthy.
+1. **Application changes** (media-broker repo): CI runs the source suite and,
+   on merge to `main`, builds and pushes the image to GHCR as
+   `ghcr.io/mich-murphy/media-broker:main` plus an immutable
+   `:sha-<commit>` tag for rollback and audit.
+2. **Digest pinning** (this repo): Renovate pins the Compose image reference
+   by digest and opens a PR whenever the `:main` digest moves. The existing
+   automerge rule for digest updates merges these PRs, so each published image
+   becomes a reviewed, revertable commit here.
+3. **Redeploy**: Portainer's Git polling detects the changed Compose file,
+   redeploys the stack, and pulls the pinned digest.
 
-The broker was detached using Portainer's supported editor/update operation.
-Its Git workflow and automatic-update settings were then verified absent.
-The source used by the other application stacks retained its five-minute
-interval. Do not reconnect this broker to that source or disable polling for
-unrelated stacks as a workaround.
+Rollback is `git revert` of the digest-bump commit followed by Portainer's
+normal redeploy, or an emergency editor update pinning a known `:sha-<commit>`
+tag. Do not re-add a `build:` block to the Compose file; Portainer must never
+build this image (see history below).
 
-This behavior is explicit in Portainer's
-[2.45 source scheduler](https://github.com/portainer/portainer/blob/2.45.0/api/gitops/scheduling/scheduler.go):
-a source tick redeploys its referenced artifacts. A separate Git-connected
-broker deployment remains future work and requires a supported way to isolate
-its update policy. The current manual Portainer ownership is intentional.
+## Why this stack was previously manual
+
+The broker used to be a host-built candidate: the image
+`home-infra/media-broker:candidate` was built from a root-owned checkout on
+docker-host, which forced manual updates and caused two documented incidents:
+
+- Portainer 2.45 schedules polling **by Git source, not by stack**. Creating
+  the broker on the repository's shared polling source redeployed it on source
+  ticks despite a manual-only policy. See the
+  [2.45 source scheduler](https://github.com/portainer/portainer/blob/2.45.0/api/gitops/scheduling/scheduler.go).
+- Portainer 2.45 can rebuild a stack from its **retained Git context** when a
+  `build` block is present, even with `PullImage: false`. During the MCP SDK
+  patch rollout this replaced a freshly built image with stale source.
+
+Publishing a registry image from dedicated repository CI removes the root
+cause of both: there is no build block to exploit, no host checkout to
+reconcile, and a redeploy can only pull an immutable digest. The broker is now
+explicitly allowed on the shared Git source; the earlier "do not connect this
+stack" rule is obsolete and must not be reintroduced while the image comes
+from GHCR.
 
 ## Stack configuration
 
-- Stack and Compose project: `media-broker`
-- Canonical Compose: `services/media-broker/deploy/compose.yml`
-- Container: `media-broker-candidate`
-- Existing external application network: `proxy`
-- AutoUpdate: disabled; webhook: none; Git workflow: none
-- Deployment method: authenticated Portainer editor/API update after host checks
+- Stack and Compose project: `media-broker`; container: `media-broker`
+- Compose path: `docker/media-broker/compose.yml` (image-only)
+- Image: `ghcr.io/mich-murphy/media-broker:main@sha256:...` (Renovate-pinned)
+- Registry credentials for `ghcr.io` are stored in Portainer's registry store
+- Update policy: shared Git polling, like every other ordinary stack
 
 Portainer supplies the interpolated `SONARR_URL`, `RADARR_URL`, `LIDARR_URL`,
 `TAUTULLI_URL`, `MEDIA_BROKER_BIND`, `MEDIA_BROKER_BIND_HOST`,
 `MEDIA_BROKER_ALLOW_PUBLIC_BIND`, and optional `MEDIA_BROKER_SECRETS_DIR`.
 These values are URLs, nonsecret bind settings, and a host directory path.
-Compose fixes the secret-file paths and the Host/Origin allow-lists.
-Never put a backend API key or broker bearer value in Portainer's stack
-variables, Compose environment, Git, or command arguments.
+Compose fixes the secret-file paths and the Host/Origin allow-lists. Never put
+a backend API key or broker bearer value in Portainer's stack variables,
+Compose environment, Git, or command arguments.
 
 The fixed endpoint is `http://docker-host:8765/mcp`, with Host
 `docker-host:8765` and Origin `http://docker-host:8765`. The host port binds
-only the verified docker-host Tailscale IPv4. It is not exposed through
-Traefik, a LAN exception, or shared port 443. The broker runs nonroot with a
-read-only filesystem and has no Docker socket or media mounts.
+only the docker-host Tailscale IPv4. It is not exposed through Traefik, a LAN
+exception, or shared port 443. The broker runs nonroot with a read-only
+filesystem and has no Docker socket or media mounts.
 
-## Guarded manual update
+## Host-side controls that remain
 
-1. Check out the reviewed release under the root-owned
-   `/srv/hermes-media-candidate` directory, retaining its restricted nonsecret
-   deployment `.env`. Reconcile the observer's source/checksum first if that
-   source changed. Do not run the standalone candidate launcher after Portainer
-   takes ownership, since that would introduce a second deployment controller.
-2. Reuse the five existing files in `/etc/media-broker/secrets`: `broker-token`,
-   `sonarr-api-key`, `radarr-api-key`, `lidarr-api-key`, and `tautulli-api-key`.
-   Directories must be `root:65532` mode `0750`; files must be `root:65532` mode
-   `0640`. File-backed Compose secrets do not enforce their declared ownership
-   or mode, so these host checks are required. Do not rotate credentials during
-   a normal update. Future ai-dev Ansible runs require the existing bearer as
-   `hermes_media_broker_token` through protected variables.
-3. Set the nonsecret values in the host shell. Portainer variables are not
-   inherited by a separate host build:
+- The five files in `/etc/media-broker/secrets` (`broker-token`,
+  `sonarr-api-key`, `radarr-api-key`, `lidarr-api-key`, `tautulli-api-key`)
+  stay host-managed: directories `root:65532` mode `0750`, files
+  `root:65532` mode `0640`. File-backed Compose secrets do not enforce their
+  declared ownership or mode, so verify these after any host rebuild.
+  Future ai-dev Ansible runs require the existing bearer as
+  `hermes_media_broker_token` through protected variables.
+- The host firewall admits TCP 8765 only from ai-dev's exact Tailscale
+  address through `tailscale0`; the `docker-host` role defines and asserts
+  the `DOCKER-USER` rules on every run.
+- The broker uses a 5 MiB upstream-response bound for the observed 2.27 MiB
+  Lidarr inventory.
 
-   ```sh
-   cd /srv/hermes-media-candidate
-   export MEDIA_BROKER_BIND=100.64.0.2 # replace with the verified host Tailscale IP
-   export MEDIA_BROKER_AI_DEV_CLIENT=ai-dev
-   export MEDIA_BROKER_BIND_HOST=0.0.0.0
-   export MEDIA_BROKER_ALLOW_PUBLIC_BIND=true
-   export SONARR_URL=http://sonarr:8989
-   export RADARR_URL=http://radarr:7878
-   export LIDARR_URL=http://lidarr:8686
-   export TAUTULLI_URL=http://tautulli:8181
-   services/media-broker/deploy/preflight.sh
-   ```
+## One-time migration runbook
 
-   Preflight verifies the exact source-pinned host policy, sanitized observer,
-   frontend/private-backend topology, deployed source identity, and secret
-   ownership/modes. Stop if it fails.
-4. Explicitly build the locked application source on docker-host:
+Performed once, from the old manual stack to the Git stack:
 
-   ```sh
-   docker --host unix:///var/run/docker.sock compose \
-     -f services/media-broker/deploy/compose.yml build --pull=false media-broker
-   ```
+1. Ensure the first image exists: the media-broker repository's `publish`
+   job must have run on `main` so GHCR serves
+   `ghcr.io/mich-murphy/media-broker:main`.
+2. In Portainer, add `ghcr.io` registry credentials with pull access to the
+   private package.
+3. Delete the existing `media-broker` stack (brief downtime; the old
+   container name `media-broker-candidate` goes away with it). Do not delete
+   host secret files.
+4. Recreate the stack from Git: repository
+   `https://github.com/mich-murphy/home-infra.git`, reference
+   `refs/heads/main`, compose path `docker/media-broker/compose.yml`, the
+   same nonsecret environment values as before, AutoUpdate polling enabled on
+   the shared source. No relative-path volumes are needed for this stack.
+5. Wait for the container to become healthy, then verify: the running image
+   digest equals the Compose-pinned digest; authenticated reads from Hermes
+   succeed for all four tools; unauthenticated requests are rejected; a
+   different client is denied. Retain the existing ACL and token. No Hermes
+   gateway restart is required.
 
-   Stop on build failure. Portainer does not run preflight, and a cached image
-   does not prove that changed source was rebuilt.
-5. Prepare an **image-only deployment copy** of the canonical Compose content
-   from that same reviewed revision. Remove only `services.media-broker.build`
-   and its `context`/`dockerfile` children from the copy. Keep the build block in
-   Git and in the host checkout for step 4. Preserve every other service setting,
-   including the image, security controls, ports, environment, and secret mounts.
-   Authenticate to Portainer and update only `media-broker` with this deployment
-   copy and its existing nonsecret settings. Keep image pulling disabled,
-   pruning disabled, and automatic updates/webhooks absent.
-
-   Use the host-built `home-infra/media-broker:candidate` image; it is local to
-   docker-host, not a public registry image. Record its image ID before updating.
-   Portainer 2.45 can rebuild from its retained old Git context when the build
-   block is present, even with `PullImage: false`. This happened during the SDK
-   patch rollout and replaced the freshly built image with old source. Removing
-   the build block from Portainer's copy prevents that controller-side build.
-6. Wait for the controller operation to finish and the container to be healthy.
-   Verify that the running container's image ID equals the recorded host-built
-   image ID, and verify the installed SDK version inside the running container.
-   An accepted API request or healthy container alone does not prove that the
-   intended source was deployed. Retest
-   authenticated reads from Hermes, all four tools, unauthenticated rejection,
-   and denial from a different client. Retain the existing ACL and token.
-   Ownership or image updates alone do not require restarting the Hermes user
-   gateway; Ansible does not restart it automatically.
-
-The host firewall admits TCP 8765 only from ai-dev's exact Tailscale address
-through `tailscale0`, before its general established-connection rules. ai-dev
-permits egress only to the dedicated docker-host endpoint. The broker uses a
-5 MiB upstream-response bound for the observed 2.27 MiB Lidarr inventory.
-
-This remains a read-only integration. Conversation-approved writes and Jellyfin
-playback reporting are not enabled. Host preflight and controller procedures
-are operational controls, not a security boundary against root administrators.
+This remains a read-only integration. Conversation-approved writes and
+Jellyfin playback reporting are not enabled. Host controls are operational
+policy, not a security boundary against root administrators.
