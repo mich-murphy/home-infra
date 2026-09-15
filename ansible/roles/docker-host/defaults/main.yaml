@@ -62,8 +62,9 @@ nfs_mounts:
 docker_agent_proxy_port: 2375
 docker_agent_proxy_client: ai-dev
 
-# Production media-broker candidate policy. Portainer owns the application
-# stack, while Docker host provisioning never activates it.
+# Production media-broker policy. Portainer owns the application stack on the
+# shared Git source with a published image; Docker host provisioning never
+# activates it.
 docker_media_broker_enabled: false
 docker_media_broker_port: 8765
 docker_media_broker_client: "{{ docker_agent_proxy_client }}"

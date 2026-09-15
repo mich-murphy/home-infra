@@ -1,12 +1,11 @@
-# Canonical source for the Portainer-managed broker. Updates require host
-# preflight and an explicit image build; do not attach shared Git polling.
+# Ordinary Portainer Git stack on the shared repository source. The image is
+# built and published by the dedicated mich-murphy/media-broker repository;
+# Renovate pins and updates its digest here, and Portainer polling redeploys on
+# change. Never add a build block: Portainer must not build from a Git clone.
 services:
   media-broker:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-    image: home-infra/media-broker:candidate
-    container_name: media-broker-candidate
+    image: ghcr.io/mich-murphy/media-broker:main
+    container_name: media-broker
     user: "65532:65532"
     security_opt:
       - no-new-privileges:true
@@ -15,10 +14,10 @@ services:
     read_only: true
     networks:
       - proxy
-    # MEDIA_BROKER_BIND is supplied only by the preflight after it verifies
-    # this host's local Tailscale address. It has no fallback value.
+    # MEDIA_BROKER_BIND is a Portainer stack variable holding this host's
+    # verified Tailscale address. It has no fallback value.
     ports:
-      - "${MEDIA_BROKER_BIND:?run deploy/preflight.sh and set MEDIA_BROKER_BIND}:8765:8000"
+      - "${MEDIA_BROKER_BIND:?set MEDIA_BROKER_BIND in Portainer stack variables}:8765:8000"
     environment:
       SONARR_URL: "${SONARR_URL:?set Sonarr URL}"
       RADARR_URL: "${RADARR_URL:?set Radarr URL}"

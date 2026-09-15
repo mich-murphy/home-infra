@@ -7,24 +7,24 @@ Docker deployment has two controllers with a deliberate bootstrap seam:
 | Owner | Responsibility |
 | --- | --- |
 | Ansible | Docker runtime, host policy, NFS storage, `/srv/portainer` for relative-path Git stacks, and `/srv/init`: Traefik, socket proxy, Portainer, and Pocket ID |
-| Portainer | Application controller for `docker/portainer-stacks.yaml`; Git updates for ordinary stacks, guarded manual updates for `media-broker` |
+| Portainer | Application controller for `docker/portainer-stacks.yaml`; Git updates for every inventoried stack |
 | Git | Compose definitions and the expected active-stack inventory |
 
 The Ansible `docker-host` role installs Docker Engine and Compose from Docker's
 stable Ubuntu repository, configures daemon and published-port policy, prepares
 NFS storage, copies `docker/init` to `/srv/init`, and reconciles that bootstrap
-stack. Portainer is the intended controller for every other inventoried stack.
-The `media-broker` project is now Portainer-managed with guarded manual updates.
+stack. Portainer is the intended controller for every other inventoried stack,
+including `media-broker`, whose image is built and published by the dedicated
+`mich-murphy/media-broker` repository.
 An inventory entry alone does not establish live ownership; verify controller
 state after a restore.
 
 ## Portainer Git configuration
 
-Configure ordinary inventory entries as separate Portainer Git stacks.
-**Do not connect `media-broker` to the shared Git source.** Portainer 2.45 polls
-by source and cannot enforce its manual-only policy through a per-stack
-`AutoUpdate: null`. The broker instead uses authenticated editor/API updates
-from reviewed Git source, after the host checks in its runbook.
+Configure every inventory entry as a separate Portainer Git stack,
+including `media-broker` (its image-only Compose references the published GHCR
+image, so the historical per-stack manual exception is obsolete — see the
+history in [`docs/hermes-media.md`](hermes-media.md)).
 
 For the ordinary Git-connected stacks:
 
@@ -37,10 +37,7 @@ For the ordinary Git-connected stacks:
   store only interpolated nonsecret settings in Portainer; backend API keys and
   the broker bearer token remain in host-managed files described in the
   [media-broker runbook](hermes-media.md);
-- update policy: enable Portainer's Git polling or webhook for ordinary stacks.
-  **Exception: `media-broker` must have AutoUpdate disabled and no webhook.**
-  Its manual redeploy requires the host preflight and explicit image build in
-  [the media-broker runbook](hermes-media.md).
+- update policy: enable Portainer's Git polling or webhook for every stack.
 
 The `recyclarr` stack bind-mounts files that live next to its `compose.yml` in
 Git (`./recyclarr.yml`, `./settings.yml`, and `./custom-formats/`). Portainer
@@ -115,13 +112,14 @@ including the TrueNAS, Portainer, and dashboard routes; only Plex and Jellyfin
 are intentionally reachable from KDS. Jellyfin's direct TCP 8096 fallback is
 allow-listed for the Tailscale range only, not DFLT or KDS.
 
-## Hermes media-broker candidate
+## Hermes media-broker
 
-The read-only media broker is Portainer-managed without a Git workflow,
-AutoUpdate, or webhook. The shared repository source's polling policy was left
-unchanged for other stacks. The inventory points to the canonical
-`services/media-broker/deploy/compose.yml`; guarded manual updates and the
-Portainer 2.45 source-polling limitation are documented in
+The read-only media broker is an ordinary Git-polled Portainer stack. Its
+image is built and published by the dedicated `mich-murphy/media-broker`
+repository; Renovate pins and updates the image digest in the inventoried
+`docker/media-broker/compose.yml`, and Portainer polling redeploys on change.
+The deployment pipeline, rollback, and the history of the earlier manual
+ownership are documented in
 [`docs/hermes-media.md`](hermes-media.md).
 
 ## Removing a stack
