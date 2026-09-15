@@ -1,0 +1,98 @@
+---
+- name: Require media-broker auto-update protected variables
+  when: docker_media_broker_autoupdate_enabled | bool
+  ansible.builtin.assert:
+    that:
+      - docker_media_broker_autoupdate_github_token is defined
+      - docker_media_broker_autoupdate_github_token | length > 0
+      - docker_media_broker_autoupdate_webhook is defined
+      - docker_media_broker_autoupdate_webhook is match('^https://[^/]+/api/stacks/webhooks/[0-9a-fA-F-]+$')
+    fail_msg: >-
+      docker_media_broker_autoupdate_enabled requires the protected variables
+      docker_media_broker_autoupdate_github_token (classic PAT with
+      read:packages) and docker_media_broker_autoupdate_webhook (the Portainer
+      media-broker stack webhook URL).
+
+- name: Install the media-broker auto-update script
+  ansible.builtin.copy:
+    src: media-broker-autoupdate.sh
+    dest: /usr/local/sbin/media-broker-autoupdate.sh
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Remove stale media-broker auto-update environment
+  when: not docker_media_broker_autoupdate_enabled | bool
+  ansible.builtin.file:
+    path: /etc/media-broker/autoupdate.env
+    state: absent
+
+- name: Store media-broker auto-update environment
+  when: docker_media_broker_autoupdate_enabled | bool
+  ansible.builtin.copy:
+    content: |-
+      MEDIA_BROKER_GHCR_USERNAME={{ docker_media_broker_autoupdate_github_username }}
+      MEDIA_BROKER_GHCR_TOKEN={{ docker_media_broker_autoupdate_github_token }}
+      MEDIA_BROKER_PORTAINER_WEBHOOK={{ docker_media_broker_autoupdate_webhook }}
+    dest: /etc/media-broker/autoupdate.env
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Install media-broker auto-update service unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/media-broker-autoupdate.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Pull and deploy the latest media-broker image
+      After=docker.service
+      Requires=docker.service
+      ConditionPathExists=/etc/media-broker/autoupdate.env
+
+      [Service]
+      Type=oneshot
+      EnvironmentFile=/etc/media-broker/autoupdate.env
+      ExecStart=/usr/local/sbin/media-broker-autoupdate.sh
+      NoNewPrivileges=true
+      PrivateTmp=true
+      ProtectHome=true
+      ReadWritePaths=/var/lib/media-broker-autoupdate
+
+- name: Install media-broker auto-update timer unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/media-broker-autoupdate.timer
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Periodically deploy the latest media-broker image
+
+      [Timer]
+      OnBootSec=3min
+      OnUnitActiveSec={{ docker_media_broker_autoupdate_interval }}
+      RandomizedDelaySec=45
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+
+- name: Remove media-broker auto-update timer when disabled
+  when: not docker_media_broker_autoupdate_enabled | bool
+  ansible.builtin.systemd:
+    name: media-broker-autoupdate.timer
+    enabled: false
+    state: stopped
+  ignore_errors: true
+
+- name: Enable media-broker auto-update timer
+  when: docker_media_broker_autoupdate_enabled | bool
+  ansible.builtin.systemd:
+    name: media-broker-autoupdate.timer
+    daemon_reload: true
+    enabled: true
+    state: started
