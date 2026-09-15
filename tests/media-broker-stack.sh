@@ -11,6 +11,17 @@ policy=${repo_root}/ansible/roles/docker-host/tasks/published-ports.yaml
 # Provisioning defaults never activate the stack; Portainer owns deployment.
 grep -q 'docker_media_broker_enabled: false' "${repo_root}/ansible/roles/docker-host/defaults/main.yaml"
 grep -q 'docker_media_broker_port: 8765' "${repo_root}/ansible/roles/docker-host/defaults/main.yaml"
+# The host timer is what keeps the running container on the newest :main
+# digest; assert its policy shape statically (no daemon required).
+autoupdate=${repo_root}/ansible/roles/docker-host/files/media-broker-autoupdate.sh
+grep -q 'image="ghcr.io/mich-murphy/media-broker:main"' "${autoupdate}"
+grep -q 'container="media-broker"' "${autoupdate}"
+grep -q 'MEDIA_BROKER_PORTAINER_WEBHOOK' "${autoupdate}"
+grep -q -- '--password-stdin' "${autoupdate}"
+if grep -q 'docker compose' "${autoupdate}"; then
+  echo 'autoupdate script must not run Compose; Portainer owns deployment' >&2
+  exit 1
+fi
 
 for command in docker python3; do
   if ! command -v "${command}" >/dev/null 2>&1; then

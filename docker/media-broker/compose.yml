@@ -1,7 +1,9 @@
 # Ordinary Portainer Git stack on the shared repository source. The image is
 # built and published by the dedicated mich-murphy/media-broker repository;
-# Renovate pins and updates its digest here, and Portainer polling redeploys on
-# change. Never add a build block: Portainer must not build from a Git clone.
+# this stack always tracks its :main tag. The Ansible-managed
+# media-broker-autoupdate timer on the Docker host pulls new digests and
+# redeploys through Portainer's webhook, because Git polling cannot notice a
+# moving tag. Never add a build block: Portainer must not build from a clone.
 services:
   media-broker:
     image: ghcr.io/mich-murphy/media-broker:main
