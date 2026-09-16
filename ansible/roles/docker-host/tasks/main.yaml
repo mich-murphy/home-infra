@@ -18,9 +18,6 @@
 - name: Deploy the Ansible-owned bootstrap stack
   ansible.builtin.import_tasks: bootstrap-stack.yaml
 
-- name: Track the latest published media-broker image
-  ansible.builtin.import_tasks: media-broker-autoupdate.yaml
-
 - name: Verify Docker host provisioning
   ansible.builtin.import_tasks: verify.yaml
   when: not ansible_check_mode

@@ -11,17 +11,6 @@ policy=${repo_root}/ansible/roles/docker-host/tasks/published-ports.yaml
 # Provisioning defaults never activate the stack; Portainer owns deployment.
 grep -q 'docker_media_broker_enabled: false' "${repo_root}/ansible/roles/docker-host/defaults/main.yaml"
 grep -q 'docker_media_broker_port: 8765' "${repo_root}/ansible/roles/docker-host/defaults/main.yaml"
-# The host timer is what keeps the running container on the newest :main
-# digest; assert its policy shape statically (no daemon required).
-autoupdate=${repo_root}/ansible/roles/docker-host/files/media-broker-autoupdate.sh
-grep -q 'image="ghcr.io/mich-murphy/media-broker:main"' "${autoupdate}"
-grep -q 'container="media-broker"' "${autoupdate}"
-grep -q 'MEDIA_BROKER_PORTAINER_WEBHOOK' "${autoupdate}"
-grep -q -- '--password-stdin' "${autoupdate}"
-if grep -q 'docker compose' "${autoupdate}"; then
-  echo 'autoupdate script must not run Compose; Portainer owns deployment' >&2
-  exit 1
-fi
 
 for command in docker python3; do
   if ! command -v "${command}" >/dev/null 2>&1; then
@@ -82,6 +71,7 @@ fi
 python3 - "${compose}" "${policy}" "${normalized}" <<'PY'
 import json
 import pathlib
+import re
 import sys
 import yaml
 from jinja2 import Environment
@@ -99,8 +89,10 @@ assert service["read_only"] is True
 assert service["security_opt"] == ["no-new-privileges:true"]
 # The image is published by the dedicated repository; Portainer must never
 # build. A build block here reintroduces the stale-context rebuild trap.
+# Renovate pins the moving :main tag by digest; both pinned and (briefly,
+# before the first pin) unpinned forms are valid.
 assert "build" not in service, "media-broker compose must not contain a build block"
-assert service["image"] == "ghcr.io/mich-murphy/media-broker:main"
+assert re.fullmatch(r"ghcr\.io/mich-murphy/media-broker:main(@sha256:[0-9a-f]{64})?", service["image"]), service["image"]
 assert service["ports"] == ["${MEDIA_BROKER_BIND:?set MEDIA_BROKER_BIND in Portainer stack variables}:8765:8000"]
 assert len(service["secrets"]) == 5
 assert set(service["environment"]) >= {

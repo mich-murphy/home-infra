@@ -10,12 +10,6 @@ zswap_enabled: true
 # Preserve the live, source-pinned read-only broker rule during reconciliation.
 docker_media_broker_enabled: true
 
-# Track the latest published media-broker image. Keep false until the
-# Portainer migration runbook in docs/hermes-media.md is complete: enabling
-# requires the protected docker_media_broker_autoupdate_github_token and
-# docker_media_broker_autoupdate_webhook variables.
-docker_media_broker_autoupdate_enabled: false
-
 # Published Docker ports must be allowlisted in DOCKER-USER.
 docker_published_ports:
   - {port: 80, proto: tcp}  # traefik

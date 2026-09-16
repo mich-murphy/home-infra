@@ -68,12 +68,3 @@ docker_agent_proxy_client: ai-dev
 docker_media_broker_enabled: false
 docker_media_broker_port: 8765
 docker_media_broker_client: "{{ docker_agent_proxy_client }}"
-
-# Always track the latest ghcr.io/mich-murphy/media-broker:main image. The
-# timer pulls the tag and redeploys through Portainer's webhook; enabling it
-# additionally requires protected variables
-# docker_media_broker_autoupdate_github_token and
-# docker_media_broker_autoupdate_webhook.
-docker_media_broker_autoupdate_enabled: false
-docker_media_broker_autoupdate_github_username: mich-murphy
-docker_media_broker_autoupdate_interval: 5min
