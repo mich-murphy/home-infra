@@ -103,7 +103,6 @@ jobs:
           nix shell .#shellcheck --command shellcheck \
             ansible/roles/ai-dev/files/ai-dev-maintenance \
             ansible/roles/ai-dev/files/reload-nftables \
-            ansible/roles/docker-host/files/media-broker-autoupdate.sh \
             ansible/tests/ai-dev-maintenance.sh \
             ansible/tests/docker-host-storage.sh
           ansible/tests/ai-dev-maintenance.sh

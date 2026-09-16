@@ -11,30 +11,33 @@ repository; this repository owns only the stack definition at
 
 ## Deployment pipeline
 
-Merging to `main` in the media-broker repository deploys the latest image
-without manual host steps:
+Merging to `main` in the media-broker repository deploys without manual host
+steps, using the same digest-pin trigger every other stack relies on:
 
 1. **Publish**: the media-broker repository's CI runs the source suite and,
    on merge to `main`, pushes the image to GHCR as
    `ghcr.io/mich-murphy/media-broker:main` plus an immutable `:sha-<commit>`
    tag kept for rollback and audit.
-2. **Tracking**: the Compose file here references `:main` unpinned. That is a
-   deliberate, documented exception to this repository's digest-pinned house
-   style: this stack always runs the newest published image.
-3. **Redeploy**: Portainer's Git polling only redeploys when the Compose file
-   itself changes; it cannot notice that a moving tag's digest changed. The
-   Ansible-managed `media-broker-autoupdate` timer on docker-host closes that
-   gap: every five minutes it pulls `:main` with the host Docker CLI and,
-   when the running container's image differs, asks Portainer's local stack
-   webhook to redeploy. Portainer remains the only deployment controller; the
-   timer never runs Compose itself.
+2. **Pin**: the Compose reference here is `:main@sha256:<digest>`. Renovate
+   (already authenticating to ghcr.io as `mich-murphy` via its hostRules)
+   updates the digest whenever `:main` moves and automerges the PR under the
+   repository's existing digest-automerge rule. Renovate runs on a cron
+   schedule; use its workflow dispatch to pin a fresh release immediately.
+3. **Redeploy**: the digest bump is a commit on home-infra `main` — exactly
+   the change Portainer's Git polling watches. It redeploys the stack and
+   pulls the pinned digest.
 
-Rollback: stop tracking first (`systemctl disable --now
-media-broker-autoupdate.timer`, or set `docker_media_broker_autoupdate_enabled:
-false` in Ansible), then redeploy a known-good immutable `:sha-<commit>` tag
-through Portainer's editor update. Re-enable the timer to resume tracking.
-Do not re-add a `build:` block to the Compose file; Portainer must never
-build this image (see history below).
+The digest pin is the deploy trigger, not a style preference: Portainer's
+auto-update compares repository commit hashes and never consults the
+registry, so an unpinned moving tag would stay stale until an unrelated
+commit happened to land. Portainer's only registry-aware feature is an
+inbound registry webhook, which is unusable here (nothing gets through
+Tailscale, and GHCR does not offer registry webhooks).
+
+Rollback is `git revert` of the digest-bump commit (Portainer redeploys the
+previous digest on the next poll) or an emergency editor update pinning a
+known `:sha-<commit>` tag. Do not re-add a `build:` block to the Compose
+file; Portainer must never build this image (see history below).
 
 ## Why this stack was previously manual
 
@@ -61,11 +64,10 @@ from GHCR.
 
 - Stack and Compose project: `media-broker`; container: `media-broker`
 - Compose path: `docker/media-broker/compose.yml` (image-only)
-- Image: `ghcr.io/mich-murphy/media-broker:main` (unpinned by design; the
-  host auto-update timer keeps the running container on the newest digest)
+- Image: `ghcr.io/mich-murphy/media-broker:main@sha256:...` (Renovate-pinned;
+  unpinned only briefly before Renovate's first pin after introduction)
 - Registry credentials for `ghcr.io` are stored in Portainer's registry store
-- Update policy: shared Git polling for Compose changes, plus the
-  `media-broker-autoupdate` timer for new image digests
+- Update policy: shared Git polling; Renovate digest bumps are the trigger
 
 Portainer supplies the interpolated `SONARR_URL`, `RADARR_URL`, `LIDARR_URL`,
 `TAUTULLI_URL`, `MEDIA_BROKER_BIND`, `MEDIA_BROKER_BIND_HOST`,
@@ -90,12 +92,6 @@ filesystem and has no Docker socket or media mounts.
   declared ownership or mode, so verify these after any host rebuild.
   Future ai-dev Ansible runs require the existing bearer as
   `hermes_media_broker_token` through protected variables.
-- The auto-update timer reads `/etc/media-broker/autoupdate.env` (root:root
-  mode `0600`), written by the `docker-host` role from the protected
-  variables `docker_media_broker_autoupdate_github_token` (classic PAT with
-  `read:packages`) and `docker_media_broker_autoupdate_webhook` (the
-  Portainer stack webhook URL). Docker login state lives only in the
-  root-owned `/var/lib/media-broker-autoupdate` directory.
 - The host firewall admits TCP 8765 only from ai-dev's exact Tailscale
   address through `tailscale0`; the `docker-host` role defines and asserts
   the `DOCKER-USER` rules on every run.
@@ -119,23 +115,17 @@ Performed once, from the old manual stack to the Git stack:
    `refs/heads/main`, compose path `docker/media-broker/compose.yml`, the
    same nonsecret environment values as before, AutoUpdate polling enabled on
    the shared source. No relative-path volumes are needed for this stack.
-5. Enable the stack webhook in Portainer's stack settings and copy its URL
-   (`https://<host>:9443/api/stacks/webhooks/<uuid>`).
-6. Provide the protected variables
-   `docker_media_broker_autoupdate_github_token` (the same `read:packages`
-   PAT) and `docker_media_broker_autoupdate_webhook` (the copied URL), set
-   `docker_media_broker_autoupdate_enabled: true` for the docker host group,
-   and run the `docker-host` role. The timer pulls `:main` within five
-   minutes and redeploys whenever the published digest changes.
-7. Wait for the container to become healthy, then verify: the running image
-   matches the newest `:main` digest; authenticated reads from Hermes
-   succeed for all four tools; unauthenticated requests are rejected; a
-   different client is denied. Retain the existing ACL and token. No Hermes
-   gateway restart is required.
-8. Verify the full pipeline once: merge a trivial change in the media-broker
-   repository, then confirm `journalctl -u media-broker-autoupdate.service`
-   shows the pull and webhook redeploy and that the container's image ID
-   changed to the new `:sha-<commit>` build.
+5. Wait for the container to become healthy, then verify: the running image
+   is the current `:main` build; authenticated reads from Hermes succeed for
+   all four tools; unauthenticated requests are rejected; a different client
+   is denied. Retain the existing ACL and token. No Hermes gateway restart
+   is required.
+6. After the pull request merging this stack lands, confirm Renovate opens
+   and automerges the initial digest-pin PR for the image, and that Portainer
+   redeploys on it. From then on, every media-broker merge becomes a
+   Renovate digest bump → automerge → Portainer redeploy. If Renovate
+   cannot resolve the digest, its token lacks `read:packages` for the
+   private package — fix the token before relying on the pipeline.
 
 This remains a read-only integration. Conversation-approved writes and
 Jellyfin playback reporting are not enabled. Host controls are operational
