@@ -99,15 +99,20 @@ jobs:
           # Docker-free contract checks; the full mode needs a local daemon.
           tests/media-broker-stack.sh --source-only
           SCRIPT
-      - name: Check ai-dev maintenance command
+      - name: Run Ansible helper tests
         if: inputs.check == 'ansible'
         run: |
           nix shell .#shellcheck --command shellcheck \
             ansible/roles/ai-dev/files/ai-dev-maintenance \
             ansible/roles/ai-dev/files/reload-nftables \
             ansible/tests/ai-dev-maintenance.sh \
-            ansible/tests/docker-host-storage.sh
+            ansible/tests/docker-host-storage.sh \
+            ansible/tests/hermes-media.sh \
+            ansible/tests/hermes-media-firewall.sh
           ansible/tests/ai-dev-maintenance.sh
+          ansible/tests/hermes-media.sh
+          # Needs the ansible CLI, provided by the shared ansible-lint package.
+          nix shell .#ansible-lint --command ansible/tests/hermes-media-firewall.sh
       - name: Lint Ansible
         if: inputs.check == 'ansible'
         # galaxy install: kewlfft.aur is not bundled with nixpkgs ansible
