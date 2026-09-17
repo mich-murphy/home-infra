@@ -2,12 +2,15 @@
 
 <!-- markdownlint-disable MD013 -->
 
-Portainer owns the live read-only broker as an **ordinary Git-connected
-stack** named `media-broker`, using the same repository source and polling as
-every other inventoried stack. The application source and its container image
-live in the dedicated [`mich-murphy/media-broker`](https://github.com/mich-murphy/media-broker)
+Portainer owns the read-only broker as an **ordinary Git-connected stack**
+named `media-broker`, using the same repository source and polling as every
+other inventoried stack. The application source and its container image live
+in the dedicated [`mich-murphy/media-broker`](https://github.com/mich-murphy/media-broker)
 repository; this repository owns only the stack definition at
 `docker/media-broker/compose.yml` and the host policy around it.
+
+This describes the target state. Until the one-time migration runbook below
+is performed, the live stack is still the earlier manually updated one.
 
 ## Deployment pipeline
 
@@ -66,7 +69,9 @@ from GHCR.
 - Compose path: `docker/media-broker/compose.yml` (image-only)
 - Image: `ghcr.io/mich-murphy/media-broker:main@sha256:...` (Renovate-pinned;
   unpinned only briefly before Renovate's first pin after introduction)
-- Registry credentials for `ghcr.io` are stored in Portainer's registry store
+- Registry credentials: the package is private, so Portainer needs a `ghcr.io`
+  registry entry. This is manual UI state, not established by this repository;
+  add it in migration step 3 and audit it after a restore
 - Update policy: shared Git polling; Renovate digest bumps are the trigger
 
 Portainer supplies the interpolated `SONARR_URL`, `RADARR_URL`, `LIDARR_URL`,
@@ -100,32 +105,37 @@ filesystem and has no Docker socket or media mounts.
 
 ## One-time migration runbook
 
-Performed once, from the old manual stack to the Git stack:
+Performed once, from the old manual stack to the Git stack. Steps 3 onward
+assume the pull request introducing `docker/media-broker/compose.yml` has
+already merged, because Portainer resolves that path from `refs/heads/main`.
 
-1. Ensure the first image exists: the media-broker repository's `publish`
+1. Merge that pull request to `main` and confirm the Compose file resolves
+   there.
+2. Ensure the first image exists: the media-broker repository's `publish`
    job must have run on `main` so GHCR serves
    `ghcr.io/mich-murphy/media-broker:main`.
-2. In Portainer, add `ghcr.io` registry credentials with pull access to the
-   private package (classic PAT with `read:packages`).
-3. Delete the existing `media-broker` stack (brief downtime; the old
+3. In Portainer, add `ghcr.io` registry credentials with pull access to the
+   private package (classic PAT with `read:packages`). Skip this step if the
+   package is made public.
+4. Delete the existing `media-broker` stack (brief downtime; the old
    container name `media-broker-candidate` goes away with it). Do not delete
    host secret files.
-4. Recreate the stack from Git: repository
+5. Recreate the stack from Git: repository
    `https://github.com/mich-murphy/home-infra.git`, reference
    `refs/heads/main`, compose path `docker/media-broker/compose.yml`, the
    same nonsecret environment values as before, AutoUpdate polling enabled on
    the shared source. No relative-path volumes are needed for this stack.
-5. Wait for the container to become healthy, then verify: the running image
+6. Wait for the container to become healthy, then verify: the running image
    is the current `:main` build; authenticated reads from Hermes succeed for
    all four tools; unauthenticated requests are rejected; a different client
    is denied. Retain the existing ACL and token. No Hermes gateway restart
    is required.
-6. After the pull request merging this stack lands, confirm Renovate opens
-   and automerges the initial digest-pin PR for the image, and that Portainer
-   redeploys on it. From then on, every media-broker merge becomes a
-   Renovate digest bump → automerge → Portainer redeploy. If Renovate
-   cannot resolve the digest, its token lacks `read:packages` for the
-   private package — fix the token before relying on the pipeline.
+7. Confirm Renovate opens and automerges the initial digest-pin PR for the
+   image, and that Portainer redeploys on it. From then on, every
+   media-broker merge becomes a Renovate digest bump → automerge → Portainer
+   redeploy. If Renovate cannot resolve the digest, its token lacks
+   `read:packages` for the private package — fix the token before relying on
+   the pipeline.
 
 This remains a read-only integration. Conversation-approved writes and
 Jellyfin playback reporting are not enabled. Host controls are operational

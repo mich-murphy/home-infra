@@ -1,9 +1,5 @@
-# Ordinary Portainer Git stack on the shared repository source. The image is
-# built and published by the dedicated mich-murphy/media-broker repository.
-# Renovate pins the :main tag by digest here and updates the pin when the tag
-# moves; that digest commit is the deploy trigger Portainer's polling watches,
-# because Portainer never consults the registry itself. Never add a build
-# block: Portainer must not build from a clone.
+# Image-only stack; never add a build block (docs/hermes-media.md).
+# The Renovate digest bump is the deploy trigger Portainer polls for.
 services:
   media-broker:
     image: ghcr.io/mich-murphy/media-broker:main
