@@ -13,3 +13,45 @@
   ansible.builtin.systemd_service:
     name: earlyoom.service
     state: restarted
+
+# The hermes user manager runs under linger, so there is no login session to
+# join; drive it through machined instead. --machine=<user>@ needs systemd 256
+# or newer, which Arch already carries.
+- name: discover enabled hermes user services
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - --no-legend
+      - --no-pager
+      - list-unit-files
+      - --state=enabled
+      - "hermes*.service"
+      - moshi-hook.service
+  register: ai_dev_hermes_service_units
+  changed_when: false
+  # rc 1 also covers a user manager that is not running yet (pre-pairing);
+  # stdout is then empty and the play reports that nothing was restarted.
+  failed_when: ai_dev_hermes_service_units.rc not in [0, 1]
+  listen: restart hermes user services
+
+- name: restart enabled hermes user services
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - restart
+      - "{{ item.split()[0] }}"
+  loop: "{{ ai_dev_hermes_service_units.stdout_lines | default([]) }}"
+  listen: restart hermes user services
+
+- name: report when no hermes user services exist yet
+  ansible.builtin.debug:
+    msg: >-
+      No enabled hermes*.service or moshi-hook.service units exist for the
+      {{ ai_dev_hermes_user }} account; nothing was restarted. This is
+      expected before first-run setup and Moshi pairing.
+  listen: restart hermes user services
+  when: (ai_dev_hermes_service_units.stdout_lines | length) == 0

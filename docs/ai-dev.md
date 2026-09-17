@@ -276,16 +276,48 @@ hermes chat
 
 ### Operating it
 
+Day-to-day management needs no login to the agent account. The role owns
+env-file reconciliation, opt-in package updates, and user-service restarts:
+
 ```sh
-hermes --version
-hermes update
-moshi-hook status
+cd ansible
+ansible-playbook run.yaml --vault-password-file .vaultpass \
+  --limit ai-dev --tags hermes,hermes-media
+# Additionally refresh the hermes account's Hermes, Herdr, and Moshi:
+ansible-playbook run.yaml --vault-password-file .vaultpass \
+  --limit ai-dev --tags hermes -e ai_dev_hermes_update=true
 ```
 
-Ansible installs the agent but does not update it; `hermes update` follows
-`origin/main` of the upstream repository. That is an unpinned, self-updating
-code path, which is acceptable on a disposable DMZ guest and is a reason the
-agent lives here rather than on docker-host.
+Updates stay opt in per run: `hermes update` follows `origin/main` of the
+upstream repository. That is an unpinned, self-updating code path, which is
+acceptable on a disposable DMZ guest and is a reason the agent lives here
+rather than on docker-host. Without `ai_dev_hermes_update=true` the play
+installs missing pieces but never advances the toolchain.
+
+Whenever the role changes the scoped credential env, the media-broker entries,
+or a toolchain version, a handler restarts the account's enabled
+`hermes*.service` and `moshi-hook.service` user units through
+`systemctl --machine=hermes@ --user`. Linger keeps that user manager running
+without a session; this path needs systemd 256 or newer, which Arch carries.
+Fresh hosts before first-run setup and pairing have no such units yet: the
+handler reports that and changes nothing, rather than starting services that
+have no credentials.
+
+For ad-hoc checks between playbook runs, the role installs
+`hermes-maintenance` for the management user. It drives the same operations
+through sudo, so neither a session on the agent account nor a sudo entry for
+it is ever needed:
+
+```sh
+hermes-maintenance status
+hermes-maintenance update
+hermes-maintenance restart
+```
+
+The account itself stays password-locked with no sudo entry; the agent reads
+untrusted input, so the capability to change the host must not exist on its
+account at all. Direct interactive access for first-run setup and debugging
+remains `ssh hermes@ai-dev` or `sudo -u hermes -i`.
 
 ### Known exposure
 
@@ -317,9 +349,10 @@ The live endpoint is `http://docker-host:8765/mcp`, reached over Tailscale.
 The sanitized Docker observer, broker, and source-pinned access controls have
 been deployed and tested. Backend keys stay on docker-host in restricted
 files. The broker uses a 5 MiB response bound for the observed 2.27 MB Lidarr
-inventory. Ansible does not restart the Hermes gateway. After subsequent
-approved configuration changes, restart the Hermes user service explicitly
-and verify its four read-only tools.
+inventory. When reconciliation changes the managed entry or token, the role's
+handler restarts the account's enabled gateway and moshi-hook user units
+discovered at run time. After subsequent approved configuration changes,
+verify the broker's four read-only tools.
 
 ## Agent scratch space
 

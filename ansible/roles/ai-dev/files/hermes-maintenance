@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# Runs Hermes-account maintenance from the management user, so no login to the
+# agent account is needed. sudo acts as the hermes user and drives the hermes
+# systemd user manager, which linger keeps running without a session.
+
+readonly HERMES_USER=hermes
+# Override point for tests; the deployment target is always /home/hermes.
+readonly HERMES_HOME=${HERMES_MAINTENANCE_HOME:-/home/hermes}
+readonly HERMES_BIN="${HERMES_HOME}/.local/bin"
+readonly HERMES_PATH="${HERMES_BIN}:/usr/local/bin:/usr/bin"
+
+usage() {
+  cat <<'EOF'
+Usage: hermes-maintenance <status|update|restart>
+
+  status   Report tool versions and Hermes user-service state.
+  update   Update the Hermes agent, Herdr, and Moshi for the hermes account,
+           then restart its enabled user services.
+  restart  Restart the enabled Hermes and Moshi user services.
+
+Ansible (ai-dev role) owns the same operations in the steady state; this
+command covers ad-hoc use between playbook runs.
+EOF
+}
+
+run_as_hermes() {
+  sudo -u "$HERMES_USER" env "HOME=$HERMES_HOME" "USER=$HERMES_USER" "PATH=$HERMES_PATH" "$@"
+}
+
+systemctl_user() {
+  sudo systemctl "--machine=${HERMES_USER}@" --user --no-legend --no-pager "$@"
+}
+
+enabled_services() {
+  systemctl_user list-unit-files --state=enabled 'hermes*.service' moshi-hook.service 2>/dev/null \
+    | awk '{print $1}'
+}
+
+version_of() {
+  local label=$1 binary=$2
+  if [[ -x $binary ]]; then
+    printf '%-10s %s\n' "${label}:" "$(run_as_hermes "$binary" --version 2>&1 | head -n 1)"
+  else
+    printf '%-10s %s\n' "${label}:" 'not installed'
+    return 1
+  fi
+}
+
+status() {
+  local failed=0
+  printf 'Hermes account (%s) tools:\n' "$HERMES_USER"
+  version_of Hermes "${HERMES_BIN}/hermes" || failed=1
+  version_of Herdr "${HERMES_BIN}/herdr" || failed=1
+  version_of Moshi "${HERMES_BIN}/moshi-hook" || failed=1
+
+  printf '\nHermes user services (enabled):\n'
+  local units unit
+  units=$(enabled_services)
+  if [[ -z $units ]]; then
+    printf 'none\n'
+    return "$failed"
+  fi
+  while IFS= read -r unit; do
+    printf '%-28s %s\n' "$unit" "$(systemctl_user is-active "$unit" 2>/dev/null || true)"
+  done <<<"$units"
+  return "$failed"
+}
+
+restart() {
+  local units unit
+  units=$(enabled_services)
+  if [[ -z $units ]]; then
+    printf 'No enabled hermes*.service or moshi-hook.service units; nothing to restart.\n'
+    return 0
+  fi
+  local failed=0
+  while IFS= read -r unit; do
+    printf 'Restarting %s\n' "$unit"
+    systemctl_user restart "$unit" || failed=1
+  done <<<"$units"
+  ((failed == 0))
+}
+
+update() {
+  local failed=0
+  printf '==> Hermes update\n'
+  run_as_hermes "${HERMES_BIN}/hermes" update || failed=1
+  printf '==> Herdr update\n'
+  run_as_hermes sh -c 'curl -fsSL https://herdr.dev/install.sh | sh' || failed=1
+  printf '==> Moshi update\n'
+  run_as_hermes sh -c 'curl -fsSL https://getmoshi.app/install.sh | MOSHI_HOOK_SKIP_FIRST_RUN=1 sh' || failed=1
+  run_as_hermes "${HERMES_BIN}/moshi-hook" install --target hermes || failed=1
+  printf '\n'
+  status || failed=1
+  printf '\n'
+  restart || failed=1
+  return "$failed"
+}
+
+case "${1:-}" in
+  status | update | restart)
+    "$1"
+    ;;
+  -h | --help | help)
+    usage
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

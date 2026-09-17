@@ -191,6 +191,7 @@
     and (ai_dev_hermes_media_reconcile.stdout | from_json).changed | bool
   no_log: true
   timeout: 20
+  notify: restart hermes user services
   when:
     - not ansible_check_mode
     - ai_dev_hermes_media_runtime_needed | bool
