@@ -167,7 +167,7 @@ services:
     restart: unless-stopped
 
   nextcloud-office:
-    image: collabora/code:26.04.4.1.1@sha256:aaf5179ec0e7bde13cf4aee4a2e910e85547db33b7e1b85a588d384be5e44fa7
+    image: collabora/code:26.04.4.1.1@sha256:d14f286a8f56a9ec081431568b03011b78e7d161b9613c8924b65b27d9f8a14c
     container_name: nextcloud-office
     # coolforkit relies on setuid/file capabilities; no-new-privileges breaks it.
     cap_drop:
