@@ -96,6 +96,8 @@ jobs:
           scripts/check-portainer-drift.sh --source-only
           # The hardening check renders and validates every Compose file once.
           tests/docker-hardening.sh
+          # Docker-free contract checks; the full mode needs a local daemon.
+          tests/media-broker-stack.sh --source-only
           SCRIPT
       - name: Check ai-dev maintenance command
         if: inputs.check == 'ansible'

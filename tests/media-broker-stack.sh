@@ -1,14 +1,102 @@
 #!/usr/bin/env bash
 # Infra-side assertions only: Compose contract, published-port policy, and
 # stack inventory. Source tests live in the mich-murphy/media-broker repo.
+# --source-only runs the Docker-free contract checks that CI executes.
 set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: tests/media-broker-stack.sh [--source-only]
+
+Source-only mode asserts the Compose contract, inventory coverage, and Ansible
+policy without a Docker daemon. Full mode additionally renders the Compose file
+and exercises the published-port template; it requires the desktop-linux
+Docker context.
+EOF
+}
+
+if [[ ${1:-} == "-h" || ${1:-} == "--help" ]]; then
+  usage
+  exit 0
+fi
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 compose=${repo_root}/docker/media-broker/compose.yml
 policy=${repo_root}/ansible/roles/docker-host/tasks/published-ports.yaml
+defaults=${repo_root}/ansible/roles/docker-host/defaults/main.yaml
+source_only=0
+if [[ ${1:-} == "--source-only" ]]; then
+  source_only=1
+  shift
+fi
+
+if ! command -v yq >/dev/null 2>&1; then
+  echo "ERROR: required command not found: yq" >&2
+  exit 2
+fi
+
+assert_yq() {
+  local description=$1 expression=$2
+  if ! yq -e "${expression}" "${compose}" >/dev/null 2>&1; then
+    echo "media-broker Compose contract failed: ${description}" >&2
+    exit 1
+  fi
+}
+
 # Provisioning defaults never activate the stack; Portainer owns deployment.
-grep -q 'docker_media_broker_enabled: false' "${repo_root}/ansible/roles/docker-host/defaults/main.yaml"
-grep -q 'docker_media_broker_port: 8765' "${repo_root}/ansible/roles/docker-host/defaults/main.yaml"
+grep -q 'docker_media_broker_enabled: false' "${defaults}"
+grep -q 'docker_media_broker_port: 8765' "${defaults}"
+
+# Portainer must never build this image; a build block reintroduces the
+# documented stale-context rebuild (docs/hermes-media.md).
+assert_yq 'build block must be absent' '.services["media-broker"] | has("build") | not'
+assert_yq 'image must be the published GHCR reference' \
+  '.services["media-broker"].image | test("^ghcr[.]io/mich-murphy/media-broker:main(@sha256:[0-9a-f]{64})?$")'
+assert_yq 'nonroot numeric user' '.services["media-broker"].user == "65532:65532"'
+assert_yq 'all capabilities dropped' '.services["media-broker"].cap_drop | (length == 1 and .[0] == "ALL")'
+assert_yq 'read-only root filesystem' '.services["media-broker"].read_only == true'
+assert_yq 'no-new-privileges' '.services["media-broker"].security_opt | (length == 1 and .[0] == "no-new-privileges:true")'
+assert_yq 'five mounted secrets' '.services["media-broker"].secrets | length == 5'
+# yq expressions are single-quoted so the shell never expands the Compose
+# interpolation syntax they assert on.
+# shellcheck disable=SC2016
+assert_yq 'source-pinned published port' \
+  '.services["media-broker"].ports[0] == "${MEDIA_BROKER_BIND:?set MEDIA_BROKER_BIND in Portainer stack variables}:8765:8000"'
+assert_yq 'fixed Host allow-list' '.services["media-broker"].environment.MEDIA_BROKER_ALLOWED_HOSTS == "docker-host:8765"'
+assert_yq 'fixed Origin allow-list' '.services["media-broker"].environment.MEDIA_BROKER_ALLOWED_ORIGINS == "http://docker-host:8765"'
+assert_yq 'bounded upstream responses' '.services["media-broker"].environment.MEDIA_BROKER_MAX_RESPONSE_BYTES == "5242880"'
+assert_yq 'upstream keys are file references' \
+  '[.services["media-broker"].environment | to_entries[] | select(.key | test("_API_KEY_FILE$"))] | length == 4'
+assert_yq 'no bind mounts' '.services["media-broker"] | has("volumes") | not'
+assert_yq 'host-managed secret files' \
+  '[.secrets[].file | select(test("/etc/media-broker/secrets"))] | length == 5'
+
+# Both bind settings must stay fail-closed: a default value would let a public
+# bind happen without the explicit opt-in the broker requires.
+for variable in MEDIA_BROKER_BIND_HOST MEDIA_BROKER_ALLOW_PUBLIC_BIND; do
+  if ! grep -q "\${${variable}:?" "${compose}"; then
+    echo "media-broker Compose contract failed: ${variable} must have no default" >&2
+    exit 1
+  fi
+done
+
+tmp_dir=$(mktemp -d)
+trap 'rm -rf -- "${tmp_dir}"' EXIT
+# Source-only discovery covers the canonical docker/* deployment path and
+# rejects an inventory declaration whose Compose file is absent.
+"${repo_root}/scripts/check-portainer-drift.sh" --source-only
+missing_inventory=${tmp_dir}/missing-inventory.yaml
+sed 's#docker/media-broker/compose.yml#docker/media-broker/missing.yml#' \
+  "${repo_root}/docker/portainer-stacks.yaml" >"${missing_inventory}"
+if "${repo_root}/scripts/check-portainer-drift.sh" --source-only "${missing_inventory}" >/dev/null 2>&1; then
+  echo 'missing declared Compose fixture unexpectedly passed' >&2
+  exit 1
+fi
+
+if [[ ${source_only} -eq 1 ]]; then
+  echo 'Media-broker Compose contract and inventory assertions passed.'
+  exit 0
+fi
 
 for command in docker python3; do
   if ! command -v "${command}" >/dev/null 2>&1; then
@@ -32,18 +120,6 @@ endpoint=$(docker_cmd context inspect --format '{{(index .Endpoints "docker").Ho
   echo "unexpected desktop-linux Docker endpoint: ${endpoint}" >&2
   exit 2
 }
-tmp_dir=$(mktemp -d)
-trap 'rm -rf -- "${tmp_dir}"' EXIT
-# Source-only discovery covers the canonical docker/* deployment path and
-# rejects an inventory declaration whose Compose file is absent.
-"${repo_root}/scripts/check-portainer-drift.sh" --source-only
-missing_inventory=${tmp_dir}/missing-inventory.yaml
-sed 's#docker/media-broker/compose.yml#docker/media-broker/missing.yml#' \
-  "${repo_root}/docker/portainer-stacks.yaml" >"${missing_inventory}"
-if "${repo_root}/scripts/check-portainer-drift.sh" --source-only "${missing_inventory}" >/dev/null 2>&1; then
-  echo 'missing declared Compose fixture unexpectedly passed' >&2
-  exit 1
-fi
 for secret in broker-token sonarr-api-key radarr-api-key lidarr-api-key tautulli-api-key; do
   : >"${tmp_dir}/${secret}"
 done
@@ -66,45 +142,20 @@ if env -u MEDIA_BROKER_BIND \
   exit 1
 fi
 
-python3 - "${compose}" "${policy}" "${normalized}" <<'PY'
+python3 - "${policy}" "${normalized}" <<'PY'
 import json
 import pathlib
-import re
 import sys
 import yaml
 from jinja2 import Environment
 
-compose = yaml.safe_load(pathlib.Path(sys.argv[1]).read_text())
-normalized = json.loads(pathlib.Path(sys.argv[3]).read_text())
-service = compose["services"]["media-broker"]
+normalized = json.loads(pathlib.Path(sys.argv[2]).read_text())
 normalized_service = normalized["services"]["media-broker"]
 assert normalized_service["ports"][0]["host_ip"] == "100.100.10.2"
 assert normalized_service["ports"][0]["published"] == "8765"
 assert len(normalized_service["secrets"]) == 5
-assert service["user"] == "65532:65532"
-assert service["cap_drop"] == ["ALL"]
-assert service["read_only"] is True
-assert service["security_opt"] == ["no-new-privileges:true"]
-# Must stay build-free (docs/hermes-media.md); the digest is absent only
-# before Renovate's first pin.
-assert "build" not in service, "media-broker compose must not contain a build block"
-assert re.fullmatch(r"ghcr\.io/mich-murphy/media-broker:main(@sha256:[0-9a-f]{64})?", service["image"]), service["image"]
-assert service["ports"] == ["${MEDIA_BROKER_BIND:?set MEDIA_BROKER_BIND in Portainer stack variables}:8765:8000"]
-assert len(service["secrets"]) == 5
-assert set(service["environment"]) >= {
-    "SONARR_URL", "RADARR_URL", "LIDARR_URL", "TAUTULLI_URL",
-    "SONARR_API_KEY_FILE", "RADARR_API_KEY_FILE", "LIDARR_API_KEY_FILE",
-    "TAUTULLI_API_KEY_FILE", "MEDIA_BROKER_TOKEN_FILE",
-}
-assert service["environment"]["MEDIA_BROKER_MAX_RESPONSE_BYTES"] == "5242880"
-assert service["environment"]["MEDIA_BROKER_ALLOWED_HOSTS"] == "docker-host:8765"
-assert service["environment"]["MEDIA_BROKER_ALLOWED_ORIGINS"] == "http://docker-host:8765"
-for mount in service.get("volumes", []):
-    assert "docker.sock" not in str(mount) and "media" not in str(mount).lower()
-for secret in compose["secrets"].values():
-    assert "/etc/media-broker/secrets" in secret["file"]
 
-policy = pathlib.Path(sys.argv[2]).read_text()
+policy = pathlib.Path(sys.argv[1]).read_text()
 assert "docker_media_broker_enabled | bool" in policy
 assert "--ctorigdstport ' ~ docker_media_broker_port ~ ' --ctdir ORIGINAL -j DROP" in policy
 media = policy.index("docker_media_broker_port")
@@ -112,7 +163,7 @@ fast = policy.index("--ctstate RELATED,ESTABLISHED")
 assert media < fast
 assert "docker_media_broker_port | int not in [443, 2375, 8006]" in policy
 
-tasks = yaml.safe_load(pathlib.Path(sys.argv[2]).read_text())
+tasks = yaml.safe_load(policy)
 block = next(item["ansible.builtin.blockinfile"]["block"] for item in tasks if item["name"] == "Allowlist Docker published ports in DOCKER-USER")
 env = Environment()
 env.filters["bool"] = bool
