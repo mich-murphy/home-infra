@@ -28,12 +28,24 @@ and `cat /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw`.
 | Guest | RAM | Notes |
 | --- | --- | --- |
 | truenas (101) | 10 GiB | ZFS ARC inside the guest; keep as is. |
-| docker-host (102) | 8 GiB | Swap-backed; Collabora prespawn limited in Compose. |
-| ai-dev (110) | 7 GiB | Raised from 5 GiB after repeated OOM kills; applies on the next stop/start. |
+| docker-host (102) | 10 GiB | Raised from 8 GiB; balloon pinned at max. |
+| ai-dev (110) | 3 GiB | Ballooning disabled. Interactive load idles >85% free, but tsc/bun/wezterm-mux builds OOM-killed at 5 GiB; bump before heavier dev workloads. |
+| unifi-controller (111) | 3 GiB | Stopped by policy on the 32 GiB board. |
 | host ZFS ARC | 3 GiB max | `zfs_arc_max` in `/etc/modprobe.d/zfs.conf`. |
 
-That leaves roughly 2 GiB for the hypervisor itself on the 32 GiB board. Do not
-grow a guest without shrinking another.
+That leaves roughly 3 GiB for the hypervisor itself on the 32 GiB board. Do not
+grow a guest without shrinking another, and do not start VM 111 during the
+nightly vzdump window.
+
+## Swap
+
+The host has no disk swap. Guests are fixed-RAM with ballooning pinned or
+disabled, so under memory pressure the kernel previously had nothing to reclaim
+short of killing a kvm process. `zram-tools` provides a single ~4 GiB lz4 zram
+device at priority 100 as OOM insurance: `/etc/default/zramswap` sets
+`CORES=1`, `PERCENT=12`, `PRIORITY=100`, `ALGO=lz4`, and `zramswap.service` is
+enabled. Do not add a disk-backed swapfile on `rpool` — ZFS-backed swap can
+deadlock under memory pressure.
 
 ## Backups
 

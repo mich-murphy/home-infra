@@ -12,10 +12,10 @@ locals {
   proxmox_creds = {
     username = local.scp["scp username"].value
     password = local.scp["scp password"].value
-    # Each guest has a distinct ephemeral/tagged single-use key. These fields
-    # are created manually in 1Password; Terraform only reads them.
-    tailscale_auth_key_docker_host = local.scp["tailscale docker-host authkey"].value
-    tailscale_auth_key_ai_dev      = local.scp["tailscale ai-dev authkey"].value
+    # One ephemeral/tagged single-use key shared by both guests at provisioning.
+    # The field is created manually in 1Password; Terraform only reads it.
+    tailscale_auth_key_docker_host = local.scp["tailscale authkey"].value
+    tailscale_auth_key_ai_dev      = local.scp["tailscale authkey"].value
   }
 }
 
@@ -152,8 +152,8 @@ resource "proxmox_virtual_environment_vm" "cloud_init_docker_host" {
     type    = "host"
   }
   memory {
-    dedicated = 8192
-    floating  = 8192
+    dedicated = 10240
+    floating  = 10240
   }
   initialization {
     datastore_id        = "local-zfs"
@@ -241,7 +241,7 @@ resource "proxmox_virtual_environment_vm" "unifi_controller" {
     type    = "host"
   }
   memory {
-    dedicated = 4096
+    dedicated = 3072
     floating  = 2048
   }
   initialization {
@@ -341,11 +341,14 @@ resource "proxmox_virtual_environment_vm" "ai_dev" {
     sockets = 1
     type    = "host"
   }
-  # 5 GiB produced ~60 OOM kills/month (tsc, bun, wezterm-mux); 7 GiB leaves the
-  # host ~2 GiB headroom with TrueNAS at 10 GiB, docker-host at 8 GiB and ARC at 3 GiB.
+  # 3 GiB covers the interactive workload (earlyoom reported ~87-98% available
+  # overnight); tsc/bun/wezterm-mux builds OOM-killed at 5 GiB, so bump before
+  # heavier dev work. floating = 0 disables virtio-balloon so the host cannot
+  # reclaim below 3 GiB. With TrueNAS at 10 GiB, docker-host at 10 GiB and ARC
+  # at 3 GiB the host keeps ~3 GiB headroom on the 32 GiB board.
   memory {
-    dedicated = 7168
-    floating  = 7168
+    dedicated = 3072
+    floating  = 0
   }
   initialization {
     datastore_id        = "local-zfs"
