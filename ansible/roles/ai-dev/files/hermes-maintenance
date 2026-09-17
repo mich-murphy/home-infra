@@ -39,9 +39,12 @@ enabled_services() {
 }
 
 version_of() {
-  local label=$1 binary=$2
-  if [[ -x $binary ]]; then
-    printf '%-10s %s\n' "${label}:" "$(run_as_hermes "$binary" --version 2>&1 | head -n 1)"
+  local label=$1 binary=$2 out rc=0
+  # Read through the sudo entry point: the hermes home is 0750, so a direct
+  # executable test would always report not installed for other users.
+  out=$(run_as_hermes "$binary" --version 2>/dev/null | head -n 1) || rc=$?
+  if [[ $rc -eq 0 && -n $out ]]; then
+    printf '%-10s %s\n' "${label}:" "$out"
   else
     printf '%-10s %s\n' "${label}:" 'not installed'
     return 1
