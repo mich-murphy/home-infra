@@ -2,7 +2,7 @@
 # The Renovate digest bump is the deploy trigger Portainer polls for.
 services:
   media-broker:
-    image: ghcr.io/mich-murphy/media-broker:main@sha256:91fee67d2e3ff83179be0765cffc5af404f267573a3eed7990615e302ed9dd45
+    image: ghcr.io/mich-murphy/media-broker:main@sha256:de2b26b530c314695c29a2b606e4a17aa17f00d3fd16ddbb429e546e891bff3a
     container_name: media-broker
     user: "65532:65532"
     security_opt:
@@ -21,10 +21,12 @@ services:
       RADARR_URL: "${RADARR_URL:?set Radarr URL}"
       LIDARR_URL: "${LIDARR_URL:?set Lidarr URL}"
       TAUTULLI_URL: "${TAUTULLI_URL:?set Tautulli URL}"
+      JELLYFIN_URL: "${JELLYFIN_URL:?set Jellyfin URL}"
       SONARR_API_KEY_FILE: /run/secrets/sonarr_api_key
       RADARR_API_KEY_FILE: /run/secrets/radarr_api_key
       LIDARR_API_KEY_FILE: /run/secrets/lidarr_api_key
       TAUTULLI_API_KEY_FILE: /run/secrets/tautulli_api_key
+      JELLYFIN_API_KEY_FILE: /run/secrets/jellyfin_api_key
       MEDIA_BROKER_TOKEN_FILE: /run/secrets/media_broker_token
       MEDIA_BROKER_BIND_HOST: "${MEDIA_BROKER_BIND_HOST:?set 0.0.0.0 only with explicit opt-in}"
       MEDIA_BROKER_ALLOW_PUBLIC_BIND: "${MEDIA_BROKER_ALLOW_PUBLIC_BIND:?set true only with exact allow-lists}"
@@ -59,6 +61,11 @@ services:
         uid: "65532"
         gid: "65532"
         mode: 0440
+      - source: jellyfin_api_key
+        target: jellyfin_api_key
+        uid: "65532"
+        gid: "65532"
+        mode: 0440
     healthcheck:
       test: ["CMD", "python3", "-c", "import socket; s=socket.create_connection(('127.0.0.1', 8000), 2); s.close()"]
       interval: 30s
@@ -78,9 +85,11 @@ secrets:
     file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/lidarr-api-key"
   tautulli_api_key:
     file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/tautulli-api-key"
+  jellyfin_api_key:
+    file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/jellyfin-api-key"
 
 networks:
-  # The existing application network provides reachability to the four
+  # The existing application network provides reachability to the five
   # upstreams; no media or Docker socket mount is needed.
   proxy:
     external: true
