@@ -21,7 +21,17 @@ case "${1:-}" in
   --version)
     echo "$(basename "$0") 1.0.0"
     ;;
-  update | install)
+  update)
+    if [[ ${STUB_UPDATE_FAIL:-0} == 1 ]]; then
+      echo 'git pull failed: network unreachable'
+      exit 1
+    fi
+    # Real hermes update exits 1 when its own gateway restart fails after a
+    # successful update; the wrapper must tolerate exactly that.
+    echo 'Update complete! (v1.0.0 -> v1.0.1)'
+    exit 1
+    ;;
+  install)
     exit 0
     ;;
   *)
@@ -113,10 +123,18 @@ if grep -q 'restart ' "$STUB_LOG"; then
 fi
 
 # Update refreshes the toolchain, reconciles the Moshi integration, and
-# finishes by restarting the enabled units.
+# finishes by restarting the enabled units. The stub updater exits 1 with the
+# success marker, matching upstream's self-restart failure mode.
 run_maintenance update >"${TEST_ROOT}/update.log"
 grep -q 'hermes update' "$STUB_LOG"
 grep -q 'moshi-hook install --target hermes' "$STUB_LOG"
 grep -q 'restart hermes-gateway.service' "$STUB_LOG"
+
+# A real update failure (nonzero without the success marker) fails the run.
+if STUB_UPDATE_FAIL=1 run_maintenance update >"${TEST_ROOT}/update-fail.log" 2>&1; then
+  echo "update unexpectedly passed after a genuine updater failure" >&2
+  exit 1
+fi
+grep -q 'FAILED: Hermes update' "${TEST_ROOT}/update-fail.log"
 
 echo "hermes-maintenance tests passed"

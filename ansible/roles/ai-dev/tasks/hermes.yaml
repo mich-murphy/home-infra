@@ -286,6 +286,10 @@
     - ai_dev_hermes_update | bool
     - not ansible_check_mode
 
+# `hermes update` exits 1 when its own in-process gateway restart fails after
+# a successful update (mixed stale/fresh imports); the output marker separates
+# that case from a real update failure, and our handler restarts the gateway
+# through systemd instead.
 - name: Update the Hermes agent
   ansible.builtin.command:
     argv:
@@ -299,7 +303,11 @@
     PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
   vars:
     ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_agent_update
   changed_when: false
+  failed_when: >-
+    ai_dev_hermes_agent_update.rc != 0
+    and 'Update complete!' not in ai_dev_hermes_agent_update.stdout
   when:
     - ai_dev_hermes_update | bool
     - not ansible_check_mode
@@ -458,6 +466,44 @@
     PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
   vars:
     ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  changed_when: false
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+# Apply any notified restarts now, then verify the services actually came up
+# on the updated code: hermes cannot prove that during its own update.
+- name: Apply notified hermes service restarts before verification
+  ansible.builtin.meta: flush_handlers
+
+- name: Discover the hermes user services after update
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - --no-legend
+      - --no-pager
+      - list-unit-files
+      - --state=enabled
+      - "hermes*.service"
+      - moshi-hook.service
+  register: ai_dev_hermes_post_update_units
+  changed_when: false
+  failed_when: ai_dev_hermes_post_update_units.rc not in [0, 1]
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+- name: Verify the hermes user services are active after update
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - is-active
+      - "{{ item.split()[0] }}"
+  loop: "{{ ai_dev_hermes_post_update_units.stdout_lines | default([]) }}"
   changed_when: false
   when:
     - ai_dev_hermes_update | bool
