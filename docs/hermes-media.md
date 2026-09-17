@@ -9,8 +9,9 @@ in the dedicated [`mich-murphy/media-broker`](https://github.com/mich-murphy/med
 repository; this repository owns only the stack definition at
 `docker/media-broker/compose.yml` and the host policy around it.
 
-This describes the target state. Until the one-time migration runbook below
-is performed, the live stack is still the earlier manually updated one.
+The one-time migration runbook below was performed on **2026-09-17**; the
+live stack is the Git-connected one (Portainer stack ID 40). The runbook is
+retained for disaster-recovery recreation and audit context.
 
 ## Deployment pipeline
 
@@ -22,9 +23,9 @@ steps, using the same digest-pin trigger every other stack relies on:
    `ghcr.io/mich-murphy/media-broker:main` plus an immutable `:sha-<commit>`
    tag kept for rollback and audit.
 2. **Pin**: the Compose reference here is `:main@sha256:<digest>`. Renovate
-   (already authenticating to ghcr.io as `mich-murphy` via its hostRules)
    updates the digest whenever `:main` moves and automerges the PR under the
-   repository's existing digest-automerge rule. Renovate runs on a cron
+   repository's existing digest-automerge rule (the GHCR package is public,
+   so Renovate resolves digests anonymously). Renovate runs on a cron
    schedule; use its workflow dispatch to pin a fresh release immediately.
 3. **Redeploy**: the digest bump is a commit on home-infra `main` — exactly
    the change Portainer's Git polling watches. It redeploys the stack and
@@ -69,9 +70,9 @@ from GHCR.
 - Compose path: `docker/media-broker/compose.yml` (image-only)
 - Image: `ghcr.io/mich-murphy/media-broker:main@sha256:...` (Renovate-pinned;
   unpinned only briefly before Renovate's first pin after introduction)
-- Registry credentials: the package is private, so Portainer needs a `ghcr.io`
-  registry entry. This is manual UI state, not established by this repository;
-  add it in migration step 3 and audit it after a restore
+- Registry access: the GHCR package is **public** (since 2026-09-17), so
+  Portainer pulls anonymously and no registry credentials are required
+  anywhere in the pipeline
 - Update policy: shared Git polling; Renovate digest bumps are the trigger
 
 Portainer supplies the interpolated `SONARR_URL`, `RADARR_URL`, `LIDARR_URL`,
@@ -105,7 +106,9 @@ filesystem and has no Docker socket or media mounts.
 
 ## One-time migration runbook
 
-Performed once, from the old manual stack to the Git stack. Steps 3 onward
+**Performed 2026-09-17** — old manual stack (ID 39) deleted, stack recreated
+from Git (ID 40) at commit `f6c7837`. Retained for disaster recovery and
+audit. Steps 3 onward
 assume the pull request introducing `docker/media-broker/compose.yml` has
 already merged, because Portainer resolves that path from `refs/heads/main`.
 
@@ -114,9 +117,9 @@ already merged, because Portainer resolves that path from `refs/heads/main`.
 2. Ensure the first image exists: the media-broker repository's `publish`
    job must have run on `main` so GHCR serves
    `ghcr.io/mich-murphy/media-broker:main`.
-3. In Portainer, add `ghcr.io` registry credentials with pull access to the
-   private package (classic PAT with `read:packages`). Skip this step if the
-   package is made public.
+3. The GHCR package is public (since 2026-09-17), so Portainer pulls
+   anonymously. If the package were ever made private, a `ghcr.io` registry
+   entry with a `read:packages` classic PAT would be required here instead.
 4. Delete the existing `media-broker` stack (brief downtime; the old
    container name `media-broker-candidate` goes away with it). Do not delete
    host secret files.
@@ -133,8 +136,9 @@ already merged, because Portainer resolves that path from `refs/heads/main`.
 7. Confirm Renovate opens and automerges the initial digest-pin PR for the
    image, and that Portainer redeploys on it. From then on, every
    media-broker merge becomes a Renovate digest bump → automerge → Portainer
-   redeploy. If Renovate cannot resolve the digest, its token lacks
-   `read:packages` for the private package — fix the token before relying on
+   redeploy. If Renovate cannot resolve the digest, the package has
+   probably been re-privatized — restore public visibility (or add a
+   `read:packages` hostRule and Portainer registry entry) before relying on
    the pipeline.
 
 This remains a read-only integration. Conversation-approved writes and
