@@ -33,6 +33,16 @@
     group: "{{ username }}"
     mode: "0755"
 
+# Ad-hoc Hermes upkeep runs through sudo from here; no session on the agent
+# account and no sudo entry on that account are required.
+- name: Install the hermes maintenance command
+  ansible.builtin.copy:
+    src: hermes-maintenance
+    dest: "/home/{{ username }}/.local/bin/hermes-maintenance"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
 - name: Ensure the ai-dev toolchain is present
   ansible.builtin.command:
     argv:

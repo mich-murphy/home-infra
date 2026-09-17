@@ -169,6 +169,7 @@
     group: "{{ ai_dev_hermes_user }}"
     mode: "0600"
   no_log: true
+  notify: restart hermes user services
 
 - name: Report Hermes credentials still missing from the vault
   ansible.builtin.debug:
@@ -262,3 +263,202 @@
       - ai_dev_hermes_version.stdout | length > 0
     fail_msg: The Hermes agent did not report a version.
   when: not ansible_check_mode
+
+# Updates stay opt in per run: the agent tracks upstream origin/main, so the
+# play refreshes the toolchain only when the operator asks. Version deltas,
+# not installer output, decide whether the user services need a restart.
+- name: Read the Hermes agent version before update
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/hermes"
+      - --version
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_agent_version_before
+  changed_when: false
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+- name: Update the Hermes agent
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/hermes"
+      - update
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  changed_when: false
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+- name: Read the Hermes agent version after update
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/hermes"
+      - --version
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_agent_version_after
+  changed_when: >-
+    ai_dev_hermes_agent_version_after.stdout
+    != ai_dev_hermes_agent_version_before.stdout
+  notify: restart hermes user services
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+- name: Read the Herdr version before update
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/herdr"
+      - --version
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_herdr_version_before
+  changed_when: false
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+- name: Update Herdr for the Hermes account
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://herdr.dev/install.sh | sh
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  changed_when: false
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+- name: Read the Herdr version after update
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/herdr"
+      - --version
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_herdr_version_after
+  changed_when: >-
+    ai_dev_hermes_herdr_version_after.stdout
+    != ai_dev_hermes_herdr_version_before.stdout
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+- name: Read the Moshi version before update
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/moshi-hook"
+      - --version
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_moshi_version_before
+  changed_when: false
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+- name: Update Moshi for the Hermes account
+  ansible.builtin.shell:
+    cmd: >-
+      curl -fsSL https://getmoshi.app/install.sh
+      | MOSHI_HOOK_SKIP_FIRST_RUN=1 sh
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  changed_when: false
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+- name: Read the Moshi version after update
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/moshi-hook"
+      - --version
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_moshi_version_after
+  changed_when: >-
+    ai_dev_hermes_moshi_version_after.stdout
+    != ai_dev_hermes_moshi_version_before.stdout
+  notify: restart hermes user services
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
+
+# The integration reconcile earlier in this file ran before any update; run
+# it again so a Moshi update does not leave stale hook files until next play.
+- name: Reconcile the Moshi integration after updates
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/moshi-hook"
+      - install
+      - --target
+      - "{{ ai_dev_hermes_moshi_target }}"
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  changed_when: false
+  when:
+    - ai_dev_hermes_update | bool
+    - not ansible_check_mode
