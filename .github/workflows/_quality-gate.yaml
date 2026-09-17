@@ -80,6 +80,7 @@ jobs:
           NEXTCLOUD_REDIS_PASSWORD: ci-placeholder
           PLEX_CLAIM: ci-placeholder
           JELLYPLEX_JELLYFIN_TOKEN: ci-placeholder
+          JELLYFIN_URL: http://jellyfin:8096
           RADARR_URL: http://radarr:7878
           LIDARR_URL: http://lidarr:8686
           SONARR_URL: http://sonarr:8989
