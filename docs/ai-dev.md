@@ -294,6 +294,16 @@ acceptable on a disposable DMZ guest and is a reason the agent lives here
 rather than on docker-host. Without `ai_dev_hermes_update=true` the play
 installs missing pieces but never advances the toolchain.
 
+Two upstream quirks to expect in update output. The updater's own
+gateway-restart phase usually fails after a successful update (it restarts
+in-process against a mixed old/new checkout), so `hermes update` exits 1
+despite printing `Update complete!`; the role treats exactly that
+code-plus-marker combination as success because the handler below restarts
+the gateway through systemd instead, then verifies the service is active.
+The updater also reports stashing local changes on every run: its own npm
+steps rewrite tracked lockfiles inside the checkout, which the stash dance
+then restores. Both messages are expected, not symptoms.
+
 Whenever the role changes the scoped credential env, the media-broker entries,
 or a toolchain version, a handler restarts the account's enabled
 `hermes*.service` and `moshi-hook.service` user units through

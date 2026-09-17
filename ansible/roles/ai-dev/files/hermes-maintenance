@@ -86,7 +86,15 @@ restart() {
 update() {
   local failed=0
   printf '==> Hermes update\n'
-  run_as_hermes "${HERMES_BIN}/hermes" update || failed=1
+  # hermes update exits 1 when its own gateway restart fails after a
+  # successful update; the restart below replaces that mechanism.
+  local out rc=0
+  out=$(run_as_hermes "${HERMES_BIN}/hermes" update 2>&1) || rc=$?
+  printf '%s\n' "$out"
+  if ((rc != 0)) && ! grep -q 'Update complete!' <<<"$out"; then
+    printf 'FAILED: Hermes update\n' >&2
+    failed=1
+  fi
   printf '==> Herdr update\n'
   run_as_hermes sh -c 'curl -fsSL https://herdr.dev/install.sh | sh' || failed=1
   printf '==> Moshi update\n'
