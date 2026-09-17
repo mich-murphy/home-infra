@@ -84,12 +84,24 @@
   no_log: true
   when: ai_dev_hermes_media_broker_enabled | bool
 
+# Resolved at run time, never committed: this repository is public. The same
+# import-order dependency in firewall.yaml does not apply here because a
+# hermes/hermes-media tagged run skips the firewall import entirely.
+- name: Resolve the media-broker host tailnet address
+  ansible.builtin.command:
+    cmd: "tailscale ip -4 {{ ai_dev_docker_proxy_host }}"
+  register: ai_dev_hermes_media_proxy_address
+  changed_when: false
+  check_mode: false
+  when: ai_dev_hermes_media_broker_enabled | bool
+
 - name: Require the fixed media-broker endpoint when enabled
   ansible.builtin.assert:
     that:
       - ai_dev_hermes_media_broker_host == ai_dev_docker_proxy_host
       - ai_dev_hermes_media_broker_url == ('http://' ~ ai_dev_docker_proxy_host ~ ':' ~ (ai_dev_hermes_media_broker_port | string) ~ '/mcp')
-      - ai_dev_docker_proxy_address.stdout | trim is match('^100\\.[0-9.]+$')
+      - ai_dev_hermes_media_proxy_address.stdout_lines | length == 1
+      - ai_dev_hermes_media_proxy_address.stdout | trim is match('^100\\.[0-9.]+$')
     fail_msg: >-
       The media broker must use the resolved docker-host Tailscale endpoint and
       its dedicated port.
