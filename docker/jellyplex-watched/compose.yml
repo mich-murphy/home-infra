@@ -19,6 +19,10 @@ services:
     environment:
       PUID: "1000"
       PGID: "1000"
+      # Keeps plexapi from overwriting the Plex server's own plex.tv device record
+      # on every sync cycle. Do not remove.
+      PLEXAPI_HEADER_IDENTIFIER: "4971cd66-8bb9-4109-965b-4ae2b73996e2"
+      PLEXAPI_HEADER_DEVICE_NAME: "jellyplex-watched"
       DRYRUN: ${JELLYPLEX_DRYRUN:-True}
       DEBUG_LEVEL: ${JELLYPLEX_DEBUG_LEVEL:-INFO}
       RUN_ONLY_ONCE: ${JELLYPLEX_RUN_ONLY_ONCE:-False}
