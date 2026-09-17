@@ -53,9 +53,9 @@ assert_yq 'build block must be absent' '.services["media-broker"] | has("build")
 assert_yq 'image must be the published GHCR reference' \
   '.services["media-broker"].image | test("^ghcr[.]io/mich-murphy/media-broker:main(@sha256:[0-9a-f]{64})?$")'
 assert_yq 'nonroot numeric user' '.services["media-broker"].user == "65532:65532"'
-assert_yq 'all capabilities dropped' '.services["media-broker"].cap_drop | (length == 1 and .[0] == "ALL")'
+# cap_drop ALL and no-new-privileges are asserted generically for every stack
+# by tests/docker-hardening.sh; this file only keeps broker-specific checks.
 assert_yq 'read-only root filesystem' '.services["media-broker"].read_only == true'
-assert_yq 'no-new-privileges' '.services["media-broker"].security_opt | (length == 1 and .[0] == "no-new-privileges:true")'
 assert_yq 'five mounted secrets' '.services["media-broker"].secrets | length == 5'
 # yq expressions are single-quoted so the shell never expands the Compose
 # interpolation syntax they assert on.
@@ -82,9 +82,8 @@ done
 
 tmp_dir=$(mktemp -d)
 trap 'rm -rf -- "${tmp_dir}"' EXIT
-# Source-only discovery covers the canonical docker/* deployment path and
-# rejects an inventory declaration whose Compose file is absent.
-"${repo_root}/scripts/check-portainer-drift.sh" --source-only
+# The drift checker's full source-only pass runs as its own quality-gate
+# step; here we only prove it rejects a declared Compose file that is absent.
 missing_inventory=${tmp_dir}/missing-inventory.yaml
 sed 's#docker/media-broker/compose.yml#docker/media-broker/missing.yml#' \
   "${repo_root}/docker/portainer-stacks.yaml" >"${missing_inventory}"
