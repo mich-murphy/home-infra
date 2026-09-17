@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# Infra-side assertions for the media-broker Portainer stack: the canonical
-# Compose contract (image-only, no build block), the Ansible published-port
-# policy, and the stack inventory. Application source tests live in the
-# dedicated mich-murphy/media-broker repository.
+# Infra-side assertions only: Compose contract, published-port policy, and
+# stack inventory. Source tests live in the mich-murphy/media-broker repo.
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -87,10 +85,8 @@ assert service["user"] == "65532:65532"
 assert service["cap_drop"] == ["ALL"]
 assert service["read_only"] is True
 assert service["security_opt"] == ["no-new-privileges:true"]
-# The image is published by the dedicated repository; Portainer must never
-# build. A build block here reintroduces the stale-context rebuild trap.
-# Renovate pins the moving :main tag by digest; both pinned and (briefly,
-# before the first pin) unpinned forms are valid.
+# Must stay build-free (docs/hermes-media.md); the digest is absent only
+# before Renovate's first pin.
 assert "build" not in service, "media-broker compose must not contain a build block"
 assert re.fullmatch(r"ghcr\.io/mich-murphy/media-broker:main(@sha256:[0-9a-f]{64})?", service["image"]), service["image"]
 assert service["ports"] == ["${MEDIA_BROKER_BIND:?set MEDIA_BROKER_BIND in Portainer stack variables}:8765:8000"]
