@@ -25,6 +25,7 @@ TOOLS = [
     "arr_root_folders",
     "tautulli_play_history",
     "jellyfin_play_history",
+    "arr_search_candidates",
     "arr_request_media",
     "arr_unmonitor_media",
     "arr_delete_media",
