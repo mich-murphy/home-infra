@@ -143,6 +143,126 @@
   changed_when: false
   when: not ansible_check_mode
 
+# Pairing stays manual (token from the Moshi iPhone app), but once the pairing
+# secret exists the daemon is converged here so it keeps running by itself;
+# linger keeps the user manager alive across logout and reboot.
+- name: Check whether the Hermes account is paired with Moshi
+  ansible.builtin.stat:
+    path: "{{ ai_dev_hermes_home }}/.local/state/moshi/secrets.json"
+  register: ai_dev_hermes_moshi_pairing
+
+- name: Check whether the Moshi hook service unit exists
+  ansible.builtin.stat:
+    path: "{{ ai_dev_hermes_home }}/.config/systemd/user/moshi-hook.service"
+  register: ai_dev_hermes_moshi_unit
+
+- name: Install the Moshi hook daemon service
+  ansible.builtin.command:
+    argv:
+      - "{{ ai_dev_hermes_home }}/.local/bin/moshi-hook"
+      - service
+      - install
+  become: true
+  become_user: "{{ ai_dev_hermes_user }}"
+  environment:
+    HOME: "{{ ai_dev_hermes_home }}"
+    USER: "{{ ai_dev_hermes_user }}"
+    PATH: "{{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin"
+  vars:
+    ansible_python_interpreter: "{{ ai_dev_hermes_python }}"
+  register: ai_dev_hermes_moshi_service_install
+  # moshi-hook calls `systemctl --user` itself, which cannot reach the user bus
+  # over sudo; the unit file is still written, and enablement happens below.
+  failed_when: >-
+    ai_dev_hermes_moshi_service_install.rc != 0
+    and 'user scope bus' not in (
+      (
+        ai_dev_hermes_moshi_service_install.stdout_lines | default([])
+        + ai_dev_hermes_moshi_service_install.stderr_lines | default([])
+      ) | join(' ')
+    )
+  changed_when: true
+  when:
+    - ai_dev_hermes_moshi_pairing.stat.exists
+    - not ai_dev_hermes_moshi_unit.stat.exists
+    - not ansible_check_mode
+
+# Two daemons (management user and hermes) default to the same gateway port;
+# give the Hermes account its own listen address so both units can be active.
+- name: Deploy the Moshi daemon gateway listen override
+  ansible.builtin.copy:
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart="{{ ai_dev_hermes_home }}/.local/bin/moshi-hook" serve --gateway-listen {{ ai_dev_hermes_moshi_gateway_listen }}
+      Environment=PATH={{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin
+    dest: "{{ ai_dev_hermes_home }}/.config/systemd/user/moshi-hook.service.d/gateway-listen.conf"
+    owner: "{{ ai_dev_hermes_user }}"
+    group: "{{ ai_dev_hermes_user }}"
+    mode: "0644"
+  notify: restart hermes user services
+  when:
+    - ai_dev_hermes_moshi_pairing.stat.exists
+    - not ansible_check_mode
+
+- name: Reload the Hermes user manager for the Moshi service
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - daemon-reload
+  changed_when: false
+  when:
+    - ai_dev_hermes_moshi_pairing.stat.exists
+    - ai_dev_hermes_moshi_unit.stat.exists or ai_dev_hermes_moshi_service_install is not skipped
+    - not ansible_check_mode
+
+- name: Read the Moshi hook service enablement
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - is-enabled
+      - moshi-hook.service
+  register: ai_dev_hermes_moshi_enabled
+  changed_when: false
+  failed_when: false
+  when:
+    - ai_dev_hermes_moshi_pairing.stat.exists
+    - not ansible_check_mode
+
+- name: Read the Moshi hook service activity
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - is-active
+      - moshi-hook.service
+  register: ai_dev_hermes_moshi_active
+  changed_when: false
+  failed_when: false
+  when:
+    - ai_dev_hermes_moshi_pairing.stat.exists
+    - not ansible_check_mode
+
+- name: Enable and start the Moshi hook daemon for the Hermes account
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - enable
+      - --now
+      - moshi-hook.service
+  changed_when: true
+  when:
+    - ai_dev_hermes_moshi_pairing.stat.exists
+    - not ansible_check_mode
+    - (ai_dev_hermes_moshi_enabled.stdout | default('')) != 'enabled' or (ai_dev_hermes_moshi_active.stdout | default('')) != 'active'
+
 - name: Ensure the Hermes configuration directory exists
   ansible.builtin.file:
     path: "{{ ai_dev_hermes_home }}/.config/hermes"
