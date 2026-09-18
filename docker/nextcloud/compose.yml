@@ -30,7 +30,7 @@ x-nextcloud-capabilities: &nextcloud-capabilities
 
 services:
   nextcloud:
-    image: nextcloud:34.0.4-apache@sha256:b13a87affb7e11e4c99ad56f885bc44f9c7564af089f55aea9e0d7cf789fa84d
+    image: nextcloud:35.0.0-apache@sha256:3e9f6eaa5dc8e26df3a7b78cd564ec14408f52cdc89d607e5b4341b85ab83f0e
     container_name: nextcloud
     security_opt:
       - no-new-privileges:true
@@ -79,7 +79,7 @@ services:
     restart: unless-stopped
 
   nextcloud-cron:
-    image: nextcloud:34.0.4-apache@sha256:b13a87affb7e11e4c99ad56f885bc44f9c7564af089f55aea9e0d7cf789fa84d
+    image: nextcloud:35.0.0-apache@sha256:3e9f6eaa5dc8e26df3a7b78cd564ec14408f52cdc89d607e5b4341b85ab83f0e
     container_name: nextcloud-cron
     security_opt:
       - no-new-privileges:true
