@@ -297,7 +297,7 @@ connection is opt-in and disabled in the role defaults. The live ai-dev host
 group explicitly enables it. When enabled, Ansible adds only the managed `mcp_servers.media_broker`
 entry and `MEDIA_BROKER_TOKEN` reference in `~/.hermes/.env`; it preserves the
 Photon, Moshi, and other MCP settings. The managed include list covers the
-broker's five read tools and its three gated write tools; the broker itself
+broker's six read tools and its three gated write tools; the broker itself
 enforces the environment gates and the delete confirmation flow. The operator-supplied token must be a
 single-line 32-256 character URL-safe value (`A-Z`, `a-z`, `0-9`, `_`, or `-`).
 It is never generated, logged, or copied into YAML. An unowned same-name entry fails
@@ -311,7 +311,7 @@ files. The broker uses a 5 MiB response bound for the observed 2.27 MB Lidarr
 inventory. When reconciliation changes the managed entry or token, the role's
 handler restarts the account's enabled gateway and moshi-hook user units
 discovered at run time. After subsequent approved configuration changes,
-verify the broker's five read and three gated write tools.
+verify the broker's six read and three gated write tools.
 
 ## Tailnet policy
 

@@ -54,7 +54,8 @@ assert config["moshi"]["gateway"] == "127.0.0.1:24543"
 assert "other" in config["mcp_servers"]
 assert entry["tools"] == {"include": [
     "arr_library_inventory", "arr_quality_profiles", "arr_root_folders", "tautulli_play_history",
-    "jellyfin_play_history", "arr_request_media", "arr_unmonitor_media", "arr_delete_media",
+    "jellyfin_play_history", "arr_search_candidates", "arr_request_media", "arr_unmonitor_media",
+    "arr_delete_media",
 ], "resources": False, "prompts": False}
 assert entry["headers"] == {"Authorization": "Bearer ${MEDIA_BROKER_TOKEN}"}
 assert entry["sampling"] == {"enabled": False}
