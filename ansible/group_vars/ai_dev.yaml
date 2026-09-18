@@ -1,6 +1,5 @@
 ---
 username: michael
-user_shell: /usr/bin/fish
 ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP9p7ei2QuEPP+ZgzBBSbwH9TZ7JuvYFiMNWMX+guPEq"
 # Keys that reach the agent account. The operator key above lives on disk, so
 # SSH offers the 1Password agent's keys first and hits MaxAuthTries before it.

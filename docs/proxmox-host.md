@@ -29,7 +29,7 @@ and `cat /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw`.
 | --- | --- | --- |
 | truenas (101) | 10 GiB | ZFS ARC inside the guest; keep as is. |
 | docker-host (102) | 10 GiB | Raised from 8 GiB; balloon pinned at max. |
-| ai-dev (110) | 3 GiB | Ballooning disabled. Interactive load idles >85% free, but tsc/bun/wezterm-mux builds OOM-killed at 5 GiB; bump before heavier dev workloads. |
+| ai-dev (110) | 3 GiB | Ballooning disabled. Sized for the Hermes agent (uv virtualenv, Hermes-managed Node, Playwright browser); bump before adding workloads. |
 | unifi-controller (111) | 3 GiB | Stopped by policy on the 32 GiB board. |
 | host ZFS ARC | 3 GiB max | `zfs_arc_max` in `/etc/modprobe.d/zfs.conf`. |
 

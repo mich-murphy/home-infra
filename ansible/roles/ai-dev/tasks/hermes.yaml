@@ -187,23 +187,14 @@
     - not ai_dev_hermes_moshi_unit.stat.exists
     - not ansible_check_mode
 
-# Two daemons (management user and hermes) default to the same gateway port;
-# give the Hermes account its own listen address so both units can be active.
-- name: Deploy the Moshi daemon gateway listen override
-  ansible.builtin.copy:
-    content: |
-      [Service]
-      ExecStart=
-      ExecStart="{{ ai_dev_hermes_home }}/.local/bin/moshi-hook" serve --gateway-listen {{ ai_dev_hermes_moshi_gateway_listen }}
-      Environment=PATH={{ ai_dev_hermes_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin
-    dest: "{{ ai_dev_hermes_home }}/.config/systemd/user/moshi-hook.service.d/gateway-listen.conf"
-    owner: "{{ ai_dev_hermes_user }}"
-    group: "{{ ai_dev_hermes_user }}"
-    mode: "0644"
+# The management user no longer runs its own Moshi daemon, so this account
+# keeps the default 127.0.0.1:24543 gateway listen address. Remove the port
+# override a previous deployment may have left behind.
+- name: Remove the retired Moshi daemon gateway listen override
+  ansible.builtin.file:
+    path: "{{ ai_dev_hermes_home }}/.config/systemd/user/moshi-hook.service.d/gateway-listen.conf"
+    state: absent
   notify: restart hermes user services
-  when:
-    - ai_dev_hermes_moshi_pairing.stat.exists
-    - not ansible_check_mode
 
 - name: Reload the Hermes user manager for the Moshi service
   ansible.builtin.command:
@@ -342,6 +333,31 @@
     owner: "{{ ai_dev_hermes_user }}"
     group: "{{ ai_dev_hermes_user }}"
     mode: "0644"
+
+# Ad-hoc Hermes upkeep runs through sudo from the management user; neither a
+# session on the agent account nor a sudo entry for it is ever needed.
+- name: Ensure the management user's local executable directory exists
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.local/bin"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Install the hermes maintenance command
+  ansible.builtin.copy:
+    src: hermes-maintenance
+    dest: "/home/{{ username }}/.local/bin/hermes-maintenance"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+# The retired command maintained the management user's own coding-agent
+# toolchain, which no longer exists on this host.
+- name: Remove the retired ai-dev maintenance command
+  ansible.builtin.file:
+    path: "/home/{{ username }}/.local/bin/ai-dev-maintenance"
+    state: absent
 
 # Each Moshi reconnect spawns a new mosh-server; without a timeout the old ones
 # linger forever. Herdr holds the real session, so mosh need not outlive it.

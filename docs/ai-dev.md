@@ -1,8 +1,10 @@
-# AI development VM
+# ai-dev
 
-`ai-dev` is the single AI development VM. Its only NIC is on the physical
+`ai-dev` is the isolated DMZ guest. Its only NIC is on the physical
 `vmbr1` DMZ, and it carries an 8 GiB disk-backed swapfile with a bounded zswap
-cache. `terraform/main.tf` holds its current spec.
+cache. `terraform/main.tf` holds its current spec. Its sole workload is the
+Hermes infrastructure agent, running under the dedicated `hermes` account
+described below.
 
 The supported remote path is:
 
@@ -30,20 +32,19 @@ Generated cloud-init files under `terraform/files/` are ignored build
 artifacts, not a credential store: rotate any Tailscale authentication key that
 was rendered into one.
 
-Before an approved Terraform run, create two distinct, short-lived, tagged,
-single-use fields in the existing 1Password `proxmox_creds` item under the
-`Terraform SCP` section: `tailscale docker-host authkey` and `tailscale ai-dev
-authkey`. Do not reuse the old shared `tailscale authkey` field. The fields must
-be present before `terraform plan` can render either guest's vendor data; this
-repository does not create or revoke keys.
+Before an approved Terraform run, create a short-lived, tagged, single-use
+`tailscale authkey` field in the existing 1Password `proxmox_creds` item under
+the `Terraform SCP` section. Both guests read this shared field: the field must
+be present before `terraform plan` can render either guest's vendor data, and
+this repository does not create or revoke keys.
 
 If bootstrap fails, inspect cloud-init status and the guest's Tailscale state
 without retrying blindly. A key that was consumed, exposed in logs/artifacts,
 expired, or is no longer needed must be revoked in the Tailscale admin console
-and replaced with a newly scoped key in the matching 1Password field. Record
+and replaced with a newly scoped key in the 1Password field. Record
 which guest was affected, remove stale generated files, and rerun only after the
-new field is available. On expiry or revocation, expect that guest to require
-an explicit rejoin; never copy the other guest's key as a recovery shortcut.
+new key is available. On expiry or revocation, expect that guest to require
+an explicit rejoin.
 
 Run:
 
@@ -87,69 +88,13 @@ available. Legacy `inet filter` removal is disabled by default; only set
 table is role-owned. Verify generated vendor data in a temporary render before
 an approved provisioning run.
 
-The ai-dev role builds and activates Home Manager from the public `nix-config`
-repository. A non-fast-forward checkout or conflicting local change stops
-deployment; check mode builds the activation package but never activates it.
-
-Home Manager is the steady-state owner of the shared shell, CLI environment,
-and Moshi user unit. Ansible owns and deploys the ai-dev maintenance command,
-builds the desired Home Manager activation package, compares it with the
-current generation, and activates only when they differ. It then runs
-`ai-dev-maintenance ensure-present`, which repairs missing tools without
-updating installed tools. A second live run must report no changes when neither
-repository's configuration has changed.
-
-## Interactive setup
-
-Home Manager owns the portable CLI configuration. Ansible deploys
-`ai-dev-maintenance` and writes the vaulted git identity fragments, selecting
-the BusinessCraft one below `~/businesscraft/`.
-
-Run ongoing coding-agent updates deliberately on ai-dev:
-
-```sh
-ai-dev-maintenance update
-ai-dev-maintenance status
-```
-
-The update command runs the official stable installers for Claude Code, Codex,
-Pi, Herdr, and Moshi independently, reconciles Herdr before Moshi
-integrations, and reports all failures together. Its implementation lives in
-the Ansible role that deploys it. Hermes is deliberately absent: it belongs to
-the separate `hermes` account described below, not to the management user's
-toolchain.
-The status command is read-only. Ansible does not copy SSH keys, OAuth sessions,
-or API keys. Authenticate each tool interactively:
-
-```sh
-gh auth login --hostname github.com --web --git-protocol ssh
-claude
-codex login --device-auth
-pi
-```
-
-Authenticate the GitHub CLI as both required GitHub accounts. Before running
-GitHub CLI operations for a repository under `~/businesscraft/`, select the
-BusinessCraft account explicitly:
-
-```sh
-gh auth switch --hostname github.com --user <businesscraft-account>
-gh auth status --hostname github.com
-```
-
-Use `/login` inside Pi if it does not prompt automatically.
-
-Pair Moshi from the phone with `moshi-hook host setup` and `moshi-hook pair`.
-The gateway must remain on `127.0.0.1:24543`: OpenSSH permits local TCP
-forwarding but disables gateway and Unix-socket forwarding.
-
 ## Hermes infrastructure agent
 
 Hermes manages infrastructure, and it reads input nobody controls: web pages
 through its bundled browser, and container logs, which are strings written by
 whatever produced them. It therefore runs as its own `hermes` account, not as
 the management user. `/home/michael` is mode `0750`, so the agent cannot read
-the management user's GitHub tokens, SSH keys, or Claude and Codex sessions.
+the management user's GitHub tokens or SSH keys.
 That separation is the point: scoping the agent's own credentials achieves
 nothing while broader credentials sit beside it in the same home directory.
 
@@ -250,8 +195,7 @@ hermes setup
 hermes doctor
 ```
 
-Pair the phone to this account. The management user's pairing does not carry
-across:
+Pair the phone to this account:
 
 ```sh
 moshi-hook host setup
@@ -259,17 +203,16 @@ moshi-hook pair --token <token-from-Moshi-Hooks-settings>
 ```
 
 Once the pairing secret exists, the role takes over the daemon: the next play
-installs the `moshi-hook.service` user unit, adds a drop-in giving the daemon
-its own gateway listen address (the management user's daemon already holds
-the default 127.0.0.1:24543, so the Hermes account uses 127.0.0.1:24544 via
-`ai_dev_hermes_moshi_gateway_listen`), and enables it through
+installs the `moshi-hook.service` user unit and enables it through
 `systemctl --machine=hermes@ --user`. Linger is already on, so the service
 survives logout and reboot. `moshi-hook service install` cannot finish its
 own enablement over sudo (no user session bus), which is why the role drives
-systemd directly.
+systemd directly. The daemon keeps the default `127.0.0.1:24543` gateway
+listen address: sshd permits local TCP forwarding but disables gateway and
+Unix-socket forwarding, so it must stay on loopback.
 
-In Moshi, add a second host: MagicDNS name `ai-dev`, username `hermes`,
-connection mode `Auto`.
+In Moshi, add a host: MagicDNS name `ai-dev`, username `hermes`, connection
+mode `Auto`.
 
 Start work inside Herdr so a dropped connection does not kill the session:
 
@@ -368,62 +311,6 @@ handler restarts the account's enabled gateway and moshi-hook user units
 discovered at run time. After subsequent approved configuration changes,
 verify the broker's four read-only tools.
 
-## Agent scratch space
-
-`/tmp` is a RAM-backed tmpfs carrying a per-user hard limit of 80% of its
-size. Agent scratch exhausts that limit while `df` still shows
-free space, and writes then fail with `EDQUOT`, which Node reports as the
-unmapped `Unknown system error -122, write`.
-
-Home Manager therefore sets `TMPDIR` to a disk-backed path under the
-management user's `/var/tmp` for shells, and Ansible sets the same value in `~/.config/environment.d/10-ai-dev-scratch.conf` for the
-lingering systemd user manager. Ansible also provisions the directory plus
-`/etc/tmpfiles.d/ai-dev-scratch.conf`, which ages the scratch root at 10d and
-reaps leftover Claude, Bun, and Pi scratch at 2d. Do not raise the quota
-instead; that keeps gigabytes of scratch in RAM.
-
-Existing Herdr panes retain the environment with which their shells started.
-After first deploying this setting, replace the shell in each idle pane with
-`exec fish`. To refresh every pane at once, stop and restart Herdr at a
-controlled time; stopping the server exits its pane processes. New shells then
-inherit the disk-backed `TMPDIR`:
-
-```sh
-exec fish
-# Or, when every pane can be stopped:
-herdr server stop
-herdr
-```
-
-`quota` and `repquota` are not installed, so read the live limit through
-`quotactl_fd`:
-
-```sh
-python3 - <<'EOF'
-import ctypes, os, struct
-libc = ctypes.CDLL("libc.so.6", use_errno=True)
-fd = os.open("/tmp", os.O_RDONLY | os.O_DIRECTORY)
-buf = ctypes.create_string_buffer(72)
-libc.syscall(443, fd, 0x80000700, os.getuid(), buf)  # quotactl_fd Q_GETQUOTA/USRQUOTA
-hard, _, used = struct.unpack("<3Q", buf.raw[:24])
-print(f"/tmp user quota: {hard * 1024 // 2**20} MiB limit, {used // 2**20} MiB used")
-EOF
-```
-
-Attribute usage with `du -shx /tmp/* | sort -h | tail` and delete stale session
-scratch directories.
-
-## Neovim exception
-
-Neovim remains deliberately outside Home Manager on ai-dev. Pacman owns
-`/usr/bin/nvim` and the temporary editor LSP/formatter packages. Ansible clones
-the public Neovim configuration into `~/.config/nvim` only when it is missing,
-with updates disabled; it never pulls, resets, or edits an existing checkout.
-An Ansible-managed site plugin outside that checkout,
-`~/.local/share/nvim/site/plugin/osc52.lua`, routes yanks through OSC 52; its
-own comments explain why paste is served from the local yank cache. Use the
-terminal's paste action to insert device clipboard content.
-
 ## Tailnet policy
 
 The tailnet policy is managed outside this repository. Give only approved user
@@ -521,32 +408,14 @@ only the ones nothing enforces automatically:
 tailscale status
 ip -brief address show
 ip route
-systemctl --user status moshi-hook
+systemctl --machine=hermes@ --user status moshi-hook
 ss -ltn 'sport = :24543'
-command -v nvim stylua gopls marksman
-fish -c 'type -p hunk yazi btop bat direnv'
-nvim --headless \
-  '+lua print(vim.g.clipboard.name, vim.o.clipboard)' \
-  +qa
 ```
 
 The guest must have one address on the DMZ interface named by
 `ai_dev_physical_interface`, no route to internal VLANs, no physical-interface
 IPv6 address, and no listener for port 24543 except `127.0.0.1`. Test that HTTPS and gateway DNS work, while new connections to
 MGMT, SRV, DFLT, KDS, GST, other DMZ hosts, and tailnet peers fail.
-
-Neovim and its temporary editor tools must resolve from `/usr/bin`; shared CLI
-tools must resolve from the Home Manager profile. Confirm Fish, Starship, FZF,
-Git, Hunk, Herdr, Yazi, btop, bat, and direnv match the Mac behavior. The
-shared instruction and skill links must exist under `.claude`, `.codex`,
-`.pi`, and `.agents`. All existing `~/.config/nvim` modifications must remain
-intact. The Neovim clipboard check must report `OSC 52 (copy only)` and
-include `unnamedplus`.
-
-Herdr does not watch its live configuration. After changing
-`~/dev/nix-config/config/herdr/config.toml`, run
-`herdr server reload-config` in each active session that should receive the
-new settings.
 
 ### Proxmox DMZ NIC reliability
 
@@ -575,7 +444,7 @@ Verify recovery from Proxmox and an approved tailnet device:
 journalctl -k -g 'eno1: Detected Hardware Unit Hang'
 qm guest exec 110 -- /usr/bin/ping -c 3 1.1.1.1
 tailscale ping ai-dev
-ssh michael@ai-dev 'herdr status server'
+ssh hermes@ai-dev 'herdr status server'
 ```
 
 The first command may show historical events from the current boot, but its
@@ -584,23 +453,7 @@ latest timestamp must not advance after TSO is disabled and the link is reset.
 From an unapproved tailnet device, TCP 22 and UDP 60000-61000 must be denied.
 From the approved phone, verify key-based OpenSSH, Mosh and SSH fallback,
 Wi-Fi/cellular roaming, persistent Herdr panes, agent inbox and approval events,
-deep links, and direct OSC52 clipboard copying.
-
-Finally, verify the shared Git identities:
-
-```sh
-mkdir -p ~/businesscraft/identity-test ~/personal-identity-test
-git -C ~/businesscraft/identity-test init
-git -C ~/personal-identity-test init
-git -C ~/businesscraft/identity-test config user.name
-git -C ~/businesscraft/identity-test config user.email
-git -C ~/personal-identity-test config user.name
-git -C ~/personal-identity-test config user.email
-```
-
-The BusinessCraft test must report the BusinessCraft account and its vaulted
-email. The personal test must report the personal identity and the vaulted
-email.
+and deep links.
 
 ## References
 

@@ -2,7 +2,7 @@
 - name: Enforce the ai-dev host and Tailscale identity
   ansible.builtin.import_tasks: identity.yaml
 
-- name: System bootstrap (packages, paru, AUR, LSPs)
+- name: System bootstrap (packages, logind, locale)
   ansible.builtin.import_tasks: bootstrap.yaml
 
 - name: Configure host firewall
@@ -10,23 +10,6 @@
 
 - name: Memory protection and filesystem maintenance timers
   ansible.builtin.import_tasks: system-maintenance.yaml
-
-- name: Provision agent scratch space
-  ansible.builtin.import_tasks: scratch.yaml
-  tags:
-    - scratch
-
-- name: Build and activate the Home Manager profile
-  ansible.builtin.import_tasks: home-manager.yaml
-
-- name: Install the ai-dev Git identity fragments
-  ansible.builtin.import_tasks: accounts.yaml
-
-- name: Ensure and verify ai-dev maintenance
-  ansible.builtin.import_tasks: tools.yaml
-
-- name: Install Neovim configuration
-  ansible.builtin.import_tasks: neovim.yaml
 
 - name: Provision the isolated Hermes agent account
   ansible.builtin.import_tasks: hermes.yaml
