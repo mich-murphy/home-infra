@@ -15,10 +15,10 @@ The initial and recovery-time preparation of the ai-dev machine performed from
 outside the machine.
 _Avoid_: Ongoing updates, maintenance
 
-**ai-dev maintenance**:
-Ongoing user-tool and Home Manager updates initiated and verified on ai-dev
-after provisioning. The Ansible ai-dev role owns and deploys the maintenance
-command even when a human invokes it directly on the host.
+**hermes maintenance**:
+Ongoing Hermes-account tool and user-service updates after provisioning. The
+Ansible ai-dev role owns these operations; `hermes-maintenance` covers ad-hoc
+use between playbook runs.
 _Avoid_: Provisioning, bootstrap
 
 **Docker host provisioning**:
@@ -32,4 +32,4 @@ The Hermes install owned by the isolated `hermes` account on ai-dev, its
 scoped Proxmox, Docker, and GitHub credentials, and the tiers of reach they
 grant. Observes broadly, proposes changes by pull request, and changes nothing
 on a running host.
-_Avoid_: ai-dev maintenance, the management user's coding agents
+_Avoid_: ai-dev provisioning, hermes maintenance

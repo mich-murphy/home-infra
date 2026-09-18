@@ -12,79 +12,57 @@
     'there is nothing to do' not in
     ((ai_dev_pacman_upgrade.stdout + ai_dev_pacman_upgrade.stderr) | lower)
 
-- name: Remove the legacy tmux package
-  community.general.pacman:
-    name: tmux
-    state: absent
-
-- name: Install bootstrap packages and Neovim LSPs/formatters
+# The Hermes installer provides its own runtimes (a uv virtualenv, a
+# Hermes-managed Node, and a Playwright browser); the base system carries only
+# access and installer prerequisites.
+- name: Install bootstrap packages
   community.general.pacman:
     state: present
     name:
-      - base-devel
-      - bubblewrap
       - git
-      - fish
-      - neovim
       - openssh
       - mosh
-      - rsync
       - curl
-      - ripgrep
       - jq
       - python
-      # Required by the retained markdownlint-cli editor package.
-      - nodejs
-      - stylua
-      - gopls
-      - delve
-      - ruff
-      - markdownlint-cli
 
-- name: Bootstrap paru AUR helper
-  kewlfft.aur.aur:
-    use: makepkg
-    name: paru
-    state: present
-  become: true
-  become_user: "{{ username }}"
-
-- name: Install AUR packages
-  kewlfft.aur.aur:
-    use: paru
-    name:
-      - tflint
-      - marksman
-    state: present
-  become: true
-  become_user: "{{ username }}"
-
-- name: Install Determinate Nix
-  ansible.builtin.shell:
-    cmd: curl -fsSL https://install.determinate.systems/nix | sh -s -- install linux --determinate --no-confirm
-  args:
-    creates: /nix/var/nix/profiles/default/bin/nix
-
-- name: Set login shell to fish
-  ansible.builtin.user:
-    name: "{{ username }}"
-    shell: /usr/bin/fish
-
-- name: Enable linger for persistent Herdr and Moshi user services
+# The management user keeps no persistent services: its retired Moshi user unit
+# is stopped and linger is dropped, so the hermes account holds the default
+# 127.0.0.1:24543 gateway port uncontended.
+- name: Read the management user's retired Moshi unit state
   ansible.builtin.command:
-    cmd: "loginctl enable-linger {{ username }}"
-  args:
-    creates: "/var/lib/systemd/linger/{{ username }}"
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ username }}@"
+      - --user
+      - --no-legend
+      - --no-pager
+      - list-unit-files
+      - moshi-hook.service
+  register: ai_dev_management_moshi_unit
+  changed_when: false
+  failed_when: ai_dev_management_moshi_unit.rc not in [0, 1]
+  when: not ansible_check_mode
 
-- name: Read the user account database entry
-  ansible.builtin.getent:
-    database: passwd
-    key: "{{ username }}"
+- name: Stop and disable the management user's retired Moshi daemon
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ username }}@"
+      - --user
+      - disable
+      - --now
+      - moshi-hook.service
+  changed_when: true
+  when:
+    - not ansible_check_mode
+    - "'moshi-hook.service' in (ai_dev_management_moshi_unit.stdout | default(''))"
 
-- name: Start the persistent user manager
-  ansible.builtin.systemd_service:
-    name: "user@{{ ansible_facts.getent_passwd[username][1] }}.service"
-    state: started
+- name: Disable linger for the management user
+  ansible.builtin.command:
+    cmd: "loginctl disable-linger {{ username }}"
+    removes: "/var/lib/systemd/linger/{{ username }}"
+  when: not ansible_check_mode
 
 - name: Ensure systemd-logind drop-in dir exists
   ansible.builtin.file:
@@ -94,7 +72,9 @@
     group: root
     mode: '0755'
 
-- name: Keep Herdr workspaces and the Moshi user service alive after SSH logout
+# The hermes account's Herdr workspaces and Moshi user service must survive SSH
+# logout (that account's linger is enabled in hermes.yaml).
+- name: Keep user services alive after SSH logout
   ansible.builtin.copy:
     dest: /etc/systemd/logind.conf.d/ai-dev.conf
     content: |

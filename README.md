@@ -20,7 +20,7 @@ Proxmox VE (hypervisor)
 ├── Docker Host VM (Ubuntu 24.04) ─── live services via Docker Compose
 │   └── Traefik → per-service TLS hostnames (Cloudflare ACME)
 ├── UniFi OS Server VM (MGMT) ─── cold controller infrastructure (off normally)
-├── ai-dev VM (DMZ) ─── Isolated AI development sandbox
+├── ai-dev VM (DMZ) ─── Isolated Hermes infrastructure agent host
 ```
 
 ### Network (MikroTik router + UniFi AP)
@@ -48,8 +48,7 @@ attached to the default `All APs` group and mapped to the DFLT/KDS/GST
 VLAN-only networks. The ai-dev VM is isolated on the physical DMZ,
 protected by host nftables default-deny input rules, and
 controlled-output rules, and further scoped by an external Tailscale policy
-managed outside this repo.
-Its mobile workflow and deployment checks are documented in
+managed outside this repo. Its deployment and operations are documented in
 [docs/ai-dev.md](docs/ai-dev.md).
 
 ## Repository Structure
@@ -102,7 +101,7 @@ Terraform state is secret-bearing. Run Terraform in a shell with `umask 077` so 
 | --- | --- | --- |
 | truenas | 101 | NAS with HBA passthrough |
 | docker-host | 102 | Docker Compose services |
-| ai-dev | 110 | AI development sandbox |
+| ai-dev | 110 | Isolated Hermes infrastructure agent host |
 | unifi-controller | 111 | Cold UniFi OS Server infrastructure |
 
 `terraform/main.tf` is authoritative for each VM's CPU, memory and disk.
@@ -124,7 +123,7 @@ Configures provisioned hosts and the router with these primary roles:
 | Role        | Purpose                                                     |
 | ----------- | ----------------------------------------------------------- |
 | common      | SSH hardening, user management                              |
-| ai-dev      | Host provisioning and Home Manager activation               |
+| ai-dev      | Host provisioning and the isolated Hermes agent account     |
 | firewall    | Reusable UFW policy                                         |
 | docker-host | Docker, NFS, published-port policy, bootstrap deployment    |
 | unifi       | UniFi OS Server install                                     |

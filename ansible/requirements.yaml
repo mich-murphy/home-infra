@@ -6,8 +6,6 @@ collections:
     version: "4.8.8"
   - name: community.general
     version: "13.4.0"
-  - name: kewlfft.aur
-    version: "0.13.0"
   # Used by the routeros role.
   - name: community.routeros
     version: "3.22.0"

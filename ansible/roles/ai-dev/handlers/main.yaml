@@ -36,8 +36,8 @@
   failed_when: ai_dev_hermes_service_units.rc not in [0, 1]
   listen: restart hermes user services
 
-# Unit drop-ins (for example the moshi gateway listen override) only take
-# effect after the user manager reloads; do that before restarting anything.
+# Unit drop-ins only take effect after the user manager reloads; do that
+# before restarting anything.
 - name: reload the hermes user manager
   ansible.builtin.command:
     argv:

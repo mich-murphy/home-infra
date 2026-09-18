@@ -3,11 +3,13 @@
 ai_dev_allow_legacy_nft_migration: false
 
 # earlyoom sends SIGTERM to the largest process when both available memory and
-# free swap fall below these percentages (SIGKILL at half of each).
+# free swap fall below these percentages (SIGKILL at half of each). Preferred
+# victims are the agent's transient runtimes (Playwright browser, the Node
+# gateway); the Python agent, Herdr, and Moshi stay protected.
 ai_dev_earlyoom_mem_percent: 8
 ai_dev_earlyoom_swap_percent: 8
-ai_dev_earlyoom_avoid: "(^|/)(init|systemd.*|sshd.*|mosh-server|tailscaled|herdr|moshi-hook|wezterm-mux-server|fish|dbus-broker.*)$"
-ai_dev_earlyoom_prefer: "(^|/)(tsc|bun|node|next-build|esbuild|vitest|jest|cargo|rustc|go)$"
+ai_dev_earlyoom_avoid: "(^|/)(init|systemd.*|sshd.*|mosh-server|tailscaled|herdr|moshi-hook|dbus-broker.*)$"
+ai_dev_earlyoom_prefer: "(^|/)(chrome|headless_shell|node)$"
 
 # Own account, so the agent cannot read the management user's credentials.
 ai_dev_hermes_user: hermes
@@ -24,9 +26,6 @@ ai_dev_hermes_github_credentials_present: >-
   {{ hermes_github_token is defined }}
 # Moshi agent integration name, which matches the account name here.
 ai_dev_hermes_moshi_target: hermes
-# The management user's moshi daemon holds the default 127.0.0.1:24543; the
-# Hermes account's daemon needs its own gateway port so both units can run.
-ai_dev_hermes_moshi_gateway_listen: 127.0.0.1:24544
 # The agent's toolchain is only refreshed when the operator opts in per run
 # (-e ai_dev_hermes_update=true): `hermes update` follows upstream main.
 ai_dev_hermes_update: false
