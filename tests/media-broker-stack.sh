@@ -65,6 +65,8 @@ assert_yq 'source-pinned published port' \
 assert_yq 'fixed Host allow-list' '.services["media-broker"].environment.MEDIA_BROKER_ALLOWED_HOSTS == "docker-host:8765"'
 assert_yq 'fixed Origin allow-list' '.services["media-broker"].environment.MEDIA_BROKER_ALLOWED_ORIGINS == "http://docker-host:8765"'
 assert_yq 'bounded upstream responses' '.services["media-broker"].environment.MEDIA_BROKER_MAX_RESPONSE_BYTES == "5242880"'
+assert_yq 'write gates enabled in Compose, not in stack variables' \
+  '.services["media-broker"].environment.MEDIA_BROKER_ENABLE_REQUESTS == "true" and .services["media-broker"].environment.MEDIA_BROKER_ENABLE_DELETES == "true"'
 assert_yq 'upstream keys are file references' \
   '[.services["media-broker"].environment | to_entries[] | select(.key | test("_API_KEY_FILE$"))] | length == 5'
 assert_yq 'no bind mounts' '.services["media-broker"] | has("volumes") | not'
