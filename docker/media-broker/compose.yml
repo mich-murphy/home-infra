@@ -2,7 +2,7 @@
 # The Renovate digest bump is the deploy trigger Portainer polls for.
 services:
   media-broker:
-    image: ghcr.io/mich-murphy/media-broker:main@sha256:de2b26b530c314695c29a2b606e4a17aa17f00d3fd16ddbb429e546e891bff3a
+    image: ghcr.io/mich-murphy/media-broker:main@sha256:01d1bf69c0c8afca6f984bc493d9ad58e461f04fdc62d768cc5377a711b2aeb9
     container_name: media-broker
     user: "65532:65532"
     security_opt:
@@ -35,6 +35,11 @@ services:
       MEDIA_BROKER_ALLOWED_ORIGINS: http://docker-host:8765
       # Lidarr's observed inventory is about 2.27 MB; keep a 5 MB hard bound.
       MEDIA_BROKER_MAX_RESPONSE_BYTES: "5242880"
+      # Gated write tools: brokered add/unmonitor, and the two-phase delete
+      # that requires a fresh signed confirmation token per action. Setting
+      # these in Compose keeps the switch out of Portainer stack variables.
+      MEDIA_BROKER_ENABLE_REQUESTS: "true"
+      MEDIA_BROKER_ENABLE_DELETES: "true"
     secrets:
       - source: media_broker_token
         target: media_broker_token

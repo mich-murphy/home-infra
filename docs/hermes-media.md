@@ -75,12 +75,25 @@ from GHCR.
 - Update policy: shared Git polling; Renovate digest bumps are the trigger
 
 Portainer supplies the interpolated `SONARR_URL`, `RADARR_URL`, `LIDARR_URL`,
-`TAUTULLI_URL`, `MEDIA_BROKER_BIND`, `MEDIA_BROKER_BIND_HOST`,
+`TAUTULLI_URL`, `JELLYFIN_URL`, `MEDIA_BROKER_BIND`, `MEDIA_BROKER_BIND_HOST`,
 `MEDIA_BROKER_ALLOW_PUBLIC_BIND`, and optional `MEDIA_BROKER_SECRETS_DIR`.
 These values are URLs, nonsecret bind settings, and a host directory path.
-Compose fixes the secret-file paths and the Host/Origin allow-lists. Never put
-a backend API key or broker bearer value in Portainer's stack variables,
-Compose environment, Git, or command arguments.
+Compose fixes the secret-file paths, the Host/Origin allow-lists, the
+response bound, and the two write gates
+(`MEDIA_BROKER_ENABLE_REQUESTS` and `MEDIA_BROKER_ENABLE_DELETES`, both
+enabled). Never put a backend API key or broker bearer value in Portainer's
+stack variables, Compose environment, Git, or command arguments.
+
+## Gated write tools
+
+Beyond the five read tools, the broker exposes three write tools because the
+Compose environment enables both gates. `arr_request_media` adds one
+catalogue-resolved candidate per call and `arr_unmonitor_media` reversibly
+unmonitors one item; both take effect immediately. `arr_delete_media` always
+runs in two phases: a preview call returns a signed confirmation token that
+expires after five minutes and is bound to the exact service, item, and file
+mode; only a second call carrying that token deletes. Import-list exclusions
+are never added, so exclusion lists stay operator-managed.
 
 The fixed endpoint is `http://docker-host:8765/mcp`, with Host
 `docker-host:8765` and Origin `http://docker-host:8765`. The host port binds
@@ -126,10 +139,10 @@ already merged, because Portainer resolves that path from `refs/heads/main`.
    same nonsecret environment values as before, AutoUpdate polling enabled on
    the shared source. No relative-path volumes are needed for this stack.
 6. Wait for the container to become healthy, then verify: the running image
-   is the current `:main` build; authenticated reads from Hermes succeed for
-   all four tools; unauthenticated requests are rejected; a different client
-   is denied. Retain the existing ACL and token. No Hermes gateway restart
-   is required.
+   is the current `:main` build; authenticated calls from Hermes succeed for
+   the eight registered tools; unauthenticated requests are rejected; a
+   different client is denied. Retain the existing ACL and token. No Hermes
+   gateway restart is required.
 7. Confirm Renovate opens and automerges the initial digest-pin PR for the
    image, and that Portainer redeploys on it. From then on, every
    media-broker merge becomes a Renovate digest bump → automerge → Portainer
@@ -137,6 +150,7 @@ already merged, because Portainer resolves that path from `refs/heads/main`.
    `read:packages` for the private package — fix the token before relying on
    the pipeline.
 
-This remains a read-only integration. Conversation-approved writes and
-Jellyfin playback reporting are not enabled. Host controls are operational
-policy, not a security boundary against root administrators.
+Jellyfin playback reporting and the gated writes are both enabled — the
+broker is no longer read-only, so the confirmation flow above covers every
+destructive path. Host controls are operational policy, not a security
+boundary against root administrators.
