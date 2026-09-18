@@ -36,6 +36,19 @@
   failed_when: ai_dev_hermes_service_units.rc not in [0, 1]
   listen: restart hermes user services
 
+# Unit drop-ins (for example the moshi gateway listen override) only take
+# effect after the user manager reloads; do that before restarting anything.
+- name: reload the hermes user manager
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - daemon-reload
+  changed_when: false
+  listen: restart hermes user services
+  when: (ai_dev_hermes_service_units.stdout_lines | length) > 0
+
 - name: restart enabled hermes user services
   ansible.builtin.command:
     argv:

@@ -256,13 +256,17 @@ across:
 ```sh
 moshi-hook host setup
 moshi-hook pair --token <token-from-Moshi-Hooks-settings>
-systemctl --user enable --now moshi-hook.service
 ```
 
-Ansible stops short of starting that service. An unpaired account has no
-credential for it, so starting it early either fails the play or leaves a unit
-crash-looping where a later real failure would hide. Linger is already on, so
-enabling it once after pairing survives logout.
+Once the pairing secret exists, the role takes over the daemon: the next play
+installs the `moshi-hook.service` user unit, adds a drop-in giving the daemon
+its own gateway listen address (the management user's daemon already holds
+the default 127.0.0.1:24543, so the Hermes account uses 127.0.0.1:24544 via
+`ai_dev_hermes_moshi_gateway_listen`), and enables it through
+`systemctl --machine=hermes@ --user`. Linger is already on, so the service
+survives logout and reboot. `moshi-hook service install` cannot finish its
+own enablement over sudo (no user session bus), which is why the role drives
+systemd directly.
 
 In Moshi, add a second host: MagicDNS name `ai-dev`, username `hermes`,
 connection mode `Auto`.
