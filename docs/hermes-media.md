@@ -86,15 +86,22 @@ stack variables, Compose environment, Git, or command arguments.
 
 ## Gated write tools
 
-Beyond the six read tools (inventory, quality profiles, root folders,
-catalogue candidate search, and both play-history tools), the broker exposes
-three write tools because the Compose environment enables both gates.
-`arr_request_media` adds one
-catalogue-resolved candidate per call and `arr_unmonitor_media` reversibly
-unmonitors one item; both take effect immediately. `arr_delete_media` always
-runs in two phases: a preview call returns a signed confirmation token that
-expires after five minutes and is bound to the exact service, item, and file
-mode; only a second call carrying that token deletes. Import-list exclusions
+Beyond the nine read tools (inventory, quality profiles, root folders,
+catalogue candidate search, the season and album detail inventories, both
+play-history tools, and the Jellyfin users list), the broker exposes seven
+write tools because the Compose environment enables both gates.
+`arr_request_media` adds one catalogue-resolved candidate per call — with an
+optional season selection for Sonarr, so a trial add can monitor and search
+season one only — and `arr_search_item` queues an upstream search for one
+item's monitored missing content; both take effect immediately.
+`arr_unmonitor_media` unmonitors one item, `arr_monitor_media` reverses it,
+and `arr_set_season_monitoring` (Sonarr) and `arr_set_album_monitored`
+(Lidarr) reversibly flip monitoring below the item level. `arr_delete_media`
+always runs in two phases: a preview call returns a signed confirmation token
+that expires after five minutes and is bound to the exact service, item,
+album, and file mode; only a second call carrying that token deletes. For
+Lidarr an optional album id deletes a single album instead of the artist,
+with the preview showing both album and artist titles. Import-list exclusions
 are never added, so exclusion lists stay operator-managed.
 
 The fixed endpoint is `http://docker-host:8765/mcp`, with Host
@@ -142,7 +149,7 @@ already merged, because Portainer resolves that path from `refs/heads/main`.
    the shared source. No relative-path volumes are needed for this stack.
 6. Wait for the container to become healthy, then verify: the running image
    is the current `:main` build; authenticated calls from Hermes succeed for
-   the nine registered tools; unauthenticated requests are rejected; a
+   the sixteen registered tools; unauthenticated requests are rejected; a
    different client is denied. Retain the existing ACL and token. No Hermes
    gateway restart is required.
 7. Confirm Renovate opens and automerges the initial digest-pin PR for the
