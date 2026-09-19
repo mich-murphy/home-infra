@@ -69,6 +69,11 @@ services:
       - wallabag-backend
     environment:
       - MYSQL_ROOT_PASSWORD=${DATABASE_PASSWORD}
+      # Runs mariadb-upgrade automatically when the data directory was
+      # created by an older major version (required for the 12.x -> 13.x
+      # upgrade). The entrypoint also writes a system_mysql_backup_*.sql.zst
+      # rollback aid into the data directory before upgrading.
+      - MARIADB_AUTO_UPGRADE=1
     volumes:
       - wallabag-db:/var/lib/mysql
     healthcheck:
