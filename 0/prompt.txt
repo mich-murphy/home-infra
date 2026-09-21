@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>boag9arm6</task-id>
+<tool-use-id>toolu_01QQkt8aDvC8N1a8UDDsXahC</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/de363a48-3163-4cd5-b45f-ce7ca17dcc01/tasks/boag9arm6.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for CI on the nextcloud bind PR" completed (exit code 0)</summary>
+</task-notification>
