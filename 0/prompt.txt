@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bsgdjcaz1</task-id>
+<tool-use-id>toolu_01Q7tX9wzi8fEQZ1Wdw4JgQ6</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/de363a48-3163-4cd5-b45f-ce7ca17dcc01/tasks/bsgdjcaz1.output</output-file>
+<status>completed</status>
+<summary>Background command "Find why five English Remux movies had no replacement grabbed" completed (exit code 0)</summary>
+</task-notification>
