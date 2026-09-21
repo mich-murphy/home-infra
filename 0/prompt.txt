@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bv9uf8skm</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/eee3386a-ecc1-4dd1-91c7-a2d428412106/tasks/bv9uf8skm.output</output-file>
+<status>completed</status>
+<summary>Background command "Re-run check mode and capture current state" completed (exit code 0)</summary>
+</task-notification>
