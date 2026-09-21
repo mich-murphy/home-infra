@@ -1,0 +1,3 @@
+I want you to review the repository for Media-Broker. I want you to look through the Python code that's there. Ensure that we're using the correct data structures for all of the values that we're storing and data that we're manipulating and interacting with. It looks like there's a lot of code there that's complicated by the fact that we're not using the right structures to begin with.
+
+I want to see fewer lines of code, only what's absolutely required. Fewer lines of code is always better than more, except for the rare occurrence. Ensure that all the tests remain and are passing. Review the tests and determine whether they're testing implementations or expected behaviour. They should only ever test expected behaviour.
