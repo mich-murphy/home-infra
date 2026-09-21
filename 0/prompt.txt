@@ -1,0 +1,9 @@
+# Annotations on pi · last message
+
+## Annotation 1 (lines 6–9)
+Comment on: "1. GitHub Actions builds the image from the reviewed source (Dockerfile base is already digest-pinned) and pushes to `ghcr.io/mich-murphy/media-broker` as two tags: - `:sha-<commit>` — immutable, for audit and instant rollback - `:main` — rolling tag the stack tracks 2. CI fires the `media-broker` stack's **Portainer webhook** → Portainer redeploys and pulls `:main`. Done."
+> How is the CI going to reach Portainer's webhook, given that it's behind Tailscale?
+
+## Annotation 2 (line 31)
+Comment on: "Want me to go ahead and make the repo-side changes? One decision from you first: rolling `:main` tag + webhook (simplest, recommended), or CI pinning the exact `sha-<commit>` tag per deploy via the Portainer API (matches your current "verify the exact image" discipline, needs an API token instead of a webhook secret)?"
+> Would it be better for us to migrate the media broker to its own dedicated repository to handle the image builds, and then the Portainer portion can pull in the prebuilt image already published elsewhere?
