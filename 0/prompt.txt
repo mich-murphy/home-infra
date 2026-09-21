@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bonodibk5</task-id>
+<tool-use-id>toolu_01KpNNbjTWwAdb4TwSEwYLyF</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/de363a48-3163-4cd5-b45f-ce7ca17dcc01/tasks/bonodibk5.output</output-file>
+<status>completed</status>
+<summary>Background command "Track the Beauty and the Beast Bluray download through to import" completed (exit code 0)</summary>
+</task-notification>
