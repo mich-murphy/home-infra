@@ -1,0 +1,7 @@
+Spawn Sonnet subagents to do exploratory analysis of the following codebase: https://github.com/mich-murphy/media-broker
+
+This code needs to run in production and be production-ready. It's providing an MCP service and a broker between my own media server and Hermes agent, so authentication and security need to be top-notch. Also, the standards of the code should be high, so the code is well-written and well-structured.
+
+It needs to be checked via tests. It needs to have linting, formatting, and cyclomatic measures of code complexity enforced, and it needs to be passing. We also need to ensure that there's no code written that doesn't serve an exact purpose. Fewer lines of code are always preferred to more lines of code, except for explicitly justified cases.
+
+Review the tests. Make sure that they test the expected behaviours and not implementation details. Every test must be justified and valuable. I want Sonnet subagents to do the code exploration and present their findings. I want you to verify, and I want you to implement any code changes on a PR as needed.
