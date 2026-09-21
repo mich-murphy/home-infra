@@ -1,0 +1,1 @@
+Have sub-agents running Sonnet do the exploratory analysis of all code and PRs.
