@@ -1,0 +1,1 @@
+do 1 for me. For the remaining items, I decided that we should just track the main branch of this repo so that we're always deploying the latest version of the package.
