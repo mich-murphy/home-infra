@@ -1,0 +1,1 @@
+Fuck that. This should be changed to poll automatically and rebuild and deploy when code changes merge into `main`.
