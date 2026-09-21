@@ -1,0 +1,3 @@
+Base directory for this skill: /Users/mm/.claude/skills/bro
+
+Restate your last message. Stop using jargon and speak coherently. State it more simply and concisely, like one human talking to another. Use simple diagrams to illustrate your point.
