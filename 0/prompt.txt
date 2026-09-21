@@ -1,0 +1,1 @@
+I need to improve the way that we're handling the Hermes AI dev env. What I'm finding is a bit of friction where I need to update the env, update packages, and restart services. The Hermes user doesn't have access to any of this stuff, and it's requiring me to log in to a dedicated user. Is there a better way we can manage this without creating so much friction?
