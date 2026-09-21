@@ -1,0 +1,39 @@
+<task-notification>
+<task-id>ab588421c13144310</task-id>
+<tool-use-id>toolu_01LJKhJ7cDNerdDhw1Riu8ku</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/eee3386a-ecc1-4dd1-91c7-a2d428412106/tasks/ab588421c13144310.output</output-file>
+<status>completed</status>
+<summary>Agent "Add herdr and moshi to hermes account" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>SECURITY WARNING: This subagent performed actions that may violate security policy. Reason: Blocked by classifier. Review the subagent's actions carefully before acting on its output.
+
+Sanity check: re-read the task brief against the diff (three installs, placed after the agent install and before the credential deployment, all carrying the interpreter var, check-mode guard, and mirrored environment); lint, syntax check, and the tagged check run all green with zero warnings.
+
+**Files changed** (working tree only, no commit/branch/push):
+
+- `/Users/mm/dev/home-infra/ansible/roles/ai-dev/tasks/hermes.yaml`
+- `/Users/mm/dev/home-infra/ansible/roles/ai-dev/defaults/main.yaml`
+
+**Task names added** (inserted between "Install the Hermes agent" and "Ensure the Hermes configuration directory exists"):
+
+1. `Install Herdr for the Hermes account` — `shell` piping `https://herdr.dev/install.sh`, `creates: {{ ai_dev_hermes_home }}/.local/bin/herdr`
+2. `Install Moshi for the Hermes account` — `shell` piping `https://getmoshi.app/install.sh` with `MOSHI_HOOK_SKIP_FIRST_RUN=1`, `creates: .../.local/bin/moshi-hook`
+3. `Install the Moshi integration for the Hermes agent` — `command` running `moshi-hook install --target {{ ai_dev_hermes_moshi_target }}`, `changed_when: false`
+
+All three set `become_user: "{{ ai_dev_hermes_user }}"`, the `ansible_python_interpreter: "{{ ai_dev_hermes_python }}"` var, `HOME`/`USER`/`PATH` matching the existing agent-install task, and `when: not ansible_check_mode`.
+
+**Var added** to defaults: `ai_dev_hermes_moshi_target: hermes`, with the one-line comment "Moshi agent integration name, which matches the account name here." I made it a var rather than a literal because the integration target is a Moshi-side agent name that happens to equal the account name — they can drift.
+
+**Verification output (recap lines):**
+
+- `ansible-lint`: `Passed: 0 failure(s), 0 warning(s) on 71 files. Profile 'basic' was required, but 'production' profile passed.`
+- `--syntax-check`: `playbook: run.yaml` (clean)
+- check run: `ai-dev : ok=13 changed=0 unreachable=0 failed=0 skipped=7 rescued=0 ignored=0`, and a grep for `warn|failed to look up|error` over the full output returned nothing — no user/group lookup warnings, as expected since the account exists.
+
+Note the three new tasks show as `skipping` in check mode; that is the `not ansible_check_mode` guard doing its job, not a problem.
+
+**Judgement call on the moshi-hook user service:** I did not add a `systemd_service` task to start or enable `moshi-hook.service`. Pairing is interactive — the service on a freshly installed, unpaired account has no credential to work with, so Ansible would either fail the play or leave a crash-looping unit that masks a real failure later. Linger is already on for the account (constraint 5), so once the operator pairs the phone manually, `systemctl --user enable --now moshi-hook.service` persists across logouts without further Ansible involvement. The role now gets the account to the point where pairing is possible and stops there. `ai-dev-maintenance` untouched; docs untouched.
+
+result: `herdr` and `moshi-hook` installation plus the `moshi-hook install --target hermes` integration added to the ai-dev role's `hermes.yaml` (with a new `ai_dev_hermes_moshi_target` default), lint clean at production profile and check run showing 0 failures, 0 warnings; the moshi-hook user service is deliberately left to manual pairing.</result>
+<usage><subagent_tokens>45568</subagent_tokens><tool_uses>7</tool_uses><duration_ms>89825</duration_ms></usage>
+</task-notification>
