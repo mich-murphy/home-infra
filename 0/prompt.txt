@@ -1,0 +1,2 @@
+<bash-stdout>To github.com:mich-murphy/home-infra.git
+ + bd0170e0...fe47727e fix-cg13 -&gt; actions-renovate/community.general-13.x (forced update)</bash-stdout><bash-stderr></bash-stderr>
