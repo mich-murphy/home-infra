@@ -1,0 +1,1 @@
+Review the above session, and I want you to carefully identify the action steps that were planned to be taken. I need you to figure out what steps have actually been taken. Before doing any work, show me what the remaining steps would be, and let's discuss how they should be implemented.
