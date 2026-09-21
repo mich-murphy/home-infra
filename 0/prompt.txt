@@ -1,0 +1,1 @@
+<bash-input>git pull</bash-input>
