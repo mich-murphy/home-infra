@@ -1,0 +1,1 @@
+review the jellyfin and plex catalogues for mismatched media and metadata (movies, TV and youtube). Also review for broken files, for example I think Jungle Book shows up as the cartoon version in Jellyfin, but its the live action version. The second episode of Sterling Point was corrupt (I may have deleted it since). I want to clean these instances up and avoid in future
