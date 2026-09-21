@@ -1,0 +1,4 @@
+what should I answer here? 
+  Enable WhatsApp? (Y/n):
+✓ WhatsApp enabled
+  Allowed user IDs (comma-separated, leave empty for no allowlist):
