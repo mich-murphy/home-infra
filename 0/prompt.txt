@@ -1,0 +1,2 @@
+- authorised
+- you can interact directly via `ssh mm@docker-host`
