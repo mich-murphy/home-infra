@@ -1,0 +1,62 @@
+apply the following changes for my pi-subagent settings:  Your pi-subagents setup lives in two files. Here's everything you need to copy it to another machine:
+
+ 1. ~/.pi/agent/settings.json — the relevant parts
+
+ The extension is loaded via the packages array, and its agents are configured in the subagents block:
+
+ ```json
+   {
+     "packages": [
+       "npm:pi-mcp-adapter",
+       "npm:pi-subagents"
+     ],
+     "subagents": {
+       "defaultModel": "openai-codex/gpt-5.6-luna",
+       "agentOverrides": {
+         "reviewer": {
+           "model": "openai-codex/gpt-5.6-sol",
+           "thinking": "high",
+           "fallbackModels": ["claude-sdk/claude-5-sonnet"]
+         },
+         "oracle": {
+           "model": "openai-codex/gpt-5.6-sol",
+           "thinking": "high",
+           "fallbackModels": ["claude-sdk/claude-5-opus"]
+         },
+         "cursor-agent": { "disabled": true },
+         "cursor-agent-writer": { "disabled": true }
+       }
+     }
+   }
+ ```
+
+ (Your full settings.json also has theme, models, etc. — only packages + subagents matter for this extension. npm:pi-mcp-adapter is a separate extension,
+ not a dependency of pi-subagents; include it only if you want MCP too.)
+
+ 2. ~/.pi/agent/extensions/subagent/config.json — extension's own config
+
+ ```json
+   {
+     "toolDescriptionMode": "compact",
+     "inlineToolDisplay": "summary",
+     "asyncWidget": false,
+     "mainWindowRenderer": {
+       "horizontalSpacing": 0
+     },
+     "forkContext": {
+       "mode": "pruned",
+       "model": "openai-codex/gpt-5.6-luna:max"
+     },
+     "worktreeBaseDir": "~/.pi/agent/worktrees"
+   }
+ ```
+
+ Notes for the other machine
+
+ - Install: adding "npm:pi-subagents" to packages is what installs it — pi fetches the npm package (currently v0.67.0) on next launch. The
+   extensions/subagent/config.json file you just copy into place.
+ - Model IDs: the subagents and forkContext blocks reference openai-codex/* and claude-sdk/* models. These only work if the other machine has those
+   providers authenticated and the models enabled in settings.json (enabledModels). Adjust to whatever is available there, or drop the overrides to use
+   defaults.
+ - Optional: on first use pi-subagents can also write per-agent defaults to ~/.pi/agent/agents/ — you have that directory too, but the settings.json
+   agentOverrides above is the authoritative part.
