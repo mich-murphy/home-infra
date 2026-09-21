@@ -1,0 +1,1 @@
+Also note that this cleanup likely extends to nix-config in the parent directory. I likely can clean up a lot of the Nix code that relates to ai-dev as well.
