@@ -1,0 +1,1 @@
+No, I likely want Hermes to interact directly with Sonar, LiDAR, and Radar because it may need to help with library cleanup, cleanup of profiles, etc.
