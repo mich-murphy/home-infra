@@ -1,0 +1,14 @@
+I need you to update my pi-subagents config to use the following settings for avoiding any expensive subagent runs. 
+
+ ```json
+   "subagents": {
+     "maxSubagentDepth": 1,
+     "maxSubagentSpawnsPerSession": 25,
+     "maxSubagentSpawnsPerRun": 20,
+     "timeoutMs": 1800000,
+     "checkpointBeforeDeadlineMs": 300000,
+     "globalConcurrencyLimit": 5,
+     ...
+   },
+   "forkContext": { "mode": "pruned" }
+ ```
