@@ -1,0 +1,1 @@
+I want you to SSH into `docker-host`, and I want you to check on the sabnzbd Music downloads: clean out any stuck or problematic downloads. You should also check against Lidarr for a complete view of what might be wrong with the files.
