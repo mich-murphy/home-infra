@@ -1,0 +1,55 @@
+<task-notification>
+<task-id>a8901d193f1184684</task-id>
+<tool-use-id>toolu_01Q1FQNmcxRLoWKooNPuv2Pa</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/tasks/a8901d193f1184684.output</output-file>
+<status>completed</status>
+<summary>Agent "Build Recyclarr stack from live config" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>All work is complete. Here is the final report.
+
+## Summary
+
+Added a full Recyclarr stack under `/Users/mm/dev/home-infra/docker/recyclarr/`, registered it, documented it, and validated it with a live `sync --preview` that now reports **zero pending changes**. All changes are uncommitted working-tree files; `renovate.json` was left untouched.
+
+### Files created/modified
+
+- `docker/recyclarr/compose.yml` — new. Single `recyclarr` service, image `ghcr.io/recyclarr/recyclarr:8.7.2@sha256:6e69e009e1cd7493ff6093e8e187b5d3788c75b4a2c0c5127b6a1beda1c19728` (the multi-arch index digest — obtained via `docker buildx imagetools inspect` on the docker host, not the per-platform manifest digest `docker manifest inspect -v` returns). Joins `proxy`, no Traefik labels. `cap_drop: [ALL]` with **no `cap_add`**: I traced the upstream `Dockerfile`/`entrypoint.sh` — the image is `USER 1000:1000` baked in at build time, never re-execs as root, and PUID/PGID are explicitly unsupported (confirmed in docs and by inspecting the Dockerfile), so none of the CHOWN/SETUID/etc. capabilities the rest of the repo's images need apply here. No healthcheck: it's a cron batch job (`supercronic` running `recyclarr sync` on `CRON_SCHEDULE`, default `0 4 * * *`), no port/HTTP endpoint, and the image ships no health script.
+- `docker/recyclarr/recyclarr.yml` — new, the main config (both `radarr:` and `sonarr:` instances).
+- `docker/recyclarr/settings.yml` — new, registers two local `custom-formats` resource providers (Recyclarr v8's mechanism for locally-supplied CFs, confirmed via the shipped JSON schemas at tag `v8.7.2`, distinct from `recyclarr.yml` — this lives in `/config/settings.yml`, auto-discovered).
+- `docker/recyclarr/custom-formats/{radarr,sonarr}/dual-audio-*.json` — new, exact live specs of the two bespoke CFs.
+- `docker/recyclarr/custom-formats/sonarr/repack-v{2,3}.json` — new (see below, added after preview testing revealed a real problem with the naive approach).
+- `docker/portainer-stacks.yaml`, `README.md` — added `recyclarr` entry (alphabetical / near `arrs`), linked `docs/recyclarr.md`.
+- `docs/docker-deployment.md` — added a note that `nextcloud` and `recyclarr` require Portainer's "Enable relative path volumes" stack setting for their `./`-relative bind mounts.
+- `docs/recyclarr.md` — new, covers scope, deployment, preview/sync, first-sync caution, and an operational-safety note (below).
+
+### CF mapping (both apps, ~30 CFs each)
+
+Every stock CF matched a TRaSH `trash_id` by name; where specs differed it was only guide content drift (e.g. missing newer release groups in Remux/WEB tiers — Recyclarr will update these to current guide content, which is expected/desired). Two real discoveries versus the task's assumptions:
+- **"Wrong Language" is no longer bespoke** — TRaSH Guides now ships an official CF with byte-identical specs. Only **"Dual Audio (Original + English)"** and **"Dual Audio (Release Title)"** remain genuinely bespoke (both apps), supplied locally.
+- **Sonarr's "Repack v2"/"Repack v3"** matched the *current* guide's `Repack2`/`Repack3` by regex intent only — not by name, and not by exact spec (guide content evolved). Recyclarr matches existing-vs-guide CFs by name, so referencing those trash_ids would have made Recyclarr **create duplicate CFs** rather than update in place (verified live: preview showed `Repack2 (0): 0 -&gt; 6 (New)`). Fixed by supplying them locally under their live name/spec instead.
+- Radarr's AMZN/ATVP/DSNP/HBO/HMAX/Hulu/iT/MAX/NF/PCOK/PMTP/STAN exist as CFs but score 0 on every live profile — left unmanaged (nothing to reproduce, protected by `delete_old_custom_formats: false`).
+
+### Quality profiles
+
+Reproduced radarr (`Any`, `Remux + WEB 1080p`, `Remux + WEB 1080p (Dual Audio)`) and sonarr (`Any`, `HD-1080p`, `HD - 720p/1080p`, `WEB-1080p`, `Any (Dual Audio)`, `WEB-1080p (Dual Audio)`) — the only profiles with any movies/series assigned. Every quality is listed explicitly (enabled or not) to reproduce live order exactly; unused stock profiles (SD, HD-720p, Ultra-HD, etc.) are intentionally left out. All live custom-format scores matched TRaSH defaults except Sonarr's streaming-service indicators, which are grouped by their actual live score (100/90/80/70/60/50) as explicit overrides.
+
+### Quality definitions &amp; naming: omitted (with reasons)
+
+Live min sizes match TRaSH exactly for both apps, but preferred/max are set to unlimited live instead of guide caps — `quality_definition` omitted, difference documented. Naming tokens/colon-replacement/multi-episode style don't match any TRaSH preset — `media_naming` omitted. Lidarr confirmed unsupported by Recyclarr upstream — left out entirely, no config invented.
+
+### Verification
+
+- `docker compose -f docker/recyclarr/compose.yml config` — renders cleanly.
+- Final `recyclarr sync --preview --log debug` against live Radarr/Sonarr: **every profile field and every custom-format score reported `X -&gt; X` (no change)**, zero `Scores updated`, zero `creating new group`, and the full HTTP trace showed only `GET` requests.
+
+### Important incident, disclosed and resolved
+
+During iteration, a before/after GET diff caught that Radarr's "Remux + WEB 1080p (Dual Audio)" profile had its `WEB 1080p` quality group merged with `Bluray-1080p` into a combined `Bluray + WEB 1080p` group between two snapshots taken around a `--preview` run. A subsequent full HTTP-debug `--preview` run showed only GETs, so this wasn't conclusively pinned on Recyclarr — but I reverted it immediately via a corrective `PUT` restoring the exact originally-captured profile object, and verified byte-for-byte equality afterward. This is documented prominently in `docs/recyclarr.md` with a recommendation to always snapshot+diff around any live preview run.
+
+### Open questions for the user
+
+1. Confirm "Enable relative path volumes" gets turned on for the `recyclarr` Portainer stack before first deploy.
+2. Decide whether to eventually clean up Sonarr's stale-named `Repack v2`/`Repack v3` (currently kept as-is via local CFs) versus renaming them to match the current guide.
+3. `yamllint` wasn't available locally to run against the new YAML — Recyclarr's own successful parse+preview is the strongest available validation, but worth running yamllint in CI if it's configured there.</result>
+<usage><subagent_tokens>329815</subagent_tokens><tool_uses>181</tool_uses><duration_ms>2236776</duration_ms></usage>
+</task-notification>
