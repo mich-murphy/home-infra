@@ -1,0 +1,3 @@
+yes it did
+
+Regarding the split-horizon DNS patch, can we just configure a split DNS within the DNS settings on Tailscale instead of having to do it on the router directly?
