@@ -1,0 +1,5 @@
+The Productlane MCP server is now connected. First confirm the tools are available with a read-only call (list my threads or workspace info); if they aren't, help me finish connecting before continuing. Then take a quick look at my workspace (is the help center empty, are there unanswered conversations, any recent commits) and recommend which of these to start with:
+1. Import my existing data into Productlane. Ask me what I use today for documentation, changelog, and customer support. For each tool, use the first import path that works, in this order: (a) a native Productlane importer if one exists, such as Zendesk; (b) the tool's own MCP server, such as transferring docs from Mintlify through the Mintlify MCP; (c) export to CSV from the tool and use Productlane's CSV importer; (d) as a last resort, ask me for the tool's API key and write a script to import the data. Check https://productlane.com/docs for the available importers.
+2. Generate the help center from the codebase.
+3. Go through all conversations and draft a reply.
+4. Generate a changelog draft from all changes in the codebase in the last two weeks.
