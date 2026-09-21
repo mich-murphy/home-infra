@@ -1,0 +1,22 @@
+{
+  "cli_version": "0.10.6",
+  "checkpoint_id": "d107a2353800",
+  "session_id": "01a06c26-e3e4-7ac2-a916-757681dad6e1",
+  "strategy": "import",
+  "created_at": "2026-09-04T11:26:37.283Z",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "agent": "Pi",
+  "model": "fable",
+  "checkpoint_transcript_start": 8,
+  "transcript_lines_at_start": 8,
+  "compact_transcript_start": 2,
+  "token_usage": {
+    "input_tokens": 2,
+    "cache_creation_tokens": 1037,
+    "cache_read_tokens": 4947,
+    "output_tokens": 1002,
+    "api_call_count": 1
+  },
+  "kind": "imported"
+}

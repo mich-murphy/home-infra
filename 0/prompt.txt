@@ -1,0 +1,1 @@
+I've also recently installed the Adam D3V nearfield speakers. These are plugged in via USB-C, and they seem to be working fine, but are there any other settings I would want to configure on the MacOS computer that's running them?
