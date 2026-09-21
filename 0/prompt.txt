@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bpzr68exu</task-id>
+<tool-use-id>toolu_01JuE5HtsXhTUtrtJNjMXPYu</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/eee3386a-ecc1-4dd1-91c7-a2d428412106/tasks/bpzr68exu.output</output-file>
+<status>completed</status>
+<summary>Background command "Full check run after fixes" completed (exit code 0)</summary>
+</task-notification>
