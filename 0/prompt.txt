@@ -1,0 +1,6 @@
+@docs/hermes-media-handover.md 
+
+1. Pull the latest changes from the repo.
+2. Review the handover document and identify the outstanding items that need to be completed for the broker.
+3. You'll note that the broker is now sitting on a separate repository. You can find it within the parent directory.
+4. Pull the latest changes here as well and assess the current status of that.
