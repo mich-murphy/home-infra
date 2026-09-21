@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bsh0gdd39</task-id>
+<tool-use-id>toolu_01142XAoow3Xr6NsceG4noA5</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/eee3386a-ecc1-4dd1-91c7-a2d428412106/tasks/bsh0gdd39.output</output-file>
+<status>completed</status>
+<summary>Background command "Run the new tasks live" completed (exit code 0)</summary>
+</task-notification>
