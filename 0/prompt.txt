@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b7w373svf</task-id>
+<tool-use-id>toolu_01GkERv8CtGJPXwYydJnvc2J</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/eee3386a-ecc1-4dd1-91c7-a2d428412106/tasks/b7w373svf.output</output-file>
+<status>completed</status>
+<summary>Background command "Update PR description and wait for CI" completed (exit code 0)</summary>
+</task-notification>
