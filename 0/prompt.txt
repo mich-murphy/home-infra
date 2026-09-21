@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b3q19v9s6</task-id>
+<tool-use-id>toolu_01VityALvJEtG1jthwEhkudz</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/eee3386a-ecc1-4dd1-91c7-a2d428412106/tasks/b3q19v9s6.output</output-file>
+<status>completed</status>
+<summary>Background command "Run the hermes tasks live" completed (exit code 0)</summary>
+</task-notification>
