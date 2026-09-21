@@ -1,0 +1,6 @@
+<bash-stdout></bash-stdout><bash-stderr>From github.com:mich-murphy/home-infra
+ - [deleted]           (none)     -&gt; origin/chore/ai-dev-drop-opencode
+   0e4a1a65..f290a078  main       -&gt; origin/main
+Your configuration specifies to merge with the ref 'refs/heads/chore/ai-dev-drop-opencode'
+from the remote, but no such ref was fetched.
+</bash-stderr>
