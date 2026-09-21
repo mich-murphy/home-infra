@@ -1,0 +1,1 @@
+Yes, OwnCloud has OwnCloud data, but within the application config itself, it may not be visible in the Dockerfile. I connect it to the NFS share that previously existed for Nextcloud.
