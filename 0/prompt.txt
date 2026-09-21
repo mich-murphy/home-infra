@@ -1,0 +1,2 @@
+getting the following after logging in: [hermes@ai-dev ~]$ hermes setup
+bash: hermes: command not found
