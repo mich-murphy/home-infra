@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bzz7dxu5l</task-id>
+<tool-use-id>toolu_01JtPiFq9LxydTwWoE1kL7eT</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/tasks/bzz7dxu5l.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for CI on the CI-fix PR" completed (exit code 0)</summary>
+</task-notification>
