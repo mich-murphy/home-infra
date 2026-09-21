@@ -1,0 +1,1 @@
+Spawn Sonnet subagents to go and explore the audiobook library on the Docker host and identify any metadata or files that need to be cleaned up, renamed, or just generally resolved there, by the way that they're imported in Audiobookshelf. (ssh mm@docker-host)
