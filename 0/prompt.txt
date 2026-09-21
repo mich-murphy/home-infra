@@ -1,0 +1,1 @@
+review my music collection via plex (ssh mm@docker-host). identify the most highly regarded hip hop albums, inline with my existing collection, that i do not already own and provide a list of up to 30 albums to add
