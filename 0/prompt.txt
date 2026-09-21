@@ -1,0 +1,1 @@
+claude mcp add --transport http productlane https://productlane.com/api/mcp
