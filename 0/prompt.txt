@@ -1,0 +1,5 @@
+# Annotations on pi · last message
+
+## Annotation 1 (line 11)
+Comment on: "The unit of change Portainer understands is a **commit in home-infra**. When media-broker merges and pushes a new `:main` digest, home-infra's compose still says `:main` — nothing commits, nothing changes, Portainer's check concludes "up to date" and does nothing. Your broker then runs stale until some *unrelated* home-infra commit happens to land. It also never consults GHCR: the only registry-aware feature Portainer BE has is the registry **webhook**, which is doubly dead here — GHCR doesn't offer registry webhooks at all, and nothing inbound gets through Tailscale regardless."
+> Can't we just have a SHA against the main tag, and then every time there's a new push to the media-broker repo, we can update the SHA in the home-infra compose file that targets the media broker image?
