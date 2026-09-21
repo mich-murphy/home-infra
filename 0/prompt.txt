@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bn3ab9api</task-id>
+<tool-use-id>toolu_01WLCfGqYg5vLRLWpfRjxRGA</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/eee3386a-ecc1-4dd1-91c7-a2d428412106/tasks/bn3ab9api.output</output-file>
+<status>completed</status>
+<summary>Background command "Check docker-host for drift against merged main" completed (exit code 0)</summary>
+</task-notification>
