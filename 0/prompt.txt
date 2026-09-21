@@ -1,0 +1,1 @@
+I'm attempting to connect Plex Amp locally on this machine to my Plex server, but I'm having difficulty finding the server when I'm logging into the application. [Image #1]
