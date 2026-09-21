@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bcgiin1kl</task-id>
+<tool-use-id>toolu_01NRkEtyDspMtfow8HNpFTaw</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/tasks/bcgiin1kl.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for Renovate PRs to rebase and their checks to finish" completed (exit code 0)</summary>
+</task-notification>
