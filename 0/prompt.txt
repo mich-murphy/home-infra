@@ -1,0 +1,1 @@
+Can we rename the share to Next Cloud instead of Own Cloud while we're in Truness? Also, does it make sense to map to the media user, or I noticed there's a dedicated Next Cloud user. We can map to that instead.
