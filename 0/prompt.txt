@@ -1,0 +1,17 @@
+Resolve the following error that appears when I launch Pi.
+
+❯ pi
+ Extension "/Users/mm/.pi/agent/npm/node_modules/pi-subagents/index.ts" error: Builtin override 'reviewer' in '/Users/mm/.pi/agent/settings.json' uses
+ removed field 'fallbackModels'; configure one model instead.
+   at parseBuiltinOverrideEntry (/Users/mm/.pi/agent/npm/node_modules/pi-subagents/src/agents/agents.ts:999:11)
+   at readSubagentSettings (/Users/mm/.pi/agent/npm/node_modules/pi-subagents/src/agents/agents.ts:1259:24)
+   at ensureSettingsForScope (/Users/mm/.pi/agent/npm/node_modules/pi-subagents/src/agents/agents.ts:2693:52)
+   at settingsForScope (/Users/mm/.pi/agent/npm/node_modules/pi-subagents/src/agents/agents.ts:2705:3)
+   at configuredAgentsForScope (/Users/mm/.pi/agent/npm/node_modules/pi-subagents/src/agents/agents.ts:2722:60)
+   at buildEffectiveDiscovery (/Users/mm/.pi/agent/npm/node_modules/pi-subagents/src/agents/agents.ts:2789:22)
+   at discoverAgents (/Users/mm/.pi/agent/npm/node_modules/pi-subagents/src/agents/agents.ts:2912:10)
+   at refreshAdvertisedAgents (/Users/mm/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts:539:51)
+   at /Users/mm/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts:1203:5
+   at ExtensionRunner.emit
+ (file:///opt/homebrew/Cellar/pi-coding-agent/0.85.1/libexec/lib/node_modules/@earendil-works/pi-coding-agent/dist/bundle/chunks/chunk-JVUZSMYM.js:1066:2992
+ 1)
