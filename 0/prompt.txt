@@ -1,0 +1,1 @@
+show me simply how I authenticate to hermes via herdr using moshi app
