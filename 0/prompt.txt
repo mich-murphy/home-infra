@@ -1,0 +1,1 @@
+ssh into docker-host (ssh mm@docker-host) and debug issues with nextcloud
