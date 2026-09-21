@@ -1,0 +1,4 @@
+1 - leave it
+2 - let's rename to hermes
+3 - cool
+4 - dropping entirely for hermes, I can do development there if needed
