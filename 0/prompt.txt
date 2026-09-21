@@ -1,0 +1,219 @@
+<task-notification>
+<task-id>a1ab0237dd34cfed6</task-id>
+<tool-use-id>toolu_017XVDDNSBZLU7LNSFLicw4C</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/tasks/a1ab0237dd34cfed6.output</output-file>
+<status>completed</status>
+<summary>Agent "Inventory Radarr language config" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result># Radarr Language/Audio Configuration — Full Report
+
+## Access confirmed
+`ssh mm@docker-host` works; `docker ps` (no sudo needed) shows `radarr` (ghcr.io/linuxserver/radarr:6.3.0.10514-ls315) and `prowlarr` (ghcr.io/linuxserver/prowlarr:2.5.2.5491-ls158) both healthy. API keys extracted from each container's `/config/config.xml` (redacted below as `&lt;RADARR_KEY&gt;` / `&lt;PROWLARR_KEY&gt;`). All queries below were GET-only, run via `docker exec &lt;container&gt; curl ...` against `127.0.0.1` inside the container (host ports for Radarr/Prowlarr are not published, confirmed working this way).
+
+---
+
+## PART 1 — CURRENT STATE
+
+### 1. System status
+Radarr version **6.3.0.10514** (linuxserver build ls315), branch master, SQLite DB, migration 242.
+
+### 2. Quality profiles (`/api/v3/qualityprofile`)
+
+| ID | Name | upgradeAllowed | cutoff (quality) | minFormatScore | cutoffFormatScore | minUpgradeFormatScore | language |
+|---|---|---|---|---|---|---|---|
+| 1 | Any | false | 20 (Bluray-2160p) | 0 | 0 | 1 | English (id 1) |
+| 2 | SD | false | 20 | 0 | 0 | 1 | English (id 1) |
+| 3 | HD-720p | false | 6 | 0 | 0 | 1 | English (id 1) |
+| 4 | HD-1080p | false | 7 | 0 | 0 | 1 | English (id 1) |
+| 5 | Ultra-HD | false | 31 | 0 | 0 | 1 | English (id 1) |
+| 6 | HD - 720p/1080p | false | 6 | 0 | 0 | 1 | English (id 1) |
+| 7 | Remux + WEB 1080p | **true** | 1002 (WEBDL-1080p group) | 0 | **10000** | 1 | **Original (id -2)** |
+
+Key facts:
+- **Every profile except #7 has `language = English (id 1)`.** Profile #7 is the only one set to `Original`, and it's the only one with `upgradeAllowed=true` and a non-zero `cutoffFormatScore` (10000) — i.e. the only profile currently capable of upgrading based on custom-format score at all. Profiles 1–6 have `cutoffFormatScore=0`, which means **no custom-format-driven upgrading happens in those profiles regardless of scores** (any score ≥0 already satisfies the 0 ceiling).
+- Allowed qualities are standard TRaSH-style quality-definition tiers (WORKPRINT→BR-DISK, grouped WEB tiers by resolution). Profile 7 only allows WEBDL/WEBRip-1080p (Remux/other qualities disabled despite the name).
+- `formatItems` are attached to all 33 known custom formats in every profile, but **every profile has every non-Remux/WEB/Repack/HDR format scored 0** except profile 7, which scores the standard TRaSH "Remux Tier", "WEB Tier", "Repack", "BCORE/CRiT/MA" streaming-service formats, plus hard -10000 rejections for BR-DISK/LQ/3D/x265(HD)/HDR-generated/Extras/AV1. **No language-related format has any nonzero score in any profile — because none exist yet (see below).**
+
+### 3. Custom formats (`/api/v3/customformat`) — 33 total
+
+All 33 are the standard TRaSH "quality-definition" formats: Remux Tier 01–03, WEB Tier 01–03, Repack/Proper/Repack2/Repack3, BR-DISK, LQ, LQ (Release Title), Sing-Along Versions, 3D, x265 (HD), Generated Dynamic HDR, Extras, AV1, and one per streaming service (AMZN, ATVP, BCORE, CRiT, DSNP, HBO, HMAX, Hulu, iT, MAX, MA, NF, PCOK, PMTP, STAN).
+
+**None of the 33 use `LanguageSpecification`, and none are named for language/multi/dual/audio/original/English.** I explicitly checked every specification's `implementation` field and every CF name for language-related keywords — zero matches. **There is currently no language or audio custom format configured at all.** This is the main gap the parent agent needs to close.
+
+### 4. Languages Radarr knows (`/api/v3/language`)
+Full list of 60 languages plus two special values needed for this task:
+- `-2` = **Original** (resolves per-movie to that movie's TMDB original/spoken language)
+- `-1` = Any
+- `1` = **English**
+- (others as needed, e.g. `2`=French, `4`=German, `5`=Italian, `3`=Spanish, `10`=Chinese, `21`=Korean, `8`=Japanese, etc.)
+
+### 5. Media management / naming
+- `renameMovies: true` — renaming is enabled.
+- `enableMediaInfo: true` — MediaInfo is parsed from files.
+- Standard movie format: `{Movie CleanTitle} {(Release Year)} {tmdb-{TmdbId}} {Edition Tags} {[Custom Formats]}{[Quality Full]}{[MediaInfo 3D]}{[MediaInfo VideoDynamicRangeType]}{[Mediainfo AudioCodec}{ Mediainfo AudioChannels]}{[Mediainfo VideoCodec]}{-Release Group}`
+- **This naming format does NOT include `{MediaInfo AudioLanguages}` or `{MediaInfo Languages}`** — so filenames won't show which audio languages are actually embedded in the file. `[Custom Formats]` is included, so once language CFs are added and `includeCustomFormatWhenRenaming=true` is set on them, matched formats (e.g. a "MULTi" tag) would show up in the filename.
+- `copyUsingHardlinks: true`, `downloadPropersAndRepacks: doNotPrefer`.
+
+### 6. Indexers / download clients
+
+**Radarr indexers** (`/api/v3/indexer`) — all synced from Prowlarr, all enabled (RSS/automatic/interactive search all true):
+
+| ID | Name | Protocol | Priority |
+|---|---|---|---|
+| 1 | HD-Torrents (Prowlarr) | torrent | 30 |
+| 4 | AnimeBytes (Prowlarr) | torrent | 25 |
+| 3 | NinjaCentral (Prowlarr) | usenet | 20 |
+| 2 | NZBgeek (Prowlarr) | usenet | 15 |
+| 5 | DrunkenSlug (Prowlarr) | usenet | 15 |
+
+**Download clients**: SABnzbd (usenet, enabled, priority 1), qBittorrent (torrent, enabled, priority 5).
+
+**Prowlarr indexers** (`/api/v1/indexer`) — 8 total, private trackers/aggregators; only 5 are pushed to Radarr (the movie-relevant ones — MyAnonamouse/Orpheus/Redacted are music-only, presumably feeding Lidarr instead). All report `language: en-US` as their **site UI language**, not per-release audio metadata — none of these indexers expose structured per-release audio-track data; Radarr/Prowlarr can only infer language from parsing the release title text.
+
+**Important finding**: every one of the 5 Radarr indexers has a **"Multi Languages" field (`multiLanguages`)** — "What languages are normally in a multi release on this indexer?" — and **it is empty (`[]`) on all five**. This field is what Radarr uses to fill in the language list when a release title just says "MULTI" without spelling out which languages (see Research section below — this is directly relevant to reliable dual-audio detection).
+
+### 7. Import lists
+`/api/v3/importlist` returned `[]` — **no import lists configured.** Movies are being added manually/via Seerr-style request flow (a `seerr` container exists), not auto-added by Radarr itself, so there's no "default quality profile for new adds" concern from Radarr's own import-list config.
+
+### 8. External config-management tooling
+Checked `docker ps -a` (full container list, 34 containers) and searched the filesystem (`find / -maxdepth 5 -iname '*recyclarr*' -o -iname '*configarr*' -o -iname '*notifiarr*'`) and `~/`: **no recyclarr, configarr, or notifiarr container or config files found anywhere.** Radarr's custom formats/quality profiles are apparently maintained by hand (or via a one-time manual import of the TRaSH quality-definitions), not by an ongoing sync tool. Any changes the parent designs will need to be applied directly via the Radarr API/UI (or a recyclarr setup could be introduced, but none exists today).
+
+---
+
+## PART 2 — RESEARCH / RECOMMENDATIONS (TRaSH Guides)
+
+Goal (per correction from parent): **prefer dual/multi-audio releases (original language + English) over original-only; accept original-only if no dual/multi release exists; reject English-dub-only releases** (i.e. releases missing the original-language track entirely).
+
+Sources: [How to set up Language Custom Formats](https://trash-guides.info/Radarr/Tips/How-to-setup-language-custom-formats/) (and its raw JSON includes on GitHub), [Radarr Collection of Custom Formats](https://trash-guides.info/Radarr/Radarr-collection-of-custom-formats/), [How to set up Quality Profiles](https://trash-guides.info/Radarr/radarr-setup-quality-profiles/), [Buildarr Radarr quality-profile reference](https://buildarr.github.io/plugins/radarr/configuration/settings/profiles/quality-profiles/), [Recyclarr quality-profiles reference](https://recyclarr.dev/reference/configuration/quality-profiles/), and Radarr GitHub issues on MULTi parsing (#8328, #8382, #7262, #6592, #10842, #10819).
+
+### A. Quality profile `language` setting: Any vs Original vs English
+TRaSH's explicit warning (verbatim from the guide):
+&gt; "Using language Custom Formats is not compatible with setting a preferred language in a quality profile in Radarr. You must use one or the other. If you want to make use of the Custom Formats set the preferred language to `Any`."
+
+- **`English`** (what 6 of your 7 profiles currently use) makes Radarr's own language filter reject any release it doesn't parse as containing English at all — this is the crude, inflexible mechanism and it's incompatible with fine-grained CF scoring.
+- **`Original`** (what profile #7 currently uses) makes Radarr require the movie's original-language track and nothing else as a hard filter — again incompatible with CF-based scoring, and it would actually reject English-only dubs by itself, but it can't *express* "prefer dual audio, tolerate original-only."
+- **`Any` + custom-format scoring** is the flexible approach TRaSH recommends whenever you want nuanced language preferences (prefer-but-don't-require patterns like this task). **To implement the requested behavior, every profile touching foreign-language movies needs `language = Any`, replacing the current `English`/`Original` settings.**
+
+### B. Custom formats needed (exact JSON, verbatim from TRaSH's repo)
+
+**1. Reject releases missing the original-language track** (blocks English-dub-only) — TRaSH calls this "Wrong Language" (superseding the older "Language: Not Original" pattern), score **-10000**:
+```json
+{
+  "name": "Wrong Language",
+  "includeCustomFormatWhenRenaming": false,
+  "specifications": [
+    {
+      "name": "Wrong Language",
+      "implementation": "LanguageSpecification",
+      "negate": true,
+      "required": true,
+      "fields": { "value": -2, "exceptLanguage": false }
+    }
+  ]
+}
+```
+(`value: -2` = Original; `negate: true` means "match releases that do NOT have the original language"; that match gets the -10000 score, so any release lacking the original track is effectively unusable at any quality tier.)
+
+**2. Prefer dual/multi-audio (original + English) as an upgrade.** TRaSH's real-world template for exactly this pattern is `"Language: Original + French"` (id `0542a48746585dc4444bbbb8a6bdf6ea`) — substitute French(`2`)→English(`1`):
+```json
+{
+  "name": "Language: Original + English",
+  "includeCustomFormatWhenRenaming": false,
+  "specifications": [
+    {
+      "name": "Original Language",
+      "implementation": "LanguageSpecification",
+      "negate": false,
+      "required": true,
+      "fields": { "value": -2 }
+    },
+    {
+      "name": "English Language",
+      "implementation": "LanguageSpecification",
+      "negate": false,
+      "required": true,
+      "fields": { "value": 1 }
+    },
+    {
+      "name": "MULTi",
+      "implementation": "ReleaseTitleSpecification",
+      "negate": false,
+      "required": true,
+      "fields": { "value": "\\b(MULTi)(\\b|\\d)" }
+    }
+  ]
+}
+```
+Assign a solidly positive score (TRaSH's own French analogue uses 500 in some of its regional profiles). Because all three specs are `required: true`, **all three must match (AND) for the format to apply** — the release must be tagged Original AND English AND carry a MULTi marker in the title. This positively rewards true dual-audio releases without needing the negative CF above (that one independently guards against English-only dubs).
+
+**3. (Optional but recommended) Generic "MULTi" release-title detector**, used elsewhere in the guide as a title-only signal (not itself scored, or scored lightly), useful if you also want to catch dual-audio releases whose *title* says MULTI but whose parsed language list Radarr hasn't fully populated yet (see MULTI-parsing caveat below):
+```json
+{
+  "name": "MULTi",
+  "includeCustomFormatWhenRenaming": true,
+  "specifications": [
+    {
+      "name": "Multi",
+      "implementation": "ReleaseTitleSpecification",
+      "negate": false,
+      "required": true,
+      "fields": { "value": "\\b(Multi)(?![ ._-]?sub(s)?)(\\b|\\d)" }
+    }
+  ]
+}
+```
+Regex deliberately excludes "Multi-subs" false positives.
+
+**4. Anime-specific pattern**, relevant since one of your indexers is AnimeBytes — `"Anime Dual Audio"` (trash_id `4a3b087eea2ce012fcc1ce319259a3be`) uses a broader regex plus optional `LanguageSpecification` for Japanese/Chinese/Korean and explicitly excludes `[JA]`/`[ZH]`/`[KO]`-only tags:
+```json
+{
+  "name": "Anime Dual Audio",
+  "includeCustomFormatWhenRenaming": false,
+  "specifications": [
+    { "name": "Dual Audio", "implementation": "ReleaseTitleSpecification", "negate": false, "required": true,
+      "fields": { "value": "dual[ ._-]?(audio)|[([]dual[])]|\\b(JA|ZH|KO)(?= ?\\+ ?.*?\\b(EN))|\\b(EN)(?= ?\\+ ?.*?\\b(JA|ZH|KO))|\\b(Japanese|Chinese|Korean) ?[ ._\\+&amp;-] ?\\b(English)|\\b(English) ?[ ._\\+&amp;-] ?\\b(Japanese|Chinese|Korean)|\\b(\\d{3,4}(p|i)|4K|U(ltra)?HD)\\b.*\\b(DUAL)\\b(?!.*\\(|\\))" },
+    { "name": "Not Single Language Only", "implementation": "ReleaseTitleSpecification", "negate": true, "required": true,
+      "fields": { "value": "\\[(JA|ZH|KO)\\]" } },
+    { "name": "Japanese Language", "implementation": "LanguageSpecification", "negate": false, "required": false, "fields": { "value": 8 } },
+    { "name": "Chinese Language", "implementation": "LanguageSpecification", "negate": false, "required": false, "fields": { "value": 10 } },
+    { "name": "Korean Language", "implementation": "LanguageSpecification", "negate": false, "required": false, "fields": { "value": 21 } }
+  ]
+}
+```
+
+**Also worth knowing:** TRaSH ships a `"Bad Dual Groups"` CF (-10000) that blocks a specific denylist of release groups known to mislabel/mis-mux dual-audio releases (wrong track order breaking ffprobe language detection → import failures) — not essential for this task but relevant if dual-audio imports start behaving oddly after this change.
+
+### C. How Radarr combines specification logic in a Custom Format
+Confirmed from the TRaSH examples themselves (e.g. "Language: Not Dutch" uses two `negate:true, required:true` specs to implement "penalize unless Dutch OR Flemish present," via De Morgan's law):
+- **All `required: true` specifications must match (AND)** for the CF to apply.
+- **Among the `required: false` (optional) specifications, at least one must match (OR)** — if optional specs exist, one match among them is enough.
+- Negation flips what "match" means for that individual spec, but the AND/OR combination rule above still governs multi-spec formats.
+- This is exactly how the "Original + English" CF above enforces "original present AND English present AND MULTi-tagged" as a single AND'd condition.
+
+### D. Score-threshold fields — how to actually make Radarr search for upgrades
+Per Buildarr/Recyclarr/TRaSH docs, three fields control this (all present in your `/api/v3/qualityprofile` payload):
+- **`minFormatScore`** ("Minimum Custom Format Score"): a hard floor — any release scoring below this is rejected outright regardless of quality.
+- **`cutoffFormatScore`** ("Upgrade Until Custom Format Score"): the ceiling Radarr will keep upgrading toward (via custom-format score) once the quality cutoff itself is already satisfied. **Your profiles 1–6 currently have this at `0`, which means no CF-based upgrade searching happens in them at all** — this must be raised to at least the score you give the "Original + English" CF (e.g. ≥500, or whatever value chosen) or Radarr will never bother searching for a dual-audio replacement once an original-only file is already downloaded.
+- **`minUpgradeFormatScore`**: the minimum score *increase* a candidate release must offer over the currently-grabbed file to be treated as a worthwhile upgrade (anti-thrashing guard against near-tied scores). Currently `1` on every profile — fine to leave as-is, or raise slightly.
+
+Putting it together for the desired behavior: an original-only release scores `0` (neither the negative "Wrong Language" CF nor the positive "Original + English" CF match it) → accepted since `0 ≥ minFormatScore(0)`. A dual/multi release scores e.g. `+500` → also accepted, and because `500 &gt; 0`, once `cutoffFormatScore` is raised above 0 Radarr will keep monitoring/searching and grab the dual-audio release as an upgrade over the original-only file already on disk. An English-dub-only release scores `-10000` (fails "Wrong Language") → always rejected outright, never grabbed even as a first pass.
+
+### E. How Radarr detects "MULTi"/dual-audio from a release title, and its limitations
+- Radarr's parser (`src/NzbDrone.Core/Parser/LanguageParser.cs`) scans the release title for known language names/tags (e.g. explicit language words, `VOSTFR`, `TRUEFRENCH`, `MULTi`, `DUAL`) and populates a `Languages` list purely from what it can textually recognize — **it has no access to actual embedded audio tracks** (MediaInfo parsing of audio language happens separately during import/rename, not during search-time filtering).
+- **Per-indexer "Multi Languages" setting** (the `multiLanguages` field seen empty on all 5 of your indexers): this tells Radarr "when this indexer's release title just says MULTI with no language list, assume the release contains these specific languages (e.g. Original + Polish)." **Because this is unset everywhere, a bare "MULTI" tag with no explicit language names in the title currently resolves to almost no usable language information** for the CFs above to act on reliably. TRaSH/community guidance and the Radarr GitHub issue tracker (#8382 "Radarr shows English release for a multi-language release", #7262 "Radarr pulling multi-language at the expense of format/profile score", #8328 "Release Parser multi tag is not working", #10842 fixing "MULTI + a named language in title only registers the named language, drops MULTI's implied languages") confirm this is a known, still-imperfect area — **setting `multiLanguages` on each indexer (e.g. to `Original` + `English`) is recommended alongside the CF changes**, otherwise many genuinely dual-audio releases will be invisible to the "Original + English" CF because Radarr never populated their `Languages` list correctly.
+- Bottom line limitation to flag to the user: Radarr's language detection is entirely release-title-text-based at search/decision time; it cannot inspect actual muxed audio streams before download, so no CF configuration can be 100% accurate — mislabeled or under-labeled releases (bare "MULTi" with no language list, or non-standard tagging) will sometimes slip through incorrectly in either direction.
+
+---
+
+## Summary of what the parent needs to change
+1. Change `language` from `English`/`Original` → **`Any`** on the profiles used for non-English movies (likely all 7, or at least whichever profiles are assigned to foreign-language movies).
+2. Add the **"Wrong Language" CF** (LanguageSpecification, Original, negate=true, required=true) scored **-10000** on those profiles.
+3. Add a new **"Language: Original + English" CF** (three required specs: Original, English, MULTi regex) scored strongly positive (e.g. 500) on those profiles.
+4. Raise `cutoffFormatScore` above 0 on profiles 1–6 (currently blocking all CF-based upgrade searching) to at least the new CF's score.
+5. Set the **`multiLanguages` field** on all 5 Radarr indexers (currently empty) to include Original + English, to improve MULTi detection reliability.
+6. No recyclarr/configarr tooling exists — changes must be applied via direct API/UI calls (or such a tool could be introduced).
+7. Once CFs/profiles are updated, triggering searches for existing non-English library movies can be done via `POST /api/v3/command` with `MoviesSearch` (or per-movie `MovieSearch`) — out of scope for this read-only recon, but confirmed the mechanism exists for the parent's next step.
+
+Files with raw JSON dumps saved for reference (all in the session scratchpad, not needed by parent unless they want raw data): `qualityprofile.json`, `customformat.json`, `language.json`, `indexer.json`, `downloadclient.json`, `prowlarr_indexer.json`, `importlist.json` in `/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/scratchpad/`.</result>
+<usage><subagent_tokens>107340</subagent_tokens><tool_uses>36</tool_uses><duration_ms>380167</duration_ms></usage>
+</task-notification>
