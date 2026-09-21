@@ -1,0 +1,11 @@
+# Annotations on pi · last message
+
+## Annotation 1 (lines 19–21)
+Comment on: "1. Should DFLT retain management access, or restrict it to MGMT and approved tailnet sources? 2. Does KDS need applications beyond Plex/Jellyfin? 3. Does direct Jellyfin access on port `8096` remain necessary?"
+> 1 - yes for now
+> 2 - no
+> 3 - mostly over tailscale, but should it be left as a backup?
+
+## Annotation 2 (lines 24–28)
+Comment on: "- Docker-agent secret exposure, explicitly deferred. - nftables table ownership, explained but unchanged. - Terraform state backup/recovery procedure. - Automated Compose hardening-policy assertions. - Creating the new Tailscale credentials and deploying the approved configuration."
+> let's address nftables, automated compose hardening and tailscale credentials
