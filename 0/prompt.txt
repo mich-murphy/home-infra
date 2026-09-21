@@ -1,0 +1,3 @@
+I want to confirm two more things:
+1. Do both KDS and DFLT networks have access to traffic as a reverse proxy so that they can look up, for instance, jellyfin.local.elmurphy.com and have this linked to the appropriate service?
+2. The DFLT network, does that have access to other services like Portainer, etc., or does that need to get routed entirely over Scale/Tailscale?
