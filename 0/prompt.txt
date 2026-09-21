@@ -1,0 +1,9 @@
+# Annotations on claude · last message
+
+## Annotation 1 (line 21)
+Comment on: "**The S04 episodes coming back are the same ZeroBuild release Checkrr flagged as corrupt.** Only E2 and E3 had approved alternatives; the other 28 had no other option that passes your profile. Checkrr is gone so nothing will delete them again, but I never established whether that flagging was a true positive or an artifact of the scan — I killed the ffmpeg test once Checkrr's removal made it moot. If playback stutters or dies partway through an episode, that's your answer, and the fix is a different release."
+> Checkrr should be completely removed, with all of its volumes deleted. Nothing else from it should be running on the system. Ensure that this is the case.
+
+## Annotation 2 (line 23)
+Comment on: "**Unrelated, but sitting in your Radarr queue:** `Wallace.and.Gromit.Vengeance.Most.Fowl.2024` is `importBlocked` — "Movie title mismatch, automatic import is not possible. Manual Import required." Not Checkrr's doing and outside what you asked for, so I left it alone."
+> clean it up
