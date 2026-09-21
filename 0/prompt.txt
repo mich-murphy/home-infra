@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b21en0j1p</task-id>
+<tool-use-id>toolu_01SWAYHdVaSgiJxkygapdvHg</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/tasks/b21en0j1p.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for the final Radarr and Sonarr imports and verify audio tracks" completed (exit code 0)</summary>
+</task-notification>
