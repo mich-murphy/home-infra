@@ -1,0 +1,22 @@
+{
+  "cli_version": "0.10.6",
+  "checkpoint_id": "4bbd1104da12",
+  "session_id": "01a0b234-d4b3-70e2-a249-5f8bc959b661",
+  "strategy": "import",
+  "created_at": "2026-09-18T01:50:38.584Z",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "agent": "Pi",
+  "model": "kimi-k3",
+  "checkpoint_transcript_start": 17,
+  "transcript_lines_at_start": 17,
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 38645,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 427050,
+    "output_tokens": 10281,
+    "api_call_count": 18
+  },
+  "kind": "imported"
+}

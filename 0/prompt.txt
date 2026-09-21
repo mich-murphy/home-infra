@@ -1,0 +1,1 @@
+When I was working with the Hermes AI agent before, it was saying that the Mediodash broker wasn't allowing visibility of logs for Docker containers. It was suggesting that we need to do a redeploy of the init compose file. Check on this, determine if it's the case, make sure everything's running the latest version, and if not, resolve.
