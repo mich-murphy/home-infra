@@ -1,0 +1,1 @@
+I'd like you to make the same changes to Sonarr when attempting to search for anime titles. There are existing anime titles in the library already, just for your reference.
