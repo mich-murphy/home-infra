@@ -1,0 +1,70 @@
+I'm requesting some further updates to the file. Have a look at the following change I made on another machine and determine what I would need on this one. I'm specifically interested in the subagents' settings and configurations, not so much the enabled models, etc. I don't want to mess with that. 
+
+Settings applied and cleaned up. Final state of ~/.pi/agent/settings.json:
+
+ ```json
+   {
+     "lastChangelogVersion": "0.85.1",
+     "theme": "dark",
+     "markdown": {
+       "mermaid": "final"
+     },
+     "showCacheMissNotices": true,
+     "collapseChangelog": true,
+     "quietStartup": true,
+     "enableInstallTelemetry": false,
+     "packages": [
+       "npm:pi-web-access",
+       "npm:pi-mcp-adapter",
+       "npm:pi-subagents",
+       "git:github.com/mich-murphy/pi-extensions"
+     ],
+     "treeFilterMode": "no-tools",
+     "subagents": {
+       "defaultModel": "openai-codex/gpt-5.6-luna",
+       "maxSubagentDepth": 1,
+       "maxSubagentSpawnsPerSession": 25,
+       "maxSubagentSpawnsPerRun": 20,
+       "timeoutMs": 1800000,
+       "checkpointBeforeDeadlineMs": 300000,
+       "globalConcurrencyLimit": 5,
+       "watchdog": {
+         "enabled": true,
+         "cadence": { "everyNTools": 15 },
+         "children": {
+           "enabled": true,
+           "cadence": { "everyNTools": 20 }
+         }
+       },
+       "agentOverrides": {
+         "reviewer": {
+           "model": "openai-codex/gpt-5.6-sol",
+           "thinking": "high"
+         },
+         "oracle": {
+           "model": "openai-codex/gpt-5.6-sol",
+           "thinking": "high"
+         },
+         "cursor-agent": {
+           "disabled": true
+         },
+         "cursor-agent-writer": {
+           "disabled": true
+         }
+       }
+     },
+     "forkContext": {
+       "mode": "pruned"
+     },
+     "enabledModels": [
+       "openai-codex/gpt-5.6-luna",
+       "openai-codex/gpt-5.6-sol",
+       "openai-codex/gpt-5.6-terra",
+       "openai-codex/gpt-6-astra",
+       "claude-sdk/claude-5-sonnet",
+       "claude-sdk/claude-5-opus",
+       "claude-sdk/claude-5.1-fable",
+       "claude-sdk/claude-4.5-haiku"
+     ]
+   }
+ ```
