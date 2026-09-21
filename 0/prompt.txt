@@ -1,0 +1,1 @@
+I want you to look at the way that renovate has been set up for the repo. I'm finding that it's a little bit too pedantic about what needs to be reviewed in a pull request and what can be managed automatically. For instance, any changes to digests can just be merged without my approval. Anything that's a patch update should be able to be approved automatically as well.
