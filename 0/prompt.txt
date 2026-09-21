@@ -1,0 +1,3 @@
+i want you to review plex music history and my music collection. focus on hip hop and jazz genres to identify my music listening habits and what i like to listen to. from this list i want you to identify the original samples for my most loved music. tools like https://www.whosampled.com/ can assist with this. 
+
+what i want out of this analysis is a list of albums from the original samples that i'm likely to really like given my listening history. the list should be ordered by the albums i'm most likely to enjoy first. limit to 15 albums
