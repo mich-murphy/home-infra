@@ -1,0 +1,1 @@
+Confirm that the Moshi hook service is settled so that it's running automatically on the Hermes user.
