@@ -1,0 +1,102 @@
+<task-notification>
+<task-id>a96b32d24bd0e49b2</task-id>
+<tool-use-id>toolu_0145nNhcrQdat4XcfWsnAyda</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/de363a48-3163-4cd5-b45f-ce7ca17dcc01/tasks/a96b32d24bd0e49b2.output</output-file>
+<status>completed</status>
+<summary>Agent "Audit Jellyfin metadata matches" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I have all the data needed. Compiling the final report now.
+
+---
+
+## Jellyfin Metadata Audit — Read-Only
+
+**Jellyfin version:** 10.11.11. No writes, deletes, moves, or restarts were performed.
+
+### 1. Libraries
+
+| Library | CollectionType | Path | Fetchers (order) | Key options |
+|---|---|---|---|---|
+| Movies | movies | `/data/media/movies` | TheMovieDb → OMDb; images: TheMovieDb, OMDb, Embedded, Screen Grab | **EnableInternetProviders: false**, SaveLocalMetadata: false, RealtimeMonitor: true, lang: en, LocalMetadataReaderOrder: [Nfo] |
+| TV | tvshows | `/data/media/tv` | Series/Episode: TheMovieDb → OMDb; Season: TheMovieDb | **EnableInternetProviders: false**, SaveLocalMetadata: false, RealtimeMonitor: true, lang: en |
+| YouTube | tvshows | `/data/media/youtube/shows` | Series/Episode: TheMovieDb → OMDb | **EnableInternetProviders: false**, SaveLocalMetadata: false, RealtimeMonitor: true, lang: (blank) |
+| Music | music | `/data/music` | MusicBrainz/TheAudioDB + "Neptune"/IMVDb plugins | EnableInternetProviders: false, RealtimeMonitor: false |
+
+**Root cause found (applies almost everywhere below):** `EnableInternetProviders` is **false on every library**, and NFO writing is **disabled in both Radarr and Sonarr** (all Kodi/Emby-metadata connectors show `"enable": false`; Radarr `importExtraFiles: false`). No `.nfo` file exists anywhere under `/data/media/tv` or `/data/media/movies` (confirmed via `find`). Only the YouTube library gets NFOs — from Pinchflat, not Sonarr. Net effect: Jellyfin cannot fetch or re-fetch metadata for Movies/TV at all; it is running purely on whatever got matched/cached in the past. Anything added since internet providers were switched off comes in completely unidentified, and anything that was mis-matched while providers were on is now frozen wrong forever (auto-scans can't correct it).
+
+### 2. Movies (167 items, 167 Radarr files, all paths exist — no orphans, no duplicate folders/Tmdb ids)
+
+| ItemId | Name/Year/Tmdb (Jellyfin) | Folder | Folder Tmdb | Problem |
+|---|---|---|---|---|
+| `26001c2c7186afa1fd410dac9bdb4283` | "The Imaginary Doctor" (2022), Tmdb **764393** | The Imaginary (2023) | **913001** | Wrong film entirely — matched to an unrelated title, not the Studio Ponoc film "The Imaginary" in the folder |
+| `e354f3757803b0db1f6080e3abd49e5f` | "The Jungle Book" (1967), Tmdb **9325** | The Jungle Book (2016) | **278927** | Classic case named in the brief — matched to the 1967 cartoon instead of the 2016 live-action film |
+| `ca53667ea3fb8c9add805b5834840352` | Name literally `"Ratatouille (2007) {tmdb-2062}"`, Year **2062**, no ProviderIds, no Overview | Ratatouille (2007) | 2062 | Fully unidentified — Jellyfin fell back to the raw folder string as title/year; needs Tmdb id set (correct id is 2062, but it never got applied to ProviderIds) |
+| `9c675a476fd45d0b7f0caadbfa5f29cf` | "Scarlet" (2025), Tmdb **1484877** | Scarlet (2025) | **1406657** | Tmdb mismatch — folder and Jellyfin disagree on which "Scarlet (2025)" this is |
+
+No missing posters/images found. Full issue list (4 records): `/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/scratchpad/jf_movies_issues.json`
+
+**Fix fields needed:** for each, `ItemId` + correct `ProviderIds.Tmdb` (from the folder's `{tmdb-XXXX}`), then re-identify/refresh metadata (Overview/Year/Images follow from the correct Tmdb id).
+
+### 3. TV — Series (87 series total: 68 in `/data/media/tv`, 19 YouTube channels)
+
+**TV library (68 series):** zero identification mismatches — every folder `{tvdb-XXXX}` agrees with Jellyfin's `Tvdb` provider id, no duplicates, no unidentified series, no missing series (Sonarr has 68 series with files, all 68 present in Jellyfin at matching paths).
+
+**Sterling Point specifically (asked in the brief):** healthy. `ItemId cadbbe016e81aa6bab9c84835d900fbf`, folder `Sterling Point (2026) {tvdb-459552}` matches Jellyfin `Tvdb=459552`/`Tmdb=283297`/`Imdb=tt35618070` exactly. Sonarr (seriesId 326) shows 8/8 episode files monitored+downloaded for season 1; **episode 2 ("She's Giving Single &amp; Bi") is present on disk, in Sonarr, and correctly indexed in Jellyfin as S01E02**. No problem here.
+
+**YouTube channels (19, CollectionType tvshows):** because `EnableInternetProviders=false`, these should just carry the Pinchflat `youtube` NFO uniqueid — but **6 of the 19 channels somehow carry Tmdb/Tvdb/Imdb ids** (a leftover from when internet matching was presumably on), and three are confirmed wrong via TMDB/IMDb lookup:
+- **"Boundary"** (dev-tools YouTube channel `@boundaryml`) → Tvdb 272697 / Tmdb 61695 = **"Beyond the Boundary"**, an unrelated 2013 anime. Wrong match.
+- **"NPR Music"** → Tmdb 70558 = **"NPR Tiny Desk Concerts"**, a narrower/different show than the full NPR Music channel. Likely wrong/too-narrow match.
+- **"New Money"** (finance channel) → Imdb tt4759938 = a 2015 reality-TV series "New Money" about nouveau-riche families. Wrong match.
+- **"DanTDM"** → Tmdb 77329 = "DanTDM Creates a Big Scene" (a real but narrow official miniseries, not the general channel) — borderline, worth reviewing.
+- **"Patrick Boyle"** → Imdb tt15661346 only (no Tmdb/Tvdb) — could not verify target via available web tools (IMDb blocked fetch attempts); flag for manual check.
+- The other 13 channels have no ProviderIds at all (correctly unidentified given the config, not misidentified).
+
+Series-level issue list (16 records): `/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/scratchpad/jf_series_issues.json`
+
+**Fix:** clear the wrong `ProviderIds` (Boundary, New Money, NPR Music, and review DanTDM/Patrick Boyle) so they fall back to the Pinchflat NFO's `youtube` id only, and turn `EnableInternetProviders` off consistently (it already is) so nothing re-matches to TVDB/TMDB by title text again.
+
+### 4. TV — Episodes (1520 real TV episodes; 0 with S/E-number-vs-filename mismatches; 0 virtual/missing placeholders — Jellyfin only ever shows episodes that have files)
+
+Two real data-integrity problems surfaced by comparing Sonarr episode-file counts to Jellyfin episode counts:
+
+- **"The Summer Hikaru Died"** (`tvdb-450428`): Sonarr counts 12 episode files; Jellyfin shows only 1 item. Cause: all 12 episodes were released/packaged as **one single video file** named `S01E01-E12`, so Jellyfin (correctly) creates one merged episode item rather than 12 — not a bug, but worth knowing individual-episode jump/resume won't work.
+- **"The Powerpuff Girls"** (`tvdb-76200`), Season 6: Sonarr counts 27 episode files; Jellyfin shows 15 items (multi-episode files merged 2:1, as expected) — **but the episode titles are wrong for most of them**. Confirmed by direct comparison of filename-embedded titles vs Jellyfin's stored `Name`:
+  - Jellyfin E1 ("S06E01-E02") shows title **"Little Miss Interprets / Night Mayor"** — that title actually belongs to the S06E10-E11 file. Every title from E1 through E17 is shifted from its real content.
+  - Jellyfin E19, E20, E22, E24, E26 (5 items) have **no title at all** — `Name` just falls back to the series name "The Powerpuff Girls".
+  - This is a genuine, confirmed metadata mismatch: `ItemId`s for the 15 episode entries under SeriesId `dd49d88fa730f39f52320f69b08a9ab5`, needs episode metadata refresh/re-identify per item once a real metadata source is restored (see root cause above — currently there is none).
+
+**Missing episode-title metadata (not wrong, just empty), a symptom of the same root cause:** 164 TV episodes have `Name == SeriesName` (i.e., no title at all) — 156 of these are **all of "One Piece" seasons 12–13** (100% of those two seasons), plus 5 in Powerpuff Girls S6 (above), 1 each in The Bear/The Hawk/Unicorn Academy. A further 44 episodes show Jellyfin's generic `"Episode N"` placeholder: Violet Evergarden (13), Agent Kim Reactivated (10), MasterChef Australia (9), Mind Over Murder (6), House of the Dragon (4), 2 others. Full detail: `/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/scratchpad/jf_title_mismatches.json` (also contains ~150 further "low text-similarity" hits between filename and Jellyfin title that are almost all false positives — dub-title vs literal-release-title differences for anime like Yu-Gi-Oh!/One Piece, not real mismatches; only the Powerpuff Girls case above was independently confirmed as a genuine wrong-title bug).
+
+**Fix fields needed:** restore a metadata source (enable Sonarr's Kodi/Emby NFO export, or turn `EnableInternetProviders` back on for TV), then trigger a metadata refresh on: One Piece (SeriesId `dcda80f8ce91daea0c0ccb81f74b7ef0`), Powerpuff Girls (`dd49d88fa730f39f52320f69b08a9ab5`), Violet Evergarden, Agent Kim Reactivated, MasterChef Australia, Mind Over Murder, House of the Dragon.
+
+### 5. YouTube library structure
+
+`/data/media/youtube/shows/&lt;Channel&gt;/Season &lt;year&gt;/s&lt;year&gt;e&lt;uploadseq&gt; - &lt;title&gt;.{mp4,nfo,jpg-thumb}` — one "season" per calendar year, episode number derived from upload date sequence. Pinchflat writes `tvshow.nfo` (channel-level, `uniqueid type="youtube"`) and per-video `.nfo` with explicit `&lt;season&gt;`/`&lt;episode&gt;` matching the filename — this is why TV-episode-level S/E parsing for YouTube is clean. 286 `.mp4` files on disk = 286 Jellyfin episodes indexed (exact match, no gap). 309 `.nfo` files vs 286 `.mp4` (23 orphan NFOs with no matching video — likely stalled/removed downloads, cosmetic only).
+
+Pinchflat's "YouTube" media profile (`pinchflat.db`, read-only query): `output_path_template = "/shows/{{source_custom_name}}/{{season_by_year__episode_by_date_and_index}} - {{title}}.{{ext}}"`, `download_nfo=1`, `embed_metadata=1`, `download_thumbnail=1`, `download_source_images=1` — configured correctly and consistent with what's on disk.
+
+Channels are surfaced as Series/Season/Episode (not Movies), which is intentional. The classic "TVDB matched a channel to a real TV show" failure mode is described in section 3 above (Boundary, New Money, NPR Music).
+
+### 6. Logs (`log_20260910.log`, `log_20260909.log`)
+
+No `ffprobe`/probe-failure or metadata-provider warnings in either day's log (consistent with internet providers being off — Jellyfin isn't even attempting fetches, so it can't log fetch failures). The only errors present: **41 repeated `ResourceNotFoundException` on `GET/HEAD /Videos/143601054e5dc11e8057f8e9911e65fd/stream`** today. That Item ID returns 404 from the Items API — it no longer exists in Jellyfin's database at all, so some client is repeatedly retrying to stream a deleted/removed item (likely a stale "continue watching"/next-up cache entry on a client). Not a metadata-match problem per se, but worth knowing a phantom item id is being hammered.
+
+### Summary of fixable items (exact fields for each)
+
+| Item | ItemId | Field to set |
+|---|---|---|
+| The Imaginary Doctor | 26001c2c7186afa1fd410dac9bdb4283 | ProviderIds.Tmdb → 913001 |
+| The Jungle Book (1967→2016) | e354f3757803b0db1f6080e3abd49e5f | ProviderIds.Tmdb → 278927 |
+| Ratatouille | ca53667ea3fb8c9add805b5834840352 | ProviderIds.Tmdb → 2062 (identify) |
+| Scarlet | 9c675a476fd45d0b7f0caadbfa5f29cf | ProviderIds.Tmdb → 1406657 |
+| Boundary (YT) | e80b721f… n/a, series id: `31583adc0ff8fd9d01b2c894052e78e3`* | clear Tvdb/Tmdb/Imdb, keep youtube id |
+| New Money (YT) | 87d802ff679c996c5f15691f33a13e3d | clear Imdb |
+| NPR Music (YT) | (see jf_series_issues.json) | clear/verify Tmdb/Tvdb |
+| Powerpuff Girls S6 titles | series `dd49d88fa730f39f52320f69b08a9ab5` | refresh episode metadata (needs a working provider first) |
+| One Piece S12/13 titles | series `dcda80f8ce91daea0c0ccb81f74b7ef0` | refresh episode metadata |
+
+*(Boundary's exact ItemId is `e80b721f1e1984604cd1704833f25d99` per `jf_series_issues.json` — I mis-keyed it in the table above, use the JSON file as source of truth.)*
+
+All raw pulls and analysis scripts are saved under `/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/scratchpad/jf_*` for follow-up. No changes were made to Jellyfin, Radarr, Sonarr, or Pinchflat; the only remote-host side effect was a temporary `docker cp` of Pinchflat's sqlite DB to `/tmp` on docker-host for a read-only query, which has been deleted.</result>
+<usage><subagent_tokens>137025</subagent_tokens><tool_uses>68</tool_uses><duration_ms>682282</duration_ms></usage>
+</task-notification>
