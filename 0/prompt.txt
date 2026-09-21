@@ -1,0 +1,1 @@
+I'm unable to log in via the web portal. Can you share with me what the username and password that was set are? The password set in my .env file isn't working. I'm expecting that the user is admin. Let me know if this is any different.
