@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bw3bjz5gr</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/eee3386a-ecc1-4dd1-91c7-a2d428412106/tasks/bw3bjz5gr.output</output-file>
+<status>completed</status>
+<summary>Background command "Run full ai-dev play to install ripgrep" completed (exit code 0)</summary>
+</task-notification>
