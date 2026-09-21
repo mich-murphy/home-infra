@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bwau7ti80</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/tasks/bwau7ti80.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for Radarr search to finish, then list grabs" completed (exit code 0)</summary>
+</task-notification>
