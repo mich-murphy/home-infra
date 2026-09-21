@@ -1,0 +1,14 @@
+i currently have this grant, should I replace with what you provided: 
+    "grants": [
+        // Hermes agent read access to docker-host and proxmox
+        {
+            "src": ["tag:ai-dev"],
+            "dst": ["docker-host"],
+            "ip":  ["tcp:2375"],
+        },
+        {
+            "src": ["tag:ai-dev"],
+            "dst": ["proxmox"],
+            "ip":  ["tcp:8006"],
+        },
+    ],
