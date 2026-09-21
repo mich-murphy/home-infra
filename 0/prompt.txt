@@ -1,0 +1,1 @@
+I'm not sure this is the right approach. why are we skipping tailscale ssh? I will need to connect via moshi on iOS and do not want to be pasing around SSH keys to authenticate
