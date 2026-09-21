@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b0ahfro77</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/4fb578e3-f78d-4d3d-917a-6fac8271a462/tasks/b0ahfro77.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for PR 1716 CI to finish and report merge state" completed (exit code 0)</summary>
+</task-notification>
