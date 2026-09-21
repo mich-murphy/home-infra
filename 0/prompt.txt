@@ -1,0 +1,1 @@
+Review the current changes that are committed for the renovate file and make sure that we do want to push them to the remote and that there are not updates that we would be pushing unnecessarily.
