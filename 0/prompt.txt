@@ -1,0 +1,54 @@
+<bash-stdout>Switched to branch 'main'
+Your branch is behind 'origin/main' by 21 commits, and can be fast-forwarded.
+  (use "git pull" to update your local branch)
+Updating e31933e8..f290a078
+Fast-forward
+ .github/workflows/_quality-gate.yaml               |   1 +
+ .github/workflows/renovate.yaml                    |   2 +-
+ CONTEXT.md                                         |   9 +-
+ README.md                                          |  97 +++---
+ ansible/group_vars/ai_dev.yaml                     |   7 +-
+ ansible/group_vars/secrets.yaml                    | 210 ++++++------
+ ansible/requirements.yaml                          |   4 +-
+ ansible/roles/ai-dev/defaults/main.yaml            |  13 +
+ ansible/roles/ai-dev/files/ai-dev-maintenance      |  46 +--
+ ansible/roles/ai-dev/tasks/firewall.yaml           |  53 ++-
+ ansible/roles/ai-dev/tasks/hermes.yaml             | 199 +++++++++++
+ ansible/roles/ai-dev/tasks/main.yaml               |   5 +
+ ansible/roles/ai-dev/tasks/system-maintenance.yaml |   8 +-
+ ansible/roles/ai-dev/tasks/tools.yaml              |   4 +-
+ ansible/roles/ai-dev/templates/nftables.conf.j2    |   7 +-
+ ansible/roles/common/tasks/swap-zram.yaml          |   2 +-
+ ansible/roles/docker-host/defaults/main.yaml       |   5 +
+ .../roles/docker-host/tasks/bootstrap-stack.yaml   |  18 +
+ .../roles/docker-host/tasks/published-ports.yaml   |  20 ++
+ ansible/roles/docker-host/tasks/verify.yaml        |  35 ++
+ ansible/roles/routeros/README.md                   |  54 ++-
+ ansible/tests/ai-dev-maintenance.sh                |   4 +-
+ docker/arrs/compose.yml                            |   4 +-
+ docker/downloads/compose.yml                       |   2 +-
+ docker/immich/compose.yml                          |   4 +-
+ docker/init/compose.yml                            |  56 ++++
+ docker/nextcloud/README.md                         |  51 +--
+ docker/nextcloud/compose.yml                       |   4 +-
+ docker/plex/compose.yml                            |   7 +-
+ docs/ai-dev-plannotator-remote-review-spec.md      | 277 ---------------
+ docs/ai-dev.md                                     | 373 +++++++++++----------
+ docs/checkrr.md                                    |  88 ++---
+ docs/docker-deployment.md                          |  51 +--
+ docs/docker-hardening.md                           |  17 +-
+ docs/media-metadata.md                             |  32 +-
+ docs/plex-playback-research.md                     |  94 ------
+ docs/proxmox-host.md                               |  34 +-
+ docs/proxmox-templates.md                          |  21 +-
+ docs/recyclarr.md                                  |  60 +---
+ docs/simplification-handover.md                    | 213 ------------
+ docs/subtitle-managers.md                          | 188 ++---------
+ docs/truenas-storage.md                            | 122 ++-----
+ terraform/.terraform.lock.hcl                      |  42 ++-
+ terraform/versions.tf                              |   2 +-
+ 44 files changed, 1032 insertions(+), 1513 deletions(-)
+ create mode 100644 ansible/roles/ai-dev/tasks/hermes.yaml
+ delete mode 100644 docs/ai-dev-plannotator-remote-review-spec.md
+ delete mode 100644 docs/plex-playback-research.md
+ delete mode 100644 docs/simplification-handover.md</bash-stdout><bash-stderr></bash-stderr>
