@@ -1,0 +1,1 @@
+I want you to SSH into the Docker host and figure out why Attack on Titan isn't playing on my Jellyfin session on the Apple TV. When I go to play the latest episode, it just closes. (ssh mm@docker-host)
