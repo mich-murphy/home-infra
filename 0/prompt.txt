@@ -1,0 +1,3 @@
+Review the existing code and determine whether there are any other settings or files that we can remove and clean up. Given that we've moved the
+  media-broker into its own dedicated repository, I'm keen to clean up any tests that are unneeded, any files that are no longer necessary, and really make
+  sure that the repository is clean and well structured.
