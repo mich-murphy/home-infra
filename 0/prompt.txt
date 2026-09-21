@@ -1,0 +1,20 @@
+<task-notification>
+<task-id>a96f7f2e6ebd60626</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/9228e521-cf9c-4eb4-a8fd-0e4dee747bd2/tasks/a96f7f2e6ebd60626.output</output-file>
+<status>completed</status>
+<summary>Agent "/code-review 1741 high" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I reviewed the branch diff (`git diff main...HEAD`, working tree clean — 2 commits touching `ansible/roles/ai-dev/defaults/main.yaml`, `ansible/roles/ai-dev/tasks/hermes.yaml`, `docs/ai-dev.md`) and read the surrounding role, inventory, `ansible.cfg`, and the docker-host role for context.
+
+The Jinja in the new assert is correct (`select('in', list)` applies `item in list`; filter binds tighter than `==`), and the interpreter pin is applied to both — and only — `become_user: hermes` tasks, which is the right scope. Three issues worth raising, no blockers beyond the first.
+
+**Findings**
+
+- `ansible/roles/ai-dev/defaults/main.yaml:13` — medium. `ai_dev_hermes_docker_host: tcp://docker-host:2375` is still written into `~/.config/hermes/env` (`hermes.yaml:120`), but the CLI that understands the `tcp://` scheme has just been removed. The docs now say the agent "queries it directly" over plain HTTP, and the noted trade-off (raw multiplexed `/containers/{id}/logs` stream) implies a raw HTTP client. `curl "$DOCKER_HOST/containers/json"` fails with "unsupported protocol"; the proxy's own healthcheck in `docker/init/compose.yml:101` uses `http://…:2375`. Either change the value to `http://docker-host:2375` or export a second HTTP-scheme variable — as shipped, the one endpoint the agent is supposed to use is spelled in a form nothing left on the host can consume.
+
+- `ansible/roles/ai-dev/tasks/hermes.yaml:83` — low. "Remove masks for the departed Docker units" deletes `/etc/systemd/system/docker.{service,socket}` with no `systemctl daemon-reload` (no handler, no follow-up command). systemd keeps the mask in its in-memory unit state until a reload or reboot, so on the run that performs the migration `systemctl is-enabled docker.service` still reports `masked` and a same-run or same-boot check of unit state sees stale data. Removing the old file-based mask without a reload also leaves the unit "masked" for anything that queries systemd before the next reboot.
+
+- `ansible/roles/ai-dev/tasks/hermes.yaml:76` — low. The removal passes `containerd`, `runc`, and `libpathrs` to `pacman --remove` with no `recurse`/dependency handling. These are shared libraries/runtimes, not the Docker client: if any other installed package depends on one of them (now or after a future package addition), `pacman -R` fails with a dependency-break error and the whole play aborts — and the permanent assert at line 198 then fails on every subsequent run even though nothing on the host can actually launch a container. Consider scoping the hard assert to `docker`/`containerd` and treating the transitive libs as best-effort removals. Related, but not a bug: the assert matches exact package names only, so `docker-bin`, `podman`, `crun`, or `lxc` would satisfy it despite the fail_msg's "must never be able to run containers" claim.</result>
+<usage><subagent_tokens>65522</subagent_tokens><tool_uses>13</tool_uses><duration_ms>204687</duration_ms></usage>
+</task-notification>
