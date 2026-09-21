@@ -1,0 +1,1 @@
+I want you to identify areas within the codebase where we could leverage external packages to cut down on the code that we have. I'm keen to leverage external packages wherever they like. I'd prefer to use those over rewriting and handrolling our own code. Before we adopt any, we need to ensure that they are actively maintained, highly regarded, and well supported.
