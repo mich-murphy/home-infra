@@ -1,0 +1,1 @@
+The NFS share was originally Nextcloud, by the way, so it should be able to integrate with it. If you need details of this, then feel free to SSH into the Docker host using the MM account.
