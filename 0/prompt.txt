@@ -1,0 +1,1 @@
+Confirm you've checked the other stacks for any fragility in the data mounts similar to what was there in Jellyfin. Make sure it's not just this one that needs to be resolved.
