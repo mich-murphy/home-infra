@@ -1,0 +1,1 @@
+why are we using bash? Why not use the same fish profile I've got setup already?
