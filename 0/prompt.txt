@@ -1,0 +1,5 @@
+# Annotations on pi · last message
+
+## Annotation 1 (lines 15–16)
+Comment on: "- **Public (simpler)** — the repo itself is already public and the image contains no secrets. GitHub → your packages → `media-broker` → Package settings → Danger zone → Change visibility. Then skip step 2 entirely, and Renovate can resolve digests anonymously. - **Keep private** — continue with step 2, and note the runbook's warning: the self-hosted Renovate token also needs `read:packages`, or digest-pin PRs will fail to resolve."
+> I'm happy to make it public. The repo is already public. Show me how I would set this up.
