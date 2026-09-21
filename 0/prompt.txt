@@ -1,0 +1,1 @@
+Want you to check on the health of docker-host as well as ai-dev. I've recently changed the RAM allowance for each of the machines, and last night we had an outage. I want to see what's going on, what we need to do to fix it, if it's already resolved.
