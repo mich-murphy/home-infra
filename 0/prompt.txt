@@ -1,0 +1,8 @@
+1. delete
+2. merge and keep the correct spelling
+3. fix in ABS
+4. fix
+5. rename
+6. scrape the missing cover metadata
+
+Spawn subagents running Sonnet to take care of each of these items.
