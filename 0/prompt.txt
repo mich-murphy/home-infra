@@ -1,0 +1,2 @@
+1 - I've connected to ether 7, not seeing ethernet port option? ────────────────────────────────────────────────────────────────────────────── INSERT
+~/dev/home-infra (release/infra-hardening-20260913)
