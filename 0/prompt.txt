@@ -1,0 +1,2 @@
+<bash-stdout>To github.com:mich-murphy/home-infra.git
+ + 07fdd449...aab995ca feat/hermes-infrastructure-agent -&gt; feat/hermes-infrastructure-agent (forced update)</bash-stdout><bash-stderr></bash-stderr>
