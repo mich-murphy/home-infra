@@ -1,0 +1,1 @@
+I've added an NFS share for mounting ownCloud. It's mapped to the media user, so there shouldn't be a need to provide username, credentials. I've set a password in the .env file within this directory under the variable `TRUENAS_PASSWORD` for `TRUENAS_USERNAME`. Just use `admin`.
