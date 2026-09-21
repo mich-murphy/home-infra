@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bc0y4b79j</task-id>
+<tool-use-id>toolu_013ooK6izHj1tpfjigVSE4bj</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/db4d1583-9c3f-49a0-a827-bdf9c125da18/tasks/bc0y4b79j.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch CI checks to completion" completed (exit code 0)</summary>
+</task-notification>
