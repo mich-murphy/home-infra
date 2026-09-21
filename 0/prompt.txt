@@ -1,0 +1,9 @@
+# Annotations on claude · last message
+
+## Annotation 1 (line 36)
+Comment on: "One genuine gap: **Drake's For All the Dogs** is missing tracks 4 and 6, Fear of Heights and First Person Shooter. The folder has 21 of 23 tracks and Lidarr believes the album is complete, so it will not re-grab. Deleting the album in Lidarr and re-searching would fetch a full copy."
+> delete it and regrab
+
+## Annotation 2 (line 40)
+Comment on: "44 files sit in folders Lidarr won't track, so the retag pass skips them: Czarface Meets Ghostface (12), Mach-Hommy's Pray for Haiti (16), Smino's Maybe in Nirvana (10), Mark Mothersbaugh's Minecraft tracks 22 to 25 (4), plus one KPop file that the refresh should pick up. They play fine in Plex. Matching them in Lidarr's manual import would let it tag them too."
+> match them for me
