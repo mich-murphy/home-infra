@@ -1,0 +1,4 @@
+review the following and determine whether any changes need to be made prior to me merging PR for version bump.
+docs: https://github.com/ansible-collections/community.general/blob/stable-13/CHANGELOG.md#breaking-changes--porting-guide
+
+PR: https://github.com/mich-murphy/home-infra/pull/1716
