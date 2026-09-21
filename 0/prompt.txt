@@ -1,0 +1,1 @@
+Review the recyclarr settings that we set and ensure that everything follows best practice. If there are any optimizations that should be made, then let's discuss them and make them.
