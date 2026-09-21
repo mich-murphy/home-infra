@@ -1,0 +1,1 @@
+I want you to research and set up a Docker Compose file to deploy Nextcloud along with a full-featured deployment of all of its supporting utilities, such as Nextcloud Office and caching with Redis, and recommended best practice. This should replace the existing OnCloud deployment and leverage the same NFS share.
