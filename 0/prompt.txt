@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bt0oi21do</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/de363a48-3163-4cd5-b45f-ce7ca17dcc01/tasks/bt0oi21do.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for Portainer to redeploy nextcloud and verify the data mount" completed (exit code 0)</summary>
+</task-notification>
