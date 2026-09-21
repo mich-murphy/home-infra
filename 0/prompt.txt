@@ -1,0 +1,1 @@
+PR is now merged. Show me what I have to do to complete the setup. How do we get this running in Portainer and actively updating?
