@@ -1,0 +1,1 @@
+I'm running Plex Amp on my computer. However, I'm having issues finding the server that I connect to. This may be due to recent firewall restrictions that we've changed or router restrictions that we've changed. I can no longer see the Plex library. You've got access to SSH into the Docker-host container. Feel free to do this and figure out what's going on.
