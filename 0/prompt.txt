@@ -1,0 +1,1 @@
+Set up the structure that's required. I'll walk through the login steps as suggested and have Pi update the auth.
