@@ -1,0 +1,4 @@
+I'm getting the following issues declared when looking at my security and setup warnings in Nextcloud. Resolve them. 
+/var/folders/rr/2ypk50n14tq8902_21mkbc840000gn/T/pi-clipboard-6623e456-389d-4c90-b85b-0cb9972669c2.png
+
+/var/folders/rr/2ypk50n14tq8902_21mkbc840000gn/T/pi-clipboard-f3ebf95e-2095-485b-bd79-176b4cdd49db.png
