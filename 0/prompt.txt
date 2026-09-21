@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bc5vtqdkw</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/db4d1583-9c3f-49a0-a827-bdf9c125da18/tasks/bc5vtqdkw.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch CI on stacked PR" completed (exit code 0)</summary>
+</task-notification>
