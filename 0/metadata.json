@@ -1,0 +1,22 @@
+{
+  "cli_version": "0.10.6",
+  "checkpoint_id": "c8cf8e6c32c3",
+  "session_id": "01a09856-5617-7031-bb86-32322982725d",
+  "strategy": "import",
+  "created_at": "2026-09-13T12:26:18.016Z",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "agent": "Pi",
+  "model": "gpt-6-astra",
+  "checkpoint_transcript_start": 368,
+  "transcript_lines_at_start": 368,
+  "compact_transcript_start": 175,
+  "token_usage": {
+    "input_tokens": 651643,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6076416,
+    "output_tokens": 15552,
+    "api_call_count": 64
+  },
+  "kind": "imported"
+}
