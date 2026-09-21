@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bfw2nmpna</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/de363a48-3163-4cd5-b45f-ce7ca17dcc01/tasks/bfw2nmpna.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for CI on the media PR" completed (exit code 0)</summary>
+</task-notification>
