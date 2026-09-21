@@ -1,0 +1,1 @@
+We can ignore this for now. The last thing that I want to check is that I noticed there are a number of tests that were included in the most recent PR that you merged. Are those tests necessary now that this has all been rolled out and deployed successfully? Are there any Bash scripts that we've written as part of this change that can now be removed as well?
