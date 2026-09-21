@@ -1,0 +1,2 @@
+Read
+ docs/hermes-media-handover.md and resume the Jellyfin history work.
