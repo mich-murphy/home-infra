@@ -1,0 +1,1 @@
+I've just set up a Shure mv7+ microphone, and I've plugged it into my MacOS laptop. I'm wondering if there are any settings I need to tweak, or if this should work by default. I've just got it plugged in via USB-C.
