@@ -1,0 +1,1 @@
+plannotator is actually no longer used, you can cleanup that code. Provide simple instructions on creating the correctly scoped PAT and tailscale grants
