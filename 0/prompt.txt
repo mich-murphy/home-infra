@@ -1,0 +1,1 @@
+are these even needed? In PR 1731 I'm removing the otel references anyway. Assuming they're not needed that update this PR 1730 to remove the references
