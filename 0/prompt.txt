@@ -1,0 +1,1 @@
+On the PR that we have open, I notice there's quite a lot of comments. Can we strip them back to only what's necessary and remove them completely if it's not necessary?
