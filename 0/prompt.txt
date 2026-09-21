@@ -1,0 +1,3 @@
+I want you to review the existing Hermes agent deployment and how we've configured that user on AI-dev. What I'm finding is that I want Hermes to be able to access and review media content and approvals. What this means in practice is things like being able to view Plex watch history and Plex music history. Ideally, the same for Jellyfin. I'd also like it to be able to interact with Sonar, Radar, and Lidar via the API to request new media or clean up media. 
+
+Spawn Luna subagents to explore the codebase, and you can consolidate and validate their findings. Once you have an understanding of this, propose to me the best design to accomplish the above.
