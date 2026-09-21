@@ -1,0 +1,1 @@
+1, 2, 3 all seems reasonable. Should we set a password for the hermes user so that I can elevate to sudo myself when needed?
