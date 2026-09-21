@@ -1,0 +1,1 @@
+From what you understand of the code, does it provide visibility into Jellyfin logs and play history, as well as Plex play history? Or is this a feature that's not yet developed?
