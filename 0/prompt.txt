@@ -1,0 +1,1 @@
+I'm getting an error when attempting to load an ODS file. The error is saying that Nextcloud Office is unavailable. https://nextcloud.local.elmurphy.com/apps/files/files/2854?dir=/2-areas/investing&editing=false&openfile=true
