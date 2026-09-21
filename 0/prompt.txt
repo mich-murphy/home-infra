@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bvdv014at</task-id>
+<tool-use-id>toolu_01Ea4WmJjasWEJGYGCJda8PL</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/ddbd13a1-ab31-4561-b4da-3e7fc30c3c20/tasks/bvdv014at.output</output-file>
+<status>completed</status>
+<summary>Monitor "CI checks on PR 1739" stream ended</summary>
+</task-notification>
