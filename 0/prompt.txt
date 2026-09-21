@@ -1,0 +1,1 @@
+Why have you left the test file in there? I don't see what value this provides when we're pulling in an image from another repo: tests/media-broker-stack.sh
