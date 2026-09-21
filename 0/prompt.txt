@@ -1,0 +1,1 @@
+One additional thing to check is that I've noticed that Plex requires an update due to patching of a vulnerability. I've seen a bit of content posted about this recently. I haven't seen a review for Plex itself come up for approval as a PR. Is this because we haven't picked up the latest update, or is this because it's merged automatically already?
