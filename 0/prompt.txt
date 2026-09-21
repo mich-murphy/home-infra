@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b9q856x7n</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/tasks/b9q856x7n.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for current Radarr downloads and report imported audio" completed (exit code 0)</summary>
+</task-notification>
