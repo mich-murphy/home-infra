@@ -1,0 +1,3 @@
+update the ai-dev machine to install hermes agent: curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+
+i also need to configure ai-dev to have read only access to docker-host over tailscale. What's the best way to set this up? This is for use via hermes agent
