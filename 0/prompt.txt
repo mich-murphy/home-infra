@@ -1,0 +1,1 @@
+You can SSH into the Trueness box and set this up for me. The password should be available in 1Password. If you query it, I'll approve.
