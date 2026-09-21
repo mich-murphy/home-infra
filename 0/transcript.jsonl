@@ -1,0 +1,2 @@
+{"v":1,"agent":"pi","cli_version":"0.10.6","type":"user","ts":"2026-09-13T00:30:38.089Z","content":[{"text":"ping"}]}
+{"v":1,"agent":"pi","cli_version":"0.10.6","type":"assistant","ts":"2026-09-13T00:30:41.596Z","id":"7e041a7d","input_tokens":9402,"output_tokens":5,"content":[{"type":"text","text":"pong"}]}
