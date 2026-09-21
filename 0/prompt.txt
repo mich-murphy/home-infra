@@ -1,0 +1,1 @@
+<bash-input> ssh root@proxmox "pveum user add hermes-audit@pve --comment 'Read-only audit for ai-dev Hermes' && pveum acl modify / --users hermes-audit@pve --roles PVEAuditor && pveum user token add hermes-audit@pve ai-dev --privsep 1 && pveum acl modify / --tokens 'hermes-audit@pve!ai-dev' --roles PVEAuditor"</bash-input>
