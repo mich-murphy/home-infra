@@ -1,0 +1,1 @@
+delete the hermes target, remove the pi-package block. is there a cleaner way to handle the app installs that would avoid the need for this file?
