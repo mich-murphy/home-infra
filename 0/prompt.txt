@@ -1,0 +1,1 @@
+Looks like for Checkrr, we can combine it with the existing deployment for Recycler. They have the same environment variables, so they can read them, and the relative paths are the same as well.
