@@ -1,0 +1,1 @@
+confirm this `ssh hermes@ai-dev` will work over tailscale ssh too? This is what I currently use for `ssh michael@ai-dev`
