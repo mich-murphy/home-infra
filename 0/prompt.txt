@@ -1,0 +1,1 @@
+no ghostty and no Python on that list, only skhd, chrome, plexamp and docker
