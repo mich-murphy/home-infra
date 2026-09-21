@@ -1,0 +1,1 @@
+Herder is reporting an OS 13 error when I attempt to add the Pi extension that's just been made available in version 0.9.0. Help me identify what's going on and how I resolve it.
