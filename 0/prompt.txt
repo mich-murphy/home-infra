@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bmggldrp7</task-id>
+<tool-use-id>toolu_012NR821zqQ26KRxJYfn4u4h</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/de363a48-3163-4cd5-b45f-ce7ca17dcc01/tasks/bmggldrp7.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for the Beauty and the Beast Bluray download and check import state" completed (exit code 0)</summary>
+</task-notification>
