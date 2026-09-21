@@ -1,0 +1,1 @@
+remove any comments that don't provide any clarity above what the code already describes. For comments that are still required they should be no more that 1 line, brief and simple language
