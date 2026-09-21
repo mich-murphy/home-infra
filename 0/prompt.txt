@@ -1,0 +1,7 @@
+<environment_context>
+  <cwd>/Users/mm/dev/home-infra</cwd>
+  <shell>zsh</shell>
+  <current_date>2026-09-21</current_date>
+  <timezone>Australia/Melbourne</timezone>
+  <filesystem><workspace_roots><root>/Users/mm/dev/home-infra</root></workspace_roots><permission_profile type="managed"><file_system type="restricted"><entry access="read"><special>:root</special></entry><entry access="read"><path>/Users/mm/dev/home-infra</path></entry><entry access="read"><special>:slash_tmp</special></entry><entry access="read"><special>:tmpdir</special></entry><entry access="read"><path>/Users/mm/dev/home-infra/.git</path></entry><entry access="read"><path>/Users/mm/dev/home-infra/.agents</path></entry><entry access="read"><path>/Users/mm/dev/home-infra/.codex</path></entry></file_system></permission_profile></filesystem>
+</environment_context>
