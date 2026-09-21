@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>be4pebuja</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/de363a48-3163-4cd5-b45f-ce7ca17dcc01/tasks/be4pebuja.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for the four-movie re-search and list grabs" completed (exit code 0)</summary>
+</task-notification>
