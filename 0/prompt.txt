@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bju9ll24p</task-id>
+<tool-use-id>toolu_016Szraj8datGrT6a2ANH7Bg</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/ed99beac-1d1c-4c9d-a615-c6537977e118/tasks/bju9ll24p.output</output-file>
+<status>completed</status>
+<summary>Background command "Poll until imports complete" completed (exit code 0)</summary>
+</task-notification>
