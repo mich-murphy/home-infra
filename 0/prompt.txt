@@ -1,0 +1,1 @@
+Do this change now: move the Nextcloud data directory over to the NFS share and structure it the way you've proposed.
