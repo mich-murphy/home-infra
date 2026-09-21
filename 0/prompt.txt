@@ -1,0 +1,115 @@
+<task-notification>
+<task-id>a099c24d9dc21d9b9</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/tasks/a099c24d9dc21d9b9.output</output-file>
+<status>completed</status>
+<summary>Agent "Audit non-English kids movies" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result># Radarr Non-English-Original Movie Audit
+
+**Radarr version:** 6.3.0.10514 (linuxserver build `6.3.0.10514-ls315`)
+**Total movies:** 209 | **With file:** 166 | **Without file:** 43
+**Root folder:** `/data/media/movies` (container path; host: `/mnt/data/media/movies`) — single root folder, id 1, accessible, ~2.79 TB free. No separate kids/family root folder exists — all movies, including every animated/family title, live in this one library.
+**Tags:** none configured (`GET /api/v3/tag` returned `[]`).
+
+Original-language breakdown: English 175, Japanese 26, French 4, German 2, Russian 1, Danish 1 → **34 non-English-original movies**.
+
+## Quality profiles
+
+| id | Name | Language setting | Movies using it |
+|---|---|---|---|
+| 1 | Any | English | 6 |
+| 2 | SD | English | 0 |
+| 3 | HD-720p | English | 0 |
+| 4 | HD-1080p | English | 0 |
+| 5 | Ultra-HD | English | 0 |
+| 6 | HD - 720p/1080p | English | 0 |
+| 7 | Remux + WEB 1080p | **Original** | 203 |
+
+Almost everything uses profile 7 with language set to "Original" — this profile does not itself enforce grabbing dual-audio releases, it just prefers original-language metadata tagging.
+
+## Full non-English-original-language movie table
+
+Audio classification: **DUAL** = original + English both present, **ORIGINAL-ONLY** = original language present, no English, **ENGLISH-DUB-ONLY** = English present, original language missing, **UNKNOWN** = only an `und`/untagged track, **NEITHER** = neither original nor English present (some other single language only). Rows marked with `*` had their audio confirmed directly via `ffprobe` inside the jellyfin container (Radarr's `mediaInfo.audioLanguages` was missing/ambiguous for these).
+
+| Title (Year) | Orig. lang | Genres | Kids? | Has file | Audio tracks in file | Classification | Quality | Size | id |
+|---|---|---|---|---|---|---|---|---|---|
+| Arco (2025) | French | Adv/Anim/Family/SciFi | Yes | Yes | eng | ENGLISH-DUB-ONLY | WEBDL-1080p | 6.67 GB | 504 |
+| Castle in the Sky (1986) | Japanese | Adv/Fantasy/Anim/Action/Family | Yes | Yes | eng | ENGLISH-DUB-ONLY | WEBDL-1080p | 8.13 GB | 217 |
+| Demon Slayer: Infinity Castle 2 (TBA) | Japanese | Animation/Action/Fantasy | Yes | No | — | N/A (no file) | — | — | 215 |
+| Demon Slayer: Infinity Castle 3 (TBA) | Japanese | Animation/Action/Fantasy | Yes | No | — | N/A (no file) | — | — | 214 |
+| Drifting Home (2022) | Japanese | Animation/Fantasy/Adv | Yes | Yes | jpn, eng | DUAL | WEBDL-1080p | 3.07 GB | 236 |
+| Goodbye, Don Glees! (2022) | Japanese | Animation/Adv/Drama | Yes | Yes | jpn, jpn, eng | DUAL | Remux-1080p | 29.79 GB | 427 |
+| Grand Prix of Europe (2025) | German | Animation/Adv/Comedy/Family | Yes | Yes | eng | ENGLISH-DUB-ONLY | WEBDL-1080p | 5.79 GB | 128 |
+| Hotarubi no Mori e (2011) | Japanese | Romance/Animation/Fantasy | Yes | Yes | jpn* | ORIGINAL-ONLY | Remux-1080p | 10.67 GB | 244 |
+| Howl's Moving Castle (2004) | Japanese | Fantasy/Animation/Adv | Yes | Yes | jpn* | ORIGINAL-ONLY | WEBDL-1080p | 5.04 GB | 15 |
+| I Want to Eat Your Pancreas (2018) | Japanese | Animation/Drama/Romance | Yes | Yes | jpn, eng | DUAL | Remux-1080p | 31.35 GB | 295 |
+| It Was Just an Accident (2025) | French† | Drama/Thriller/Crime/Mystery | No | Yes | per* | NEITHER | Remux-1080p | 29.85 GB | 55 |
+| Kiki's Delivery Service (1989) | Japanese | Animation/Family/Fantasy | Yes | Yes | kor* | NEITHER | WEBDL-1080p | 5.91 GB | 16 |
+| Lu Over the Wall (2017) | Japanese | Animation/Adv/Music/Fantasy/Family | Yes | Yes | eng, jpn | DUAL | Bluray-1080p | 8.22 GB | 514 |
+| My Life as a Zucchini (2016) | French | Animation/Comedy/Drama | Yes | No | — | N/A (no file) | — | — | 488 |
+| My Neighbor Totoro (1988) | Japanese | Fantasy/Animation/Family | Yes | Yes | eng, jpn (+21 others) | DUAL | WEBDL-1080p | 6.63 GB | 14 |
+| Okko's Inn (2018) | Japanese | Animation/Drama/Fantasy/Family | Yes | Yes | jpn* | ORIGINAL-ONLY | WEBDL-1080p | 3.47 GB | 329 |
+| One Piece: Episode of East Blue (2017) | Japanese | Action/Animation/Adv | Yes | Yes | jpn, eng, eng | DUAL | Remux-1080p | 29.74 GB | 416 |
+| Penguin Highway (2018) | Japanese | Animation/Adv/Comedy/Fantasy | Yes | Yes | jpn* | ORIGINAL-ONLY | WEBDL-1080p | 7.16 GB | 328 |
+| Pets on a Train (2025) | French | Animation/Comedy/Adv/Thriller/Family | Yes | Yes | eng | ENGLISH-DUB-ONLY | WEBDL-1080p | 4.51 GB | 126 |
+| Ponyo (2008) | Japanese | Animation/Fantasy/Family | Yes | Yes | jpn, eng | DUAL | Remux-1080p | 22.78 GB | 20 |
+| Porco Rosso (1992) | Japanese | Animation/Adv/Fantasy | Yes | Yes | dan, fin, nob, swe, eng, jpn | DUAL | WEBDL-1080p | 5.38 GB | 218 |
+| Princess Mononoke (1997) | Japanese | Adv/Fantasy/Animation | Yes | Yes | jpn* | ORIGINAL-ONLY | WEBDL-1080p | 7.32 GB | 18 |
+| Promare (2019) | Japanese | Animation/Action/SciFi | Yes | Yes | fre, jpn | ORIGINAL-ONLY | WEBDL-1080p | 4.90 GB | 428 |
+| Scarlet (2025) | Japanese | Animation/Action/Drama/SciFi | Yes | Yes | jpn, eng | DUAL | WEBDL-1080p | 5.45 GB | 259 |
+| Secret Magic Control Agency (2021) | Russian | Animation/Comedy/Fantasy | Yes | Yes | eng, dan, nor, fin, swe | ENGLISH-DUB-ONLY | WEBDL-1080p | 3.88 GB | 405 |
+| Solo Leveling -ReAwakening- (2024) | Japanese | Action/Adv/Fantasy/Animation | Yes | Yes | und* | UNKNOWN | WEBRip-1080p | 1.61 GB | 296 |
+| The Boy and the Heron (2023) | Japanese | Animation/Fantasy/Drama | Yes | Yes | jpn, eng | DUAL | WEBDL-1080p | 6.27 GB | 19 |
+| The Castle of Cagliostro (1979) | Japanese | Animation/Adv/Comedy/Crime | Yes | Yes | jpn, eng, eng | DUAL | WEBDL-1080p | 11.22 GB | 429 |
+| The Cat Returns (2002) | Japanese | Adv/Fantasy/Animation/Drama/Family | Yes | Yes | jpn* | ORIGINAL-ONLY | WEBDL-1080p | 3.17 GB | 297 |
+| The Imaginary (2023) | Japanese | Animation/Adv/Drama/Family/Fantasy | Yes | Yes | jpn, eng | DUAL | WEBDL-1080p | 5.28 GB | 325 |
+| The Lives of Others (2006) | German | Drama/Thriller | No | Yes | ger, eng, ger, ger | DUAL | Remux-1080p | 36.46 GB | 398 |
+| The Secret Woman (2026) | Danish | Drama/Thriller/Mystery | No | Yes | dan, eng | DUAL | WEBDL-1080p | 6.80 GB | 516 |
+| The Secret World of Arrietty (2010) | Japanese | Fantasy/Animation/Family | Yes | Yes | jpn* | ORIGINAL-ONLY | WEBDL-1080p | 3.99 GB | 17 |
+| Warriors of the Wind (1984) [Nausicaä] | Japanese | Adv/Animation/Fantasy | Yes | Yes | rus* | NEITHER | WEBDL-1080p | 6.27 GB | 216 |
+
+† *Metadata anomaly*: Radarr/TMDB lists this film's original language as "French," but it's Jafar Panahi's Iranian film (a France/Iran co-production) and the file's only audio track is Persian. Treated here as neither French nor English present.
+
+## Shortlist: everything that is NOT DUAL
+
+Per the updated instruction this includes all non-English titles (not just kids ones) lacking full original+English dual audio — kids/family titles marked in **bold**.
+
+| Title | Class | tmdbId | Radarr id | File path |
+|---|---|---|---|---|
+| **Arco (2025)** | ENGLISH-DUB-ONLY | 804370 | 504 | `/data/media/movies/Arco (2025) {tmdb-804370}/Arco (2025) {tmdb-804370} [AMZN][WEBDL-1080p][EAC3 5.1][h264]-BYNDR.mkv` |
+| **Castle in the Sky (1986)** | ENGLISH-DUB-ONLY | 10515 | 217 | `/data/media/movies/Castle in the Sky (1986) {tmdb-10515}/Castle in the Sky (1986) {tmdb-10515} [NF][WEBDL-1080p][EAC3 5.1][x264]-NINJACENTRAL.mkv` |
+| **Grand Prix of Europe (2025)** | ENGLISH-DUB-ONLY | 1316147 | 128 | `/data/media/movies/Grand Prix of Europe (2025) {tmdb-1316147}/Grand Prix of Europe (2025) {tmdb-1316147} [AMZN][WEBDL-1080p][EAC3 5.1][h264]-Kitsune.mkv` |
+| **Hotarubi no Mori e (2011)** | ORIGINAL-ONLY | 92321 | 244 | `/data/media/movies/Hotarubi no Mori e (2011) {tmdb-92321}/Hotarubi no Mori e (2011) {tmdb-92321} [Remux-1080p][PCM 2.0][AVC].mkv` |
+| **Howl's Moving Castle (2004)** | ORIGINAL-ONLY | 4935 | 15 | `/data/media/movies/Howls Moving Castle (2004) {tmdb-4935}/Howls Moving Castle (2004) {tmdb-4935} [NF][WEBDL-1080p][EAC3 5.1][x264]-NINJACENTRAL.mkv` |
+| It Was Just an Accident (2025) | NEITHER (per only) | 1456349 | 55 | `/data/media/movies/It Was Just an Accident (2025) {tmdb-1456349}/It Was Just an Accident (2025) {tmdb-1456349} [Remux-1080p][DTS-HD MA 5.1][AVC]-CiNEPHiLES.mkv` |
+| **Kiki's Delivery Service (1989)** | NEITHER (**kor only** — no Japanese or English at all) | 16859 | 16 | `/data/media/movies/Kikis Delivery Service (1989) {tmdb-16859}/Kikis Delivery Service (1989) {tmdb-16859} [NF][WEBDL-1080p][EAC3 5.1][x264]-NINJACENTRAL.mkv` |
+| **My Life as a Zucchini (2016)** | N/A — no file | 393559 | 488 | — (not yet downloaded) |
+| **Okko's Inn (2018)** | ORIGINAL-ONLY | 521296 | 329 | `/data/media/movies/Okkos Inn (2018) {tmdb-521296}/Okkos Inn (2018) {tmdb-521296} [WEBDL-1080p][EAC3 5.1][AVC].mkv` |
+| **Penguin Highway (2018)** | ORIGINAL-ONLY | 508422 | 328 | `/data/media/movies/Penguin Highway (2018) {tmdb-508422}/Penguin Highway (2018) {tmdb-508422} [WEBDL-1080p][AAC 2.0][x264]-TROLLORANGE.mkv` |
+| **Pets on a Train (2025)** | ENGLISH-DUB-ONLY | 1107216 | 126 | `/data/media/movies/Pets on a Train (2025) {tmdb-1107216}/Pets on a Train (2025) {tmdb-1107216} [WEBDL-1080p][AC3 5.1][h264]-KBOX.mkv` |
+| **Princess Mononoke (1997)** | ORIGINAL-ONLY | 128 | 18 | `/data/media/movies/Princess Mononoke (1997) {tmdb-128}/Princess Mononoke (1997) {tmdb-128} [NF][WEBDL-1080p][EAC3 5.1][x264]-NINJACENTRAL.mkv` |
+| **Promare (2019)** | ORIGINAL-ONLY (has jpn+fre, no eng) | 553600 | 428 | `/data/media/movies/Promare (2019) {tmdb-553600}/Promare (2019) {tmdb-553600} [WEBDL-1080p][AC3 5.1][h264]-ALLDAYiN.mkv` |
+| **Secret Magic Control Agency (2021)** | ENGLISH-DUB-ONLY (no Russian) | 797394 | 405 | `/data/media/movies/Secret Magic Control Agency (2021) {tmdb-797394}/Secret Magic Control Agency (2021) {tmdb-797394} [WEBDL-1080p][AC3 5.1][x264]-MiDWEEK.mp4` |
+| **Solo Leveling -ReAwakening- (2024)** | UNKNOWN (single `und`-tagged track) | 1357633 | 296 | `/data/media/movies/Solo Leveling -ReAwakening- (2024) {tmdb-1357633}/Solo Leveling -ReAwakening- (2024) {tmdb-1357633} [WEBRip-1080p][AAC 2.0][x264]-WORLD.mp4` |
+| **The Cat Returns (2002)** | ORIGINAL-ONLY | 15370 | 297 | `/data/media/movies/The Cat Returns (2002) {tmdb-15370}/The Cat Returns (2002) {tmdb-15370} [NF][WEBDL-1080p][EAC3 5.1][x264]-BiOMA.mkv` |
+| **The Secret World of Arrietty (2010)** | ORIGINAL-ONLY | 51739 | 17 | `/data/media/movies/The Secret World of Arrietty (2010) {tmdb-51739}/The Secret World of Arrietty (2010) {tmdb-51739} [NF][WEBDL-1080p][EAC3 5.1][x264]-NINJACENTRAL.mkv` |
+| **Warriors of the Wind (1984)** [Nausicaä] | NEITHER (**rus only**) | 81 | 216 | `/data/media/movies/Nausicaa of the Valley of the Wind (1984) {tmdb-81}/Warriors of the Wind (1984) {tmdb-81} [NF][WEBDL-1080p][EAC3 5.1][x264]-NINJACENTRAL.mkv` |
+| Demon Slayer: Infinity Castle 2 &amp; 3 | N/A — no files | 1311034 / 1311035 | 215 / 214 | — (not yet downloaded) |
+
+Two entries stand out as worth a closer look: **Kiki's Delivery Service** and **Warriors of the Wind** are both filed under one audio track each — Korean and Russian respectively — with no Japanese or English at all. These look like they were grabbed from foreign-language-only releases; worth re-grabbing.
+
+## Method notes / verification
+
+- 11 files with missing/ambiguous English-audio data per Radarr's `mediaInfo.audioLanguages` were independently verified with `ffprobe` (via the jellyfin container, which mounts the same `/mnt/data/media` → `/data/media` path as Radarr, so no path translation was needed). All ffprobe results confirmed Radarr's data exactly — each of those files has exactly one audio stream.
+- `localhost:7878` was not reachable from the docker host (Radarr is only on the `proxy` network, port not published) — all Radarr API calls were made via `docker exec radarr curl ... 127.0.0.1:7878`.
+- Host has `jq` and `python3` but no `ffprobe`/`mediainfo` directly; jellyfin's bundled `jellyfin-ffmpeg/ffprobe` was used instead.
+- No modifications were made anywhere — read-only throughout; temporary scratch files (`probe_list.txt`, `run_probes.sh`, `probe_results.jsonl`) copied to `/tmp` on the host were deleted after use.
+- API key used: [redacted].
+
+## Errors / unresolved items
+
+- None outright failed. The only genuine ambiguity is **Solo Leveling -ReAwakening-** (`und` tag, single track) — I did not attempt to identify the spoken language by ear/inspection since that would go beyond metadata reading; it's reported as UNKNOWN per your instruction.
+- **It Was Just an Accident (2025)**: Radarr/TMDB's `originalLanguage` field says French, which conflicts with the film being a Persian-language Iranian production (per its single Persian audio track) — flagged as a likely metadata quirk rather than a missing-audio problem, but noted in the shortlist since it has no English track either way.</result>
+<usage><subagent_tokens>69980</subagent_tokens><tool_uses>20</tool_uses><duration_ms>244203</duration_ms></usage>
+</task-notification>
