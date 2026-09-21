@@ -1,0 +1,5 @@
+1. I think I've done it, but double-check that everything is correct.
+
+2. yes, let's do this as well. 
+
+You mentioned there's some dead public mapping. Let's clean that up as well whilst we're looking at Plex.
