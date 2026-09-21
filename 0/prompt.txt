@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b025fqm8o</task-id>
+<tool-use-id>toolu_01UYs94kPSmTRAckYkfAbbEB</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/de363a48-3163-4cd5-b45f-ce7ca17dcc01/tasks/b025fqm8o.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for the playWEB Sterling Point import and demux-check it" completed (exit code 0)</summary>
+</task-notification>
