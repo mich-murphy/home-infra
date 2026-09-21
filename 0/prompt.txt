@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bjsv9jv95</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/d3f24245-e5fb-4811-8dbe-b9304620c838/tasks/bjsv9jv95.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for the Bluray re-search and list grab events" completed (exit code 0)</summary>
+</task-notification>
