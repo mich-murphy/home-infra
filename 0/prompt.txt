@@ -1,0 +1,5 @@
+check it's gone   ← kept, but now says
+                    "this showed up unexpectedly"
+                    instead of "this is forbidden"
+
+remove this too then create a PR for the cleanup tasks
