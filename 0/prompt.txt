@@ -1,0 +1,13 @@
+# Annotations on claude · last message
+
+## Annotation 1 (lines 28–30)
+Comment on: "1. **Kendrick Lamar, The Steppers Tour.** Two identical 5-track copies (121 MB each). The Amazon Originals folder is the manual import. The Lidarr-named folder is canonical. Plex shows the album twice. 2. **A Minecraft Movie 16** at the library root holds tracks 22 to 25 only. The full 25-track album sits correctly under Mark Mothersbaugh. Delete the root folder. 3. **KPop Demon Hunters** is split across three folders and three Plex entries. The Lidarr-named folder under KPop Demon Hunters Cast is the most complete (12 tracks), but its file 01 is tagged as track 6 so the album shows Takedown twice and lacks track 1. Fix that one tag, then remove the scene-named folder (11 tracks) and the 2-track Various Artists folder."
+> cleanup all duplicates
+
+## Annotation 2 (line 32)
+Comment on: "**Lower priority observations.** 51 album folders still have scene-release names with brackets and catalogue numbers rather than Lidarr's clean format. Lidarr has "rename tracks" on but "delete empty folders" off, which is why leftovers accumulate. Lidarr also reports the MyAnonamouse indexer failing for over 6 hours. Embedded tags are patchy (1,683 files lack a genre, 3,306 lack embedded art) but that has no effect while Plex's "Prefer local metadata" stays off, which is the right setting for this library."
+> cleanup naming, set delete empty folders on, resolve patchy tags
+
+## Annotation 3 (line 88)
+Comment on: "Lidarr manages this library with 289 artists, so these can be added there for automatic acquisition. I haven't queued them since that triggers downloads. Say the word and I'll add all 42 to Lidarr as monitored albums."
+> request all of these albums via Lidarr
