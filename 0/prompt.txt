@@ -1,0 +1,1 @@
+opencode is no longer needed. the rest should remain as they are
