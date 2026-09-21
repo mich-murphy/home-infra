@@ -1,0 +1,6 @@
+<task-notification>
+<task-id>bvdv014at</task-id>
+<summary>Monitor event: "CI checks on PR 1739"</summary>
+<event>ansible / ansible: pass
+ALL CHECKS COMPLETE</event>
+</task-notification>
