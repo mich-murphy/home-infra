@@ -1,0 +1,1 @@
+add the near misses, cleanup plex genre tags and any other metadata for music. also check actual music files to ensure plex is finding everything that's there and no issues with media organisation
