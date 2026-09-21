@@ -1,0 +1,33 @@
+# Annotations on pi · last message
+
+## Annotation 1 (line 15)
+Comment on: "**Recommendation:** If broad Docker diagnostics are unnecessary, remove the agent endpoint. Otherwise, use an existing endpoint-level authorization mechanism to permit only the required operations, excluding inspect/archive where necessary. Treat credentials accessible through Docker as part of the agent's compromise scope."
+> ignore this for now, I'll come back to how we improve this in a dedicated session
+
+## Annotation 2 (line 25)
+Comment on: "**Recommendation:** Narrow the router rules to intended destinations and service ports. Reserve management access for management sources. Extend the existing policy test with permitted/denied traffic cases, rather than merely checking rule order."
+> let's define what these would be narrowed to
+
+## Annotation 3 (line 39)
+Comment on: "**Recommendation:** Correct the existing path filters. Add a non-executing `just` parse check. No new workflow framework is needed."
+> agree, but for just we can remove it entirely, i no longer us it
+
+## Annotation 4 (line 49)
+Comment on: "**Recommendation:** Use separate short-lived enrollment credentials and explicitly handle revocation after failed provisioning. Establish the intended physical-interface IPv6 policy during bootstrap, not only afterward."
+> agreed
+
+## Annotation 5 (line 59)
+Comment on: "**Recommendation:** Reconcile the full role-owned RouterOS list in one operation, using the restricted removal pattern already present nearby. For mounts, use native mount management and explicit retirement entries. Do not automatically unmount active application storage."
+> make this change
+
+## Annotation 6 (lines 63–70)
+Comment on: "| Area | Smallest useful simplification | |---|---| | Bootstrap Compose deployment | Replace `command: docker compose up` plus unconditional `changed_when: true` at `bootstrap-stack.yaml:97–101` with `community.docker.docker_compose_v2`. Accurate change reporting without custom output parsing. | | NFS management | Evaluate `ansible.posix.mount` instead of coordinating `lineinfile`, `findmnt`, `mount`, and remount commands in `storage.yaml:37–79`. Preserve the existing automount semantics. | | Portainer inventory parser | Replace the `awk` YAML extraction at `scripts/check-portainer-drift.sh:43–44` with a real YAML parser. I reproduced a failure by quoting paths in otherwise identical YAML. Retain the small comparison script, not its homemade parser. | | Shared network facts | Consume `network/inventory.yaml` in the Docker-host play instead of repeating TrueNAS's address five times in `ansible/roles/docker-host/defaults/main.yaml:42–54`. Avoid introducing a generator for every static Compose file. | | Unused Traefik policy | `docker/init/traefik-dynamic.yml:66–75` defines an unused allowlist/chain. Either deliberately apply a reviewed policy or delete it. Do not blindly enable it: its current ranges exclude intended client VLANs. | | Terraform command conventions | Add the missing root `just plan` recipe and align `docs/ai-dev.md:33–40` with the documented restrictive-umask convention. Keep one operator-facing invocation pattern. |"
+> let's do these, except for the just one, this can be removed as mentioned above
+
+## Annotation 7 (lines 74–76)
+Comment on: "- **State recovery:** Neither Terraform root declares a remote backend, and I found no documented encrypted state-backup/restore procedure. Local state is reasonable for one operator and does support locking. Document recovery before adding a backend solely for convention. - **NFS access:** `docs/truenas-storage.md:89–91` already records unrestricted media/photo export host lists. Complete that existing hardening item before building more automation. - **Firewall ownership:** `ansible/roles/ai-dev/templates/nftables.conf.j2:3` flushes the entire ruleset. Prefer replacing only the owned table if other software manages nftables rules. No current collision was demonstrated."
+> NFS access, explain what hardening would looke like. You will find my truenas credentials in 1password (xportal) these can be used to SSH into the box and check on the state of things
+
+## Annotation 8 (lines 74–76)
+Comment on: "- **State recovery:** Neither Terraform root declares a remote backend, and I found no documented encrypted state-backup/restore procedure. Local state is reasonable for one operator and does support locking. Document recovery before adding a backend solely for convention. - **NFS access:** `docs/truenas-storage.md:89–91` already records unrestricted media/photo export host lists. Complete that existing hardening item before building more automation. - **Firewall ownership:** `ansible/roles/ai-dev/templates/nftables.conf.j2:3` flushes the entire ruleset. Prefer replacing only the owned table if other software manages nftables rules. No current collision was demonstrated."
+> explain the Firewall ownership more clearly - what would this ideally look like?
