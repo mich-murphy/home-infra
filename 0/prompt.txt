@@ -1,0 +1,4 @@
+A -> 1
+B -> 2
+C -> yes I can perform the manual UI actions
+D -> Artemis Fowl delete duplicates, Minecraft keep Jack Black narration
