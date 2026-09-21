@@ -1,0 +1,1 @@
+Confirm for these changes: does this mean, with KDS and DFLT networks, they'll now be taking a longer route over Tailscale to connect to Jellyfin and other services?
