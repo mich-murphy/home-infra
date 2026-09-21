@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bcey5lleo</task-id>
+<tool-use-id>toolu_0168mH21uhNfM1iPs7CdD7ik</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-mm-dev-home-infra/eee3386a-ecc1-4dd1-91c7-a2d428412106/tasks/bcey5lleo.output</output-file>
+<status>completed</status>
+<summary>Background command "Run ai-dev play against merged main" completed (exit code 0)</summary>
+</task-notification>
