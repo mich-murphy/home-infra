@@ -73,12 +73,18 @@ from GHCR.
   registry entry. This is manual UI state, not established by this repository;
   add it in migration step 3 and audit it after a restore
 - Update policy: shared Git polling; Renovate digest bumps are the trigger
+- Health: the image carries the `HEALTHCHECK` (unauthenticated `GET /health`
+  on the container port answering a static body); the Compose file keeps no
+  override, so Portainer reports the real probe result
 
 Portainer supplies the interpolated `SONARR_URL`, `RADARR_URL`, `LIDARR_URL`,
-`TAUTULLI_URL`, `JELLYFIN_URL`, `MEDIA_BROKER_BIND`, `MEDIA_BROKER_BIND_HOST`,
+`TAUTULLI_URL`, `JELLYFIN_URL`, `QBITTORRENT_URL`, `QBITTORRENT_USERNAME`,
+`MEDIA_BROKER_BIND`, `MEDIA_BROKER_BIND_HOST`,
 `MEDIA_BROKER_ALLOW_PUBLIC_BIND`, and optional `MEDIA_BROKER_SECRETS_DIR`.
-These values are URLs, nonsecret bind settings, and a host directory path.
-Compose fixes the secret-file paths, the Host/Origin allow-lists, the
+These values are URLs, the nonsecret qBittorrent WebUI username, nonsecret
+bind settings, and a host directory path.
+Compose fixes the secret-file paths (including the qBittorrent WebUI password),
+the Host/Origin allow-lists, the
 response bound, and the two write gates
 (`MEDIA_BROKER_ENABLE_REQUESTS` and `MEDIA_BROKER_ENABLE_DELETES`, both
 enabled). Never put a backend API key or broker bearer value in Portainer's
@@ -86,9 +92,10 @@ stack variables, Compose environment, Git, or command arguments.
 
 ## Gated write tools
 
-Beyond the nine read tools (inventory, quality profiles, root folders,
+Beyond the twelve read tools (inventory, quality profiles, root folders,
 catalogue candidate search, the season and album detail inventories, both
-play-history tools, and the Jellyfin users list), the broker exposes seven
+play-history tools, the Jellyfin users list, and the three read-only
+qBittorrent torrent tools), the broker exposes seven
 write tools because the Compose environment enables both gates.
 `arr_request_media` adds one catalogue-resolved candidate per call — with an
 optional season selection for Sonarr, so a trial add can monitor and search
@@ -104,6 +111,17 @@ Lidarr an optional album id deletes a single album instead of the artist,
 with the preview showing both album and artist titles. Import-list exclusions
 are never added, so exclusion lists stay operator-managed.
 
+## Torrent client visibility
+
+With `QBITTORRENT_URL`, `QBITTORRENT_USERNAME`, and the password file set, the
+broker registers three read-only qBittorrent tools: `torrent_client_stats`,
+`torrent_client_inventory`, and `torrent_client_check_paths`. They exist for
+ratio and reseed audits: verifying tracker-reported seeding state against the
+client and checking which re-add candidates still have complete data. The
+broker logs in to the WebUI server-side, caches the session cookie, and issues
+no writes to the client. ai-dev gains no new egress: Hermes still reaches only
+the broker.
+
 The fixed endpoint is `http://docker-host:8765/mcp`, with Host
 `docker-host:8765` and Origin `http://docker-host:8765`. The host port binds
 only the docker-host Tailscale IPv4. It is not exposed through Traefik, a LAN
@@ -112,13 +130,19 @@ filesystem and has no Docker socket or media mounts.
 
 ## Host-side controls that remain
 
-- The five files in `/etc/media-broker/secrets` (`broker-token`,
-  `sonarr-api-key`, `radarr-api-key`, `lidarr-api-key`, `tautulli-api-key`)
+- The seven files in `/etc/media-broker/secrets` (`broker-token`,
+  `sonarr-api-key`, `radarr-api-key`, `lidarr-api-key`, `tautulli-api-key`,
+  `jellyfin-api-key`, `qbittorrent-password`)
   stay host-managed: directories `root:65532` mode `0750`, files
   `root:65532` mode `0640`. File-backed Compose secrets do not enforce their
   declared ownership or mode, so verify these after any host rebuild.
+  `qbittorrent-password` holds the password of the qBittorrent WebUI account
+  named by `QBITTORRENT_USERNAME`; rotate both together.
   Future ai-dev Ansible runs require the existing bearer as
   `hermes_media_broker_token` through protected variables.
+- qBittorrent's WebUI Host-header validation must accept the broker's direct
+  `qbittorrent:8080` authority; the Traefik hostname fronting already forces
+  that setting off, so this is a verification step, not a change.
 - The host firewall admits TCP 8765 only from ai-dev's exact Tailscale
   address through `tailscale0`; the `docker-host` role defines and asserts
   the `DOCKER-USER` rules on every run.
@@ -149,7 +173,7 @@ already merged, because Portainer resolves that path from `refs/heads/main`.
    the shared source. No relative-path volumes are needed for this stack.
 6. Wait for the container to become healthy, then verify: the running image
    is the current `:main` build; authenticated calls from Hermes succeed for
-   the sixteen registered tools; unauthenticated requests are rejected; a
+   the nineteen registered tools; unauthenticated requests are rejected; a
    different client is denied. Retain the existing ACL and token. No Hermes
    gateway restart is required.
 7. Confirm Renovate opens and automerges the initial digest-pin PR for the
