@@ -53,9 +53,11 @@ assert config["photon"]["enabled"] is True
 assert config["moshi"]["gateway"] == "127.0.0.1:24543"
 assert "other" in config["mcp_servers"]
 assert entry["tools"] == {"include": [
-    "arr_library_inventory", "arr_quality_profiles", "arr_root_folders", "tautulli_play_history",
-    "jellyfin_play_history", "arr_search_candidates", "torrent_client_stats", "torrent_client_inventory",
-    "torrent_client_check_paths", "arr_request_media", "arr_unmonitor_media", "arr_delete_media",
+    "arr_library_inventory", "arr_quality_profiles", "arr_root_folders", "arr_search_candidates",
+    "arr_season_inventory", "arr_album_inventory", "tautulli_play_history", "jellyfin_play_history",
+    "jellyfin_users", "torrent_client_stats", "torrent_client_inventory", "torrent_client_check_paths",
+    "arr_request_media", "arr_search_item", "arr_unmonitor_media", "arr_monitor_media",
+    "arr_set_season_monitoring", "arr_set_album_monitored", "arr_delete_media",
 ], "resources": False, "prompts": False}
 assert entry["headers"] == {"Authorization": "Bearer ${MEDIA_BROKER_TOKEN}"}
 assert entry["sampling"] == {"enabled": False}
