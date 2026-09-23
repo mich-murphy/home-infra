@@ -56,7 +56,10 @@ assert_yq 'nonroot numeric user' '.services["media-broker"].user == "65532:65532
 # cap_drop ALL and no-new-privileges are asserted generically for every stack
 # by tests/docker-hardening.sh; this file only keeps broker-specific checks.
 assert_yq 'read-only root filesystem' '.services["media-broker"].read_only == true'
-assert_yq 'six mounted secrets' '.services["media-broker"].secrets | length == 6'
+assert_yq 'seven mounted secrets' '.services["media-broker"].secrets | length == 7'
+# The image owns the healthcheck (GET /health); a Compose override would
+# shadow it, as the old raw-TCP probe did.
+assert_yq 'no healthcheck override' '.services["media-broker"] | has("healthcheck") | not'
 # yq expressions are single-quoted so the shell never expands the Compose
 # interpolation syntax they assert on.
 # shellcheck disable=SC2016
@@ -69,13 +72,16 @@ assert_yq 'write gates enabled in Compose, not in stack variables' \
   '.services["media-broker"].environment.MEDIA_BROKER_ENABLE_REQUESTS == "true" and .services["media-broker"].environment.MEDIA_BROKER_ENABLE_DELETES == "true"'
 assert_yq 'upstream keys are file references' \
   '[.services["media-broker"].environment | to_entries[] | select(.key | test("_API_KEY_FILE$"))] | length == 5'
+assert_yq 'qBittorrent password is a file reference' \
+  '.services["media-broker"].environment.QBITTORRENT_PASSWORD_FILE == "/run/secrets/qbittorrent_password"'
 assert_yq 'no bind mounts' '.services["media-broker"] | has("volumes") | not'
 assert_yq 'host-managed secret files' \
-  '[.secrets[].file | select(test("/etc/media-broker/secrets"))] | length == 6'
+  '[.secrets[].file | select(test("/etc/media-broker/secrets"))] | length == 7'
 
 # Both bind settings must stay fail-closed: a default value would let a public
-# bind happen without the explicit opt-in the broker requires.
-for variable in MEDIA_BROKER_BIND_HOST MEDIA_BROKER_ALLOW_PUBLIC_BIND; do
+# bind happen without the explicit opt-in the broker requires. The qBittorrent
+# URL and WebUI username follow the same fail-closed stack-variable pattern.
+for variable in MEDIA_BROKER_BIND_HOST MEDIA_BROKER_ALLOW_PUBLIC_BIND QBITTORRENT_URL QBITTORRENT_USERNAME; do
   if ! grep -q "\${${variable}:?" "${compose}"; then
     echo "media-broker Compose contract failed: ${variable} must have no default" >&2
     exit 1
@@ -121,7 +127,7 @@ endpoint=$(docker_cmd context inspect --format '{{(index .Endpoints "docker").Ho
   echo "unexpected desktop-linux Docker endpoint: ${endpoint}" >&2
   exit 2
 }
-for secret in broker-token sonarr-api-key radarr-api-key lidarr-api-key tautulli-api-key jellyfin-api-key; do
+for secret in broker-token sonarr-api-key radarr-api-key lidarr-api-key tautulli-api-key jellyfin-api-key qbittorrent-password; do
   : >"${tmp_dir}/${secret}"
 done
 normalized=${tmp_dir}/compose.json
@@ -132,6 +138,7 @@ compose_env=(
   SONARR_URL=http://sonarr:8989 RADARR_URL=http://radarr:7878
   LIDARR_URL=http://lidarr:8686 TAUTULLI_URL=http://tautulli:8181
   JELLYFIN_URL=http://jellyfin:8096
+  QBITTORRENT_URL=http://qbittorrent:8080 QBITTORRENT_USERNAME=admin
 )
 env "${compose_env[@]}" docker --context desktop-linux compose -f "${compose}" config --format json >"${normalized}"
 if env -u MEDIA_BROKER_BIND \
@@ -140,6 +147,7 @@ if env -u MEDIA_BROKER_BIND \
   RADARR_URL=http://radarr:7878 \
   LIDARR_URL=http://lidarr:8686 TAUTULLI_URL=http://tautulli:8181 \
   JELLYFIN_URL=http://jellyfin:8096 \
+  QBITTORRENT_URL=http://qbittorrent:8080 QBITTORRENT_USERNAME=admin \
   docker --context desktop-linux compose -f "${compose}" config --quiet >/dev/null 2>&1; then
   echo 'missing MEDIA_BROKER_BIND unexpectedly rendered' >&2
   exit 1
@@ -156,7 +164,7 @@ normalized = json.loads(pathlib.Path(sys.argv[2]).read_text())
 normalized_service = normalized["services"]["media-broker"]
 assert normalized_service["ports"][0]["host_ip"] == "100.100.10.2"
 assert normalized_service["ports"][0]["published"] == "8765"
-assert len(normalized_service["secrets"]) == 6
+assert len(normalized_service["secrets"]) == 7
 
 policy = pathlib.Path(sys.argv[1]).read_text()
 assert "docker_media_broker_enabled | bool" in policy

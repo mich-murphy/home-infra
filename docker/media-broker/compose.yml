@@ -22,11 +22,15 @@ services:
       LIDARR_URL: "${LIDARR_URL:?set Lidarr URL}"
       TAUTULLI_URL: "${TAUTULLI_URL:?set Tautulli URL}"
       JELLYFIN_URL: "${JELLYFIN_URL:?set Jellyfin URL}"
+      QBITTORRENT_URL: "${QBITTORRENT_URL:?set qBittorrent URL}"
       SONARR_API_KEY_FILE: /run/secrets/sonarr_api_key
       RADARR_API_KEY_FILE: /run/secrets/radarr_api_key
       LIDARR_API_KEY_FILE: /run/secrets/lidarr_api_key
       TAUTULLI_API_KEY_FILE: /run/secrets/tautulli_api_key
       JELLYFIN_API_KEY_FILE: /run/secrets/jellyfin_api_key
+      # The WebUI username is a nonsecret identifier; the password stays a file.
+      QBITTORRENT_USERNAME: "${QBITTORRENT_USERNAME:?set qBittorrent WebUI username}"
+      QBITTORRENT_PASSWORD_FILE: /run/secrets/qbittorrent_password
       MEDIA_BROKER_TOKEN_FILE: /run/secrets/media_broker_token
       MEDIA_BROKER_BIND_HOST: "${MEDIA_BROKER_BIND_HOST:?set 0.0.0.0 only with explicit opt-in}"
       MEDIA_BROKER_ALLOW_PUBLIC_BIND: "${MEDIA_BROKER_ALLOW_PUBLIC_BIND:?set true only with exact allow-lists}"
@@ -71,12 +75,13 @@ services:
         uid: "65532"
         gid: "65532"
         mode: 0440
-    healthcheck:
-      test: ["CMD", "python3", "-c", "import socket; s=socket.create_connection(('127.0.0.1', 8000), 2); s.close()"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      - source: qbittorrent_password
+        target: qbittorrent_password
+        uid: "65532"
+        gid: "65532"
+        mode: 0440
+    # The image carries the healthcheck (unauthenticated GET /health);
+    # a Compose override would shadow it, so there is deliberately none.
     restart: unless-stopped
 
 secrets:
@@ -92,9 +97,11 @@ secrets:
     file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/tautulli-api-key"
   jellyfin_api_key:
     file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/jellyfin-api-key"
+  qbittorrent_password:
+    file: "${MEDIA_BROKER_SECRETS_DIR:-/etc/media-broker/secrets}/qbittorrent-password"
 
 networks:
-  # The existing application network provides reachability to the five
+  # The existing application network provides reachability to the six
   # upstreams; no media or Docker socket mount is needed.
   proxy:
     external: true
