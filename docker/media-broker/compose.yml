@@ -2,7 +2,7 @@
 # The Renovate digest bump is the deploy trigger Portainer polls for.
 services:
   media-broker:
-    image: ghcr.io/mich-murphy/media-broker:main@sha256:828ec4a69348b45d84c253b4e0725aa9bdd3ab8a9c2a1b52b419ba1e45d50c08
+    image: ghcr.io/mich-murphy/media-broker:main@sha256:c56eaf2eca911706a11e537ffb5c89c6eb3c4de2648c53dfcd63f01170d87611
     container_name: media-broker
     user: "65532:65532"
     security_opt:
