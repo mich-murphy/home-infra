@@ -44,6 +44,12 @@ services:
       # these in Compose keeps the switch out of Portainer stack variables.
       MEDIA_BROKER_ENABLE_REQUESTS: "true"
       MEDIA_BROKER_ENABLE_DELETES: "true"
+      # Verified-complete qBittorrent reseeds: the broker adds a .torrent
+      # stopped, rechecks it, and starts it only when every piece verifies,
+      # into this exact save path as qBittorrent sees it (the music category
+      # under /data/torrents).
+      MEDIA_BROKER_ENABLE_RESEEDS: "true"
+      QBITTORRENT_RESEED_SAVE_PATHS: /data/torrents/music
     secrets:
       - source: media_broker_token
         target: media_broker_token

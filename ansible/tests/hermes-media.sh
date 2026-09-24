@@ -56,6 +56,7 @@ assert entry["tools"] == {"include": [
     "arr_library_inventory", "arr_quality_profiles", "arr_root_folders", "arr_search_candidates",
     "arr_season_inventory", "arr_album_inventory", "tautulli_play_history", "jellyfin_play_history",
     "jellyfin_users", "torrent_client_stats", "torrent_client_inventory", "torrent_client_check_paths",
+    "torrent_client_reseed",
     "arr_request_media", "arr_search_item", "arr_unmonitor_media", "arr_monitor_media",
     "arr_set_season_monitoring", "arr_set_album_monitored", "arr_delete_media",
 ], "resources": False, "prompts": False}
