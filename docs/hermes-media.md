@@ -85,9 +85,10 @@ These values are URLs, the nonsecret qBittorrent WebUI username, nonsecret
 bind settings, and a host directory path.
 Compose fixes the secret-file paths (including the qBittorrent WebUI password),
 the Host/Origin allow-lists, the
-response bound, and the two write gates
-(`MEDIA_BROKER_ENABLE_REQUESTS` and `MEDIA_BROKER_ENABLE_DELETES`, both
-enabled). Never put a backend API key or broker bearer value in Portainer's
+response bound, the three write gates
+(`MEDIA_BROKER_ENABLE_REQUESTS`, `MEDIA_BROKER_ENABLE_DELETES`, and
+`MEDIA_BROKER_ENABLE_RESEEDS`, all enabled), and the reseed save-path
+allow-list (`QBITTORRENT_RESEED_SAVE_PATHS`). Never put a backend API key or broker bearer value in Portainer's
 stack variables, Compose environment, Git, or command arguments.
 
 ## Gated write tools
@@ -95,8 +96,8 @@ stack variables, Compose environment, Git, or command arguments.
 Beyond the twelve read tools (inventory, quality profiles, root folders,
 catalogue candidate search, the season and album detail inventories, both
 play-history tools, the Jellyfin users list, and the three read-only
-qBittorrent torrent tools), the broker exposes seven
-write tools because the Compose environment enables both gates.
+qBittorrent torrent tools), the broker exposes eight
+write tools because the Compose environment enables all three gates.
 `arr_request_media` adds one catalogue-resolved candidate per call — with an
 optional season selection for Sonarr, so a trial add can monitor and search
 season one only — and `arr_search_item` queues an upstream search for one
@@ -118,9 +119,30 @@ broker registers three read-only qBittorrent tools: `torrent_client_stats`,
 `torrent_client_inventory`, and `torrent_client_check_paths`. They exist for
 ratio and reseed audits: verifying tracker-reported seeding state against the
 client and checking which re-add candidates still have complete data. The
-broker logs in to the WebUI server-side, caches the session cookie, and issues
-no writes to the client. ai-dev gains no new egress: Hermes still reaches only
-the broker.
+broker logs in to the WebUI server-side and caches the session cookie. The
+read tools issue no writes to the client. ai-dev gains no new egress: Hermes
+still reaches only the broker.
+
+## Torrent reseeds
+
+`MEDIA_BROKER_ENABLE_RESEEDS` registers `torrent_client_reseed`, which re-adds
+one `.torrent` file over data already on disk and starts it only after a full
+recheck verifies every piece. The broker adds it stopped, tagged
+`media-broker-reseed`, throttled to 1 B/s, with an explicit save path, then
+rechecks it. A verified torrent is started (`reseeding`). Anything else is
+removed with its data kept (`aborted_incomplete`), and a torrent the broker did
+not add is never touched (`already_present`). A recheck that outlasts the call
+reports `checking`, and replaying the same call resumes it, so a whole batch
+can be re-run after any interruption.
+
+The only allowed save path is `/data/torrents/music`, the music category's
+path as qBittorrent sees it through its `/mnt/data/torrents` bind. The broker
+refuses to reseed while qBittorrent appends an extension to incomplete files,
+or while excluded file names and the unwanted folder are both enabled, because
+an incomplete recheck would then rename or move files on disk. Both are off
+today; keep them off. The media-broker repository README documents the full
+flow and its one residual risk: a reseeded torrent announces to the trackers
+named in the supplied metainfo.
 
 The fixed endpoint is `http://docker-host:8765/mcp`, with Host
 `docker-host:8765` and Origin `http://docker-host:8765`. The host port binds
@@ -183,7 +205,8 @@ already merged, because Portainer resolves that path from `refs/heads/main`.
    `read:packages` for the private package — fix the token before relying on
    the pipeline.
 
-Jellyfin playback reporting and the gated writes are both enabled — the
+Jellyfin playback reporting and the gated writes (requests, deletes, and
+reseeds) are all enabled — the
 broker is no longer read-only, so the confirmation flow above covers every
 destructive path. Host controls are operational policy, not a security
 boundary against root administrators.

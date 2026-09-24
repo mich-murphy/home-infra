@@ -32,6 +32,7 @@ TOOLS = [
     "torrent_client_stats",
     "torrent_client_inventory",
     "torrent_client_check_paths",
+    "torrent_client_reseed",
     "arr_request_media",
     "arr_search_item",
     "arr_unmonitor_media",
