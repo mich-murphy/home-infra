@@ -23,16 +23,18 @@ _Avoid_: Media role, application stack deployment
 
 **Subscription proxy**:
 CLIProxyAPI (CPA) on ai-dev, owned by the Ansible cliproxy role: one tailnet
-endpoint that pools Claude and Codex subscription accounts, with the stock
-management dashboard and no client API keys. Tailscale identity, the tailnet
-grant and the nftables admit on `tailscale0` are its client access control.
+HTTPS endpoint, `https://ai-dev.<tailnet>.ts.net` through `tailscale
+serve`, that pools Claude and Codex subscription accounts, with the stock
+management dashboard and no client API keys. Tailscale identity and the
+tailnet grant to tcp:443 are its client access control.
 _Avoid_: AI gateway, API proxy, Hermes
 
 **Routing controller**:
 The cliproxy-controller service beside CPA. It sets CPA's credential
 priorities so the account whose weekly quota resets soonest fills first,
 enables Codex WebSockets, and reports routing order and cache hit rates on its
-status page. It never redeems banked resets.
+status page at `/controller/` on the same HTTPS name. It never redeems banked
+resets.
 _Avoid_: Scheduler, load balancer
 
 **Hermes decommission**:
