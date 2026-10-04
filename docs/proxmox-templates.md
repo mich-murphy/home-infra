@@ -166,9 +166,15 @@ current boot's `/run/cloud-init`, all root-only. The same `cloud-init` tasks
 run `ansible/roles/common/files/redact-cloud-init-tailscale-keys`, which
 overwrites each key in place with filler of the same length, so the pickles and
 JSON stay loadable, prints only counts, and fails the play if any key remains.
-Check mode only counts. Redaction does not revoke a key. The Proxmox snippets
-under `/var/lib/vz/snippets`, the cloud-init drive and the ignored files under
-`terraform/files/` still hold the key Terraform last rendered.
+Check mode only counts. Redaction does not revoke a key. The root-only (`0600`)
+Proxmox snippets under `/var/lib/vz/snippets`, the cloud-init drive and the
+local Terraform state still hold the key Terraform last uploaded; Terraform
+renders the snippets in memory and writes no copy to local disk.
+`tests/terraform-cloud-init.sh` fails any local file resource, any snippet not
+uploaded from `source_raw` with a root-only `file_mode`, and any VM that names
+a snippet by anything but its literal volume ID. A reference to the snippet
+resource's ID is unknown while the snippet is replaced, so the provider would
+update and reboot the VM.
 
 ## References
 

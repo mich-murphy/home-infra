@@ -95,7 +95,7 @@ nix develop
 ## Terraform
 
 Provisions VMs on Proxmox using the [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox) provider. Secrets sourced from 1Password via the `onepassword` provider.
-Terraform state is secret-bearing. Run Terraform in a shell with `umask 077` so local state and generated cloud-init files are created with restrictive permissions.
+Terraform state is secret-bearing. It is local and git-ignored; run Terraform in a shell with `umask 077` so state, its backups and saved plans are created with restrictive permissions.
 
 | VM | ID | Purpose |
 | --- | --- | --- |
@@ -107,6 +107,7 @@ Terraform state is secret-bearing. Run Terraform in a shell with `umask 077` so 
 `terraform/main.tf` is authoritative for each VM's CPU, memory and disk.
 
 Cloud-init template (`cloud_init.tftpl`) bootstraps the management user, installs qemu-guest-agent, and joins Tailscale.
+Terraform renders it in memory and uploads it as a root-only Proxmox snippet (`source_raw`); no vendor-data file is written locally. Outside the guests, the Tailscale auth key it carries lives only in 1Password, the Terraform state (as a sensitive value) and the snippet; see [Cached Tailscale auth keys](docs/proxmox-templates.md#cached-tailscale-auth-keys) for the guests' copies.
 TrueNAS, docker-host, ai-dev, and the UniFi controller use `prevent_destroy`.
 Pinned MAC addresses are supplied through sensitive Terraform variables in the
 ignored root `.envrc`. The UniFi controller intentionally has `on_boot = false`
