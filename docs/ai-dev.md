@@ -40,14 +40,28 @@ The `ai-dev` role owns the host: identity, packages, the nftables policy and
 memory protection. The `cliproxy` role owns the proxy and the controller.
 
 - `cliproxy.service` runs CPA as the `cliproxy` system user on
-  `0.0.0.0:8317`: the client API, the management API and the dashboard.
+  `127.0.0.1:8317`: the client API, the management API and the dashboard.
 - `cliproxy-controller.service` runs the routing controller as a systemd
-  `DynamicUser` on `0.0.0.0:8318`: the status API and status page.
+  `DynamicUser` on `127.0.0.1:8318`: the status API and status page.
+- `tailscaled` publishes both over HTTPS with `tailscale serve`, on the
+  node's tailnet name only (no Funnel): `/` proxies to `127.0.0.1:8317` and
+  `/controller` to `127.0.0.1:8318`.
 
-nftables admits both ports on `tailscale0` only. The physical DMZ stays
-default-denied, and the guest still cannot initiate a session to any tailnet
-peer. CPA reaches the Anthropic and OpenAI endpoints over the DMZ's public IPv4
-route.
+Clients use `https://ai-dev.<tailnet>.ts.net` as the proxy base URL; the
+dashboard is `https://ai-dev.<tailnet>.ts.net/management.html` and the
+controller's status page `https://ai-dev.<tailnet>.ts.net/controller/`.
+`<tailnet>.ts.net` stands for the tailnet's MagicDNS suffix; any tailnet
+device prints it with `tailscale status --json | jq -r .MagicDNSSuffix`.
+Nothing listens beyond loopback except `sshd`, Mosh and `tailscaled`.
+
+nftables admits TCP 443 on `tailscale0` only. That rule documents the intended
+exposure rather than carrying serve traffic: on Linux, `tailscaled` applies the
+tailnet policy and then hands connections for serve ports to its userspace
+network stack, so they never reach the kernel's nftables input hook. The
+physical DMZ stays default-denied, and the guest still cannot initiate a
+session to any tailnet peer. CPA reaches the Anthropic and OpenAI endpoints,
+and `tailscaled` reaches Let's Encrypt and the Tailscale control plane, over
+the DMZ's public IPv4 route.
 
 Both services are hardened systemd units: a read-only system apart from their
 own state, no capabilities, private `/tmp` and devices, and a system call
@@ -112,20 +126,60 @@ again.
 ### Client access
 
 CPA's client API has no API keys (`access.api-keys: []`). Any device that can
-open TCP 8317 on ai-dev can spend the pooled subscriptions. That is a
-deliberate, accepted decision: Tailscale identity, the narrow tailnet grant
-below and the nftables admit on `tailscale0` are the access control.
+open TCP 443 on ai-dev can spend the pooled subscriptions. That is a
+deliberate, accepted decision: Tailscale identity and the narrow tailnet grant
+below are the access control.
 
 The management API, the dashboard and the controller's status API all require
 the management key, `cliproxy_management_secret` in the Ansible vault. CPA
 blocks a client address after repeated wrong keys, and the controller
 throttles wrong keys so its endpoint is no faster than CPA's for guessing.
 
+### Serve and client addresses
+
+`tailscale serve` connects to CPA from `127.0.0.1`. CPA treats `127.0.0.1` and
+`::1` as local clients, and it bans a client address for 30 minutes after five
+wrong management keys, so without forwarded addresses every tailnet browser
+would share one local identity: a few wrong keys from any device would lock
+out the controller too, and logs would show only `127.0.0.1`.
+
+CPA therefore lists `127.0.0.1` in `server.trusted-proxies`. For connections
+from that address it takes the client from `X-Forwarded-For`, which serve
+always overwrites with the tailnet peer's address (the proxy drops any
+incoming forwarding headers first), so a client cannot choose its own.
+Tailnet browsers are remote clients, which is why
+`management.allow-remote` stays `true`; every management request, local or
+remote, still needs the key. The controller calls CPA directly without a
+forwarded header and remains a local client with its own failure count. Any
+process on ai-dev could claim another address through loopback, which gains
+nothing beyond the key check it already faces.
+
+`tailscale serve --set-path /controller` strips the mount before proxying, so
+the controller sees root paths and keeps `CONTROLLER_BASE_PATH` empty; its
+page resolves `v1/status` relative to its own URL. Serve passes WebSocket
+upgrades through, which the Codex Responses WebSocket on `/v1/responses` and
+`/backend-api/codex/responses` relies on.
+
+The serve configuration lives in `tailscaled`'s state. `tailscale serve
+set-config` covers Tailscale Services only, so the cliproxy role compares
+`tailscale serve status --json` with `cliproxy_serve_config` and, on any
+difference, runs `tailscale serve reset` and the two `tailscale serve --bg`
+commands, then asserts the result matches exactly.
+
+### HTTPS certificates
+
+Serve needs HTTPS Certificates enabled for the tailnet (admin console, DNS
+page); the cliproxy role checks `CertDomains` in `tailscale status --json`
+before touching serve. `tailscaled` obtains a Let's Encrypt certificate for
+`ai-dev.<tailnet>.ts.net` on the first request and renews it itself.
+Certificates are recorded in public Certificate Transparency logs, so the
+machine name and tailnet name are public; nothing else about the host is.
+
 ## Tailnet policy
 
 The tailnet policy is managed outside this repository. `tag:ai-dev` is owned
 by `mich-murphy@github`, and one grant reaches ai-dev. It admits `group:admin`
-to OpenSSH, Mosh, CPA and the controller:
+to OpenSSH, Mosh and HTTPS (CPA and the controller through serve):
 
 ```json
 {
@@ -136,7 +190,7 @@ to OpenSSH, Mosh, CPA and the controller:
     {
       "src": ["group:admin"],
       "dst": ["tag:ai-dev"],
-      "ip": ["tcp:22", "udp:60000-61000", "tcp:8317", "tcp:8318"]
+      "ip": ["tcp:22", "udp:60000-61000", "tcp:443"]
     }
   ]
 }
@@ -204,12 +258,17 @@ Run:
 cd terraform
 terraform fmt -check -recursive
 terraform validate
+../tests/terraform-cloud-init.sh
 terraform plan
 ```
 
 Stop if VMID 110 or its disk would be destroyed or replaced; `main.tf` keeps a
 `moved` block, so an address move is the only structural change a plan should
 ever report here.
+A change inside `initialization` is an in-place update, but applying it reboots
+ai-dev and gives it a new cloud-init instance ID. Prepare the guest first as
+described in
+[Changing a running guest's cloud-init settings](proxmox-templates.md#changing-a-running-guests-cloud-init-settings).
 If the plan instead proposes creating all BPG-provider VMs or asks for the
 legacy Telmate provider, stop: the local state predates the earlier provider
 migration and must be reconciled/imported before this rename can be planned.
@@ -290,7 +349,8 @@ manual; run them in order.
 
 ## Logging in accounts
 
-Open the dashboard at `http://ai-dev:8317/management.html` and sign in with the
+Open the dashboard at
+`https://ai-dev.<tailnet>.ts.net/management.html` and sign in with the
 management key, `cliproxy_management_secret` in the vault (from `ansible/`,
 `ansible-vault view group_vars/secrets.yaml --vault-password-file .vaultpass`
 shows it). Its **OAuth Login** page has **Start Anthropic Login** and
@@ -364,8 +424,8 @@ curl -fsS http://127.0.0.1:8318/healthz
 
 The controller logs one JSON object per line; `routing order changed`,
 `credential patched` and `usage poll failed` are the messages to watch. Its
-status page is at `http://ai-dev:8318/` and asks for the management key, which
-it keeps only in that browser tab.
+status page is at `https://ai-dev.<tailnet>.ts.net/controller/` and asks
+for the management key, which it keeps only in that browser tab.
 
 To rotate the management key, replace `cliproxy_management_secret` in the vault
 and run the play with `--tags cliproxy`; it rewrites CPA's configuration and the
@@ -414,15 +474,40 @@ tailscale status
 ip -brief address show
 ip route
 ss -ltn 'sport = :8317 or sport = :8318'
+tailscale serve status
+tailscale funnel status
 ```
 
 The guest must have one address on the DMZ interface named by
 `ai_dev_physical_interface`, no route to internal VLANs, and no
-physical-interface IPv6 address. Test that HTTPS and gateway DNS work, while
+physical-interface IPv6 address. Both proxy ports listen on `127.0.0.1` only,
+and serve shows exactly the two handlers, with no Funnel. Test that HTTPS and
+gateway DNS work, while
 new connections to MGMT, SRV, DFLT, KDS, GST, other DMZ hosts, and tailnet
-peers fail. From a tailnet device outside `group:admin`, TCP 8317 and 8318
-must be refused; from a `group:admin` one, `curl http://ai-dev:8317/healthz`
-answers.
+peers fail. From a tailnet device outside `group:admin`, TCP 443 must be
+refused. From a `group:admin` one:
+
+```sh
+name=ai-dev.$(tailscale status --json | jq -r .MagicDNSSuffix)
+host=https://${name}
+# 200 with a certificate curl verifies; the digest matches cliproxy_panel_sha256.
+curl -fsS "$host/management.html" | shasum -a 256
+# The client API needs no key.
+curl -fsS -o /dev/null -w '%{http_code}\n' "$host/v1/models"
+# The management API refuses a missing key with 401.
+curl -sS -o /dev/null -w '%{http_code}\n' "$host/v8/management/credentials"
+# The old plain-HTTP port is closed.
+nc -z -w 5 "$name" 8317 || echo refused
+# A WebSocket upgrade through serve answers 101.
+curl -sS --http1.1 -m 5 -o /dev/null -w '%{http_code}\n' \
+  -H 'Connection: Upgrade' -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Version: 13' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  "$host/v1/responses"
+```
+
+`journalctl -u cliproxy` should show the tailnet device's address, not
+`127.0.0.1`, for those requests.
 
 With clients pointed at the proxy, check the end-to-end behaviour:
 
@@ -463,7 +548,7 @@ Verify recovery from Proxmox and a `group:admin` tailnet device:
 journalctl -k -g 'eno1: Detected Hardware Unit Hang'
 qm guest exec 110 -- /usr/bin/ping -c 3 1.1.1.1
 tailscale ping ai-dev
-curl -fsS http://ai-dev:8317/healthz
+curl -fsS "https://ai-dev.$(tailscale status --json | jq -r .MagicDNSSuffix)/healthz"
 ```
 
 The first command may show historical events from the current boot, but its
@@ -481,4 +566,7 @@ fallback, Wi-Fi/cellular roaming, and persistent Herdr panes.
 - [Moshi connections](https://getmoshi.app/docs/connections)
 - [Moshi with Herdr](https://getmoshi.app/docs/herdr)
 - [Tailscale grants syntax](https://tailscale.com/docs/reference/syntax/grants)
+- [Tailscale Serve](https://tailscale.com/kb/1312/serve) and the
+  [`tailscale serve` command](https://tailscale.com/kb/1242/tailscale-serve)
+- [Enabling HTTPS](https://tailscale.com/kb/1153/enabling-https)
 - [systemd credentials](https://systemd.io/CREDENTIALS/)
