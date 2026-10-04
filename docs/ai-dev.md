@@ -123,46 +123,32 @@ throttles wrong keys so its endpoint is no faster than CPA's for guessing.
 
 ## Tailnet policy
 
-The tailnet policy is managed outside this repository. Two grants reach
-ai-dev. Grants are additive, so a broader existing grant can defeat either.
-
-Give only approved user and iOS device selectors permission to initiate
-OpenSSH and Mosh traffic:
+The tailnet policy is managed outside this repository. `tag:ai-dev` is owned
+by `mich-murphy@github`, and one grant reaches ai-dev. It admits `group:admin`
+to OpenSSH, Mosh, CPA and the controller:
 
 ```json
 {
+  "tagOwners": {
+    "tag:ai-dev": ["mich-murphy@github"]
+  },
   "grants": [
     {
-      "src": ["group:ai-dev-users"],
+      "src": ["group:admin"],
       "dst": ["tag:ai-dev"],
-      "ip": ["tcp:22", "udp:60000-61000"]
+      "ip": ["tcp:22", "udp:60000-61000", "tcp:8317", "tcp:8318"]
     }
   ]
 }
 ```
 
-The proxy grant is the client access control for CPA and the controller, so
-keep it to the devices that should spend the subscriptions:
+This grant is the client access control for CPA and the controller, so
+`group:admin` must hold only the users who may administer the host and spend
+the pooled subscriptions. Grants are additive, so a broader existing grant can
+defeat it.
 
-```json
-{
-  "grants": [
-    {
-      "src": ["group:ai-proxy-users"],
-      "dst": ["tag:ai-dev"],
-      "ip": ["tcp:8317", "tcp:8318"]
-    }
-  ]
-}
-```
-
-Replace both groups with the tailnet's approved selectors, and prefer naming
-your own devices or user over `autogroup:member` or `*`.
-
-No grant should have `tag:ai-dev` as a source. Hermes needed grants from ai-dev
-to the docker-host observer (`tcp:2375`), the media broker (`tcp:8765`) and the
-Proxmox API (`tcp:8006`); delete them from the policy. Nothing on the guest
-initiates a tailnet session any more.
+No grant has `tag:ai-dev` as a source; nothing on the guest initiates a
+tailnet session.
 
 The tailnet policy is necessary but not sufficient. ai-dev's own nftables
 output chain drops the whole `100.64.0.0/10` range, so the guest cannot
@@ -271,8 +257,8 @@ manual; run them in order.
    it if so, then delete the file. Do not print it; the key is the only secret
    in the file. Remove any key left in the 1Password `tailscale authkey` field
    the same way.
-2. **Tailnet policy.** Add the proxy grant above for your devices, and delete
-   every grant with `tag:ai-dev` as a source.
+2. **Tailnet policy.** Make the `group:admin` grant above the only grant to
+   `tag:ai-dev`, and delete every grant with `tag:ai-dev` as a source.
 3. **Check, then apply.** Run the check-mode and apply commands from
    [Deployment](#deployment). The apply installs CPA and the dashboard, closes
    Hermes's tailnet egress, and reports the controller as skipped until its
@@ -358,8 +344,8 @@ Then revoke the agent's credentials, which this repository no longer holds:
   Developer settings, Fine-grained tokens).
 
 Remove the `hermes` host from the Moshi app as well. The docker-host observer
-and media broker keep running unchanged with no consumer; see
-[`docs/hermes-media.md`](hermes-media.md).
+and media broker keep running with no consumer, and docker-host admits no
+client to either; see [`docs/hermes-media.md`](hermes-media.md).
 
 ## Operating it
 
@@ -429,8 +415,8 @@ The guest must have one address on the DMZ interface named by
 `ai_dev_physical_interface`, no route to internal VLANs, and no
 physical-interface IPv6 address. Test that HTTPS and gateway DNS work, while
 new connections to MGMT, SRV, DFLT, KDS, GST, other DMZ hosts, and tailnet
-peers fail. From a tailnet device outside the proxy grant, TCP 8317 and 8318
-must be refused; from an approved one, `curl http://ai-dev:8317/healthz`
+peers fail. From a tailnet device outside `group:admin`, TCP 8317 and 8318
+must be refused; from a `group:admin` one, `curl http://ai-dev:8317/healthz`
 answers.
 
 With clients pointed at the proxy, check the end-to-end behaviour:
@@ -466,7 +452,7 @@ After changing the hook, apply it live with
 the isolated DMZ link with `ip link set dev eno1 down` followed by
 `ip link set dev eno1 up`; Proxmox management remains on `eno2`/`vmbr0`.
 
-Verify recovery from Proxmox and an approved tailnet device:
+Verify recovery from Proxmox and a `group:admin` tailnet device:
 
 ```sh
 journalctl -k -g 'eno1: Detected Hardware Unit Hang'
@@ -478,9 +464,9 @@ curl -fsS http://ai-dev:8317/healthz
 The first command may show historical events from the current boot, but its
 latest timestamp must not advance after TSO is disabled and the link is reset.
 
-From an unapproved tailnet device, TCP 22 and UDP 60000-61000 must be denied.
-From the approved phone, verify key-based OpenSSH, Mosh and SSH fallback,
-Wi-Fi/cellular roaming, and persistent Herdr panes.
+From a tailnet device outside `group:admin`, TCP 22 and UDP 60000-61000 must
+be denied. From a `group:admin` phone, verify key-based OpenSSH, Mosh and SSH
+fallback, Wi-Fi/cellular roaming, and persistent Herdr panes.
 
 ## References
 
