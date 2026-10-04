@@ -3,5 +3,5 @@
   "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
   "platform": "github",
   "onboarding": false,
-  "repositories": ["mich-murphy/home-infra"]
+  "repositories": ["mich-murphy/home-infra", "mich-murphy/cliproxy-controller"]
 }
