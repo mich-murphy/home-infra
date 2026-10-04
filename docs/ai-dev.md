@@ -292,15 +292,20 @@ tasks that unpack binaries, start units and probe health report as skipped.
 The configuration template runs with diff disabled, because the file carries
 the management key.
 
-The Proxmox IP configuration does not request guest IPv6, and the ai-dev role
-persists the physical DMZ IPv6 disablement after networking is available. A
-per-interface networkd drop-in disables DHCPv6, IPv6 link-local addresses, and
-router advertisements so networkd cannot undo the sysctl policy at reboot.
-The same drop-in pins the physical interface's resolver to the DMZ gateway,
-`ai_dev_dns_server`: with no VM nameserver set, Proxmox hands cloud-init its own
-MagicDNS resolver and tailnet search domain, and MagicDNS answers SERVFAIL for
-public names on this host. The role asserts the interface's resolver and that a
-public name resolves on every run.
+The Proxmox IP configuration does not request guest IPv6, and
+`tests/terraform-cloud-init.sh` fails an `ipv6` block on any DMZ guest. The
+ai-dev role persists the physical DMZ IPv6 disablement after networking is
+available. A per-interface networkd drop-in disables DHCPv6, IPv6 link-local
+addresses, and router advertisements so networkd cannot undo the sysctl policy
+at reboot.
+Terraform sets the VM's nameserver and search domain; see
+[Guest name resolution](proxmox-templates.md#guest-name-resolution). Left
+unset, Proxmox hands cloud-init its own MagicDNS resolver and tailnet search
+domain, and MagicDNS answers SERVFAIL for public names on this host. The live
+guest's cloud-init network file predates that and still names MagicDNS, so the
+same drop-in pins the physical interface's resolver to the router,
+`ai_dev_dns_server`, and drops its search domain. The role asserts the
+interface's resolver and that a public name resolves on every run.
 The existing cloud-init IPv4 configuration and Tailscale interface are preserved.
 This cloud-init template cannot guarantee first-boot isolation: its `runcmd` phase
 runs after networking. Do not treat a fresh ai-dev guest as isolated until an

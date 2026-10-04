@@ -114,7 +114,9 @@ and `started = false` while the server has 32GB installed; this is not drift.
 Start VM 111 before running the UniFi Ansible role or any `terraform/network`
 plan/apply, and stop it again after controller-dependent work is complete.
 Template build usage and recovery are documented in
-[docs/proxmox-templates.md](docs/proxmox-templates.md).
+[docs/proxmox-templates.md](docs/proxmox-templates.md), together with the
+resolver every cloud-init guest must set and what to do before applying a
+change to a running guest's cloud-init settings, which reboots it.
 
 ## Ansible
 
