@@ -69,7 +69,7 @@ managed outside this repo. Its deployment and operations are documented in
 - [direnv](https://direnv.net/) (auto-loads the Nix dev shell)
 
 The dev shell includes Terraform, Ansible, Docker Compose, ShellCheck, `yq`,
-Actionlint, and Alejandra.
+`hcl2json`, `jq`, Actionlint, and Alejandra.
 
 ## Quick Start
 
