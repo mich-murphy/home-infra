@@ -1,0 +1,24 @@
+---
+# Proxmox derives a guest's NoCloud instance ID from a hash of its generated
+# user-data and network configuration, so any change to the VM's cloud-init
+# settings makes the next boot look like a new instance's first boot: SSH host
+# keys are regenerated, the cloud-init user is set up again and the
+# vendor-data, with its Tailscale auth key, runs again. Trusting the cached
+# instance stops that. docs/proxmox-templates.md covers what the guest no
+# longer picks up and how to re-provision one deliberately.
+- name: check whether cloud-init is installed
+  ansible.builtin.stat:
+    path: /usr/bin/cloud-init
+  register: cloud_init_binary
+
+- name: keep cloud-init on its cached instance when the instance ID changes
+  ansible.builtin.copy:
+    dest: /etc/cloud/cloud.cfg.d/99-manual-cache-clean.cfg
+    content: |
+      # Managed by Ansible (common role). Trust the cached instance rather than
+      # treating a new instance ID as a first boot; `cloud-init clean` re-runs it.
+      manual_cache_clean: true
+    owner: root
+    group: root
+    mode: "0644"
+  when: cloud_init_binary.stat.exists
