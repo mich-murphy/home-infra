@@ -1,23 +1,10 @@
 ---
 username: michael
 ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIP9p7ei2QuEPP+ZgzBBSbwH9TZ7JuvYFiMNWMX+guPEq"
-# Keys that reach the agent account. The operator key above lives on disk, so
-# SSH offers the 1Password agent's keys first and hits MaxAuthTries before it.
-ai_dev_hermes_authorized_keys:
-  - "{{ ssh_public_key }}"
-  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF macbook"
 ai_dev_hostname: ai-dev
 ai_dev_physical_interface: eth0
 ai_dev_dmz_gateway: 10.77.99.1
 ai_dev_dns_server: 10.77.1.1
-# The only tailnet peers ai-dev may connect to; other egress is denied.
-ai_dev_docker_proxy_host: docker-host
-ai_dev_docker_proxy_port: 2375
-ai_dev_proxmox_api_host: proxmox
-ai_dev_proxmox_api_port: 8006
-# Live read-only broker. Supply its existing token through protected Ansible vars
-# as hermes_media_broker_token when reconciling this host; never commit the value.
-ai_dev_hermes_media_broker_enabled: true
 
 swap_mode: file
 swap_size_gb: 8

@@ -1,0 +1,124 @@
+---
+# One-time removal of the retired Hermes agent from a live host. Every step is
+# idempotent, so a rerun after a partial failure finishes the job. Nothing here
+# touches the management user's SSH, Mosh or Herdr access.
+- name: Refuse to decommission anything but the dedicated agent account
+  ansible.builtin.assert:
+    that:
+      - ai_dev_hermes_user not in ['root', username]
+      - ai_dev_hermes_home == '/home/' ~ ai_dev_hermes_user
+    fail_msg: >-
+      ai_dev_hermes_user must name the retired agent account, never root or
+      the management user, and ai_dev_hermes_home must be its own home.
+
+- name: Look up the retired Hermes account
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ ai_dev_hermes_user }}"
+    fail_key: false
+
+- name: Record whether the retired Hermes account exists
+  ansible.builtin.set_fact:
+    ai_dev_hermes_account_present: "{{ ansible_facts.getent_passwd[ai_dev_hermes_user] is not none }}"
+
+# rc 1 also covers a user manager that is no longer running; stdout is then
+# empty and nothing is stopped here. terminate-user below ends any remainder.
+- name: List the Hermes account's enabled user services
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - --no-legend
+      - --no-pager
+      - list-unit-files
+      - --state=enabled
+      - "hermes*.service"
+      - moshi-hook.service
+  register: ai_dev_hermes_enabled_units
+  changed_when: false
+  failed_when: ai_dev_hermes_enabled_units.rc not in [0, 1]
+  check_mode: false
+  when: ai_dev_hermes_account_present | bool
+
+- name: Stop and disable the Hermes user services
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/systemctl
+      - "--machine={{ ai_dev_hermes_user }}@"
+      - --user
+      - disable
+      - --now
+      - "{{ item.split()[0] }}"
+  loop: "{{ ai_dev_hermes_enabled_units.stdout_lines | default([]) }}"
+  changed_when: true
+  when: ai_dev_hermes_account_present | bool
+
+- name: Disable linger for the Hermes account
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/loginctl
+      - disable-linger
+      - "{{ ai_dev_hermes_user }}"
+    removes: "/var/lib/systemd/linger/{{ ai_dev_hermes_user }}"
+  when: ai_dev_hermes_account_present | bool
+
+# Ends the user manager, Herdr servers and any session the account still holds;
+# userdel refuses to remove an account that owns running processes.
+- name: End every remaining Hermes session and process
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/loginctl
+      - terminate-user
+      - "{{ ai_dev_hermes_user }}"
+  register: ai_dev_hermes_terminate
+  changed_when: ai_dev_hermes_terminate.rc == 0
+  # Fails only when the account has nothing left to terminate.
+  failed_when: false
+  when:
+    - ai_dev_hermes_account_present | bool
+    - not ansible_check_mode
+
+- name: Wait for the Hermes processes to exit
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/pgrep
+      - --uid
+      - "{{ ai_dev_hermes_user }}"
+  register: ai_dev_hermes_processes
+  changed_when: false
+  failed_when: ai_dev_hermes_processes.rc not in [0, 1]
+  until: ai_dev_hermes_processes.rc == 1
+  retries: 15
+  delay: 2
+  when:
+    - ai_dev_hermes_account_present | bool
+    - not ansible_check_mode
+
+- name: Remove the Hermes account and its home directory
+  ansible.builtin.user:
+    name: "{{ ai_dev_hermes_user }}"
+    state: absent
+    remove: true
+
+- name: Remove the Hermes group
+  ansible.builtin.group:
+    name: "{{ ai_dev_hermes_user }}"
+    state: absent
+
+- name: Remove the installed Hermes files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    # Left behind if the account was ever removed by hand.
+    - "{{ ai_dev_hermes_home }}"
+    - "/var/lib/systemd/linger/{{ ai_dev_hermes_user }}"
+    # The management user's ad-hoc Hermes maintenance command.
+    - "/home/{{ username }}/.local/bin/hermes-maintenance"
+
+- name: Remove the Hermes mosh server lifetime override
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d/61-hermes-mosh-timeout.conf
+    state: absent
+  notify: restart ai-dev sshd
