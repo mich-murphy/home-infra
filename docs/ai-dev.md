@@ -57,7 +57,9 @@ Nothing listens beyond loopback except `sshd`, Mosh and `tailscaled`.
 nftables admits TCP 443 on `tailscale0` only. That rule documents the intended
 exposure rather than carrying serve traffic: on Linux, `tailscaled` applies the
 tailnet policy and then hands connections for serve ports to its userspace
-network stack, so they never reach the kernel's nftables input hook. The
+network stack, so they never reach the kernel's nftables input hook. `ss`
+still shows `tailscaled` listening on 443 at its tailnet addresses; those
+kernel sockets exist only for connections from ai-dev itself. The
 physical DMZ stays default-denied, and the guest still cannot initiate a
 session to any tailnet peer. CPA reaches the Anthropic and OpenAI endpoints,
 and `tailscaled` reaches Let's Encrypt and the Tailscale control plane, over
