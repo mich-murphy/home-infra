@@ -62,7 +62,9 @@ in restricted host files.
 ## Agent Docker observer
 
 The `init` stack runs Traefik's pinned socket proxy on an internal network and a
-separate two-service path for the ai-dev Hermes agent. The
+separate two-service path that served the ai-dev Hermes agent. Hermes has been
+retired and ai-dev no longer has egress to it, so the observer currently has
+no consumer; it stays deployed unchanged. The
 `docker-socket-proxy-agent` container keeps the existing tailnet address and
 port 2375, but is now a small read-only HTTP projection with no Docker socket.
 It talks only to the fixed, unexposed
@@ -112,9 +114,10 @@ including the TrueNAS, Portainer, and dashboard routes; only Plex and Jellyfin
 are intentionally reachable from KDS. Jellyfin's direct TCP 8096 fallback is
 allow-listed for the Tailscale range only, not DFLT or KDS.
 
-## Hermes media-broker
+## Media broker
 
-The read-only media broker is an ordinary Git-polled Portainer stack. Its
+The media broker is an ordinary Git-polled Portainer stack with no current
+client since the ai-dev Hermes agent was retired. Its
 image is built and published by the dedicated `mich-murphy/media-broker`
 repository; Renovate pins the image digest in the inventoried
 `docker/media-broker/compose.yml` and updates it when `:main` moves, so the
