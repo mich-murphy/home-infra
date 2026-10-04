@@ -1,0 +1,37 @@
+---
+# The controller's static cloud-init network configuration names the router as
+# its only resolver (Terraform's local.guest_dns), so no networkd or netplan
+# override is needed here, unlike ai-dev. Check it before the package tasks,
+# which need DNS.
+- name: read the controller interface DNS servers
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/resolvectl
+      - dns
+      - "{{ unifi_interface }}"
+  register: unifi_interface_dns
+  changed_when: false
+  check_mode: false
+
+- name: verify the controller interface resolves only through the router
+  ansible.builtin.assert:
+    that:
+      - "'100.100.100.100' not in unifi_interface_dns.stdout"
+      - (unifi_interface_dns.stdout | regex_replace('^[^)]*\):', '')).split() == [unifi_dns_server]
+    fail_msg: >-
+      {{ unifi_interface }} must resolve only through {{ unifi_dns_server }}
+      (got: {{ unifi_interface_dns.stdout | trim }}). MagicDNS answers SERVFAIL
+      for public names on a guest's physical interface.
+
+- name: verify that a public name resolves
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/getent
+      - ahostsv4
+      - github.com
+  register: unifi_public_resolution
+  until: unifi_public_resolution.rc == 0
+  retries: 5
+  delay: 2
+  changed_when: false
+  check_mode: false

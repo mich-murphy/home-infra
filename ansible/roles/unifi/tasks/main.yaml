@@ -1,4 +1,8 @@
 ---
+- name: verify controller name resolution
+  ansible.builtin.import_tasks: dns.yaml
+  tags: dns
+
 - name: install UniFi OS Server prerequisites
   ansible.builtin.apt:
     name:
