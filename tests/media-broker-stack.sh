@@ -43,9 +43,14 @@ assert_yq() {
   fi
 }
 
-# Provisioning defaults never activate the stack; Portainer owns deployment.
-grep -q 'docker_media_broker_enabled: false' "${defaults}"
 grep -q 'docker_media_broker_port: 8765' "${defaults}"
+# docker-host admits no client to the broker or the observer: their ports have
+# a DROP and no RETURN in the published-port policy. The full mode below
+# renders the policy to prove the same.
+if grep -E 'docker_(media_broker|agent_proxy)_port' "${policy}" | grep -q 'RETURN'; then
+  echo 'media-broker policy failed: the broker and observer ports must admit no client' >&2
+  exit 1
+fi
 
 # Portainer must never build this image; a build block reintroduces the
 # documented stale-context rebuild (docs/hermes-media.md).
@@ -160,7 +165,7 @@ import json
 import pathlib
 import sys
 import yaml
-from jinja2 import Environment
+from jinja2 import Environment, StrictUndefined
 
 normalized = json.loads(pathlib.Path(sys.argv[2]).read_text())
 normalized_service = normalized["services"]["media-broker"]
@@ -169,33 +174,32 @@ assert normalized_service["ports"][0]["published"] == "8765"
 assert len(normalized_service["secrets"]) == 7
 
 policy = pathlib.Path(sys.argv[1]).read_text()
-assert "docker_media_broker_enabled | bool" in policy
 assert "--ctorigdstport ' ~ docker_media_broker_port ~ ' --ctdir ORIGINAL -j DROP" in policy
 media = policy.index("docker_media_broker_port")
 fast = policy.index("--ctstate RELATED,ESTABLISHED")
 assert media < fast
-assert "docker_media_broker_port | int not in [443, 2375, 8006]" in policy
+assert "docker_media_broker_port | int not in [443, docker_agent_proxy_port | int]" in policy
+# No client address is looked up, so none can be admitted.
+assert "tailscale ip" not in policy
 
 tasks = yaml.safe_load(policy)
 block = next(item["ansible.builtin.blockinfile"]["block"] for item in tasks if item["name"] == "Allowlist Docker published ports in DOCKER-USER")
-env = Environment()
-env.filters["bool"] = bool
-for enabled in (False, True):
-    rendered = env.from_string(block).render(
-        docker_media_broker_enabled=enabled,
-        docker_media_broker_port=8765,
-        docker_agent_proxy_client_address={"stdout": "100.100.10.20"},
-        docker_media_broker_client_address={"stdout": "100.100.10.30"},
-        docker_external_interface="eth0",
-        docker_published_ports=[],
-        docker_tailscale_fallback_ports=[],
-        docker_agent_proxy_port=2375,
-    )
-    lines = [line.strip() for line in rendered.splitlines() if line.strip()]
-    drop = "-A DOCKER-USER -p tcp -m conntrack --ctorigdstport 8765 --ctdir ORIGINAL -j DROP"
-    assert lines.index(drop) < lines.index("-A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN")
-    allow = "-A DOCKER-USER -s 100.100.10.30/32 -i tailscale0 -p tcp -m conntrack --ctorigdstport 8765 --ctdir ORIGINAL -j RETURN"
-    assert (allow in lines) is enabled
+# StrictUndefined fails the render if the block still references a client.
+env = Environment(undefined=StrictUndefined)
+rendered = env.from_string(block).render(
+    docker_media_broker_port=8765,
+    docker_external_interface="eth0",
+    docker_published_ports=[],
+    docker_tailscale_fallback_ports=[],
+    docker_agent_proxy_port=2375,
+)
+lines = [line.strip() for line in rendered.splitlines() if line.strip()]
+drop = "-A DOCKER-USER -p tcp -m conntrack --ctorigdstport 8765 --ctdir ORIGINAL -j DROP"
+assert lines.index(drop) < lines.index("-A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN")
+assert "-A DOCKER-USER -p tcp -m conntrack --ctdir ORIGINAL --ctorigdstport 2375 -j DROP" in lines
+for port in ("8765", "2375"):
+    port_rules = [line for line in lines if f"--ctorigdstport {port} " in line]
+    assert port_rules and all(line.endswith("-j DROP") for line in port_rules), port_rules
 PY
 
 echo 'Media-broker stack, Compose contract, and policy assertions passed.'

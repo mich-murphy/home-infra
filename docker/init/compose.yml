@@ -68,7 +68,7 @@ services:
       - docker-socket-proxy-agent
       - docker-socket-proxy-agent-backend
     ports:
-      # Tailnet address only; also pinned to ai-dev in DOCKER-USER.
+      # Tailnet address only; DOCKER-USER drops every client on this port.
       - ${AGENT_PROXY_BIND}:2375:2375
     environment:
       # Changes the service config when the root-controlled source changes,

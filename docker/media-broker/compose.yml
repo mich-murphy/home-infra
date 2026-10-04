@@ -34,7 +34,8 @@ services:
       MEDIA_BROKER_TOKEN_FILE: /run/secrets/media_broker_token
       MEDIA_BROKER_BIND_HOST: "${MEDIA_BROKER_BIND_HOST:?set 0.0.0.0 only with explicit opt-in}"
       MEDIA_BROKER_ALLOW_PUBLIC_BIND: "${MEDIA_BROKER_ALLOW_PUBLIC_BIND:?set true only with exact allow-lists}"
-      # Hermes uses this fixed authority over the Tailscale endpoint.
+      # Any future client must use this fixed authority on the Tailscale
+      # endpoint; docker-host currently admits no client to this port.
       MEDIA_BROKER_ALLOWED_HOSTS: docker-host:8765
       MEDIA_BROKER_ALLOWED_ORIGINS: http://docker-host:8765
       # Lidarr's observed inventory is about 2.27 MB; keep a 5 MB hard bound.
