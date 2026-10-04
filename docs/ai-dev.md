@@ -235,10 +235,12 @@ file, so unrelated persistent rules cannot be silently discarded or resurrected.
 
 ## Deployment
 
-Generated cloud-init files under `terraform/files/` are ignored build
-artifacts, not a credential store: rotate any Tailscale authentication key that
-was rendered into one. `terraform/files/ai-dev.cfg` holds the key rendered for
-the last ai-dev bootstrap; the rollout below checks and removes it.
+Terraform renders the ai-dev vendor data in memory and uploads it as the
+root-only (`0600`) snippet `local:snippets/ai-dev.yml`; nothing is written under
+`terraform/`. Outside the guest, its Tailscale authentication key lives only in
+the 1Password field below, the local, git-ignored Terraform state (as a
+sensitive value) and that snippet. The guest's own copies are covered in
+[Cached Tailscale auth keys](proxmox-templates.md#cached-tailscale-auth-keys).
 
 Before an approved Terraform run, create a short-lived, tagged, single-use
 `tailscale authkey` field in the existing 1Password `proxmox_creds` item under
@@ -250,9 +252,8 @@ If bootstrap fails, inspect cloud-init status and the guest's Tailscale state
 without retrying blindly. A key that was consumed, exposed in logs/artifacts,
 expired, or is no longer needed must be revoked in the Tailscale admin console
 and replaced with a newly scoped key in the 1Password field. Record
-which guest was affected, remove stale generated files, and rerun only after the
-new key is available. On expiry or revocation, expect that guest to require
-an explicit rejoin.
+which guest was affected, and rerun only after the new key is available. On
+expiry or revocation, expect that guest to require an explicit rejoin.
 
 Run:
 
@@ -274,8 +275,9 @@ described in
 If the plan instead proposes creating all BPG-provider VMs or asks for the
 legacy Telmate provider, stop: the local state predates the earlier provider
 migration and must be reconciled/imported before this rename can be planned.
-A plan that only re-creates `local_sensitive_file.cloud_init_ai_dev` after the
-file was deleted is expected.
+A new key or template change replaces
+`proxmox_virtual_environment_file.cloud_init_ai_dev` and nothing else: the VM
+names the snippet by its fixed volume ID, so the replacement plans no VM update.
 
 Then stage the guest changes:
 
@@ -315,19 +317,18 @@ image/bootstrap mechanism that disables physical-interface IPv6 before network
 startup has been verified. Any such mechanism must leave Tailscale IPv6
 available. Legacy `inet filter` removal is disabled by default; only set
 `ai_dev_allow_legacy_nft_migration=true` after an operator has confirmed that
-table is role-owned. Verify generated vendor data in a temporary render before
-an approved provisioning run.
+table is role-owned. Review the vendor data in `terraform/cloud_init.tftpl`
+before an approved provisioning run; the plan shows it only as a sensitive
+value.
 
 ## Rollout
 
 The first CPA rollout replaces Hermes on the live guest. Each step below is
 manual; run them in order.
 
-1. **Rendered Tailscale key.** In the Tailscale admin console, check whether
-   the key rendered into `terraform/files/ai-dev.cfg` is still valid and revoke
-   it if so, then delete the file. Do not print it; the key is the only secret
-   in the file. Remove any key left in the 1Password `tailscale authkey` field
-   the same way.
+1. **Previous Tailscale key.** In the Tailscale admin console, check whether
+   the key in the 1Password `tailscale authkey` field, which the `ai-dev.yml`
+   snippet also carries, is still valid and revoke it if so. Do not print it.
 2. **Tailnet policy.** Make the `group:admin` grant above the only grant to
    `tag:ai-dev`, and delete every grant with `tag:ai-dev` as a source.
 3. **Check, then apply.** Run the check-mode and apply commands from
