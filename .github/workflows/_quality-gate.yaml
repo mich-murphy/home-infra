@@ -41,7 +41,7 @@ jobs:
       - name: Lint Proxmox template scripts and Terraform tests
         if: inputs.check == 'terraform'
         run: nix shell .#shellcheck --command shellcheck terraform/scripts/*.sh tests/terraform-cloud-init.sh
-      - name: Check cloud-init guest network settings
+      - name: Check cloud-init guest settings
         if: inputs.check == 'terraform'
         run: nix shell .#terraform-config-tools --command tests/terraform-cloud-init.sh
       - name: Validate Terraform roots
