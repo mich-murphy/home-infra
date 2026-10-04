@@ -6,6 +6,11 @@ ssh_public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJB/6HGQa6B3kSZqVosObsWeiRSI
 swap_mode: none
 swap_swappiness: 10
 
+# The controller's interface and its resolver, the router (Terraform's
+# local.guest_dns); the unifi role asserts both.
+unifi_interface: eth0
+unifi_dns_server: 10.77.1.1
+
 unifi_admin_source: 10.77.1.0/24
 unifi_ap_source: 10.77.1.0/24
 
