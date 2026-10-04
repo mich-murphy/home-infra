@@ -58,13 +58,10 @@ nfs_mounts:
     local_path: /mnt/audiobooks
     nfs_share: "{{ network.infrastructure.truenas }}:/mnt/slow/media/audiobooks"
 
-# Read-only Docker socket proxy for the ai-dev Hermes agent.
+# Sanitized Docker observer (docker-socket-proxy-agent) port. It has no
+# client: DOCKER-USER drops every source on it.
 docker_agent_proxy_port: 2375
-docker_agent_proxy_client: ai-dev
 
-# Production media-broker policy. Portainer owns the application stack on the
-# shared Git source with a published image; Docker host provisioning never
-# activates it.
-docker_media_broker_enabled: false
+# Media-broker port. Portainer owns the application stack on the shared Git
+# source with a published image; DOCKER-USER drops every source on this port.
 docker_media_broker_port: 8765
-docker_media_broker_client: "{{ docker_agent_proxy_client }}"

@@ -62,9 +62,9 @@ in restricted host files.
 ## Agent Docker observer
 
 The `init` stack runs Traefik's pinned socket proxy on an internal network and a
-separate two-service path that served the ai-dev Hermes agent. Hermes has been
-retired and ai-dev no longer has egress to it, so the observer currently has
-no consumer; it stays deployed unchanged. The
+separate two-service path that served the retired ai-dev Hermes agent. The
+observer has no consumer and docker-host admits no client to it, but it stays
+deployed. The
 `docker-socket-proxy-agent` container keeps the existing tailnet address and
 port 2375, but is now a small read-only HTTP projection with no Docker socket.
 It talks only to the fixed, unexposed
@@ -98,9 +98,10 @@ If the backend address changes, restart/reconcile the observer so it resolves
 again. Docker inspect and CLI compatibility is deliberately reduced: this endpoint
 is for safe status observation, not full `docker inspect`.
 
-Independent controls restrict the existing port to the ai-dev tailnet address;
-the `docker-host` role defines them and asserts them on every run, including
-that the container never binds all interfaces. An empty `AGENT_PROXY_BIND`
+The port admits no client: `DOCKER-USER` drops every source on it, and the
+`docker-host` role defines that rule and asserts on every run that nothing
+returns the port's traffic to Docker and that the container never binds all
+interfaces. An empty `AGENT_PROXY_BIND`
 would make Compose bind everywhere, so the bind address is verified rather than
 assumed. Only the backend mounts `/var/run/docker.sock`; both services drop
 all capabilities and the observer runs read-only as an unprivileged user. The
@@ -117,7 +118,8 @@ allow-listed for the Tailscale range only, not DFLT or KDS.
 ## Media broker
 
 The media broker is an ordinary Git-polled Portainer stack with no current
-client since the ai-dev Hermes agent was retired. Its
+client since the ai-dev Hermes agent was retired; `DOCKER-USER` drops every
+source on TCP 8765. Its
 image is built and published by the dedicated `mich-murphy/media-broker`
 repository; Renovate pins the image digest in the inventoried
 `docker/media-broker/compose.yml` and updates it when `:main` moves, so the

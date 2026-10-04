@@ -61,20 +61,24 @@
   loop_control:
     label: "{{ item.port }}/{{ item.proto }}"
 
-- name: Verify the agent socket proxy is pinned to its single client
+- name: Verify the observer and media-broker ports admit no client
   ansible.builtin.assert:
     that:
+      - _port_rules | select('search', ' -j RETURN$') | list | length == 0
       - >-
-        docker_published_port_policy.stdout_lines
-        | select('search', '^-A DOCKER-USER -s .* --ctorigdstport ' ~ docker_agent_proxy_port ~ ' --ctdir ORIGINAL -j RETURN$')
-        | list | length == 1
-      - >-
-        docker_published_port_policy.stdout_lines
-        | select('search', '^-A DOCKER-USER -p tcp .*--ctorigdstport ' ~ docker_agent_proxy_port ~ ' --ctdir ORIGINAL -j DROP$')
+        _port_rules
+        | select('search', '^-A DOCKER-USER -p tcp .*--ctorigdstport ' ~ item ~ ' --ctdir ORIGINAL -j DROP$')
         | list | length == 1
     fail_msg: >-
-      The agent socket proxy port must admit exactly one source address and
-      drop every other client.
+      Port {{ item }}/tcp must have exactly one DOCKER-USER drop and no rule
+      that returns its traffic to Docker.
+  vars:
+    _port_rules: >-
+      {{ docker_published_port_policy.stdout_lines
+         | select('search', ' --ctorigdstport ' ~ item ~ ' ') | list }}
+  loop:
+    - "{{ docker_agent_proxy_port }}"
+    - "{{ docker_media_broker_port }}"
 
 - name: Read the agent socket proxy bind address
   ansible.builtin.command:

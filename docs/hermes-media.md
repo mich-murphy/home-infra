@@ -13,12 +13,13 @@ This describes the target state. Until the one-time migration runbook below
 is performed, the live stack is still the earlier manually updated one.
 
 The broker's only client was the Hermes agent on ai-dev, which has been retired
-in favour of CLIProxyAPI (see [`docs/ai-dev.md`](ai-dev.md)). The stack and its
-host controls are unchanged, but nothing consumes the broker until a new client
-is chosen: ai-dev's firewall no longer permits egress to `tcp:8765`, and the
-tailnet grant from `tag:ai-dev` to it should be deleted. This file keeps its
-name because the Compose file, the stack test and the Docker workflow refer to
-it.
+in favour of CLIProxyAPI (see [`docs/ai-dev.md`](ai-dev.md)). The stack keeps
+running, but nothing consumes it and nothing can reach it over the tailnet:
+docker-host's `DOCKER-USER` chain drops every source on `tcp:8765`, ai-dev's
+firewall blocks egress to it, and no tailnet grant has `tag:ai-dev` as a
+source. A new client needs its exact Tailscale address admitted in the
+`docker-host` role and a tailnet grant. This file keeps its name because the
+Compose file, the stack test and the Docker workflow refer to it.
 
 ## Deployment pipeline
 
@@ -173,11 +174,10 @@ filesystem and has no Docker socket or media mounts.
 - qBittorrent's WebUI Host-header validation must accept the broker's direct
   `qbittorrent:8080` authority; the Traefik hostname fronting already forces
   that setting off, so this is a verification step, not a change.
-- The host firewall admits TCP 8765 only from ai-dev's exact Tailscale
-  address through `tailscale0`; the `docker-host` role defines and asserts
-  the `DOCKER-USER` rules on every run. ai-dev no longer initiates that
-  traffic, so the rule stays only until the broker gets a new client or is
-  removed.
+- The host firewall admits no client on TCP 8765: `DOCKER-USER` drops every
+  source on it ahead of the established-connection fast path, and the
+  `docker-host` role defines that rule and asserts on every run that nothing
+  returns the port's traffic to Docker.
 - The broker uses a 5 MiB upstream-response bound for the observed 2.27 MiB
   Lidarr inventory.
 
@@ -203,11 +203,11 @@ already merged, because Portainer resolves that path from `refs/heads/main`.
    `refs/heads/main`, compose path `docker/media-broker/compose.yml`, the
    same nonsecret environment values as before, AutoUpdate polling enabled on
    the shared source. No relative-path volumes are needed for this stack.
-6. Wait for the container to become healthy, then verify: the running image
-   is the current `:main` build; authenticated calls from Hermes succeed for
-   the nineteen registered tools; unauthenticated requests are rejected; a
-   different client is denied. Retain the existing ACL and token. No Hermes
-   gateway restart is required.
+6. Wait for the container to become healthy, then verify on docker-host
+   itself, since no tailnet client is admitted: the running image is the
+   current `:main` build; authenticated calls succeed for the nineteen
+   registered tools; unauthenticated requests are rejected. From any tailnet
+   device, TCP 8765 must not connect. Retain the existing token.
 7. Confirm Renovate opens and automerges the initial digest-pin PR for the
    image, and that Portainer redeploys on it. From then on, every
    media-broker merge becomes a Renovate digest bump → automerge → Portainer
