@@ -4,49 +4,15 @@ ai_dev_allow_legacy_nft_migration: false
 
 # earlyoom sends SIGTERM to the largest process when both available memory and
 # free swap fall below these percentages (SIGKILL at half of each). Preferred
-# victims are the agent's transient runtimes (Playwright browser, the Node
-# gateway); the Python agent, Herdr, and Moshi stay protected.
+# victims are transient browser and Node runtimes from interactive work; access
+# paths stay protected.
 ai_dev_earlyoom_mem_percent: 8
 ai_dev_earlyoom_swap_percent: 8
 ai_dev_earlyoom_avoid: "(^|/)(init|systemd.*|sshd.*|mosh-server|tailscaled|herdr|moshi-hook|dbus-broker.*)$"
 ai_dev_earlyoom_prefer: "(^|/)(chrome|headless_shell|node)$"
 
-# Own account, so the agent cannot read the management user's credentials.
+# The retired Hermes agent account. Removing it is destructive, so it runs only
+# when an operator opts in for one run (-e ai_dev_hermes_decommission=true).
+ai_dev_hermes_decommission: false
 ai_dev_hermes_user: hermes
 ai_dev_hermes_home: /home/hermes
-# Read-only socket proxy on docker-host. No client here reads the tcp:// scheme,
-# so the endpoint is spelled the way an HTTP request needs it.
-ai_dev_hermes_docker_host: http://docker-host:2375
-ai_dev_hermes_proxmox_endpoint: https://proxmox:8006
-# Lets the play run before the tokens are minted.
-ai_dev_hermes_proxmox_credentials_present: >-
-  {{ hermes_proxmox_token_id is defined
-     and hermes_proxmox_token_secret is defined }}
-ai_dev_hermes_github_credentials_present: >-
-  {{ hermes_github_token is defined }}
-# Moshi agent integration name, which matches the account name here.
-ai_dev_hermes_moshi_target: hermes
-# The agent's toolchain is only refreshed when the operator opts in per run
-# (-e ai_dev_hermes_update=true): `hermes update` follows upstream main.
-ai_dev_hermes_update: false
-# Ansible discovers the management user's nix python, which sits inside a 0750
-# home the agent account cannot traverse.
-ai_dev_hermes_python: /usr/bin/python3
-# Seconds a detached mosh server waits for a client before exiting.
-ai_dev_hermes_mosh_timeout: 3600
-
-# Optional, read-only media-broker MCP integration. It is deliberately disabled
-# on fresh hosts and requires an operator-supplied vaulted token when enabled.
-ai_dev_hermes_media_broker_enabled: false
-ai_dev_hermes_media_broker_host: "{{ ai_dev_docker_proxy_host }}"
-ai_dev_hermes_media_broker_port: 8765
-ai_dev_hermes_media_broker_url: "http://{{ ai_dev_hermes_media_broker_host }}:{{ ai_dev_hermes_media_broker_port }}/mcp"
-ai_dev_hermes_media_broker_takeover: false
-ai_dev_hermes_media_broker_config: "{{ ai_dev_hermes_home }}/.hermes/config.yaml"
-ai_dev_hermes_media_broker_env: "{{ ai_dev_hermes_home }}/.hermes/.env"
-ai_dev_hermes_media_broker_marker: "{{ ai_dev_hermes_home }}/.config/hermes/media-broker.managed"
-ai_dev_hermes_media_broker_marker_prefix: ansible-managed-hermes-media-broker-v1
-ai_dev_hermes_config_python_candidates:
-  - "{{ ai_dev_hermes_home }}/.hermes/hermes-agent/venv/bin/python"
-  - "{{ ai_dev_hermes_home }}/.hermes/hermes-agent/.venv/bin/python"
-  - /usr/bin/python3

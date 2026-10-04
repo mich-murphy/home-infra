@@ -11,13 +11,9 @@
 - name: Memory protection and filesystem maintenance timers
   ansible.builtin.import_tasks: system-maintenance.yaml
 
-- name: Provision the isolated Hermes agent account
-  ansible.builtin.import_tasks: hermes.yaml
+# Destructive and off by default; docs/ai-dev.md holds the runbook.
+- name: Decommission the retired Hermes agent account
+  ansible.builtin.import_tasks: hermes-decommission.yaml
+  when: ai_dev_hermes_decommission | bool
   tags:
-    - hermes
-
-- name: Configure optional Hermes media-broker integration
-  ansible.builtin.import_tasks: hermes-media.yaml
-  tags:
-    - hermes
-    - hermes-media
+    - hermes-decommission

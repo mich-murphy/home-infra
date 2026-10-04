@@ -106,16 +106,11 @@ jobs:
         if: inputs.check == 'ansible'
         run: |
           nix shell .#shellcheck --command shellcheck \
-            ansible/roles/ai-dev/files/hermes-maintenance \
             ansible/roles/ai-dev/files/reload-nftables \
-            ansible/tests/docker-host-storage.sh \
-            ansible/tests/hermes-maintenance.sh \
-            ansible/tests/hermes-media.sh \
-            ansible/tests/hermes-media-firewall.sh
-          ansible/tests/hermes-maintenance.sh
-          ansible/tests/hermes-media.sh
+            ansible/tests/ai-dev-firewall.sh \
+            ansible/tests/docker-host-storage.sh
           # Needs the ansible CLI, provided by the shared ansible-lint package.
-          nix shell .#ansible-lint --command ansible/tests/hermes-media-firewall.sh
+          nix shell .#ansible-lint --command ansible/tests/ai-dev-firewall.sh
       - name: Lint Ansible
         if: inputs.check == 'ansible'
         # galaxy install: role collections are not bundled with nixpkgs ansible
