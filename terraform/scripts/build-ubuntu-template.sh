@@ -9,6 +9,11 @@ readonly FIRST_BOOT_TIMEOUT=${FIRST_BOOT_TIMEOUT:-900}
 readonly ISO_DIR=/var/lib/vz/template/iso
 readonly SNIPPET_DIR=/var/lib/vz/snippets
 readonly SNIPPET=ubuntu-template-builder.yml
+# The first boot and clones use these unless Terraform sets its own; keep them
+# equal to local.guest_dns in terraform/main.tf. Unset, Proxmox hands a guest
+# its own Tailscale-managed resolver and search domain.
+readonly NAMESERVER=10.77.1.1
+readonly SEARCHDOMAIN=home.arpa
 
 usage() {
   cat <<'EOF'
@@ -101,7 +106,8 @@ created=1
 qm importdisk "${VMID}" "${image_path}" local-zfs
 qm set "${VMID}" --scsi0 "local-zfs:vm-${VMID}-disk-0,discard=on"
 qm set "${VMID}" --ide2 local-zfs:cloudinit --boot order=scsi0 --serial0 socket
-qm set "${VMID}" --ipconfig0 ip=dhcp,ip6=auto --nameserver 10.77.1.1
+qm set "${VMID}" --ipconfig0 ip=dhcp,ip6=auto \
+  --nameserver "${NAMESERVER}" --searchdomain "${SEARCHDOMAIN}"
 qm set "${VMID}" --cicustom "user=local:snippets/${SNIPPET}"
 
 qm start "${VMID}"

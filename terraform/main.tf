@@ -17,6 +17,15 @@ locals {
     tailscale_auth_key_docker_host = local.scp["tailscale authkey"].value
     tailscale_auth_key_ai_dev      = local.scp["tailscale authkey"].value
   }
+  # Every cloud-init guest resolves through the router, the resolver RouterOS
+  # DHCP hands SRV and the DMZ (routeros_default_dns). Proxmox fills an unset
+  # nameserver or search domain from its own resolv.conf, which Tailscale owns,
+  # so a guest must set both or it inherits MagicDNS or the tailnet search
+  # domain. home.arpa is the special-use domain for home networks (RFC 8375).
+  guest_dns = {
+    domain  = "home.arpa"
+    servers = [local.network.mgmt.gateway]
+  }
 }
 
 provider "proxmox" {
@@ -159,6 +168,10 @@ resource "proxmox_virtual_environment_vm" "cloud_init_docker_host" {
     datastore_id        = "local-zfs"
     interface           = "ide1"
     vendor_data_file_id = "local:snippets/agents.yml"
+    dns {
+      domain  = local.guest_dns.domain
+      servers = local.guest_dns.servers
+    }
     ip_config {
       ipv4 {
         address = "dhcp"
@@ -254,7 +267,8 @@ resource "proxmox_virtual_environment_vm" "unifi_controller" {
       }
     }
     dns {
-      servers = [local.network.mgmt.gateway]
+      domain  = local.guest_dns.domain
+      servers = local.guest_dns.servers
     }
     user_account {
       keys     = [var.unifi_ssh_public_key]
@@ -357,6 +371,10 @@ resource "proxmox_virtual_environment_vm" "ai_dev" {
     user_account {
       keys     = [var.ai_dev_ssh_public_key]
       username = "michael"
+    }
+    dns {
+      domain  = local.guest_dns.domain
+      servers = local.guest_dns.servers
     }
     ip_config {
       ipv4 {

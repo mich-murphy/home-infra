@@ -6,6 +6,11 @@ readonly NAME=${NAME:-arch-cloud}
 readonly IMAGE_URL=${IMAGE_URL:-}
 readonly IMAGE_SHA256=${IMAGE_SHA256:-}
 readonly ISO_DIR=/var/lib/vz/template/iso
+# Clones inherit these unless Terraform sets its own; keep them equal to
+# local.guest_dns in terraform/main.tf. Unset, Proxmox hands a guest its own
+# Tailscale-managed resolver and search domain.
+readonly NAMESERVER=10.77.1.1
+readonly SEARCHDOMAIN=home.arpa
 
 usage() {
   cat <<'EOF'
@@ -80,6 +85,7 @@ qm importdisk "${VMID}" "${image_path}" local-zfs
 # No iothread: it can hang the host on local-zfs zvols.
 qm set "${VMID}" --scsi0 "local-zfs:vm-${VMID}-disk-0,discard=on"
 qm set "${VMID}" --ide2 local-zfs:cloudinit --boot order=scsi0 --serial0 socket
+qm set "${VMID}" --nameserver "${NAMESERVER}" --searchdomain "${SEARCHDOMAIN}"
 qm template "${VMID}"
 created=0
 trap - ERR
