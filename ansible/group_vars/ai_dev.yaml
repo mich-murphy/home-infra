@@ -10,6 +10,9 @@ ai_dev_dns_server: 10.77.1.1
 # tag:ai-dev is their client access control.
 cliproxy_port: 8317
 cliproxy_controller_port: 8318
+# The first rollout's dry-run ranking was reviewed and matched the soonest
+# weekly resets, so the controller now writes priorities.
+cliproxy_controller_dry_run: false
 # tailscaled's netstack takes serve connections before the kernel sees them,
 # so nftables never evaluates them; the rule states the intended exposure and
 # keeps any future kernel listener on 443 tailnet-only.
