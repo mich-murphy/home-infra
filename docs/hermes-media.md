@@ -1,4 +1,4 @@
-# Hermes media-broker ownership and updates
+# Media-broker ownership and updates
 
 <!-- markdownlint-disable MD013 -->
 
@@ -11,6 +11,14 @@ repository; this repository owns only the stack definition at
 
 This describes the target state. Until the one-time migration runbook below
 is performed, the live stack is still the earlier manually updated one.
+
+The broker's only client was the Hermes agent on ai-dev, which has been retired
+in favour of CLIProxyAPI (see [`docs/ai-dev.md`](ai-dev.md)). The stack and its
+host controls are unchanged, but nothing consumes the broker until a new client
+is chosen: ai-dev's firewall no longer permits egress to `tcp:8765`, and the
+tailnet grant from `tag:ai-dev` to it should be deleted. This file keeps its
+name because the Compose file, the stack test and the Docker workflow refer to
+it.
 
 ## Deployment pipeline
 
@@ -120,8 +128,8 @@ broker registers three read-only qBittorrent tools: `torrent_client_stats`,
 ratio and reseed audits: verifying tracker-reported seeding state against the
 client and checking which re-add candidates still have complete data. The
 broker logs in to the WebUI server-side and caches the session cookie. The
-read tools issue no writes to the client. ai-dev gains no new egress: Hermes
-still reaches only the broker.
+read tools issue no writes to the client, and they give a broker client no
+reach beyond the broker itself.
 
 ## Torrent reseeds
 
@@ -160,14 +168,16 @@ filesystem and has no Docker socket or media mounts.
   declared ownership or mode, so verify these after any host rebuild.
   `qbittorrent-password` holds the password of the qBittorrent WebUI account
   named by `QBITTORRENT_USERNAME`; rotate both together.
-  Future ai-dev Ansible runs require the existing bearer as
-  `hermes_media_broker_token` through protected variables.
+  The ai-dev role no longer reads this bearer; rotate it when the broker gets
+  a new client.
 - qBittorrent's WebUI Host-header validation must accept the broker's direct
   `qbittorrent:8080` authority; the Traefik hostname fronting already forces
   that setting off, so this is a verification step, not a change.
 - The host firewall admits TCP 8765 only from ai-dev's exact Tailscale
   address through `tailscale0`; the `docker-host` role defines and asserts
-  the `DOCKER-USER` rules on every run.
+  the `DOCKER-USER` rules on every run. ai-dev no longer initiates that
+  traffic, so the rule stays only until the broker gets a new client or is
+  removed.
 - The broker uses a 5 MiB upstream-response bound for the observed 2.27 MiB
   Lidarr inventory.
 

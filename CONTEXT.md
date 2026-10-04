@@ -15,21 +15,27 @@ The initial and recovery-time preparation of the ai-dev machine performed from
 outside the machine.
 _Avoid_: Ongoing updates, maintenance
 
-**hermes maintenance**:
-Ongoing Hermes-account tool and user-service updates after provisioning. The
-Ansible ai-dev role owns these operations; `hermes-maintenance` covers ad-hoc
-use between playbook runs.
-_Avoid_: Provisioning, bootstrap
-
 **Docker host provisioning**:
 The Ansible-owned preparation of the Docker host, including Docker runtime
 installation, storage mounts, published-port policy, daemon policy, and
 bootstrap deployment.
 _Avoid_: Media role, application stack deployment
 
-**Hermes infrastructure agent**:
-The Hermes install owned by the isolated `hermes` account on ai-dev, its
-scoped Proxmox, Docker, and GitHub credentials, and the tiers of reach they
-grant. Observes broadly, proposes changes by pull request, and changes nothing
-on a running host.
-_Avoid_: ai-dev provisioning, hermes maintenance
+**Subscription proxy**:
+CLIProxyAPI (CPA) on ai-dev, owned by the Ansible cliproxy role: one tailnet
+endpoint that pools Claude and Codex subscription accounts, with the stock
+management dashboard and no client API keys. Tailscale identity, the tailnet
+grant and the nftables admit on `tailscale0` are its client access control.
+_Avoid_: AI gateway, API proxy, Hermes
+
+**Routing controller**:
+The cliproxy-controller service beside CPA. It sets CPA's credential
+priorities so the account whose weekly quota resets soonest fills first,
+enables Codex WebSockets, and reports routing order and cache hit rates on its
+status page. It never redeems banked resets.
+_Avoid_: Scheduler, load balancer
+
+**Hermes decommission**:
+The opt-in, one-time ai-dev role run that removes the retired Hermes agent's
+account, services and files from a live host.
+_Avoid_: Hermes maintenance, uninstall
