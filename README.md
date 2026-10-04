@@ -124,12 +124,12 @@ Configures provisioned hosts and the router with these primary roles:
 
 | Role        | Purpose                                                     |
 | ----------- | ----------------------------------------------------------- |
-| common      | SSH hardening, user management                              |
+| common      | SSH hardening, users, cloud-init cache and key redaction    |
 | ai-dev      | Host provisioning, isolation, Hermes decommission           |
 | cliproxy    | CLIProxyAPI, its pinned dashboard and routing controller    |
 | firewall    | Reusable UFW policy                                         |
 | docker-host | Docker, NFS, published-port policy, bootstrap deployment    |
-| unifi       | UniFi OS Server install                                     |
+| unifi       | UniFi OS Server install, resolver check                     |
 | routeros    | Router VLANs, DHCP, firewall, NAT, OOB port                 |
 
 Secrets are managed via ansible-vault (`ansible/group_vars/secrets.yaml`).
