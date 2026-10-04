@@ -103,25 +103,32 @@ resource "proxmox_virtual_environment_vm" "truenas" {
   }
 }
 
-resource "local_sensitive_file" "cloud_init_agents" {
-  content = sensitive(templatefile("cloud_init.tftpl", {
-    hostname           = "docker-host"
-    os_family          = "debian"
-    tailscale_auth_key = local.proxmox_creds.tailscale_auth_key_docker_host
-  }))
-  filename        = "${path.module}/files/agents.cfg"
-  file_permission = "0600"
-}
-
+# Vendor-data carries the Tailscale auth key, so Terraform renders it in memory
+# and uploads it as a root-only snippet; nothing besides the git-ignored state
+# is written locally. The VMs name the snippet by its fixed volume ID, not this
+# resource's id, so replacing the snippet never plans a VM update. Do not add
+# create_before_destroy: the replacement has the same volume ID, so destroying
+# the old object would delete the new file.
 resource "proxmox_virtual_environment_file" "cloud_init_agents" {
   content_type = "snippets"
   datastore_id = "local"
   node_name    = local.proxmox_node
   overwrite    = true
-  source_file {
-    path      = local_sensitive_file.cloud_init_agents.filename
+  file_mode    = "0600"
+  source_raw {
+    data = sensitive(templatefile("cloud_init.tftpl", {
+      hostname           = "docker-host"
+      os_family          = "debian"
+      tailscale_auth_key = local.proxmox_creds.tailscale_auth_key_docker_host
+    }))
     file_name = "agents.yml"
-    checksum  = local_sensitive_file.cloud_init_agents.content_sha256
+  }
+}
+
+removed {
+  from = local_sensitive_file.cloud_init_agents
+  lifecycle {
+    destroy = false
   }
 }
 
@@ -303,25 +310,27 @@ moved {
   to   = module.ai_dev
 }
 
-resource "local_sensitive_file" "cloud_init_ai_dev" {
-  content = sensitive(templatefile("cloud_init.tftpl", {
-    hostname           = "ai-dev"
-    os_family          = "arch"
-    tailscale_auth_key = local.proxmox_creds.tailscale_auth_key_ai_dev
-  }))
-  filename        = "${path.module}/files/ai-dev.cfg"
-  file_permission = "0600"
-}
-
+# Uploaded like cloud_init_agents above: no local file, root-only snippet.
 resource "proxmox_virtual_environment_file" "cloud_init_ai_dev" {
   content_type = "snippets"
   datastore_id = "local"
   node_name    = local.proxmox_node
   overwrite    = true
-  source_file {
-    path      = local_sensitive_file.cloud_init_ai_dev.filename
+  file_mode    = "0600"
+  source_raw {
+    data = sensitive(templatefile("cloud_init.tftpl", {
+      hostname           = "ai-dev"
+      os_family          = "arch"
+      tailscale_auth_key = local.proxmox_creds.tailscale_auth_key_ai_dev
+    }))
     file_name = "ai-dev.yml"
-    checksum  = local_sensitive_file.cloud_init_ai_dev.content_sha256
+  }
+}
+
+removed {
+  from = local_sensitive_file.cloud_init_ai_dev
+  lifecycle {
+    destroy = false
   }
 }
 
