@@ -6,9 +6,17 @@ config-version: 8
 server:
   host: "{{ cliproxy_listen_host }}"
   port: {{ cliproxy_port }}
+  # tailscale serve is the only client that connects over loopback with a
+  # forwarded address. It overwrites X-Forwarded-For with the tailnet peer's
+  # address, so CPA logs, and bans wrong management keys per, real tailnet
+  # clients instead of 127.0.0.1. The controller sends no forwarded header and
+  # stays a local client.
+  trusted-proxies:
+    - 127.0.0.1
 
 management:
-  # Remote management over the tailnet; every request still needs the key.
+  # Tailnet browsers arrive through serve as their own (remote) addresses, so
+  # remote management stays on; every request, local or remote, needs the key.
   allow-remote: true
   secret-key: {{ cliproxy_management_secret | to_json }}
   # Serve only the pinned dashboard Ansible installs: never download a newer
@@ -16,8 +24,8 @@ management:
   disable-auto-update-panel: true
 
 access:
-  # No client keys. Tailscale identity, the tailnet grant and the nftables
-  # admit on tailscale0 are the client access control.
+  # No client keys. Tailscale identity and the tailnet grant to tcp:443 are
+  # the client access control.
   api-keys: []
 
 routing:

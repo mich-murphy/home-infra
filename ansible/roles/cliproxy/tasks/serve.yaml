@@ -1,0 +1,80 @@
+---
+# Publishes CPA and the controller over HTTPS with tailscale serve. The node
+# serve configuration has no file format of its own (`serve set-config` covers
+# Tailscale Services only), so the play compares `tailscale serve status
+# --json` with cliproxy_serve_config and, on any difference, resets serve and
+# adds the two handlers with the CLI.
+- name: Read the Tailscale node status
+  ansible.builtin.command:
+    cmd: tailscale status --json --peers=false
+  register: cliproxy_tailscale_status
+  changed_when: false
+  check_mode: false
+
+- name: Record the node's tailnet HTTPS name
+  ansible.builtin.set_fact:
+    cliproxy_serve_host: "{{ (cliproxy_tailscale_status.stdout | from_json).Self.DNSName | regex_replace('\\.$', '') }}"
+
+# Without the tailnet's HTTPS Certificates, `tailscale serve` prints an
+# enablement link and either waits or exits without serving anything.
+- name: Require tailnet HTTPS certificates for the node
+  ansible.builtin.assert:
+    that:
+      - cliproxy_serve_host | length > 0
+      - cliproxy_serve_host in ((cliproxy_tailscale_status.stdout | from_json).CertDomains | default([], true))
+    fail_msg: >-
+      The tailnet does not issue HTTPS certificates for {{ cliproxy_serve_host }}.
+      Enable HTTPS Certificates in the Tailscale admin console (DNS page) and
+      re-run the play.
+
+- name: Read the tailscale serve configuration
+  ansible.builtin.command:
+    cmd: tailscale serve status --json
+  register: cliproxy_serve_status
+  changed_when: false
+  check_mode: false
+
+- name: Compare the serve configuration with the desired one
+  ansible.builtin.set_fact:
+    cliproxy_serve_drift: "{{ (cliproxy_serve_status.stdout | from_json | default({}, true)) != cliproxy_serve_config }}"
+
+- name: Show the serve configuration the play will replace
+  ansible.builtin.debug:
+    msg:
+      current: "{{ cliproxy_serve_status.stdout | from_json | default({}, true) }}"
+      desired: "{{ cliproxy_serve_config }}"
+  when: cliproxy_serve_drift | bool
+
+# Reset clears every handler, port and Funnel setting; the two handlers are
+# then the whole configuration. Serve is briefly down only when it drifted.
+- name: Replace the serve configuration
+  ansible.builtin.command:
+    argv: "{{ item }}"
+  loop:
+    - [tailscale, serve, reset]
+    - [tailscale, serve, --bg, --yes, "--https={{ cliproxy_serve_port }}",
+       "http://127.0.0.1:{{ cliproxy_port }}"]
+    - [tailscale, serve, --bg, --yes, "--https={{ cliproxy_serve_port }}",
+       "--set-path={{ cliproxy_controller_serve_path }}",
+       "http://127.0.0.1:{{ cliproxy_controller_port }}"]
+  changed_when: true
+  when:
+    - cliproxy_serve_drift | bool
+    - not ansible_check_mode
+
+- name: Read the applied serve configuration
+  ansible.builtin.command:
+    cmd: tailscale serve status --json
+  register: cliproxy_serve_applied
+  changed_when: false
+  when: not ansible_check_mode
+
+# Exact equality also proves Funnel is off: AllowFunnel would appear here.
+- name: Verify serve publishes exactly CPA and the controller, without Funnel
+  ansible.builtin.assert:
+    that:
+      - (cliproxy_serve_applied.stdout | from_json | default({}, true)) == cliproxy_serve_config
+    fail_msg: >-
+      tailscale serve status --json does not match cliproxy_serve_config:
+      {{ cliproxy_serve_applied.stdout }}
+  when: not ansible_check_mode
