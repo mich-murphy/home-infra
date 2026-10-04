@@ -1,0 +1,125 @@
+#!/usr/bin/python3
+"""Count or redact the Tailscale auth keys that cloud-init has cached.
+
+Proxmox vendor-data writes a Tailscale auth key to /etc/tailscale/authkey.
+Cloud-init keeps a copy in every instance directory under /var/lib/cloud (the
+vendor-data, the cloud-config and scripts rendered from it, and the pickled
+datasource) and in the current boot's instance data under /run/cloud-init.
+
+--count reports what is cached; --redact overwrites each key in place with
+filler of the same length, which keeps the pickles and JSON files valid, and
+then counts again. Both print one JSON object of counts and never print a
+key or any file content. Run as root.
+"""
+
+import json
+import os
+import pickletools
+import re
+import sys
+
+ROOTS = ("/var/lib/cloud", "/run/cloud-init")
+KEY = re.compile(rb"tskey-[A-Za-z0-9-]*")
+FILLER = b"redacted"
+# Pickle opcodes whose argument is a length-prefixed string, by the size of
+# that little-endian length.
+PICKLE_STRING_LENGTH_BYTES = {
+    "SHORT_BINSTRING": 1,
+    "SHORT_BINBYTES": 1,
+    "SHORT_BINUNICODE": 1,
+    "BINSTRING": 4,
+    "BINBYTES": 4,
+    "BINUNICODE": 4,
+    "BINBYTES8": 8,
+    "BINUNICODE8": 8,
+    "BYTEARRAY8": 8,
+}
+# Protocol 0 string opcodes end their argument with a newline.
+PICKLE_STRING_LINE_OPCODES = {"STRING", "UNICODE"}
+
+
+def cached_files():
+    # os.walk does not follow symlinks, so /var/lib/cloud/instance, a link to
+    # the current instance directory, is scanned once through instances/.
+    for root in ROOTS:
+        for directory, _, names in os.walk(root):
+            for name in names:
+                path = os.path.join(directory, name)
+                if os.path.isfile(path) and not os.path.islink(path):
+                    yield path
+
+
+def fill(match):
+    return (FILLER * len(match.group()))[: len(match.group())]
+
+
+def pickle_layout(data):
+    """Return the opcode positions and the byte spans of string arguments."""
+    opcodes, spans = [], []
+    for opcode, _, position in pickletools.genops(data):
+        opcodes.append((opcode.name, position))
+        size = PICKLE_STRING_LENGTH_BYTES.get(opcode.name)
+        if size is not None:
+            start = position + 1 + size
+            length = int.from_bytes(data[position + 1 : start], "little")
+            spans.append((start, start + length))
+        elif opcode.name in PICKLE_STRING_LINE_OPCODES:
+            spans.append((position + 1, data.index(b"\n", position + 1)))
+    return opcodes, spans
+
+
+def redacted(path, data):
+    if not path.endswith(".pkl"):
+        return KEY.sub(fill, data)
+    # Redact only inside string arguments, so a key that ends a string never
+    # runs into the next opcode. Equal-length filler moves nothing.
+    opcodes, spans = pickle_layout(data)
+    new = bytearray(data)
+    for start, end in spans:
+        new[start:end] = KEY.sub(fill, data[start:end])
+    new = bytes(new)
+    if pickle_layout(new)[0] != opcodes:
+        raise ValueError("pickle structure would change")
+    return new
+
+
+def scan(redact):
+    counts = {"errors": 0, "files": 0, "keys": 0, "redacted_files": 0}
+    for path in cached_files():
+        try:
+            with open(path, "rb") as handle:
+                data = handle.read()
+            keys = len(KEY.findall(data))
+            if not keys:
+                continue
+            counts["files"] += 1
+            counts["keys"] += keys
+            if redact:
+                new = redacted(path, data)
+                # In place, so the file keeps its owner, mode and inode.
+                with open(path, "r+b") as handle:
+                    handle.write(new)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                counts["redacted_files"] += 1
+        except Exception:  # never report a message; it may quote file data
+            counts["errors"] += 1
+    return counts
+
+
+def main():
+    if len(sys.argv) != 2 or sys.argv[1] not in ("--count", "--redact"):
+        print(json.dumps({"error": "usage: redact-cloud-init-tailscale-keys --count|--redact"}))
+        return 2
+    if os.geteuid() != 0:
+        print(json.dumps({"error": "must run as root"}))
+        return 2
+    result = scan(redact=sys.argv[1] == "--redact")
+    if sys.argv[1] == "--redact":
+        result["remaining_keys"] = scan(redact=False)["keys"]
+    print(json.dumps(result, sort_keys=True))
+    return 1 if result["errors"] else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
