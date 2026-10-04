@@ -16,12 +16,15 @@
          | reject('match', '^(#|$)') | map('split', '=', 1)) }}
     controller_unit: "{{ lookup('ansible.builtin.template', '../roles/cliproxy/templates/cliproxy-controller.service.j2') }}"
   tasks:
-    - name: Serve unauthenticated tailnet clients with remote management
+    # tailscale serve connects from 127.0.0.1 and sets X-Forwarded-For to the
+    # tailnet peer, so tailnet clients are remote clients that need the key.
+    - name: Listen on loopback behind serve, with remote management by key
       ansible.builtin.assert:
         that:
           - config['config-version'] == 8
-          - config.server.host == '0.0.0.0'
+          - config.server.host == '127.0.0.1'
           - config.server.port == 8317
+          - config.server['trusted-proxies'] == ['127.0.0.1']
           - config.access['api-keys'] == []
           - config.management['allow-remote'] is true
           - config.management['secret-key'] == cliproxy_management_secret
@@ -47,14 +50,15 @@
           - config.observability.usage['usage-statistics-enabled'] is true
           - config.observability.usage['redis-usage-queue-retention-seconds'] == 3600
 
-    - name: Start the controller in dry run, listening directly on its port
+    - name: Start the controller in dry run, listening on loopback
       ansible.builtin.assert:
         that:
           - controller_env.CPA_BASE_URL == 'http://127.0.0.1:8317'
-          - controller_env.CONTROLLER_LISTEN == '0.0.0.0:8318'
+          - controller_env.CONTROLLER_LISTEN == '127.0.0.1:8318'
           - controller_env.CONTROLLER_DRY_RUN == 'true'
           - controller_env.CONTROLLER_LOG_LEVEL == 'info'
-          # Empty settings fall back to the controller's own defaults.
+          # Empty settings fall back to the controller's own defaults. Serve
+          # strips the /controller mount, so the controller answers at root.
           - "'CONTROLLER_BASE_PATH' not in controller_env"
           - "'CPA_MANAGEMENT_KEY' not in controller_env"
 
@@ -64,3 +68,23 @@
           - controller_env.CPA_MANAGEMENT_KEY_FILE == '/run/credentials/cliproxy-controller.service/management-key'
           - "'LoadCredential=management-key:/etc/cliproxy-controller/management-key' in controller_unit"
           - "'StateDirectory=cliproxy-controller' in controller_unit"
+
+    # The `tailscale serve status --json` shape the two serve --bg commands
+    # produce; no AllowFunnel key means Funnel stays off.
+    - name: Publish exactly CPA at / and the controller at /controller over HTTPS
+      vars:
+        cliproxy_serve_host: ai-dev.example.ts.net
+        expected_serve_config:
+          TCP:
+            "443":
+              HTTPS: true
+          Web:
+            "ai-dev.example.ts.net:443":
+              Handlers:
+                /:
+                  Proxy: http://127.0.0.1:8317
+                /controller:
+                  Proxy: http://127.0.0.1:8318
+      ansible.builtin.assert:
+        that:
+          - cliproxy_serve_config == expected_serve_config

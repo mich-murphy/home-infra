@@ -27,11 +27,12 @@ cliproxy_controller_repository: mich-murphy/cliproxy-controller
 cliproxy_controller_asset: cliproxy-controller-linux-x64
 cliproxy_controller_credentials_present: "{{ cliproxy_controller_github_token is defined }}"
 
-# CPA serves clients, the management API and the dashboard on one port. There
-# are no client API keys: Tailscale identity, the tailnet grant and the ai-dev
-# nftables admit on tailscale0 are the access control.
+# CPA serves clients, the management API and the dashboard on one loopback
+# port; tailscale serve publishes it over HTTPS on the tailnet (serve.yaml).
+# There are no client API keys: Tailscale identity and the tailnet grant are
+# the access control.
 cliproxy_user: cliproxy
-cliproxy_listen_host: 0.0.0.0
+cliproxy_listen_host: 127.0.0.1
 cliproxy_port: 8317
 cliproxy_install_dir: /opt/cliproxy
 cliproxy_download_dir: /var/cache/cliproxy
@@ -45,7 +46,7 @@ cliproxy_session_affinity_ttl: 90m
 # Usage records wait this long (CPA's maximum) for the controller to drain them.
 cliproxy_usage_queue_retention_seconds: 3600
 
-cliproxy_controller_listen_host: 0.0.0.0
+cliproxy_controller_listen_host: 127.0.0.1
 cliproxy_controller_port: 8318
 cliproxy_controller_install_dir: /opt/cliproxy-controller
 cliproxy_controller_config_dir: /etc/cliproxy-controller
@@ -54,7 +55,10 @@ cliproxy_controller_config_dir: /etc/cliproxy-controller
 # off.
 cliproxy_controller_dry_run: true
 # The remaining CONTROLLER_* settings, at the controller README's defaults.
-# Empty values are left out of the environment file.
+# Empty values are left out of the environment file. CONTROLLER_BASE_PATH
+# stays empty: tailscale serve strips the /controller mount before proxying,
+# so the controller sees root paths, and its page resolves v1/status relative
+# to its own URL.
 cliproxy_controller_settings:
   CONTROLLER_BASE_PATH: ""
   CONTROLLER_CORS_ORIGINS: ""
@@ -68,3 +72,19 @@ cliproxy_controller_settings:
   CONTROLLER_DEMOTE_BELOW_PERCENT: 2
   CONTROLLER_PROMOTE_ABOVE_PERCENT: 5
   CONTROLLER_LOG_LEVEL: info
+
+# tailscale serve terminates HTTPS on the node's tailnet name (Let's Encrypt,
+# DNS-01 through the Tailscale control plane) and proxies to the loopback
+# listeners above. Serve only: no Funnel. The play replaces any other serve
+# configuration with exactly this one and asserts it.
+cliproxy_serve_port: 443
+cliproxy_controller_serve_path: /controller
+# The node's MagicDNS name; serve.yaml reads it from tailscale status.
+cliproxy_serve_host: ""
+# The node's serve configuration in `tailscale serve status --json` form.
+cliproxy_serve_config:
+  TCP: "{{ {(cliproxy_serve_port | string): {'HTTPS': true}} }}"
+  Web: >-
+    {{ {(cliproxy_serve_host ~ ':' ~ cliproxy_serve_port): {'Handlers': {
+         '/': {'Proxy': 'http://127.0.0.1:' ~ cliproxy_port},
+         cliproxy_controller_serve_path: {'Proxy': 'http://127.0.0.1:' ~ cliproxy_controller_port}}}} }}
