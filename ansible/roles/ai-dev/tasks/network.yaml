@@ -1,0 +1,111 @@
+---
+# Keep the cloud-init network definition intact and override only what the
+# DMZ needs: IPv4-only physical networking, and name resolution through the
+# DMZ gateway. Runs before bootstrap, whose package upgrade needs DNS.
+- name: Check the physical interface cloud-init network definition
+  ansible.builtin.stat:
+    path: "/etc/systemd/network/10-cloud-init-{{ ai_dev_physical_interface }}.network"
+  register: ai_dev_network_definition
+
+- name: Require the supported networkd configuration before adding its override
+  ansible.builtin.assert:
+    that:
+      - ai_dev_network_definition.stat.exists
+      - ai_dev_network_definition.stat.isreg | default(false)
+    fail_msg: >-
+      Expected the cloud-init networkd definition for {{ ai_dev_physical_interface }}.
+      Inspect the active network manager before changing physical IPv6 policy.
+
+- name: Ensure the physical interface networkd override directory exists
+  ansible.builtin.file:
+    path: "/etc/systemd/network/10-cloud-init-{{ ai_dev_physical_interface }}.network.d"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# networkd can re-enable IPv6 after systemd-sysctl has run. Proxmox hands
+# cloud-init its own MagicDNS resolver and tailnet search domain when the VM
+# sets no nameserver, and MagicDNS answers SERVFAIL for public names here. The
+# empty assignments drop both; Tailscale keeps its own DNS on tailscale0.
+- name: Keep physical networking IPv4-only and resolving through the DMZ gateway
+  ansible.builtin.copy:
+    dest: "/etc/systemd/network/10-cloud-init-{{ ai_dev_physical_interface }}.network.d/90-ai-dev-ipv4-only.conf"
+    content: |
+      [Network]
+      DHCP=ipv4
+      LinkLocalAddressing=no
+      IPv6AcceptRA=no
+      DNS=
+      DNS={{ ai_dev_dns_server }}
+      Domains=
+
+      [DHCPv4]
+      UseDNS=no
+    owner: root
+    group: root
+    mode: "0644"
+  register: ai_dev_network_override
+
+- name: Read the physical interface DNS servers
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/resolvectl
+      - dns
+      - "{{ ai_dev_physical_interface }}"
+  register: ai_dev_physical_dns
+  changed_when: false
+  check_mode: false
+
+# Reconfigures only the interfaces the changed .network file matches.
+- name: Apply the physical interface networkd override
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/networkctl
+      - reload
+  when: >-
+    ai_dev_network_override is changed
+    or (ai_dev_physical_dns.stdout | regex_replace('^[^)]*\):', '')).split() != [ai_dev_dns_server]
+  changed_when: true
+
+# Check mode cannot preview a resolver that the override has yet to apply.
+- name: Wait for the physical interface to resolve only through the DMZ gateway
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/resolvectl
+      - dns
+      - "{{ ai_dev_physical_interface }}"
+  register: ai_dev_physical_dns
+  until: >-
+    (ai_dev_physical_dns.stdout | regex_replace('^[^)]*\):', '')).split() == [ai_dev_dns_server]
+  retries: 10
+  delay: 2
+  failed_when: false
+  changed_when: false
+  check_mode: false
+  when: not (ansible_check_mode and ai_dev_network_override is changed)
+
+- name: Verify the physical interface uses only the DMZ gateway resolver
+  ansible.builtin.assert:
+    that:
+      - "'100.100.100.100' not in ai_dev_physical_dns.stdout"
+      - (ai_dev_physical_dns.stdout | regex_replace('^[^)]*\):', '')).split() == [ai_dev_dns_server]
+    fail_msg: >-
+      {{ ai_dev_physical_interface }} must resolve only through {{ ai_dev_dns_server }}
+      (got: {{ ai_dev_physical_dns.stdout | trim }}). MagicDNS answers SERVFAIL
+      for public names on this host.
+  when: not (ansible_check_mode and ai_dev_network_override is changed)
+
+- name: Verify that a public name resolves
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/getent
+      - ahostsv4
+      - github.com
+  register: ai_dev_public_resolution
+  until: ai_dev_public_resolution.rc == 0
+  retries: 5
+  delay: 2
+  changed_when: false
+  check_mode: false
+  when: not (ansible_check_mode and ai_dev_network_override is changed)

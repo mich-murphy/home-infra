@@ -2,6 +2,9 @@
 - name: Enforce the ai-dev host and Tailscale identity
   ansible.builtin.import_tasks: identity.yaml
 
+- name: Physical networking and DMZ name resolution
+  ansible.builtin.import_tasks: network.yaml
+
 - name: System bootstrap (packages, logind, locale)
   ansible.builtin.import_tasks: bootstrap.yaml
 
