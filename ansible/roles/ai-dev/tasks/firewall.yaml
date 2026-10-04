@@ -76,6 +76,17 @@
   when: ai_dev_ipv6_config.changed or ai_dev_ipv6_state.stdout != "1"
   changed_when: true
 
+- name: Validate the tailnet service ports
+  ansible.builtin.assert:
+    that:
+      - ai_dev_tailnet_tcp_ports | map('string') | select('match', '^[0-9]+$') | list | length == ai_dev_tailnet_tcp_ports | length
+      - ai_dev_tailnet_tcp_ports | map('int') | select('ge', 1) | select('le', 65535) | list | length == ai_dev_tailnet_tcp_ports | length
+      - ai_dev_tailnet_tcp_ports | map('int') | unique | list | length == ai_dev_tailnet_tcp_ports | length
+      - 22 not in (ai_dev_tailnet_tcp_ports | map('int') | list)
+    fail_msg: >-
+      ai_dev_tailnet_tcp_ports must list distinct numeric TCP ports other than
+      OpenSSH's.
+
 # The distro unit's ExecStart loads /etc/nftables.conf. Keep that root-owned
 # file as the administrator's persistent configuration and add only a native
 # include for the fragment owned by this role.
@@ -341,6 +352,18 @@
       - "'iifname \"tailscale0\" drop' in ai_dev_nft_input_chain.stdout"
       - "('iifname \"' ~ ai_dev_physical_interface ~ '\" drop') in ai_dev_nft_input_chain.stdout"
     fail_msg: Tailnet and physical DMZ input must remain default-denied.
+  when: not ansible_check_mode
+
+# Each tailnet service must be admitted by exactly one rule, scoped to tailscale0.
+- name: Verify tailnet services are admitted only on tailscale0
+  ansible.builtin.assert:
+    that:
+      - >-
+        ai_dev_nft_input_chain.stdout_lines | map('trim')
+        | select('search', 'dport ' ~ item ~ '( |$)') | list
+        == ['iifname "tailscale0" tcp dport ' ~ item ~ ' accept']
+    fail_msg: "TCP {{ item }} must be accepted only on tailscale0."
+  loop: "{{ ai_dev_tailnet_tcp_ports }}"
   when: not ansible_check_mode
 
 - name: Read the active nftables output chain

@@ -17,6 +17,9 @@
   roles:
     - common
     - ai-dev
+    - role: cliproxy
+      tags:
+        - cliproxy
 
 - name: configure unifi controller
   hosts: unifi

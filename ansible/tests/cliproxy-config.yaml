@@ -1,0 +1,66 @@
+---
+# The routing controller depends on these CLIProxyAPI v8.0.13 settings
+# (cliproxy-controller docs/requirements.md); keys checked against upstream's
+# config.example.yaml for that release.
+- name: Test the CLIProxyAPI and routing controller configuration contract
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../roles/cliproxy/defaults/main.yaml
+  vars:
+    cliproxy_management_secret: ci-placeholder-management-key-0123456789
+    config: "{{ lookup('ansible.builtin.template', '../roles/cliproxy/templates/config.yaml.j2') | from_yaml }}"
+    controller_env: >-
+      {{ dict(lookup('ansible.builtin.template', '../roles/cliproxy/templates/cliproxy-controller.env.j2').splitlines()
+         | reject('match', '^(#|$)') | map('split', '=', 1)) }}
+    controller_unit: "{{ lookup('ansible.builtin.template', '../roles/cliproxy/templates/cliproxy-controller.service.j2') }}"
+  tasks:
+    - name: Serve unauthenticated tailnet clients with remote management
+      ansible.builtin.assert:
+        that:
+          - config['config-version'] == 8
+          - config.server.host == '0.0.0.0'
+          - config.server.port == 8317
+          - config.access['api-keys'] == []
+          - config.management['allow-remote'] is true
+          - config.management['secret-key'] == cliproxy_management_secret
+          - config.management['disable-auto-update-panel'] is true
+          - config.oauth['auth-dir'] == '/var/lib/cliproxy/auths'
+
+    - name: Route by controller priority with sticky sessions
+      ansible.builtin.assert:
+        that:
+          - config.routing.strategy == 'fill-first'
+          - config.routing['session-affinity'] is true
+          - config.routing['session-affinity-ttl'] == '90m'
+          - config.routing['session-affinity-subagents'] is true
+          - config.upstream.claude['model-level-cooling'] is false
+          - config.upstream.codex['model-level-cooling'] is false
+          - config.upstream.claude['disable-claude-cloak-mode'] is true
+          - config.upstream.codex['response-steering'] is false
+          - config.upstream.codex['stream-bootstrap-buffering'] is false
+
+    - name: Keep usage records for the controller to drain
+      ansible.builtin.assert:
+        that:
+          - config.observability.usage['usage-statistics-enabled'] is true
+          - config.observability.usage['redis-usage-queue-retention-seconds'] == 3600
+
+    - name: Start the controller in dry run, listening directly on its port
+      ansible.builtin.assert:
+        that:
+          - controller_env.CPA_BASE_URL == 'http://127.0.0.1:8317'
+          - controller_env.CONTROLLER_LISTEN == '0.0.0.0:8318'
+          - controller_env.CONTROLLER_DRY_RUN == 'true'
+          - controller_env.CONTROLLER_LOG_LEVEL == 'info'
+          # Empty settings fall back to the controller's own defaults.
+          - "'CONTROLLER_BASE_PATH' not in controller_env"
+          - "'CPA_MANAGEMENT_KEY' not in controller_env"
+
+    - name: Hand the controller its key through the unit's credential
+      ansible.builtin.assert:
+        that:
+          - controller_env.CPA_MANAGEMENT_KEY_FILE == '/run/credentials/cliproxy-controller.service/management-key'
+          - "'LoadCredential=management-key:/etc/cliproxy-controller/management-key' in controller_unit"
+          - "'StateDirectory=cliproxy-controller' in controller_unit"

@@ -1,0 +1,16 @@
+---
+# Restarting CPA clears its session bindings, so each session's next request
+# binds afresh and rebuilds its prompt cache.
+- name: restart cliproxy
+  ansible.builtin.systemd_service:
+    name: cliproxy.service
+    state: restarted
+    daemon_reload: true
+  when: not ansible_check_mode
+
+- name: restart cliproxy-controller
+  ansible.builtin.systemd_service:
+    name: cliproxy-controller.service
+    state: restarted
+    daemon_reload: true
+  when: not ansible_check_mode

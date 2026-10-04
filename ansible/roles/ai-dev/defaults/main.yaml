@@ -2,13 +2,18 @@
 # Legacy inet filter removal requires an explicit operator-approved migration.
 ai_dev_allow_legacy_nft_migration: false
 
+# TCP services admitted from the tailnet in addition to OpenSSH and Mosh. Each
+# port is accepted on tailscale0 only; the physical DMZ stays default-denied.
+ai_dev_tailnet_tcp_ports: []
+
 # earlyoom sends SIGTERM to the largest process when both available memory and
 # free swap fall below these percentages (SIGKILL at half of each). Preferred
 # victims are transient browser and Node runtimes from interactive work; access
-# paths stay protected.
+# paths and the proxy services stay protected. Names are the kernel's
+# 15-character process names, hence the truncated controller entry.
 ai_dev_earlyoom_mem_percent: 8
 ai_dev_earlyoom_swap_percent: 8
-ai_dev_earlyoom_avoid: "(^|/)(init|systemd.*|sshd.*|mosh-server|tailscaled|herdr|moshi-hook|dbus-broker.*)$"
+ai_dev_earlyoom_avoid: "(^|/)(init|systemd.*|sshd.*|mosh-server|tailscaled|herdr|moshi-hook|dbus-broker.*|cli-proxy-api|cliproxy-contro.*)$"
 ai_dev_earlyoom_prefer: "(^|/)(chrome|headless_shell|node)$"
 
 # The retired Hermes agent account. Removing it is destructive, so it runs only
