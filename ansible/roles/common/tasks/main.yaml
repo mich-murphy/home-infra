@@ -11,6 +11,13 @@
   ansible.builtin.include_tasks:
     file: journald.yaml
 
+- name: pin cloud-init to its cached instance
+  ansible.builtin.include_tasks:
+    file: cloud-init.yaml
+    apply:
+      tags: cloud-init
+  tags: cloud-init
+
 - name: configure swap
   ansible.builtin.include_tasks:
     file: swap.yaml
