@@ -5,13 +5,16 @@ ai_dev_hostname: ai-dev
 ai_dev_physical_interface: eth0
 ai_dev_dmz_gateway: 10.77.99.1
 ai_dev_dns_server: 10.77.1.1
-# CLIProxyAPI and its routing controller (cliproxy role) answer on the tailnet
-# only; the tailnet grant to tag:ai-dev is their client access control.
+# CLIProxyAPI and its routing controller (cliproxy role) listen on loopback;
+# tailscale serve publishes both over HTTPS on 443. The tailnet grant to
+# tag:ai-dev is their client access control.
 cliproxy_port: 8317
 cliproxy_controller_port: 8318
+# tailscaled's netstack takes serve connections before the kernel sees them,
+# so nftables never evaluates them; the rule states the intended exposure and
+# keeps any future kernel listener on 443 tailnet-only.
 ai_dev_tailnet_tcp_ports:
-  - "{{ cliproxy_port }}"
-  - "{{ cliproxy_controller_port }}"
+  - 443
 
 swap_mode: file
 swap_size_gb: 8

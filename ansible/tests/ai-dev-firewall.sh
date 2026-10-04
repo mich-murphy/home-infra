@@ -29,7 +29,13 @@ chain() {
   sed -n "/chain $1 {/,/^[[:space:]]*}\$/p" "$2" | sed -E 's/^[[:space:]]+//'
 }
 
-for ports in '[]' '[8317, 8318]'; do
+# The production list must be exactly HTTPS for tailscale serve; CPA and the
+# controller listen on loopback, so their ports are never admitted.
+production_ports=$(sed -n '/^ai_dev_tailnet_tcp_ports:/,/^[^ ]/p' "${repo_root}/ansible/group_vars/ai_dev.yaml" |
+  sed -nE 's/^  - ([0-9]+)$/\1/p' | paste -sd, -)
+[[ ${production_ports} == '443' ]] || fail "ai_dev_tailnet_tcp_ports must be [443], got [${production_ports}]"
+
+for ports in '[]' "[${production_ports}]"; do
   rendered=${render_dir}/ai-dev.nft
   render "${ports}" "${rendered}"
   input=$(chain input "${rendered}")
@@ -44,8 +50,11 @@ for ports in '[]' '[8317, 8318]'; do
   expected_ingress+=$'\niifname "tailscale0" drop'
   ingress=$(grep -E '^iifname "tailscale0"' <<<"${input}")
   [[ ${ingress} == "${expected_ingress}" ]] || fail "unexpected tailnet ingress for ${ports}: ${ingress}"
-  if grep -E 'dport (8317|8318)' <<<"${input}" | grep -vq '^iifname "tailscale0" '; then
-    fail "a proxy port is admitted outside tailscale0 for ${ports}"
+  if grep -E 'dport 443( |$)' <<<"${input}" | grep -vq '^iifname "tailscale0" '; then
+    fail "HTTPS is admitted outside tailscale0 for ${ports}"
+  fi
+  if grep -Eq 'dport (8317|8318)( |$)' <<<"${input}"; then
+    fail "a loopback-only proxy port is admitted for ${ports}"
   fi
   grep -qx 'iifname "eth0" drop' <<<"${input}" || fail 'physical DMZ input is not default-denied'
 
