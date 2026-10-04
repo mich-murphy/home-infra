@@ -79,30 +79,96 @@ the most recent one, which coincides with an earlier Terraform apply.
 
 Pinning the instance ID is not an option for an existing guest: it needs a
 custom meta-data snippet, and the provider replaces the VM when
-`meta_data_file_id` changes. Before applying an `initialization` change to a
-running guest, make cloud-init trust its cached instance instead:
+`meta_data_file_id` changes. Instead, the common role makes every cloud-init
+guest trust its cached instance: it writes
+`/etc/cloud/cloud.cfg.d/99-manual-cache-clean.cfg` with
+`manual_cache_clean: true`. Before applying an `initialization` change to a
+running guest, make sure the guest has it:
 
 ```sh
-echo 'manual_cache_clean: true' | sudo tee /etc/cloud/cloud.cfg.d/99-manual-cache-clean.cfg
+cd ansible
+ansible-playbook run.yaml --vault-password-file .vaultpass \
+  --limit <host> --tags cloud-init --check --diff
+ansible-playbook run.yaml --vault-password-file .vaultpass \
+  --limit <host> --tags cloud-init
 ```
 
-Cloud-init then does not compare instance IDs, so the reboot re-runs nothing
-and the guest keeps the network configuration it rendered at first boot. The
-new settings take effect in the guest only when it is re-provisioned. That
-loses nothing on the live guests: ai-dev's Ansible drop-in already pins its
-resolver and IPv6 policy, and docker-host takes the router's resolver from
-DHCP. Leave the setting in place: Proxmox regenerates the drive at every start,
-and a Proxmox upgrade that changes the generated user-data would otherwise
-cause the same re-run. To re-provision a guest deliberately, run
-`cloud-init clean`.
-
 VM 111 can only take the setting while it runs. Start it as for any controller
-work, add the file, then apply; the provider stops it again.
+work, run the commands above with `--limit unifi-controller --tags
+cloud-init,dns`, then apply; the provider stops it again.
 
 After the apply, confirm on the guest that `/var/lib/cloud/data/instance-id`
 and `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` are unchanged, and on the
 Proxmox host that `qm config <vmid>` shows the new `nameserver` and
 `searchdomain`.
+
+### What a trusted cache keeps
+
+Without the setting, cloud-init's local stage checks its cache at every boot.
+NoCloud cannot confirm a cached instance ID without reading the drive, so the
+check always fails (`cache invalid in datasource` in
+`/var/log/cloud-init.log`), cloud-init reads the drive and compares the
+instance ID it finds with `/var/lib/cloud/data/instance-id`. With
+`manual_cache_clean: true` the local stage trusts the cache instead: it
+restores the pickled datasource, `obj.pkl`, without reading the drive, so the
+instance ID stays the same and the reboot re-runs no per-instance module.
+
+The guest also keeps the network configuration it rendered at first boot.
+Cloud-init applies network configuration only to a new instance, NoCloud's
+default `boot-new-instance` update event, so a new nameserver, search domain
+or IP setting reaches the guest only when it is re-provisioned. That loses
+nothing on the live guests:
+
+- ai-dev's networkd drop-in pins its resolver, drops the tailnet search domain
+  and disables IPv6 on the physical interface, so the removed `ip6` setting
+  needs no re-render either.
+- docker-host's netplan names no nameserver; it takes the router's resolver
+  from DHCP.
+- unifi-controller's static configuration has named the router since it was
+  built. Its physical interface keeps the tailnet search domain until it is
+  re-provisioned, which does not change the resolver it uses. The unifi role
+  asserts that resolver and a public lookup.
+
+Leave the setting in place: Proxmox regenerates the drive at every start, and
+anything that changes the generated user-data or network configuration, such
+as a Proxmox upgrade, would otherwise cause the same re-run.
+
+One case still re-provisions. When the guest's Python minor version changes,
+cloud-init discards its cache at the next boot whatever the setting says,
+reads the drive, and treats a different instance ID as a new instance.
+Ubuntu 24.04 stays on Python 3.12, but ai-dev's Arch Linux takes each new
+Python release. Once an `initialization` change has been applied to ai-dev,
+treat the first reboot after a Python minor upgrade as a re-provision.
+
+### Re-provisioning a guest deliberately
+
+To make cloud-init run again as on a first boot, remove its cache and reboot:
+
+```sh
+sudo cloud-init clean --logs --reboot
+```
+
+With no cache to trust, the next boot reads the drive and runs every
+per-instance module again: new SSH host keys, the cloud-init user, the drive's
+current network configuration and the vendor-data with its Tailscale key.
+Before that, put a fresh auth key in the 1Password `tailscale authkey` field
+and apply Terraform so the snippet carries it. Afterwards, replace the guest's
+host key in `known_hosts` and rerun the common role, which writes the setting
+again and redacts the new key. Leave out `--machine-id`, which only the
+template build needs: a live guest keeps its machine ID.
+
+### Cached Tailscale auth keys
+
+Cloud-init keeps the vendor-data's Tailscale auth key in every instance
+directory under `/var/lib/cloud` (`vendor-data.txt`, the rendered
+`vendor-cloud-config.txt` and `scripts/runcmd`, and `obj.pkl`) and in the
+current boot's `/run/cloud-init`, all root-only. The same `cloud-init` tasks
+run `ansible/roles/common/files/redact-cloud-init-tailscale-keys`, which
+overwrites each key in place with filler of the same length, so the pickles and
+JSON stay loadable, prints only counts, and fails the play if any key remains.
+Check mode only counts. Redaction does not revoke a key. The Proxmox snippets
+under `/var/lib/vz/snippets`, the cloud-init drive and the ignored files under
+`terraform/files/` still hold the key Terraform last rendered.
 
 ## References
 
@@ -111,3 +177,11 @@ Proxmox host that `qm config <vmid>` shows the new `nameserver` and
 - [bpg/proxmox v0.114.0 `vm.go`](https://github.com/bpg/terraform-provider-proxmox/blob/v0.114.0/proxmoxtf/resource/vm/vm.go):
   `vmUpdate` (cloud-init rebuild and reboot) and the `initialization` schema
 - [cloud-init first boot determination](https://docs.cloud-init.io/en/latest/explanation/first_boot.html)
+  and the [`manual_cache_clean` key](https://docs.cloud-init.io/en/latest/reference/base_config_reference.html)
+- [cloud-init 26.1 `cmd/main.py`](https://github.com/canonical/cloud-init/blob/26.1/cloudinit/cmd/main.py):
+  `main_init` (`manual_cache_clean` selects `trust`) and
+  `purge_cache_on_python_version_change`
+- [cloud-init 26.1 `stages.py`](https://github.com/canonical/cloud-init/blob/26.1/cloudinit/stages.py):
+  `_restore_from_checked_cache` and `apply_network_config`, and
+  [`sources/__init__.py`](https://github.com/canonical/cloud-init/blob/26.1/cloudinit/sources/__init__.py):
+  `default_update_events`
