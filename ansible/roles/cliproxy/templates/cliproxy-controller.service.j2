@@ -1,0 +1,49 @@
+# Managed by Ansible (cliproxy role).
+[Unit]
+Description=CLIProxyAPI routing controller
+Documentation=https://github.com/{{ cliproxy_controller_repository }}
+Wants=cliproxy.service network-online.target
+After=cliproxy.service network-online.target
+
+[Service]
+Type=simple
+ExecStart={{ cliproxy_controller_install_dir }}/{{ cliproxy_controller_version }}/cliproxy-controller
+EnvironmentFile={{ cliproxy_controller_config_dir }}/env
+# A private read-only copy of the root-only key file, at the path the
+# environment file names.
+LoadCredential=management-key:{{ cliproxy_controller_config_dir }}/management-key
+DynamicUser=yes
+StateDirectory=cliproxy-controller
+StateDirectoryMode=0700
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+# No MemoryDenyWriteExecute: the Bun runtime JIT-compiles.
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

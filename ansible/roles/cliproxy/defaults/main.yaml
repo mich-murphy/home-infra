@@ -1,0 +1,70 @@
+---
+# Each pin below is a version and a SHA-256 that Renovate bumps together.
+
+# CLIProxyAPI (CPA), the upstream linux amd64 release tarball, verified against
+# upstream's published checksums.txt.
+# renovate: datasource=github-release-attachments depName=router-for-me/CLIProxyAPI
+cliproxy_version: v8.0.13
+cliproxy_sha256: 50ecffb47fdd81c8c5a9825a73a7a905ab66342337e274f39c4276b92d3533f3
+cliproxy_archive: "CLIProxyAPI_{{ cliproxy_version | regex_replace('^v', '') }}_linux_amd64.tar.gz"
+cliproxy_archive_url: "https://github.com/router-for-me/CLIProxyAPI/releases/download/{{ cliproxy_version }}/{{ cliproxy_archive }}"
+
+# The stock management dashboard (CPAMC), pinned by the digest GitHub records
+# for the release asset. CPA serves this file and never replaces it.
+# renovate: datasource=github-release-attachments depName=router-for-me/Cli-Proxy-API-Management-Center
+cliproxy_panel_version: v1.25.3
+cliproxy_panel_sha256: 866bae020785b59126a209e89389b77f673fd791beb2208ea650dcc07b3a108d
+cliproxy_panel_url: "https://github.com/router-for-me/Cli-Proxy-API-Management-Center/releases/download/{{ cliproxy_panel_version }}/management.html"
+
+# The routing controller, a release asset of the private repository below. The
+# play reads it through the GitHub API with cliproxy_controller_github_token
+# (vault); without the token it installs CPA alone and reports the controller
+# as skipped.
+# renovate: datasource=custom.cliproxy-controller depName=mich-murphy/cliproxy-controller
+cliproxy_controller_version: v0.2.0
+cliproxy_controller_sha256: f12df68b46f2110fa1b74f08a21b45f8f2febd9755cf637bf05bccffd28a0d54
+cliproxy_controller_repository: mich-murphy/cliproxy-controller
+cliproxy_controller_asset: cliproxy-controller-linux-x64
+cliproxy_controller_credentials_present: "{{ cliproxy_controller_github_token is defined }}"
+
+# CPA serves clients, the management API and the dashboard on one port. There
+# are no client API keys: Tailscale identity, the tailnet grant and the ai-dev
+# nftables admit on tailscale0 are the access control.
+cliproxy_user: cliproxy
+cliproxy_listen_host: 0.0.0.0
+cliproxy_port: 8317
+cliproxy_install_dir: /opt/cliproxy
+cliproxy_download_dir: /var/cache/cliproxy
+cliproxy_config_dir: /etc/cliproxy
+# Runtime state: OAuth credential files (auths) and logs. The dashboard
+# directory inside it stays root-owned.
+cliproxy_state_dir: /var/lib/cliproxy
+cliproxy_auth_dir: "{{ cliproxy_state_dir }}/auths"
+cliproxy_static_dir: "{{ cliproxy_state_dir }}/static"
+cliproxy_session_affinity_ttl: 90m
+# Usage records wait this long (CPA's maximum) for the controller to drain them.
+cliproxy_usage_queue_retention_seconds: 3600
+
+cliproxy_controller_listen_host: 0.0.0.0
+cliproxy_controller_port: 8318
+cliproxy_controller_install_dir: /opt/cliproxy-controller
+cliproxy_controller_config_dir: /etc/cliproxy-controller
+# Logs the priority patches it would send instead of sending them. Keep it on
+# for the first rollout; docs/ai-dev.md covers checking the logs and turning it
+# off.
+cliproxy_controller_dry_run: true
+# The remaining CONTROLLER_* settings, at the controller README's defaults.
+# Empty values are left out of the environment file.
+cliproxy_controller_settings:
+  CONTROLLER_BASE_PATH: ""
+  CONTROLLER_CORS_ORIGINS: ""
+  CONTROLLER_CREDENTIALS_INTERVAL: 60s
+  CONTROLLER_USAGE_INTERVAL: 5m
+  CONTROLLER_USAGE_MIN_INTERVAL: 60s
+  CONTROLLER_QUEUE_INTERVAL: 15s
+  CONTROLLER_QUEUE_BATCH: 500
+  CONTROLLER_REQUEST_TIMEOUT: 30s
+  CONTROLLER_STALE_AFTER: 15m
+  CONTROLLER_DEMOTE_BELOW_PERCENT: 2
+  CONTROLLER_PROMOTE_ABOVE_PERCENT: 5
+  CONTROLLER_LOG_LEVEL: info

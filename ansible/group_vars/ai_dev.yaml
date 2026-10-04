@@ -5,6 +5,13 @@ ai_dev_hostname: ai-dev
 ai_dev_physical_interface: eth0
 ai_dev_dmz_gateway: 10.77.99.1
 ai_dev_dns_server: 10.77.1.1
+# CLIProxyAPI and its routing controller (cliproxy role) answer on the tailnet
+# only; the tailnet grant to tag:ai-dev is their client access control.
+cliproxy_port: 8317
+cliproxy_controller_port: 8318
+ai_dev_tailnet_tcp_ports:
+  - "{{ cliproxy_port }}"
+  - "{{ cliproxy_controller_port }}"
 
 swap_mode: file
 swap_size_gb: 8

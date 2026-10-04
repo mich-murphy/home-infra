@@ -1,0 +1,146 @@
+---
+- name: Require the vaulted management secret
+  ansible.builtin.assert:
+    that:
+      - cliproxy_management_secret is defined
+      - cliproxy_management_secret | string is match('^[A-Za-z0-9_-]{32,256}$')
+    fail_msg: >-
+      cliproxy_management_secret must be set in group_vars/secrets.yaml as a
+      URL-safe value of 32-256 characters.
+  no_log: true
+
+- name: Create the CLIProxyAPI group
+  ansible.builtin.group:
+    name: "{{ cliproxy_user }}"
+    system: true
+
+- name: Create the CLIProxyAPI system user
+  ansible.builtin.user:
+    name: "{{ cliproxy_user }}"
+    group: "{{ cliproxy_user }}"
+    system: true
+    home: "{{ cliproxy_state_dir }}"
+    create_home: false
+    shell: /usr/bin/nologin
+    password_lock: true
+
+- name: Create the CLIProxyAPI directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ cliproxy_install_dir }}", owner: root, group: root, mode: "0755" }
+    - { path: "{{ cliproxy_install_dir }}/{{ cliproxy_version }}", owner: root, group: root, mode: "0755" }
+    - { path: "{{ cliproxy_download_dir }}", owner: root, group: root, mode: "0755" }
+    # The service reads its configuration but cannot change it.
+    - { path: "{{ cliproxy_config_dir }}", owner: root, group: "{{ cliproxy_user }}", mode: "0750" }
+    - { path: "{{ cliproxy_state_dir }}", owner: "{{ cliproxy_user }}", group: "{{ cliproxy_user }}", mode: "0750" }
+    - { path: "{{ cliproxy_auth_dir }}", owner: "{{ cliproxy_user }}", group: "{{ cliproxy_user }}", mode: "0700" }
+    - { path: "{{ cliproxy_static_dir }}", owner: root, group: root, mode: "0755" }
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Download and verify the pinned CLIProxyAPI release
+  ansible.builtin.get_url:
+    url: "{{ cliproxy_archive_url }}"
+    dest: "{{ cliproxy_download_dir }}/{{ cliproxy_archive }}"
+    checksum: "sha256:{{ cliproxy_sha256 }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+# Check mode downloads nothing, so there is no archive to unpack yet.
+- name: Unpack the CLIProxyAPI binary
+  ansible.builtin.unarchive:
+    src: "{{ cliproxy_download_dir }}/{{ cliproxy_archive }}"
+    dest: "{{ cliproxy_install_dir }}/{{ cliproxy_version }}"
+    remote_src: true
+    include:
+      - cli-proxy-api
+    creates: "{{ cliproxy_install_dir }}/{{ cliproxy_version }}/cli-proxy-api"
+    owner: root
+    group: root
+  when: not ansible_check_mode
+  notify: restart cliproxy
+
+# A stable path for the OAuth login commands in docs/ai-dev.md.
+- name: Link the CLIProxyAPI command
+  ansible.builtin.file:
+    src: "{{ cliproxy_install_dir }}/{{ cliproxy_version }}/cli-proxy-api"
+    dest: /usr/local/bin/cli-proxy-api
+    state: link
+  when: not ansible_check_mode
+
+- name: Find superseded CLIProxyAPI releases
+  ansible.builtin.find:
+    paths:
+      - "{{ cliproxy_install_dir }}"
+      - "{{ cliproxy_download_dir }}"
+    file_type: any
+    excludes:
+      - "{{ cliproxy_version }}"
+      - "{{ cliproxy_archive }}"
+  register: cliproxy_superseded
+
+- name: Remove superseded CLIProxyAPI releases
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ cliproxy_superseded.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+# Root-owned and read-only to the service: CPA can neither replace the pinned
+# dashboard nor fetch the unverified fallback in its place.
+- name: Install the pinned management dashboard
+  ansible.builtin.get_url:
+    url: "{{ cliproxy_panel_url }}"
+    dest: "{{ cliproxy_static_dir }}/management.html"
+    checksum: "sha256:{{ cliproxy_panel_sha256 }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+# diff stays off: the file carries the management secret.
+- name: Render the CLIProxyAPI configuration
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: "{{ cliproxy_config_dir }}/config.yaml"
+    owner: root
+    group: "{{ cliproxy_user }}"
+    mode: "0640"
+  diff: false
+  notify: restart cliproxy
+
+- name: Install the CLIProxyAPI unit
+  ansible.builtin.template:
+    src: cliproxy.service.j2
+    dest: /etc/systemd/system/cliproxy.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart cliproxy
+
+- name: Enable and start CLIProxyAPI
+  ansible.builtin.systemd_service:
+    name: cliproxy.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: not ansible_check_mode
+
+- name: Apply pending CLIProxyAPI restarts before verification
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for CLIProxyAPI to answer
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ cliproxy_port }}/healthz"
+    status_code: 200
+  register: cliproxy_health
+  until: cliproxy_health.status == 200
+  retries: 15
+  delay: 2
+  when: not ansible_check_mode

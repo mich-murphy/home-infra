@@ -1,0 +1,192 @@
+---
+- name: Check the installed routing controller
+  ansible.builtin.stat:
+    path: "{{ cliproxy_controller_install_dir }}/{{ cliproxy_controller_version }}/cliproxy-controller"
+    checksum_algorithm: sha256
+  register: cliproxy_controller_binary
+
+- name: Decide what the routing controller needs
+  ansible.builtin.set_fact:
+    cliproxy_controller_installed: >-
+      {{ cliproxy_controller_binary.stat.exists
+         and cliproxy_controller_binary.stat.checksum == cliproxy_controller_sha256 }}
+
+# The private release is only reachable through the GitHub API with a token,
+# so the play provisions CPA first and installs the controller once the token
+# is in the vault.
+- name: Report the routing controller as skipped until its token exists
+  ansible.builtin.debug:
+    msg: >-
+      The routing controller {{ cliproxy_controller_version }} is not installed:
+      cliproxy_controller_github_token is missing. Add a fine-grained, read-only
+      token for {{ cliproxy_controller_repository }} to group_vars/secrets.yaml
+      and re-run. CPA runs without it, but nothing orders credential priorities.
+  when:
+    - not cliproxy_controller_installed | bool
+    - not cliproxy_controller_credentials_present | bool
+
+- name: Download the pinned routing controller
+  when:
+    - not cliproxy_controller_installed | bool
+    - cliproxy_controller_credentials_present | bool
+    - not ansible_check_mode
+  block:
+    # Every request carrying the token, or the signed URL it yields, is no_log.
+    - name: Look up the controller release through the GitHub API
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/{{ cliproxy_controller_repository }}/releases/tags/{{ cliproxy_controller_version }}"
+        headers:
+          Accept: application/vnd.github+json
+          Authorization: "Bearer {{ cliproxy_controller_github_token }}"
+          X-GitHub-Api-Version: "2022-11-28"
+      register: cliproxy_controller_release
+      failed_when: false
+      no_log: true
+
+    - name: Select the pinned controller asset
+      ansible.builtin.set_fact:
+        cliproxy_controller_release_asset: >-
+          {{ (cliproxy_controller_release.json.assets | default([])
+              | selectattr('name', 'equalto', cliproxy_controller_asset)
+              | list | first) | default({}) }}
+
+    - name: Require the release asset that matches the pinned checksum
+      ansible.builtin.assert:
+        that:
+          - cliproxy_controller_release.status == 200
+          - cliproxy_controller_release_asset.url is defined
+          - cliproxy_controller_release_asset.digest | default('') == 'sha256:' ~ cliproxy_controller_sha256
+        fail_msg: >-
+          GitHub answered HTTP {{ cliproxy_controller_release.status }} for
+          {{ cliproxy_controller_repository }} {{ cliproxy_controller_version }}.
+          A 401, 403 or 404 means the token cannot read the repository's
+          contents; a 200 means the release has no {{ cliproxy_controller_asset }}
+          asset with digest sha256:{{ cliproxy_controller_sha256 }}.
+
+    - name: Resolve the controller asset's download location
+      ansible.builtin.uri:
+        url: "{{ cliproxy_controller_release_asset.url }}"
+        headers:
+          Accept: application/octet-stream
+          Authorization: "Bearer {{ cliproxy_controller_github_token }}"
+          X-GitHub-Api-Version: "2022-11-28"
+        follow_redirects: none
+        status_code: 302
+      register: cliproxy_controller_asset_location
+      no_log: true
+
+    - name: Create the controller release directory
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      loop:
+        - "{{ cliproxy_controller_install_dir }}"
+        - "{{ cliproxy_controller_install_dir }}/{{ cliproxy_controller_version }}"
+
+    - name: Download and verify the routing controller
+      ansible.builtin.get_url:
+        url: "{{ cliproxy_controller_asset_location.location }}"
+        dest: "{{ cliproxy_controller_install_dir }}/{{ cliproxy_controller_version }}/cliproxy-controller"
+        checksum: "sha256:{{ cliproxy_controller_sha256 }}"
+        force: true
+        owner: root
+        group: root
+        mode: "0755"
+      register: cliproxy_controller_download
+      failed_when: false
+      no_log: true
+      notify: restart cliproxy-controller
+
+    - name: Require the downloaded controller to match the pinned checksum
+      ansible.builtin.assert:
+        that:
+          - not (cliproxy_controller_download.failed | default(false))
+        fail_msg: >-
+          The {{ cliproxy_controller_asset }} download failed or did not match
+          sha256:{{ cliproxy_controller_sha256 }}; nothing was installed.
+
+    - name: Record the routing controller as installed
+      ansible.builtin.set_fact:
+        cliproxy_controller_installed: true
+
+- name: Configure and run the routing controller
+  when: cliproxy_controller_installed | bool
+  block:
+    - name: Find superseded routing controller releases
+      ansible.builtin.find:
+        paths: "{{ cliproxy_controller_install_dir }}"
+        file_type: any
+        excludes: "{{ cliproxy_controller_version }}"
+      register: cliproxy_controller_superseded
+
+    - name: Remove superseded routing controller releases
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ cliproxy_controller_superseded.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Create the controller configuration directory
+      ansible.builtin.file:
+        path: "{{ cliproxy_controller_config_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    # Root-only; systemd hands the service its own copy (LoadCredential).
+    - name: Install the controller's management key
+      ansible.builtin.copy:
+        content: "{{ cliproxy_management_secret }}\n"
+        dest: "{{ cliproxy_controller_config_dir }}/management-key"
+        owner: root
+        group: root
+        mode: "0600"
+      diff: false
+      no_log: true
+      notify: restart cliproxy-controller
+
+    - name: Render the controller environment
+      ansible.builtin.template:
+        src: cliproxy-controller.env.j2
+        dest: "{{ cliproxy_controller_config_dir }}/env"
+        owner: root
+        group: root
+        mode: "0600"
+      notify: restart cliproxy-controller
+
+    - name: Install the routing controller unit
+      ansible.builtin.template:
+        src: cliproxy-controller.service.j2
+        dest: /etc/systemd/system/cliproxy-controller.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: restart cliproxy-controller
+
+    - name: Enable and start the routing controller
+      ansible.builtin.systemd_service:
+        name: cliproxy-controller.service
+        enabled: true
+        state: started
+        daemon_reload: true
+      when: not ansible_check_mode
+
+- name: Apply pending controller restarts before verification
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for the routing controller to answer
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ cliproxy_controller_port }}/healthz"
+    status_code: 200
+  register: cliproxy_controller_health
+  until: cliproxy_controller_health.status == 200
+  retries: 15
+  delay: 2
+  when:
+    - cliproxy_controller_installed | bool
+    - not ansible_check_mode

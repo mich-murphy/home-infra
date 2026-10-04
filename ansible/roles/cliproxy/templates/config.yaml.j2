@@ -1,0 +1,49 @@
+# Managed by Ansible (cliproxy role); edits here and Config Panel saves do not
+# persist. CPA cannot write this file, so it hashes the management key in
+# memory at every start instead of rewriting it.
+config-version: 8
+
+server:
+  host: "{{ cliproxy_listen_host }}"
+  port: {{ cliproxy_port }}
+
+management:
+  # Remote management over the tailnet; every request still needs the key.
+  allow-remote: true
+  secret-key: {{ cliproxy_management_secret | to_json }}
+  # Serve only the pinned dashboard Ansible installs: never download a newer
+  # one, and never fall back to the unverified hosted panel.
+  disable-auto-update-panel: true
+
+access:
+  # No client keys. Tailscale identity, the tailnet grant and the nftables
+  # admit on tailscale0 are the client access control.
+  api-keys: []
+
+routing:
+  # Priorities set by the routing controller decide which credential fills
+  # first; sessions stay on one credential so prompt caches survive.
+  strategy: fill-first
+  session-affinity: true
+  session-affinity-ttl: "{{ cliproxy_session_affinity_ttl }}"
+  session-affinity-subagents: true
+
+upstream:
+  codex:
+    model-level-cooling: false
+    response-steering: false
+    stream-bootstrap-buffering: false
+  claude:
+    model-level-cooling: false
+    # Genuine Claude Code passes through untouched; other clients are never
+    # disguised as it.
+    disable-claude-cloak-mode: true
+
+oauth:
+  auth-dir: "{{ cliproxy_auth_dir }}"
+
+observability:
+  usage:
+    # The routing controller is the only consumer of the usage queue.
+    usage-statistics-enabled: true
+    redis-usage-queue-retention-seconds: {{ cliproxy_usage_queue_retention_seconds }}

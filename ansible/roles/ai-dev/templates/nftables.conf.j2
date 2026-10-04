@@ -12,6 +12,12 @@ table inet ai_dev {
     # Moshi reaches normal OpenSSH and mosh only through the tailnet.
     iifname "tailscale0" tcp dport 22 accept
     iifname "tailscale0" udp dport 60000-61000 accept
+{% if ai_dev_tailnet_tcp_ports | length > 0 %}
+    # Tailnet-only services; the tailnet grant is their client access control.
+{% endif %}
+{% for port in ai_dev_tailnet_tcp_ports %}
+    iifname "tailscale0" tcp dport {{ port }} accept
+{% endfor %}
     iifname "tailscale0" drop
 
     # DHCP is the only unsolicited input accepted from the physical DMZ.

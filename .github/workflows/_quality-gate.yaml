@@ -123,6 +123,7 @@ jobs:
           printf '%s\n' '---' > group_vars/secrets.yaml
           ansible-playbook --syntax-check run.yaml
           ansible-playbook tests/routeros-firewall-policy.yaml
+          ansible-playbook tests/cliproxy-config.yaml
           ./tests/docker-host-storage.sh
           ansible-lint
           SCRIPT

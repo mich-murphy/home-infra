@@ -1,0 +1,50 @@
+# Managed by Ansible (cliproxy role).
+[Unit]
+Description=CLIProxyAPI subscription proxy
+Documentation=https://github.com/router-for-me/CLIProxyAPI
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User={{ cliproxy_user }}
+Group={{ cliproxy_user }}
+ExecStart={{ cliproxy_install_dir }}/{{ cliproxy_version }}/cli-proxy-api -config {{ cliproxy_config_dir }}/config.yaml
+WorkingDirectory={{ cliproxy_state_dir }}
+Environment=HOME={{ cliproxy_state_dir }}
+Environment=MANAGEMENT_STATIC_PATH={{ cliproxy_static_dir }}
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+# Only the state directory is writable; the dashboard inside it is not.
+ProtectSystem=strict
+ReadWritePaths={{ cliproxy_state_dir }}
+ReadOnlyPaths={{ cliproxy_static_dir }}
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target
