@@ -38,9 +38,12 @@ jobs:
       - name: Check Terraform formatting
         if: inputs.check == 'terraform'
         run: nix shell .#terraform-ci --command terraform-ci -chdir=terraform fmt -check -recursive
-      - name: Lint Proxmox template scripts
+      - name: Lint Proxmox template scripts and Terraform tests
         if: inputs.check == 'terraform'
-        run: nix shell .#shellcheck --command shellcheck terraform/scripts/*.sh
+        run: nix shell .#shellcheck --command shellcheck terraform/scripts/*.sh tests/terraform-cloud-init.sh
+      - name: Check cloud-init guest network settings
+        if: inputs.check == 'terraform'
+        run: nix shell .#terraform-config-tools --command tests/terraform-cloud-init.sh
       - name: Validate Terraform roots
         if: inputs.check == 'terraform'
         env:

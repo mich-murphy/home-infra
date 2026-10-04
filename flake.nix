@@ -76,6 +76,14 @@
       portainer-drift-tools = pkgs.yq-go;
       shellcheck = pkgs.shellcheck;
       terraform-ci = terraformCiFor pkgs;
+      # Static Terraform configuration checks read HCL as JSON.
+      terraform-config-tools = pkgs.buildEnv {
+        name = "terraform-config-tools";
+        paths = [
+          pkgs.hcl2json
+          pkgs.jq
+        ];
+      };
     });
 
     devShells = forAllSystems ({
@@ -86,6 +94,7 @@
         packages = [
           (terraformFor pkgs)
           self.packages.${system}.terraform-ci
+          self.packages.${system}.terraform-config-tools
           # Ansible + librouteros on one interpreter: the community.routeros API
           # modules import librouteros from the controller's python (this shell).
           # The same environment carries ansible-lint to avoid duplicate

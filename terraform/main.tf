@@ -22,6 +22,7 @@ locals {
   # nameserver or search domain from its own resolv.conf, which Tailscale owns,
   # so a guest must set both or it inherits MagicDNS or the tailnet search
   # domain. home.arpa is the special-use domain for home networks (RFC 8375).
+  # tests/terraform-cloud-init.sh fails any initialization block without both.
   guest_dns = {
     domain  = "home.arpa"
     servers = [local.network.mgmt.gateway]
@@ -376,6 +377,10 @@ resource "proxmox_virtual_environment_vm" "ai_dev" {
       domain  = local.guest_dns.domain
       servers = local.guest_dns.servers
     }
+    # IPv4 only: the physical DMZ interface carries no guest IPv6. Declaring
+    # ip_config makes the provider read ipconfig0 back on this clone, and it
+    # sends ipconfig0 whole, so a plan shows and an apply clears any ip6 set
+    # outside Terraform. tests/terraform-cloud-init.sh rejects an ipv6 block.
     ip_config {
       ipv4 {
         address = "dhcp"
