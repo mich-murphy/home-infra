@@ -21,8 +21,8 @@ cliproxy_panel_url: "https://github.com/router-for-me/Cli-Proxy-API-Management-C
 # (vault); without the token it installs CPA alone and reports the controller
 # as skipped.
 # renovate: datasource=custom.cliproxy-controller depName=mich-murphy/cliproxy-controller
-cliproxy_controller_version: v0.2.1
-cliproxy_controller_sha256: 3bb040e73567fb8b4c50209929d23dfe4466e79f93fd465786e0671a54b8e9cd
+cliproxy_controller_version: v0.2.2
+cliproxy_controller_sha256: 6b0a5128c9d1964bf92f8c0075a9201f86d1e401abecece40d4ff455c073c9a7
 cliproxy_controller_repository: mich-murphy/cliproxy-controller
 cliproxy_controller_asset: cliproxy-controller-linux-x64
 cliproxy_controller_credentials_present: "{{ cliproxy_controller_github_token is defined }}"
