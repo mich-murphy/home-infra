@@ -1,7 +1,7 @@
 ---
 services:
   portainer:
-    image: portainer/portainer-ee:lts@sha256:0cd22f754ac52fcfceb362d5ce8f47ee23a5f6427484db17ebfaa4c8a00f7718
+    image: portainer/portainer-ee:lts@sha256:64593d0645eec314e84b93c03aba51db67c72ec12c760927335b52b1652765d7
     container_name: portainer
     security_opt:
       - no-new-privileges:true
