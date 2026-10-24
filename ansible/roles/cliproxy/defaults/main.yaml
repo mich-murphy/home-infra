@@ -4,8 +4,8 @@
 # CLIProxyAPI (CPA), the upstream linux amd64 release tarball, verified against
 # upstream's published checksums.txt.
 # renovate: datasource=github-release-attachments depName=router-for-me/CLIProxyAPI
-cliproxy_version: v8.0.38
-cliproxy_sha256: 05690c53245a149230a8b7d64085ed96036275a72414d0097f88bb6314acb39b
+cliproxy_version: v8.0.41
+cliproxy_sha256: 99b9ca69753b2fa16290edecae4d19011299ecd7bfbad17a411b5470288d8b4a
 cliproxy_archive: "CLIProxyAPI_{{ cliproxy_version | regex_replace('^v', '') }}_linux_amd64.tar.gz"
 cliproxy_archive_url: "https://github.com/router-for-me/CLIProxyAPI/releases/download/{{ cliproxy_version }}/{{ cliproxy_archive }}"
 
