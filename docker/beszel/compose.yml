@@ -8,7 +8,11 @@ services:
     cap_drop:
       - ALL
     networks:
-      - proxy
+      proxy:
+        # Fixed address: the host UFW rule admitting the hub to the local
+        # beszel-agent (TCP 45876) is keyed on it (group_vars/docker.yaml).
+        # Dynamic allocation starts at .2, so .250 stays clear of the pool.
+        ipv4_address: 172.20.1.250
     environment:
       - DISABLE_PASSWORD_AUTH=true # use pocket-id
     volumes:
