@@ -134,6 +134,19 @@ if yq -e '.networks["docker-socket-proxy-agent"].internal == true' "${init_norma
   exit 1
 fi
 
+# dockerd recreates docker.sock on restart; with live-restore a file bind keeps
+# the stale inode. Socket consumers must bind /run non-recursively instead.
+for svc in portainer docker-socket-proxy docker-socket-proxy-agent-backend; do
+  if HARDENING_SERVICE=${svc} yq -e '.services[strenv(HARDENING_SERVICE)].volumes // [] | any_c(.source == "/var/run/docker.sock" or .source == "/run/docker.sock")' "${init_normalized}" >/dev/null 2>&1; then
+    echo "init/${svc}: bind /run (non-recursive), not the docker.sock file" >&2
+    exit 1
+  fi
+  if ! HARDENING_SERVICE=${svc} yq -e '.services[strenv(HARDENING_SERVICE)].volumes // [] | any_c(.type == "bind" and .source == "/run" and .read_only == true and .bind.recursive == "disabled")' "${init_normalized}" >/dev/null 2>&1; then
+    echo "init/${svc}: must bind host /run read-only with recursive: disabled" >&2
+    exit 1
+  fi
+done
+
 # The source checksum must participate in the normalized service configuration;
 # changing it is the Compose recreation trigger for the bind-mounted process.
 observer_source_hash=$(sha256sum "${repo_root}/docker/init/agent-observer/observer.py" | cut -d' ' -f1)

@@ -59,8 +59,10 @@ with disposable empty volumes when their image or capability set changes.
 - **Traefik** retains the capabilities required to bind its entrypoints. It
   discovers services through the restricted Docker socket proxy rather than a
   direct socket mount.
-- **Portainer** is the designated Docker API controller and mounts
-  `/var/run/docker.sock` directly.
+- **Portainer** is the designated Docker API controller and reaches the Docker
+  socket directly. It mounts the host's `/run` read-only and non-recursively
+  at `/var/run` rather than the socket file, so the mount survives dockerd
+  recreating the socket.
 - **Pocket ID** does not drop all capabilities; dropping them fails its
   privilege-dropping entrypoint.
 - **Immich machine learning** does not drop all capabilities; dropping them
