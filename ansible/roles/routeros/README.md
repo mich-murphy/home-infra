@@ -49,6 +49,9 @@ isolation, ordered firewall rules / NAT, and management services restricted to
 DHCP, DNS, and ICMP; an explicit DMZ-to-router drop follows those allows. An
 explicit DMZ-to-internal drop precedes the DMZ-to-WAN allow independently of the
 optional final default drop.
+Internal subnets may reach each other on UDP 41641 (Tailscale's direct path),
+after the OOB, DMZ and GST isolation drops, so tailnet peers on different VLANs
+behind the same WAN IP connect directly instead of through a DERP relay.
 It also keeps `vlan-filtering` and managed `default-drop` enabled. The live router
 was verified in this state on 2026-06-06.
 

@@ -39,6 +39,7 @@ routeros_proxmox_host: "{{ network.mgmt.proxmox }}"
 routeros_docker_host_srv_ip: "{{ network.infrastructure.docker_host }}"
 routeros_qbittorrent_peer_port: 25565
 routeros_qbittorrent_peer_target: "{{ routeros_docker_host_srv_ip }}"
+routeros_tailscale_port: 41641 # tailscaled's default listen port (direct UDP path)
 routeros_qbittorrent_peer_protocols:
   - tcp
   - udp

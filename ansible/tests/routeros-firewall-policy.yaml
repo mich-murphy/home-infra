@@ -26,7 +26,7 @@
       ansible.builtin.assert:
         that:
           - rules[item[0]].action == 'drop'
-          - comments.index(item[0]) < comments.index(item[1])
+          - "comments.index(item[0]) < comments.index(item[1])"
       loop:
         - ['OOB drop routed traffic (managed: routeros role)', 'WAN -> qBittorrent peers tcp (managed: routeros role)']
         - ['DMZ drop internal routing (managed: routeros role)', '10.77.99.0/24 -> WAN (managed: routeros role)']
@@ -44,6 +44,21 @@
       loop:
         - 'DFLT -> Docker host HTTPS (managed: routeros role)'
         - 'KDS -> Docker host media HTTPS (managed: routeros role)'
+
+    - name: Admit Tailscale direct UDP only between internal nodes, after isolation drops
+      vars:
+        ts: 'Tailscale direct path between internal nodes (managed: routeros role)'
+      ansible.builtin.assert:
+        that:
+          - rules[ts].action == 'accept'
+          - rules[ts].protocol == 'udp'
+          - rules[ts]['dst-port'] | int == 41641
+          - rules[ts]['src-address-list'] == 'internal'
+          - rules[ts]['dst-address-list'] == 'internal'
+          - "comments.index('OOB drop routed traffic (managed: routeros role)') < comments.index(ts)"
+          - "comments.index('DMZ drop internal routing (managed: routeros role)') < comments.index(ts)"
+          - "comments.index('GST drop internal routing (managed: routeros role)') < comments.index(ts)"
+          - "comments.index(ts) < comments.index('DEFAULT DROP (managed: routeros role)')"
 
     - name: Verify qBittorrent peer forwarding fields
       ansible.builtin.assert:
