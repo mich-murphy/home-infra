@@ -7,6 +7,12 @@ swap_size_gb: 8
 swap_swappiness: 10
 zswap_enabled: true
 
+# Host-level inbound allows (firewall role). The Beszel hub container reaches
+# the systemd beszel-agent on the host; its address is pinned in
+# docker/beszel/compose.yml.
+firewall_allow_ports:
+  - {port: "45876", proto: tcp, from: 172.20.1.250}  # beszel hub -> local agent
+
 # Published Docker ports must be allowlisted in DOCKER-USER.
 docker_published_ports:
   - {port: 80, proto: tcp}  # traefik
