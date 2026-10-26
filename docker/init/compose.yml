@@ -9,7 +9,17 @@ services:
       - proxy
     volumes:
       - portainer-data:/data
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Mount the directory, not the socket file: dockerd recreates the socket
+      # on every restart (e.g. apt upgrades), and a file bind keeps the stale
+      # inode while live-restore leaves this container running.
+      # Non-recursive: only the /run tmpfs holding docker.sock, not the
+      # container rootfs/netns/user mounts stacked beneath it.
+      - type: bind
+        source: /run
+        target: /var/run
+        read_only: true
+        bind:
+          recursive: disabled
     ports:
       # escape hatch when traefik is down; allowlisted in docker_published_ports
       - 9443:9443
@@ -43,8 +53,16 @@ services:
       - PING=1
       - POST=0
       - VERSION=1
+      # /run is this container's tmpfs, so the host's /run is mounted beside it.
+      - SOCKET_PATH=/host-run/docker.sock
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Directory mount survives dockerd recreating the socket (see portainer).
+      - type: bind
+        source: /run
+        target: /host-run
+        read_only: true
+        bind:
+          recursive: disabled
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2375/version"]
       interval: 30s
@@ -109,8 +127,16 @@ services:
       - PING=1
       - VERSION=1
       - POST=0
+      # /run is this container's tmpfs, so the host's /run is mounted beside it.
+      - SOCKET_PATH=/host-run/docker.sock
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Directory mount survives dockerd recreating the socket (see portainer).
+      - type: bind
+        source: /run
+        target: /host-run
+        read_only: true
+        bind:
+          recursive: disabled
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2375/version"]
       interval: 30s

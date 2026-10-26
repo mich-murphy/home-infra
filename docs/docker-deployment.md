@@ -103,11 +103,18 @@ The port admits no client: `DOCKER-USER` drops every source on it, and the
 returns the port's traffic to Docker and that the container never binds all
 interfaces. An empty `AGENT_PROXY_BIND`
 would make Compose bind everywhere, so the bind address is verified rather than
-assumed. Only the backend mounts `/var/run/docker.sock`; both services drop
+assumed. Only the backend can reach `docker.sock`; both services drop
 all capabilities and the observer runs read-only as an unprivileged user. The
 root-controlled observer source is hashed into the Compose service
 configuration during bootstrap, so a source update recreates the observer
 instead of leaving an old process behind a replaced bind-mounted inode.
+
+Containers that need the Docker socket bind the host's `/run` directory
+read-only and non-recursively, never the `docker.sock` file itself. dockerd
+recreates the socket whenever it restarts (for example during an apt upgrade).
+Because `live-restore` keeps containers running across that restart, a
+file bind would leave them holding the old, dead inode. That is what stopped
+Portainer deploys and the socket proxy from 2026-10-19 to 2026-10-26.
 
 The router permits DFLT and KDS to the Docker host only on TCP 443. Traefik's
 `kds-media-only` IP allow-list middleware is attached to every non-media router,
