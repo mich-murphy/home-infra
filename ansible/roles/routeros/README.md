@@ -130,6 +130,7 @@ tags its NIC with VLAN 20 and this role reserves its lease on `srv-dhcp`. After 
 VM reconnects or reboots, verify the guest holds an SRV lease, then update any
 external DNS records still pointing service names at its old MGMT address.
 
-The ai-dev VM should land on the physical DMZ through `vmbr1`. If it receives an
+The physical DMZ and `vmbr1` remain reserved for isolated future workloads.
+Any future DMZ guest must use that bridge. If it receives an
 MGMT lease instead, the router's DMZ port is still bridged into MGMT or the cabling
 is wrong; do not enable `default-drop` until that is corrected.

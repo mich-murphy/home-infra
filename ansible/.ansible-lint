@@ -10,6 +10,6 @@ skip_list:
   - jinja[invalid] # false positive: routeros assert templates need play vars lint cannot provide
   - name[casing] # task names are lowercase throughout; mass rename is churn, not a behavior fix
   - partial-become[task] # become is set at play level in run.yaml; lint evaluates roles standalone
-  - role-name # ai-dev is referenced by plays and inventory; renaming the role dir is out of scope
+  - role-name # docker-host is the established role name referenced by the play
   - var-naming[no-role-prefix] # established var names shared via group_vars; renaming is risky
   - yaml[line-length] # single long line in common/swap-file.yaml; role edits deferred

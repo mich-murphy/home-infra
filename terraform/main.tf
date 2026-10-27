@@ -12,10 +12,9 @@ locals {
   proxmox_creds = {
     username = local.scp["scp username"].value
     password = local.scp["scp password"].value
-    # One ephemeral/tagged single-use key shared by both guests at provisioning.
+    # Ephemeral/tagged single-use key for docker-host provisioning.
     # The field is created manually in 1Password; Terraform only reads it.
     tailscale_auth_key_docker_host = local.scp["tailscale authkey"].value
-    tailscale_auth_key_ai_dev      = local.scp["tailscale authkey"].value
   }
   # Every cloud-init guest resolves through the router, the resolver RouterOS
   # DHCP hands SRV and the DMZ (routeros_default_dns). Proxmox fills an unset
@@ -118,7 +117,6 @@ resource "proxmox_virtual_environment_file" "cloud_init_agents" {
   source_raw {
     data = sensitive(templatefile("cloud_init.tftpl", {
       hostname           = "docker-host"
-      os_family          = "debian"
       tailscale_auth_key = local.proxmox_creds.tailscale_auth_key_docker_host
     }))
     file_name = "agents.yml"
@@ -303,133 +301,4 @@ resource "proxmox_virtual_environment_vm" "unifi_controller" {
     ignore_changes  = [clone]
     prevent_destroy = true
   }
-}
-
-moved {
-  from = module.ai_dev["ai-dev-bgd"]
-  to   = module.ai_dev
-}
-
-# Uploaded like cloud_init_agents above: no local file, root-only snippet.
-resource "proxmox_virtual_environment_file" "cloud_init_ai_dev" {
-  content_type = "snippets"
-  datastore_id = "local"
-  node_name    = local.proxmox_node
-  overwrite    = true
-  file_mode    = "0600"
-  source_raw {
-    data = sensitive(templatefile("cloud_init.tftpl", {
-      hostname           = "ai-dev"
-      os_family          = "arch"
-      tailscale_auth_key = local.proxmox_creds.tailscale_auth_key_ai_dev
-    }))
-    file_name = "ai-dev.yml"
-  }
-}
-
-removed {
-  from = local_sensitive_file.cloud_init_ai_dev
-  lifecycle {
-    destroy = false
-  }
-}
-
-resource "proxmox_virtual_environment_vm" "ai_dev" {
-  depends_on          = [proxmox_virtual_environment_file.cloud_init_ai_dev]
-  vm_id               = 110
-  name                = "ai-dev"
-  description         = "Managed by Terraform."
-  node_name           = local.proxmox_node
-  tags                = ["arch", "ai-dev"]
-  bios                = "seabios"
-  keyboard_layout     = "en-us"
-  boot_order          = ["scsi0"]
-  on_boot             = true
-  reboot_after_update = true
-  scsi_hardware       = "virtio-scsi-single"
-  started             = true
-  agent {
-    enabled = true
-    type    = "virtio"
-  }
-  operating_system {
-    type = "l26"
-  }
-  clone {
-    full      = false
-    node_name = local.proxmox_node
-    vm_id     = var.arch_cloud_template_vmid
-  }
-  cpu {
-    cores   = 4
-    sockets = 1
-    type    = "host"
-  }
-  # 3 GiB covers the interactive workload (earlyoom reported ~87-98% available
-  # overnight); tsc/bun/wezterm-mux builds OOM-killed at 5 GiB, so bump before
-  # heavier dev work. floating = 0 disables virtio-balloon so the host cannot
-  # reclaim below 3 GiB. With TrueNAS at 10 GiB, docker-host at 10 GiB and ARC
-  # at 3 GiB the host keeps ~3 GiB headroom on the 32 GiB board.
-  memory {
-    dedicated = 3072
-    floating  = 0
-  }
-  initialization {
-    datastore_id        = "local-zfs"
-    interface           = "ide1"
-    vendor_data_file_id = "local:snippets/ai-dev.yml"
-    user_account {
-      keys     = [var.ai_dev_ssh_public_key]
-      username = "michael"
-    }
-    dns {
-      domain  = local.guest_dns.domain
-      servers = local.guest_dns.servers
-    }
-    # IPv4 only: the physical DMZ interface carries no guest IPv6. Declaring
-    # ip_config makes the provider read ipconfig0 back on this clone, and it
-    # sends ipconfig0 whole, so a plan shows and an apply clears any ip6 set
-    # outside Terraform. tests/terraform-cloud-init.sh rejects an ipv6 block.
-    ip_config {
-      ipv4 {
-        address = "dhcp"
-      }
-    }
-  }
-  serial_device {
-    device = "socket"
-  }
-  disk {
-    datastore_id = "local-zfs"
-    discard      = "on"
-    file_format  = "raw"
-    interface    = "scsi0"
-    # iothread on a local-zfs zvol can hang the host under bursty guest I/O.
-    iothread  = false
-    replicate = false
-    size      = 150
-  }
-  network_device {
-    bridge = "vmbr1"
-    model  = "virtio"
-  }
-  lifecycle {
-    ignore_changes  = [clone]
-    prevent_destroy = true
-  }
-}
-
-moved {
-  from = module.ai_dev.local_sensitive_file.cloud_init
-  to   = local_sensitive_file.cloud_init_ai_dev
-}
-
-moved {
-  from = module.ai_dev.proxmox_virtual_environment_file.cloud_init
-  to   = proxmox_virtual_environment_file.cloud_init_ai_dev
-}
-
-moved {
-  from = module.ai_dev.proxmox_virtual_environment_vm.this
-  to   = proxmox_virtual_environment_vm.ai_dev
 }

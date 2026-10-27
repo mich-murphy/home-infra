@@ -2,32 +2,6 @@
 # Docker-published ports bypass UFW's INPUT policy and must be filtered before
 # Docker's own FORWARD rules.
 
-- name: Validate the reserved observer and media-broker ports
-  ansible.builtin.assert:
-    that:
-      - >-
-        (docker_published_ports + docker_tailscale_fallback_ports)
-        | selectattr('port', 'equalto', docker_agent_proxy_port | int)
-        | list | length == 0
-      - docker_media_broker_port | string is match('^[0-9]+$')
-      - docker_media_broker_port | int >= 1
-      - docker_media_broker_port | int <= 65535
-      - docker_media_broker_port | int not in [443, docker_agent_proxy_port | int]
-      - >-
-        docker_published_ports
-        | selectattr('port', 'equalto', docker_media_broker_port | int)
-        | list | length == 0
-      - >-
-        docker_tailscale_fallback_ports
-        | selectattr('port', 'equalto', docker_media_broker_port | int)
-        | list | length == 0
-    fail_msg: >-
-      The observer port must be absent from all general or fallback
-      published-port lists. The media-broker port must be numeric, distinct
-      from HTTPS and the observer, and absent from those lists too.
-
-# The observer and media-broker ports admit no client: each has an
-# original-direction DROP and no source-pinned RETURN.
 - name: Allowlist Docker published ports in DOCKER-USER
   ansible.builtin.blockinfile:
     path: /etc/ufw/after.rules
@@ -35,7 +9,6 @@
     block: |
       *filter
       :DOCKER-USER - [0:0]
-      {{ '-A DOCKER-USER -p tcp -m conntrack --ctorigdstport ' ~ docker_media_broker_port ~ ' --ctdir ORIGINAL -j DROP' }}
       -A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
       -A DOCKER-USER -m conntrack --ctstate INVALID -j DROP
       {% for entry in docker_published_ports %}
@@ -47,7 +20,6 @@
          ' -m conntrack --ctdir ORIGINAL --ctorigdstport ' ~
          entry.port ~ ' -j RETURN' }}
       {% endfor %}
-      -A DOCKER-USER -p tcp -m conntrack --ctdir ORIGINAL --ctorigdstport {{ docker_agent_proxy_port }} -j DROP
       -A DOCKER-USER -i {{ docker_external_interface }} -m conntrack --ctstate NEW -j DROP
       -A DOCKER-USER -j RETURN
       COMMIT

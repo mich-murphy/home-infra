@@ -29,13 +29,14 @@ and `cat /sys/class/powercap/intel-rapl:0/constraint_1_power_limit_uw`.
 | --- | --- | --- |
 | truenas (101) | 10 GiB | ZFS ARC inside the guest; keep as is. |
 | docker-host (102) | 10 GiB | Raised from 8 GiB; balloon pinned at max. |
-| ai-dev (110) | 3 GiB | Ballooning disabled. Sized for the retired Hermes agent; CLIProxyAPI and its controller need far less, so measure before shrinking. |
 | unifi-controller (111) | 3 GiB | Stopped by policy on the 32 GiB board. |
 | host ZFS ARC | 3 GiB max | `zfs_arc_max` in `/etc/modprobe.d/zfs.conf`. |
 
-That leaves roughly 3 GiB for the hypervisor itself on the 32 GiB board. Do not
-grow a guest without shrinking another, and do not start VM 111 during the
-nightly vzdump window.
+With UniFi stopped, running guests total 20 GiB. Adding the 3 GiB
+host ARC ceiling leaves 9 GiB nominally, before other host/QEMU overhead,
+hardware-reserved memory and safety margin. Starting UniFi at its maximum
+reduces that remainder to 6 GiB. Check measured available memory before growing
+a guest or starting UniFi; do not start VM 111 during the nightly vzdump window.
 
 ## Swap
 
@@ -54,12 +55,13 @@ Daily vzdump to TrueNAS.
 | Item | Value |
 | --- | --- |
 | PVE storage | `truenas-backups`, NFSv4.2, the TrueNAS `slow/backups/proxmox` export, content `backup` |
-| Job | `backup-truenas-daily`, 02:30, all guests except templates 9001-9003, snapshot mode, zstd, `repeat-missed` |
+| Job | `backup-truenas-daily`, 02:30, all guests except Ubuntu templates 9001 and 9003, snapshot mode, zstd, `repeat-missed` |
 | Retention | `keep-daily=7,keep-weekly=4,keep-monthly=3` on both job and storage |
 | TrueNAS side | dataset, export and snapshot task recorded in [truenas-storage.md](truenas-storage.md) |
 
-Each run is a full image, so the refquota is what stops the retention set
-eating the pool. TrueNAS VM 101 is included deliberately: its boot disk lives
+Each run is a full image. The refquota bounds live referenced backup data,
+not the dataset's retained snapshots; budget both when assessing pool usage.
+It does not by itself cap the total retention footprint. TrueNAS VM 101 is included deliberately: its boot disk lives
 on `rpool`, so a copy on the data pool is the only way to rebuild it without
 reinstalling.
 
@@ -71,7 +73,11 @@ run from outside MGMT.
 
 ## Known gaps
 
-- Host notification delivery is not configured, so ZFS and PVE alerts do not
-  reach anyone. Worth fixing.
+- PVE's own notification target remains disabled, so native backup/job alert
+  delivery still needs configuration. Beszel now has CPU, memory, disk and
+  status alerts for Proxmox and Docker, and its SMTP test was accepted on
+  2026-10-07, with inbox receipt subsequently confirmed by the user. See
+  [monitoring configuration](docker-deployment.md#monitoring-configuration).
+  Resource/pool monitoring does not replace native backup and TrueNAS alerts.
 - The TrueNAS guest runs without the QEMU guest agent by design.
 - The UniFi controller guest is intentionally stopped and not started on boot.

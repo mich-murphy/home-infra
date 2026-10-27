@@ -1,0 +1,20 @@
+{
+  "services": {
+    "jellyfin": {
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "jellyfin-cache",
+          "target": "/cache"
+        },
+        {
+          "type": "tmpfs",
+          "target": "/cache/transcodes"
+        }
+      ]
+    }
+  },
+  "volumes": {
+    "jellyfin-cache": {}
+  }
+}

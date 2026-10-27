@@ -9,18 +9,6 @@
     - common
     - docker-host
 
-- name: configure ai-dev hosts
-  hosts: ai_dev
-  become: true
-  vars_files:
-    - "group_vars/secrets.yaml"
-  roles:
-    - common
-    - ai-dev
-    - role: cliproxy
-      tags:
-        - cliproxy
-
 - name: configure unifi controller
   hosts: unifi
   become: true

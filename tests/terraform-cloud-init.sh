@@ -2,8 +2,8 @@
 # Check the cloud-init settings Terraform gives Proxmox guests.
 #
 # Proxmox fills an unset nameserver or search domain from its own resolv.conf,
-# which Tailscale owns, so every initialization block must set both. ai-dev's
-# physical DMZ interface is IPv4-only, so a DMZ guest must not request IPv6.
+# which Tailscale owns, so every initialization block must set both. The reserved
+# physical DMZ is IPv4-only, so any future DMZ guest must not request IPv6.
 #
 # Vendor-data carries a Tailscale auth key, so nothing may render it to a local
 # file: a snippet is uploaded from source_raw with a root-only file_mode. A VM
@@ -82,9 +82,8 @@ check_config() {
               elif any($snippets[]; . == $id) then empty
               else "\($address): initialization.\($key) names no snippet Terraform uploads"
               end),
-           # vmbr1 is the physical DMZ bridge, and ai-dev is its guest.
-           (if ($address | endswith(".ai_dev"))
-               or ([$body.network_device[]?.bridge] | index("vmbr1") != null)
+           # vmbr1 is the reserved physical DMZ bridge.
+           (if ([$body.network_device[]?.bridge] | index("vmbr1") != null)
             then
               (if ($init.ip_config // [] | length) == 0
                then "\($address): DMZ guest must declare its ip_config"
@@ -105,13 +104,6 @@ failed=0
 
 if ! check_config "${repo_root}/terraform" >"${tmp_dir}/violations"; then
   sed 's/^/ERROR: /' "${tmp_dir}/violations" >&2
-  failed=1
-fi
-
-# A renamed ai-dev resource must not silently drop out of the DMZ check.
-if ! jq -e 'any(.[]; .address | endswith(": proxmox_virtual_environment_vm.ai_dev"))' \
-  "${tmp_dir}/resources.json" >/dev/null; then
-  echo "ERROR: proxmox_virtual_environment_vm.ai_dev not found; update this test" >&2
   failed=1
 fi
 
@@ -269,4 +261,4 @@ resource "proxmox_virtual_environment_vm" "guest" {
 if [[ ${failed} -ne 0 ]]; then
   exit 1
 fi
-echo "Cloud-init guest DNS, DMZ IPv6 and vendor-data snippet checks passed (including negative fixtures)."
+echo "Cloud-init guest DNS and vendor-data snippet checks passed (including negative fixtures)."

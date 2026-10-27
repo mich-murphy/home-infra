@@ -1,0 +1,10 @@
+{
+  "services": {
+    "jellyfin": {
+      "volumes": []
+    }
+  },
+  "volumes": {
+    "jellyfin-cache": {}
+  }
+}
