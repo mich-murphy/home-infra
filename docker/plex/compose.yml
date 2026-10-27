@@ -2,7 +2,7 @@
 services:
   # NOTE: visit https://<server-ip>:32400/web to setup new server
   plex:
-    image: plexinc/pms-docker:1.43.4.10903-e5521bd8c@sha256:e0ab27395614a8e1a4fdf84c6bc60ac664915cfdde70c52d030c7728a1c48e14
+    image: plexinc/pms-docker:1.43.5.11079-b3b13e506@sha256:6d778d41daae68f89115aa87a44ae14a96b23e71a2093da173b5a9aac4091336
     container_name: plex
     security_opt:
       - no-new-privileges:true
@@ -122,7 +122,7 @@ services:
 
   # Initial config is created by hand: https://kometa.wiki/en/latest/kometa/install/walkthroughs/docker/#setting-up-the-initial-config-file
   kometa:
-    image: kometateam/kometa:v2.5.3@sha256:48c3cb318ec984213587f221e8e762c5ad2dbd0e6966efc7bba0a5868a6c5758
+    image: kometateam/kometa:nightly@sha256:732a59fd25abe20d3e9c7c0978a55e5c037f23bb2603d6a787c9ec1aa2610200
     container_name: kometa
     mem_limit: 1g
     security_opt:
