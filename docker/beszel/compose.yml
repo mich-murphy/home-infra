@@ -1,14 +1,18 @@
 ---
 services:
   beszel:
-    image: henrygd/beszel:0.21.0@sha256:6b39a8b64f9b15d00a25e7683e31a93c46161182a54f62713525107064e10599
+    image: henrygd/beszel:0.21.1@sha256:8514a69d9bbbcb74f371a3205561ee231fc0289739cea64e8131f341d695b770
     container_name: beszel
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     networks:
-      - proxy
+      proxy:
+        # Fixed address: the host UFW rule admitting the hub to the local
+        # beszel-agent (TCP 45876) is keyed on it (group_vars/docker.yaml).
+        # Dynamic allocation starts at .2, so .250 stays clear of the pool.
+        ipv4_address: 172.20.1.250
     environment:
       - DISABLE_PASSWORD_AUTH=true # use pocket-id
     volumes:

@@ -155,6 +155,17 @@
         dst-address-list: internal
         action: drop
         comment: "GST drop internal routing (managed: routeros role)"
+      # Tailscale direct path between LAN nodes. Peers behind the same WAN IP
+      # first probe each other's LAN endpoints; without this, the default drop
+      # forces cross-VLAN tailnet traffic through a DERP relay. Placed after
+      # the OOB/DMZ/GST isolation drops, which therefore still apply.
+      - chain: forward
+        src-address-list: internal
+        dst-address-list: internal
+        protocol: udp
+        dst-port: {{ routeros_tailscale_port }}
+        action: accept
+        comment: "Tailscale direct path between internal nodes (managed: routeros role)"
       - chain: forward
         src-address-list: admin
         out-interface-list: WAN

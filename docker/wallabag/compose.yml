@@ -2,7 +2,7 @@
 services:
   # initial login: wallabag, wallabag
   wallabag:
-    image: wallabag/wallabag:2.6.14@sha256:4a527e027e0d59e87c14225ef11e005af3d4890374202ad319ce5e63dfc66709
+    image: wallabag/wallabag:2.6.14.1@sha256:92754c1238ddfb5099874852585c4216d5a65e2840bfc672e86f00b3f8f88ef1
     container_name: wallabag
     security_opt:
       - no-new-privileges:true
@@ -52,7 +52,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: mariadb:13.0.2@sha256:f1bba652ba57bea3099ca2fe1af692af537c27d96e0bcde39dce29e2ba1ec4f3
+    image: mariadb:13.0.2@sha256:0e4bb0f339feba125d1154fbacd36c16ec8518f52e44e1f82ecec7d6771caf39
     container_name: wallabag-mariadb
     security_opt:
       - no-new-privileges:true
@@ -83,7 +83,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:8.10.2-alpine@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
+    image: redis:8.10.2-alpine@sha256:0bf6577d7774e592b29d093e3ac9390eb91e13d72c21e506afce736de5e0eeb0
     container_name: wallabag-redis
     security_opt:
       - no-new-privileges:true

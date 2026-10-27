@@ -132,6 +132,21 @@ for fixture in "${repo_root}"/tests/fixtures/jellyfin-cache-*.json; do
   fi
 done
 
+# dockerd recreates docker.sock on restart; with live-restore a file bind keeps
+# the stale inode. Socket consumers must bind /run non-recursively instead.
+init_normalized=${tmp_dir}/init.json
+docker-compose -f "${repo_root}/docker/init/compose.yml" config --format json >"${init_normalized}"
+for svc in portainer docker-socket-proxy; do
+  if HARDENING_SERVICE=${svc} yq -e '.services[strenv(HARDENING_SERVICE)].volumes // [] | any_c(.source == "/var/run/docker.sock" or .source == "/run/docker.sock")' "${init_normalized}" >/dev/null 2>&1; then
+    echo "init/${svc}: bind /run (non-recursive), not the docker.sock file" >&2
+    exit 1
+  fi
+  if ! HARDENING_SERVICE=${svc} yq -e '.services[strenv(HARDENING_SERVICE)].volumes // [] | any_c(.type == "bind" and .source == "/run" and .read_only == true and .bind.recursive == "disabled")' "${init_normalized}" >/dev/null 2>&1; then
+    echo "init/${svc}: must bind host /run read-only with recursive: disabled" >&2
+    exit 1
+  fi
+done
+
 # Negative fixtures ensure each required field is checked independently rather
 # than allowing a service to bypass both assertions as one exception.
 if check_normalized_file init "${repo_root}/tests/fixtures/docker-hardening-missing-nnp.json"; then

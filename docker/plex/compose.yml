@@ -2,7 +2,7 @@
 services:
   # NOTE: visit https://<server-ip>:32400/web to setup new server
   plex:
-    image: plexinc/pms-docker:1.43.4.10903-e5521bd8c@sha256:e0ab27395614a8e1a4fdf84c6bc60ac664915cfdde70c52d030c7728a1c48e14
+    image: plexinc/pms-docker:1.43.5.11079-b3b13e506@sha256:6d778d41daae68f89115aa87a44ae14a96b23e71a2093da173b5a9aac4091336
     container_name: plex
     security_opt:
       - no-new-privileges:true
@@ -56,7 +56,7 @@ services:
     restart: unless-stopped
 
   tautulli:
-    image: ghcr.io/linuxserver/tautulli:v2.18.2-ls246@sha256:bfcd2f3f6f89d2171d161ac1780723d1633f8de3c4c993d0dc52aa9edb729e16
+    image: ghcr.io/linuxserver/tautulli:v2.18.2-ls249@sha256:c6a48416d16b26f254b000133d2d844c1905ee58ed0f44aad9bda66598d39988
     container_name: tautulli
     security_opt:
       - no-new-privileges:true
@@ -122,7 +122,7 @@ services:
 
   # Initial config is created by hand: https://kometa.wiki/en/latest/kometa/install/walkthroughs/docker/#setting-up-the-initial-config-file
   kometa:
-    image: kometateam/kometa:v2.5.1@sha256:20388de48f0e088ad9feb9904f6a452fd9ef933a79c7b2bf186e388224e8f437
+    image: kometateam/kometa:nightly@sha256:732a59fd25abe20d3e9c7c0978a55e5c037f23bb2603d6a787c9ec1aa2610200
     container_name: kometa
     mem_limit: 1g
     security_opt:
