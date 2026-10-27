@@ -1,0 +1,23 @@
+{
+  "services": {
+    "jellyfin": {
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "jellyfin-cache",
+          "target": "/cache"
+        }
+      ]
+    }
+  },
+  "volumes": {
+    "jellyfin-cache": {
+      "driver": "local",
+      "driver_opts": {
+        "type": "tmpfs",
+        "device": "tmpfs",
+        "o": "size=2g"
+      }
+    }
+  }
+}

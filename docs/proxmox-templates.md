@@ -1,23 +1,24 @@
 # Proxmox cloud templates
 
-The scripts in `terraform/scripts/` are host-local Proxmox administration
-tools. Run them as root on the Proxmox host, not from a workstation. They
-require `qm`, `pvesm`, `wget`, and `sha256sum`, plus available `local` and
+The Ubuntu script in `terraform/scripts/` is a host-local Proxmox administration
+tool. Run it as root on the Proxmox host, not from a workstation. It
+requires `qm`, `pvesm`, `wget`, and `sha256sum`, plus available `local` and
 `local-zfs` storage.
 
-Both scripts require a versioned image URL and its published SHA256 so a
+The Ubuntu script requires a versioned image URL and its published SHA256 so a
 template build is reproducible. Moving `latest` or `current` URLs are not an
 accepted build input.
 
-Each script prints its own invocation and required variables when run without
-them. The default template VMIDs are 9002 for Arch and 9003 for Ubuntu. `VMID` and
+The script prints its invocation and required variables when run without
+them. Its default template VMID is 9003 for Ubuntu; retain the existing Ubuntu
+template 9001 as well. `VMID` and
 `NAME` may be overridden. Ubuntu first boot is bounded to 900 seconds by
 default; override `FIRST_BOOT_TIMEOUT` only after checking the VM console and
 cloud-init logs.
 
 An existing completed template is a no-op. An existing non-template VM with the
 target VMID is treated as a partial or conflicting build and stops execution.
-The scripts never destroy it automatically; their failure output names the
+The script never destroys it automatically; its failure output names the
 exact inspection and recovery commands for the conflicting VMID.
 
 Downloaded images are written to a `.partial` file, verified, and then renamed
@@ -38,7 +39,7 @@ Every cloud-init guest therefore sets both from `local.guest_dns` in
 also hands SRV and the DMZ, and `home.arpa`, the special-use home network
 domain (RFC 8375). Proxmox appends the search domain to the VM name to form the
 FQDN that cloud-init writes to `/etc/hosts`, so guests built from now on are
-`<name>.home.arpa`. Both template scripts set the same values for clones that
+`<name>.home.arpa`. The Ubuntu template script sets the same values for clones that
 Terraform does not configure. `tests/terraform-cloud-init.sh`, part of the
 Terraform quality gate, fails any `initialization` block that lacks either
 setting, and any DMZ guest that requests IPv6.
@@ -47,8 +48,8 @@ A completed template is a no-op, so templates built before this keep their old
 settings. Align them by hand on the Proxmox host:
 
 ```sh
-qm set 9002 --nameserver 10.77.1.1 --searchdomain home.arpa
-qm set 9003 --searchdomain home.arpa
+qm set 9001 --nameserver 10.77.1.1 --searchdomain home.arpa
+qm set 9003 --nameserver 10.77.1.1 --searchdomain home.arpa
 ```
 
 ## Changing a running guest's cloud-init settings
@@ -73,9 +74,8 @@ boot and re-runs its per-instance modules:
   snippet, repeats the package and Tailscale installs and calls `tailscale up`
   with that key.
 
-This is not hypothetical. docker-host and ai-dev each carry four instance
-directories under `/var/lib/cloud/instances`, and their SSH host keys date from
-the most recent one, which coincides with an earlier Terraform apply.
+Earlier Terraform initialization changes have re-run per-instance modules on
+docker-host; do not assume a settings-only update is harmless.
 
 Pinning the instance ID is not an option for an existing guest: it needs a
 custom meta-data snippet, and the provider replaces the VM when
@@ -119,9 +119,6 @@ default `boot-new-instance` update event, so a new nameserver, search domain
 or IP setting reaches the guest only when it is re-provisioned. That loses
 nothing on the live guests:
 
-- ai-dev's networkd drop-in pins its resolver, drops the tailnet search domain
-  and disables IPv6 on the physical interface, so the removed `ip6` setting
-  needs no re-render either.
 - docker-host's netplan names no nameserver; it takes the router's resolver
   from DHCP.
 - unifi-controller's static configuration has named the router since it was
@@ -136,9 +133,8 @@ as a Proxmox upgrade, would otherwise cause the same re-run.
 One case still re-provisions. When the guest's Python minor version changes,
 cloud-init discards its cache at the next boot whatever the setting says,
 reads the drive, and treats a different instance ID as a new instance.
-Ubuntu 24.04 stays on Python 3.12, but ai-dev's Arch Linux takes each new
-Python release. Once an `initialization` change has been applied to ai-dev,
-treat the first reboot after a Python minor upgrade as a re-provision.
+Ubuntu 24.04 stays on Python 3.12; treat a future Python minor upgrade after
+an initialization change as a potential re-provision.
 
 ### Re-provisioning a guest deliberately
 

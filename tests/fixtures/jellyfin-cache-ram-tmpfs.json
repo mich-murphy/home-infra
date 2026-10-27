@@ -1,0 +1,19 @@
+{
+  "services": {
+    "jellyfin": {
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "jellyfin-cache",
+          "target": "/cache"
+        }
+      ],
+      "tmpfs": [
+        "/transcode:rw,nosuid,nodev,noexec,uid=1000,gid=1000,mode=1777,size=2g"
+      ]
+    }
+  },
+  "volumes": {
+    "jellyfin-cache": {}
+  }
+}

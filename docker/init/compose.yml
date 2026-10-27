@@ -71,80 +71,6 @@ services:
       start_period: 30s
     restart: unless-stopped
 
-  # The agent-facing name and tailnet port remain stable, but this service is
-  # now a projection and never has access to the Docker socket.
-  docker-socket-proxy-agent:
-    image: python:3.14-slim@sha256:35caba83af2fe6da9a5d922f9b0156f21d1246a48278c58a08bd253303ba42e8
-    container_name: docker-socket-proxy-agent
-    user: "65532:65532"
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    read_only: true
-    networks:
-      - docker-socket-proxy-agent
-      - docker-socket-proxy-agent-backend
-    ports:
-      # Tailnet address only; DOCKER-USER drops every client on this port.
-      - ${AGENT_PROXY_BIND}:2375:2375
-    environment:
-      # Changes the service config when the root-controlled source changes,
-      # forcing Compose to replace the process rather than retain stale code.
-      - OBSERVER_SOURCE_SHA256=${AGENT_OBSERVER_SOURCE_SHA256}
-    volumes:
-      - ./agent-observer/observer.py:/observer.py:ro
-    command: ["python3", "/observer.py"]
-    depends_on:
-      - docker-socket-proxy-agent-backend
-    healthcheck:
-      test: ["CMD", "python3", "-c", "import socket; s=socket.create_connection(('127.0.0.1',2375),2); s.close()"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    restart: unless-stopped
-
-  # Unexposed backend: the socket is available only to this pinned, reduced
-  # proxy, and the observer above can reach only this fixed service name.
-  docker-socket-proxy-agent-backend:
-    image: ghcr.io/tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
-    container_name: docker-socket-proxy-agent-backend
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    read_only: true
-    # entrypoint renders haproxy.cfg into /tmp; haproxy writes its pidfile to /run
-    tmpfs:
-      - /tmp
-      - /run
-    networks:
-      - docker-socket-proxy-agent-backend
-    environment:
-      - CONTAINERS=1
-      - LOGS=1
-      - PING=1
-      - VERSION=1
-      - POST=0
-      # /run is this container's tmpfs, so the host's /run is mounted beside it.
-      - SOCKET_PATH=/host-run/docker.sock
-    volumes:
-      # Directory mount survives dockerd recreating the socket (see portainer).
-      - type: bind
-        source: /run
-        target: /host-run
-        read_only: true
-        bind:
-          recursive: disabled
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2375/version"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-    restart: unless-stopped
-
   traefik:
     image: traefik:v3.7.16@sha256:1336e85aaed293bd63d005086e0dd013b04078b26aaeb1c18b26a2f928af7e65
     container_name: traefik
@@ -239,11 +165,4 @@ networks:
         - subnet: 172.20.1.0/24
   docker-socket-proxy:
     name: docker-socket-proxy
-    internal: true
-  # The observer needs a non-internal frontend for Docker's published port;
-  # only the observer attaches to it. Its backend path remains private.
-  docker-socket-proxy-agent:
-    name: docker-socket-proxy-agent
-  docker-socket-proxy-agent-backend:
-    name: docker-socket-proxy-agent-backend
     internal: true

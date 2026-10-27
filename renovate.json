@@ -18,25 +18,6 @@
   "major": {
     "automerge": false
   },
-  "customManagers": [
-    {
-      "customType": "regex",
-      "description": "Release artefacts the cliproxy role installs, each pinned by a version and a SHA-256 under a '# renovate:' comment; Renovate bumps both together",
-      "managerFilePatterns": ["/^ansible/roles/cliproxy/defaults/main\\.yaml$/"],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[a-z_]+_version: (?<currentValue>\\S+)\\n[a-z_]+_sha256: (?<currentDigest>[0-9a-f]{64})"
-      ]
-    }
-  ],
-  "customDatasources": {
-    "cliproxy-controller": {
-      "defaultRegistryUrlTemplate": "https://api.github.com/repos/mich-murphy/cliproxy-controller/releases?per_page=100",
-      "format": "json",
-      "transformTemplates": [
-        "{\"sourceUrl\": \"https://github.com/mich-murphy/cliproxy-controller\", \"releases\": [$[draft = false and prerelease = false].{\"version\": tag_name, \"releaseTimestamp\": published_at, \"digest\": $substringAfter(assets[name = \"cliproxy-controller-linux-x64\"].digest, \"sha256:\")}]}"
-      ]
-    }
-  },
   "packageRules": [
     {
       "description": "Never automerge major or minor updates to high-risk infrastructure; PRs are still raised automatically. Digest and patch updates are automerged by the final rule",
@@ -53,27 +34,38 @@
         "/^terraform-provider-.*/",
         "/^traefik$/"
       ],
-      "matchUpdateTypes": ["major", "minor"],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
       "automerge": false
     },
     {
       "description": "Nextcloud only supports stepping one major at a time; raise each major separately",
-      "matchPackageNames": ["/^nextcloud$/"],
+      "matchPackageNames": [
+        "/^nextcloud$/"
+      ],
       "separateMultipleMajor": true
     },
     {
       "description": "Linuxserver.io Qbittorrent",
-      "matchPackageNames": ["/^(gh|ls)cr\\.io\\/linuxserver\\/qbittorrent/"],
+      "matchPackageNames": [
+        "/^(gh|ls)cr\\.io\\/linuxserver\\/qbittorrent/"
+      ],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:-r(?<build>\\d+))?(?:_v[\\d.]+)?-ls(?<revision>\\d+)$"
     },
     {
       "description": "Linuxserver.io Sabnzbd",
-      "matchPackageNames": ["/^(gh|ls)cr\\.io\\/linuxserver\\/sabnzbd/"],
+      "matchPackageNames": [
+        "/^(gh|ls)cr\\.io\\/linuxserver\\/sabnzbd/"
+      ],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>.+)$"
     },
     {
       "description": "Linuxserver.io Tautulli",
-      "matchPackageNames": ["/^(gh|ls)cr\\.io\\/linuxserver\\/tautulli/"],
+      "matchPackageNames": [
+        "/^(gh|ls)cr\\.io\\/linuxserver\\/tautulli/"
+      ],
       "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>.+)$"
     },
     {
@@ -85,7 +77,9 @@
     },
     {
       "description": "Plex Media Server",
-      "matchPackageNames": ["/^plexinc\\/pms-docker/"],
+      "matchPackageNames": [
+        "/^plexinc\\/pms-docker/"
+      ],
       "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-(?<revision>.+)$"
     },
     {
@@ -96,18 +90,14 @@
       "enabled": false
     },
     {
-      "description": "Automerge low-risk updates for every package: digests, pins and patch releases. Must stay below the rules above so it overrides them; only the ai-dev proxy rule follows it",
-      "matchUpdateTypes": ["digest", "pinDigest", "pin", "patch"],
-      "automerge": true
-    },
-    {
-      "description": "The ai-dev proxy, its dashboard and its routing controller deploy by a manual Ansible run and must stay in step with the controller's parity and contract tests, so a dashboard bump waits for cliproxy-controller's upstream-dashboard.version to pass; never automerge them. Must stay last so it overrides the automerge rule above",
-      "matchDepNames": [
-        "router-for-me/CLIProxyAPI",
-        "router-for-me/Cli-Proxy-API-Management-Center",
-        "mich-murphy/cliproxy-controller"
+      "description": "Automerge low-risk updates for every package: digests, pins and patch releases. Must stay below the rules above so it overrides them",
+      "matchUpdateTypes": [
+        "digest",
+        "pinDigest",
+        "pin",
+        "patch"
       ],
-      "automerge": false
+      "automerge": true
     }
   ]
 }

@@ -1,0 +1,17 @@
+{
+  "services": {
+    "jellyfin": {
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "jellyfin-cache",
+          "target": "/cache",
+          "read_only": true
+        }
+      ]
+    }
+  },
+  "volumes": {
+    "jellyfin-cache": {}
+  }
+}

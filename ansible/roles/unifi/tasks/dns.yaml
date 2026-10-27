@@ -1,7 +1,7 @@
 ---
 # The controller's static cloud-init network configuration names the router as
 # its only resolver (Terraform's local.guest_dns), so no networkd or netplan
-# override is needed here, unlike ai-dev. Check it before the package tasks,
+# override is needed here. Check it before the package tasks,
 # which need DNS.
 - name: read the controller interface DNS servers
   ansible.builtin.command:

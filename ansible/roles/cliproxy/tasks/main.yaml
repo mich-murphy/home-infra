@@ -1,9 +1,0 @@
----
-- name: Install and run CLIProxyAPI with the pinned dashboard
-  ansible.builtin.import_tasks: proxy.yaml
-
-- name: Install and run the routing controller
-  ansible.builtin.import_tasks: controller.yaml
-
-- name: Publish both over HTTPS with tailscale serve
-  ansible.builtin.import_tasks: serve.yaml

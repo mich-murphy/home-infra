@@ -27,8 +27,6 @@ docker_bootstrap_dir: /srv/init
 docker_portainer_stacks_dir: /srv/portainer
 docker_bootstrap_containers:
   - docker-socket-proxy
-  - docker-socket-proxy-agent
-  - docker-socket-proxy-agent-backend
   - pocket-id
   - portainer
   - traefik
@@ -57,11 +55,3 @@ nfs_mounts:
   - name: audiobooks
     local_path: /mnt/audiobooks
     nfs_share: "{{ network.infrastructure.truenas }}:/mnt/slow/media/audiobooks"
-
-# Sanitized Docker observer (docker-socket-proxy-agent) port. It has no
-# client: DOCKER-USER drops every source on it.
-docker_agent_proxy_port: 2375
-
-# Media-broker port. Portainer owns the application stack on the shared Git
-# source with a published image; DOCKER-USER drops every source on this port.
-docker_media_broker_port: 8765

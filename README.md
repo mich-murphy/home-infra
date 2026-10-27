@@ -4,7 +4,10 @@
 
 Infrastructure-as-code for a single-server homelab running on Proxmox. Terraform
 provisions infrastructure, Ansible configures hosts and the router, and Docker
-Compose plus Portainer GitOps run application services.
+Compose runs application services, with Portainer GitOps as their intended controller.
+
+The remaining improvement plan, current operational blockers and next-session
+resume instructions are in [the roadmap handover](docs/homelab-roadmap-handover.md).
 
 ## Hardware
 
@@ -19,8 +22,7 @@ Proxmox VE (hypervisor)
 ├── TrueNAS VM (SRV VLAN) ─── NFS shares (media, downloads, bulk storage)
 ├── Docker Host VM (Ubuntu 24.04) ─── live services via Docker Compose
 │   └── Traefik → per-service TLS hostnames (Cloudflare ACME)
-├── UniFi OS Server VM (MGMT) ─── cold controller infrastructure (off normally)
-├── ai-dev VM (DMZ) ─── Tailnet-only Claude/Codex subscription proxy (CLIProxyAPI)
+└── UniFi OS Server VM (MGMT) ─── cold controller infrastructure (off normally)
 ```
 
 ### Network (MikroTik router + UniFi AP)
@@ -37,7 +39,7 @@ are managed through the UniFi controller API (`terraform/network`).
 | DFLT | Main wireless clients |
 | KDS | Kids wireless clients with filtered DNS |
 | GST | Guest wireless clients with UniFi L2 isolation |
-| DMZ | Isolated ai-dev VM |
+| DMZ | Reserved isolated physical network (no active guest) |
 | OOB | Break-glass router access |
 
 VLAN IDs, subnets, addresses, and the physical port map are in
@@ -45,11 +47,8 @@ VLAN IDs, subnets, addresses, and the physical port map are in
 trunks MGMT/SRV over one ethernet port and carries the untagged DMZ uplink on
 the other. The UniFi U6-Pro AP is adopted in the controller. The three managed WLANs are
 attached to the default `All APs` group and mapped to the DFLT/KDS/GST
-VLAN-only networks. The ai-dev VM is isolated on the physical DMZ,
-protected by host nftables default-deny input rules, and
-controlled-output rules, and further scoped by an external Tailscale policy
-managed outside this repo. Its deployment and operations are documented in
-[docs/ai-dev.md](docs/ai-dev.md).
+VLAN-only networks. The physical DMZ and `vmbr1` remain reserved isolated
+infrastructure; retiring a workload does not rewire the router or host network.
 
 ## Repository Structure
 
@@ -101,17 +100,17 @@ Terraform state is secret-bearing. It is local and git-ignored; run Terraform in
 | --- | --- | --- |
 | truenas | 101 | NAS with HBA passthrough |
 | docker-host | 102 | Docker Compose services |
-| ai-dev | 110 | Tailnet-only subscription proxy (CLIProxyAPI) |
 | unifi-controller | 111 | Cold UniFi OS Server infrastructure |
 
 `terraform/main.tf` is authoritative for each VM's CPU, memory and disk.
 
 Cloud-init template (`cloud_init.tftpl`) bootstraps the management user, installs qemu-guest-agent, and joins Tailscale.
 Terraform renders it in memory and uploads it as a root-only Proxmox snippet (`source_raw`); no vendor-data file is written locally. Outside the guests, the Tailscale auth key it carries lives only in 1Password, the Terraform state (as a sensitive value) and the snippet; see [Cached Tailscale auth keys](docs/proxmox-templates.md#cached-tailscale-auth-keys) for the guests' copies.
-TrueNAS, docker-host, ai-dev, and the UniFi controller use `prevent_destroy`.
+TrueNAS, docker-host, and the UniFi controller use `prevent_destroy`.
 Pinned MAC addresses are supplied through sensitive Terraform variables in the
-ignored root `.envrc`. The UniFi controller intentionally has `on_boot = false`
-and `started = false` while the server has 32GB installed; this is not drift.
+ignored root `.envrc`. The UniFi controller intentionally
+has `on_boot = false` and `started = false` while the server has 32GB installed;
+this is not drift.
 Start VM 111 before running the UniFi Ansible role or any `terraform/network`
 plan/apply, and stop it again after controller-dependent work is complete.
 Template build usage and recovery are documented in
@@ -126,8 +125,6 @@ Configures provisioned hosts and the router with these primary roles:
 | Role        | Purpose                                                     |
 | ----------- | ----------------------------------------------------------- |
 | common      | SSH hardening, users, cloud-init cache and key redaction    |
-| ai-dev      | Host provisioning, isolation, Hermes decommission           |
-| cliproxy    | CLIProxyAPI, its pinned dashboard and routing controller    |
 | firewall    | Reusable UFW policy                                         |
 | docker-host | Docker, NFS, published-port policy, bootstrap deployment    |
 | unifi       | UniFi OS Server install, resolver check                     |
@@ -157,7 +154,8 @@ consumed by both Terraform roots and the RouterOS play.
 All services run behind Traefik on the shared `proxy` network with TLS via the
 Cloudflare DNS challenge. Ansible owns the `/srv/init` bootstrap stack because
 Traefik and Portainer must exist before Portainer can operate. Portainer GitOps
-owns every application stack in `docker/portainer-stacks.yaml`. The inventory,
+is the intended controller for application stacks in `docker/portainer-stacks.yaml`,
+not proof of actual ownership; see the documented watched-state stack drift. The inventory,
 Git settings, drift check, and removal order are documented in
 [docs/docker-deployment.md](docs/docker-deployment.md). Radarr and Sonarr
 custom formats and quality profiles are managed as code by Recyclarr; see
@@ -166,12 +164,12 @@ settings are described in [docs/media-metadata.md](docs/media-metadata.md).
 
 | Stack                | Services                                       |
 | -------------------- | ---------------------------------------------- |
-| **init**             | Traefik, Portainer, Pocket-ID (SSO)            |
+| **init**             | Traefik, socket proxy, Portainer, Pocket-ID (SSO) |
 | **arrs**             | Radarr, Sonarr, Lidarr, Prowlarr               |
 | **recyclarr**        | Recyclarr (TRaSH sync)                         |
-| **downloads**        | qBittorrent, SABnzbd                           |
-| **plex**             | Plex, Tautulli, Seerr, Maintainerr, Kometa     |
-| **jellyfin**         | Jellyfin, Jellyseerr                           |
+| **downloads**        | qBittorrent, qbitwebui, SABnzbd                |
+| **plex**             | Plex, Tautulli, Seerr, Kometa                  |
+| **jellyfin**         | Jellyfin                                      |
 | **immich**           | Immich Server, Immich ML, PostgreSQL, Redis    |
 | **nextcloud**        | Nextcloud, PostgreSQL, Redis, cron, Collabora  |
 | **miniflux**         | Miniflux, PostgreSQL                           |
@@ -185,7 +183,7 @@ settings are described in [docs/media-metadata.md](docs/media-metadata.md).
 ### Conventions
 
 - Images pinned to SHA256 digests (managed by Renovate)
-- `security_opt: no-new-privileges:true` on all containers
+- `security_opt: no-new-privileges:true` on containers, with documented exceptions
 - `cap_drop: [ALL]` by default with documented retained init capabilities and exceptions; see [docs/docker-hardening.md](docs/docker-hardening.md)
 - Backend databases use isolated Docker-allocated internal networks
 - GPU passthrough (`/dev/dri`) for Plex, Jellyfin, Immich transcoding

@@ -7,24 +7,19 @@ Docker deployment has two controllers with a deliberate bootstrap seam:
 | Owner | Responsibility |
 | --- | --- |
 | Ansible | Docker runtime, host policy, NFS storage, `/srv/portainer` for relative-path Git stacks, and `/srv/init`: Traefik, socket proxy, Portainer, and Pocket ID |
-| Portainer | Application controller for `docker/portainer-stacks.yaml`; Git updates for every inventoried stack |
+| Portainer | Intended application controller for `docker/portainer-stacks.yaml`; desired Git updates for inventoried stacks |
 | Git | Compose definitions and the expected active-stack inventory |
 
 The Ansible `docker-host` role installs Docker Engine and Compose from Docker's
 stable Ubuntu repository, configures daemon and published-port policy, prepares
 NFS storage, copies `docker/init` to `/srv/init`, and reconciles that bootstrap
-stack. Portainer is the intended controller for every other inventoried stack,
-including `media-broker`, whose image is built and published by the dedicated
-`mich-murphy/media-broker` repository.
+stack. Portainer is the intended controller for every other inventoried stack.
 An inventory entry alone does not establish live ownership; verify controller
 state after a restore.
 
 ## Portainer Git configuration
 
-Configure every inventory entry as a separate Portainer Git stack,
-including `media-broker` (its image-only Compose references the published GHCR
-image, so the historical per-stack manual exception is obsolete — see the
-history in [`docs/hermes-media.md`](hermes-media.md)).
+Configure every inventory entry as a separate Portainer Git stack.
 
 For the ordinary Git-connected stacks:
 
@@ -33,10 +28,7 @@ For the ordinary Git-connected stacks:
 - Compose path: the entry's `compose_path`;
 - credentials: stored in Portainer's Git credential store, never in Git or a
   Compose file;
-- environment values and secrets: follow each stack's policy. For `media-broker`,
-  store only interpolated nonsecret settings in Portainer; backend API keys and
-  the broker bearer token remain in host-managed files described in the
-  [media-broker runbook](hermes-media.md);
+- environment values and secrets: follow each stack's policy; never commit them;
 - update policy: enable Portainer's Git polling or webhook for every stack.
 
 The `recyclarr` stack bind-mounts files that live next to its `compose.yml` in
@@ -55,59 +47,17 @@ any stack whose compose file uses a `./`-relative bind mount.
 Portainer remains the authoritative record for credential identity, polling
 interval, webhook token, and per-stack environment values because these are
 secret-bearing or controller-specific. Audit them in the Portainer UI after a
-restore and whenever repository authentication changes. This does not make
-Portainer the owner of the media broker's API keys or bearer token; those remain
-in restricted host files.
+restore and whenever repository authentication changes.
 
-## Agent Docker observer
+## Docker management boundary
 
-The `init` stack runs Traefik's pinned socket proxy on an internal network and a
-separate two-service path that served the retired ai-dev Hermes agent. The
-observer has no consumer and docker-host admits no client to it, but it stays
-deployed. The
-`docker-socket-proxy-agent` container keeps the existing tailnet address and
-port 2375, but is now a small read-only HTTP projection with no Docker socket.
-It talks only to the fixed, unexposed
-`docker-socket-proxy-agent-backend` service on a private internal network. The
-observer also attaches to a dedicated non-internal frontend solely because
-Docker cannot publish a port from an internal-only network; no other service
-attaches to that frontend. The backend is the pinned Tecnativa proxy with only
-`CONTAINERS`, `LOGS`, `VERSION`, and `PING` reads enabled and `POST=0`.
-
-The observer permits only `GET`/`HEAD` `/_ping`, `/version`,
-`/containers/json` (with only `all=0` or `all=1`),
-`/containers/{strict-name-or-id}/json`, and
-`/containers/{strict-name-or-id}/logs` (with only `stdout`, `stderr`,
-`timestamps` as 0/1 and decimal `tail` capped at 1000; `follow`, `since`,
-`until`, and every other logs parameter are rejected, and the query is
-rebuilt from the validated parts rather than relayed), each with an optional
-Docker API version prefix. It rejects writes, encoded or ambiguous paths, and all
-other Docker routes including archives, events, images, volumes, and
-configuration reads. Responses contain only IDs, names, image references,
-state, status, exit codes, and health `Status`; environment, labels,
-commands, mount paths, networks, health logs, arbitrary nested data, and
-backend errors are not returned. Log responses are bounded finite reads
-(follow disabled upstream), demultiplexed server-side, coerced to UTF-8,
-and subject to the same 1 MiB body cap as every other response. The
-observer has finite request, concurrency, upstream header/body, and
-upstream time limits and does not follow redirects or environment proxies.
-It resolves the fixed backend once at startup, before accepting clients, and
-uses the cached numeric address thereafter; startup DNS follows the container
-OS resolver's own timeout and is intentionally outside the request deadline.
-If the backend address changes, restart/reconcile the observer so it resolves
-again. Docker inspect and CLI compatibility is deliberately reduced: this endpoint
-is for safe status observation, not full `docker inspect`.
-
-The port admits no client: `DOCKER-USER` drops every source on it, and the
-`docker-host` role defines that rule and asserts on every run that nothing
-returns the port's traffic to Docker and that the container never binds all
-interfaces. An empty `AGENT_PROXY_BIND`
-would make Compose bind everywhere, so the bind address is verified rather than
-assumed. Only the backend can reach `docker.sock`; both services drop
-all capabilities and the observer runs read-only as an unprivileged user. The
-root-controlled observer source is hashed into the Compose service
-configuration during bootstrap, so a source update recreates the observer
-instead of leaving an old process behind a replaced bind-mounted inode.
+Traefik retains its read-only, unexposed socket proxy on an internal network.
+Portainer intentionally mounts the Docker socket directly because its management
+APIs require it; a read-only bind mount does not make the Docker API read-only.
+Treat Portainer administration as privileged Docker-host access. A Portainer
+socket proxy is deliberately not part of this design. Further admin-reachability
+restrictions are a separate task; this retirement does not widen firewall rules
+or split networks.
 
 Containers that need the Docker socket bind the host's `/run` directory
 read-only and non-recursively, never the `docker.sock` file itself. dockerd
@@ -122,18 +72,49 @@ including the TrueNAS, Portainer, and dashboard routes; only Plex and Jellyfin
 are intentionally reachable from KDS. Jellyfin's direct TCP 8096 fallback is
 allow-listed for the Tailscale range only, not DFLT or KDS.
 
-## Media broker
+## Jellyfin transcode scratch
 
-The media broker is an ordinary Git-polled Portainer stack with no current
-client since the ai-dev Hermes agent was retired; `DOCKER-USER` drops every
-source on TCP 8765. Its
-image is built and published by the dedicated `mich-murphy/media-broker`
-repository; Renovate pins the image digest in the inventoried
-`docker/media-broker/compose.yml` and updates it when `:main` moves, so the
-digest bump — not the moving tag — is the commit Portainer redeploys on.
-The deployment pipeline, rollback, and the history of the earlier manual
-ownership are documented in
-[`docs/hermes-media.md`](hermes-media.md).
+The active encoding path is `/cache/transcodes` on the local named disk cache.
+Compose no longer declares the old `/transcode` tmpfs mount, but that unused
+mount remains in the running container until a Portainer-managed recreation.
+Actual transcoding/playback was not tested as part of this cleanup.
+
+## Monitoring configuration
+
+The Beszel hub is Portainer-owned. Its binary agents on Proxmox and Docker are
+currently installed outside Ansible; agent ownership and automatic restoration
+remain a reproducibility task. Hub administrative credentials are in the
+personal xportal 1Password account's `Private / Beszel` item, accessed through
+desktop approval rather than the restricted homelab service account. SMTP and
+recipient details remain in Beszel's persistent controller data, not Git.
+
+On 2026-10-07 both systems reported up and these rules were verified through the
+hub API for the existing notification owner:
+
+| System | CPU | Memory | Disk | Status |
+| --- | --- | --- | --- | --- |
+| docker-host | 80%, 10 min (existing) | 90%, 5 min | 80%, 10 min (existing) | Enabled, min field 2 |
+| proxmox | 90%, 10 min | 90%, 5 min | 80%, 10 min | Enabled, min field 2 |
+
+Beszel's SMTP test endpoint accepted a marked test email to the existing
+recipient; the user confirmed inbox receipt on 2026-10-07. No alert incident was
+fabricated.
+Proxmox ZFS pool metrics are present, but TrueNAS/SMART coverage is not yet
+established. Native backup-job and TrueNAS volume alerts must not be assumed
+covered by these resource alerts.
+
+Docker agent connectivity was restored with a runtime UFW rule permitting only
+hub `172.20.1.8` on `br-6e5e47ea39f2` to local agent
+`100.96.174.126:45876/tcp`. That address/bridge is a live snapshot, not a portable
+policy: after recreation, verify the actual hub address and agent connectivity.
+Prefer an outbound agent connection or a stable, automatically reconciled
+source-pinned policy as the durable follow-up. Do not open the agent port to
+ordinary LAN clients to work around this dependency.
+
+Portainer's 2026-10-07 controller inventory did not include the running
+`jellyplex-watched` project. Its entry in the desired inventory is not proof of
+controller ownership; reconcile that separate drift without deleting the
+running watched-state service as part of retirement.
 
 ## Removing a stack
 

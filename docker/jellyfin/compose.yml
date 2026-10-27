@@ -18,6 +18,7 @@ services:
       - JELLYFIN_PublishedServerUrl=https://jellyfin.local.elmurphy.com
     volumes:
       - jellyfin-data:/config
+      # Server encoding configuration uses /cache/transcodes: local disk, not RAM.
       - jellyfin-cache:/cache
       - type: bind
         source: /mnt/data/media
@@ -31,8 +32,6 @@ services:
         read_only: true
         bind:
           propagation: rslave
-    tmpfs:
-      - /transcode:rw,nosuid,nodev,noexec,uid=1000,gid=1000,mode=1777,size=2g # ram transcode
     ports:
       # Direct fallback over Tailscale when Traefik is unavailable.
       # Docker-host filters ingress; the external Tailscale ACL controls clients.

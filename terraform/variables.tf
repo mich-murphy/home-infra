@@ -16,12 +16,6 @@ variable "unifi_ssh_public_key" {
   default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJB/6HGQa6B3kSZqVosObsWeiRSI5UsKkeBkLsxPlWqQ"
 }
 
-variable "ai_dev_ssh_public_key" {
-  type        = string
-  description = "SSH public key for the michael user on the ai-dev VM (the laptop key)."
-  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIH1TgAtlovn+B5ojfw7JRFDi8UxcTkHym30wEg6jekF"
-}
-
 variable "truenas_macaddr" {
   type        = string
   description = "Pinned TrueNAS VM NIC MAC address. Provide via TF_VAR_truenas_macaddr in the ignored root .envrc."
@@ -38,10 +32,4 @@ variable "ubuntu_server_24_04_template_vmid" {
   type        = number
   description = "Proxmox VMID for the ubuntu-server-24-04 cloud-init template."
   default     = 9003
-}
-
-variable "arch_cloud_template_vmid" {
-  type        = number
-  description = "Proxmox VMID for the arch-cloud cloud-init template."
-  default     = 9002
 }
