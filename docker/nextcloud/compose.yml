@@ -138,7 +138,7 @@ services:
     restart: unless-stopped
 
   nextcloud-redis:
-    image: redis:8.10.2@sha256:97ec88159e6d7cfb5ddef9015386087d58a912de80112f06ebdfa78fa5989901
+    image: redis:8.10.3@sha256:298641b35ac51aa999f9bb85707d6681fe635ce59cda51886a0b6adc1da37b8e
     container_name: nextcloud-redis
     security_opt:
       - no-new-privileges:true
