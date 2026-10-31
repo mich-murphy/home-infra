@@ -8,4 +8,4 @@ collections:
     version: "13.5.0"
   # Used by the routeros role.
   - name: community.routeros
-    version: "3.22.0"
+    version: "3.23.0"
