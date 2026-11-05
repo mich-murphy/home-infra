@@ -1,7 +1,7 @@
 ---
 services:
   jellyplex-watched:
-    image: luigi311/jellyplex-watched:main@sha256:e3b33047846cee76f906eb2cb316f9b6f04d3b78fdf3317d826d83c09db97a47
+    image: luigi311/jellyplex-watched:main@sha256:c0fca5c52a66fe7e7cb8b6d746ef6675e2eef977369a1ccaf51718dd7a6eb064
     container_name: jellyplex-watched
     init: true
     security_opt:
