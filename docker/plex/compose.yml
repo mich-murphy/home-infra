@@ -122,7 +122,7 @@ services:
 
   # Initial config is created by hand: https://kometa.wiki/en/latest/kometa/install/walkthroughs/docker/#setting-up-the-initial-config-file
   kometa:
-    image: kometateam/kometa:nightly@sha256:333f85c7c9e9193f4d3edd62818c5f8e62b8bb5adc66e1981df4fe4e8f2a8423
+    image: kometateam/kometa:nightly@sha256:22c5c95fa477d5f5ea9bb3936b97f861eb0ee210345d6e2ad57a125c44d572f7
     container_name: kometa
     mem_limit: 1g
     security_opt:
