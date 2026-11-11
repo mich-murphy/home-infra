@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Lease-gated private Chrome runner; no live execution without parent grant.
+
+Verify the exact Gateway leaf with the independent private CA before extracting
+its SPKI. Chrome trusts only that key, never a global certificate exception.
+"""
+import argparse
+import base64
+import hashlib
+import importlib
+import json
+from pathlib import Path
+import socket
+import ssl
+import subprocess
+import sys
+
+safety = importlib.import_module('talos-proof-media-safety')
+
+
+def verified_spki(ca, host):
+    if host not in ('qbittorrent.proof.invalid', 'plex.proof.invalid', 'jellyfin.proof.invalid'):
+        raise ValueError('unsupported browser proof host')
+    context = ssl.create_default_context(cafile=str(safety.private_file(ca)))
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
+    with socket.create_connection(('127.0.0.1', 18443), timeout=15) as tcp:
+        with context.wrap_socket(tcp, server_hostname=host) as tls:
+            certificate = tls.getpeercert(binary_form=True)
+    public = subprocess.run(['openssl', 'x509', '-inform', 'DER', '-pubkey', '-noout'],
+                            input=certificate, capture_output=True, timeout=10, check=True).stdout
+    der = subprocess.run(['openssl', 'pkey', '-pubin', '-outform', 'DER'],
+                         input=public, capture_output=True, timeout=10, check=True).stdout
+    return base64.b64encode(hashlib.sha256(der).digest()).decode()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('service', choices=['qbittorrent', 'plex', 'jellyfin'])
+    parser.add_argument('--media-path', help='exact same-origin MP4 path from real server scan')
+    parser.add_argument('--fixture', type=Path, help='new immutable twelve-second H264 fixture')
+    parser.add_argument('--state', type=Path, required=True)
+    parser.add_argument('--ca', type=Path, required=True)
+    parser.add_argument('--module', type=Path, required=True, help='installed Playwright module, no install/download')
+    args = parser.parse_args()
+    state = safety.private_dir(args.state)
+    safety.lease(args.service)
+    safety.exclusivity(args.service)
+    credentials = json.loads(safety.read_private(state / 'credentials.json'))[args.service]
+    payload = {'service': args.service, 'state': str(state), 'module': str(args.module.resolve()),
+               'spki': verified_spki(args.ca, args.service + '.proof.invalid'), **credentials}
+    if args.service != 'qbittorrent':
+        import re
+        allowed = (r'/library/parts/[0-9]+/[0-9]+/file\.mp4' if args.service == 'plex'
+                   else r'/Videos/[a-fA-F0-9-]+/stream\.mp4\?static=true')
+        if not args.media_path or not re.fullmatch(allowed, args.media_path):
+            raise ValueError('exact scanned original MP4 path required; no arbitrary query/URL')
+        if args.fixture is None or args.fixture.name != 'Proof Browser Fixture (2000).mp4':
+            raise ValueError('new immutable browser fixture required')
+        headers = {'X-Plex-Token': credentials['api_key']} if args.service == 'plex' else {
+            'X-Emby-Token': json.loads(safety.read_private(state / 'jellyfin-session.json'))['token']}
+        api = importlib.import_module('talos-proof-media-http').API(
+            'https://' + args.service + '.proof.invalid:18443', headers, service=args.service, ca=args.ca)
+        expected = safety.read_private(args.fixture, binary=True)
+        if hashlib.sha256(api.call(args.media_path, raw=True)).digest() != hashlib.sha256(expected).digest():
+            raise RuntimeError('actual server stream is not the new immutable fixture')
+        payload.update(mediaPath=args.media_path, headers=headers)
+    process = subprocess.run(['node', str(safety.ROOT / 'tests/talos-proof-media-browser.mjs')],
+                             input=json.dumps(payload).encode(), capture_output=True, timeout=150)
+    # Child deliberately emits only fixed check names/status; never forward stderr.
+    result = json.loads(process.stdout)
+    print(json.dumps(result))
+    if process.returncode or result.get('status') != 'PASS':
+        raise RuntimeError('browser checks failed; no acceptance')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as exc:
+        print('Browser stopped: ' + type(exc).__name__, file=sys.stderr)
+        raise SystemExit(1)

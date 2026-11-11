@@ -210,3 +210,7 @@ See `docs/evidence/talos-media/dependency-workflow-preparation.md` for explicit 
 ## Actual local download milestone
 
 `docs/evidence/talos-media/live-download-transfers.md` and companion sanitized observations now record real qBit BEP3 and SAB NNTP/yEnc32044-byte WAV completion, positive fixture counters, exact actual-output SHA, fixtureOFF restart and different-fresh-PVC recovery PASS. All failed attempts and compatibility fixes retained. Native-browser qbit auth/CSRF remains OPEN (manual Origin-only401 does not prove browser broken). All app/fixture/helper pods deleted and media live lease released. No external provider/MP4/arr import/full-media acceptance claim.
+
+## Offline native-browser/player checkpoint
+
+See [browser/player preparation](evidence/talos-media/browser-player-preparation.md) for native qBit5.3 login/CSRF gates, independent CA-verified exact leaf SPKI, pre-navigation HTTP/WSS guards, NEW immutable H264/AAC fixture and real Chrome frame/clock/seek checks. No live execution, receipt, credential or retained archive changed. Custom muted decoder is not app resume/native UI/audio-output proof; ACL/restart/restore remain explicit gates.

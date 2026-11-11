@@ -16,20 +16,55 @@ import shutil
 import wave
 
 
+BROWSER_VIDEO = 'Proof Browser Fixture (2000).mp4'
+
+
+def browser_video(state, ffmpeg, safety):
+    """New immutable H264/AAC fixture; never replace the historical MPEG4 file."""
+    path = state / BROWSER_VIDEO
+    subtitle = state / 'Proof Browser Fixture (2000).en.srt'
+    if path.exists() or subtitle.exists():
+        raise RuntimeError('refuse to regenerate existing browser fixture')
+    if not ffmpeg or not Path(ffmpeg).is_file() or not os.access(ffmpeg, os.X_OK):
+        raise RuntimeError('local ffmpeg executable required')
+    command = [ffmpeg, '-hide_banner', '-loglevel', 'error', '-nostdin',
+               '-f', 'lavfi', '-i', 'testsrc=size=320x180:rate=15',
+               '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000',
+               '-t', '12', '-c:v', 'libx264', '-profile:v', 'baseline', '-level', '3.0',
+               '-preset', 'veryfast', '-crf', '28', '-pix_fmt', 'yuv420p',
+               '-c:a', 'aac', '-b:a', '48k', '-map_metadata', '-1',
+               '-movflags', 'frag_keyframe+empty_moov', '-f', 'mp4', 'pipe:1']
+    result = subprocess.run(command, capture_output=True, timeout=60)
+    if result.returncode or not result.stdout or len(result.stdout) > 2 * 1024 * 1024:
+        raise RuntimeError('bounded H264 fixture generation failed; original artifacts unchanged')
+    safety.write_private(path, result.stdout)
+    safety.write_private(subtitle, '1\n00:00:01,000 --> 00:00:10,000\nSynthetic browser proof subtitle.\n')
+    return path
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--state-dir', type=Path, required=True)
     p.add_argument('--seed', choices=['jellyfin', 'plex', 'audiobookshelf'])
     p.add_argument('--video', action='store_true', help='generate two-second MP4 locally, never on the proof VM')
     p.add_argument('--ffmpeg', help='local Mac ffmpeg executable (or set FFMPEG)')
+    p.add_argument('--browser-video', action='store_true', help='NEW immutable 12-second H264/AAC fixture; with --seed use existing file only')
     safety = importlib.import_module('talos-proof-media-safety')
     p.add_argument('--group', choices=safety.DEPENDENCY_BATCHES)
     args = p.parse_args()
     if args.group and args.seed not in safety.DEPENDENCY_BATCHES[args.group]:
         p.error('fixture target must belong to exact dependency group')
     group = args.group or args.seed
+    if args.browser_video and (args.video or args.seed == 'audiobookshelf'):
+        p.error('--browser-video is separate from legacy video/audio fixture')
     os.umask(0o077)
     state = safety.private_dir(args.state_dir, create=True)
+    if args.browser_video and not args.seed:
+        path = browser_video(state, args.ffmpeg or os.environ.get('FFMPEG') or shutil.which('ffmpeg'), safety)
+        print(json.dumps({'fixture': path.name, 'bytes': path.stat().st_size,
+                          'sha256': hashlib.sha256(safety.read_private(path, binary=True)).hexdigest(),
+                          'source': 'local procedural testsrc/sine; H264 baseline/AAC; 12seconds; no GPU'}))
+        return
     repo = safety.ROOT
     if args.seed:
         safety.guard(group, extra_mib=64)
@@ -40,8 +75,12 @@ def main():
         wav.setsampwidth(2)
         wav.setframerate(8000)
         wav.writeframes(b''.join(struct.pack('<h', int(4000 * math.sin(2 * math.pi * 440 * i / 8000))) for i in range(16000)))
-    safety.write_private(path, stream.getvalue(), replace=True)
-    print(json.dumps({'fixture': 'proof-tone.wav', 'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'source': 'mathematically generated 440Hz sine; no external input'}))
+    if args.browser_video:
+        path = safety.private_file(state / BROWSER_VIDEO)
+        safety.private_file(state / 'Proof Browser Fixture (2000).en.srt')
+    else:
+        safety.write_private(path, stream.getvalue(), replace=True)
+        print(json.dumps({'fixture': 'proof-tone.wav', 'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'source': 'mathematically generated 440Hz sine; no external input'}))
     if args.video:
         ffmpeg = args.ffmpeg or os.environ.get('FFMPEG') or shutil.which('ffmpeg')
         if not ffmpeg or not Path(ffmpeg).is_file() or not os.access(ffmpeg, os.X_OK):
@@ -75,8 +114,8 @@ def main():
         pod = k('get', 'pod', '-l', 'job-name=seed-synthetic-fixture', '-o', 'jsonpath={.items[0].metadata.name}').decode()
         destination = '/fixture/Proof Author/Proof Book/proof-tone.wav' if args.seed == 'audiobookshelf' else '/fixture/' + path.name
         k('exec', '-i', pod, '--', '/bin/sh', '-ec', 'mkdir -p "$(dirname "$1")"; cat > "$1"', 'seed', destination, data=safety.read_private(path, binary=True))
-        if args.video:
-            subtitle = state / 'Proof Fixture (2000).en.srt'
+        if args.video or args.browser_video:
+            subtitle = state / ('Proof Browser Fixture (2000).en.srt' if args.browser_video else 'Proof Fixture (2000).en.srt')
             k('exec', '-i', pod, '--', '/bin/sh', '-ec', 'cat > "$1"', 'seed', '/fixture/' + subtitle.name, data=safety.read_private(subtitle, binary=True))
     finally:
         k('delete', 'job', 'seed-synthetic-fixture', '--wait=true', '--timeout=60s')
