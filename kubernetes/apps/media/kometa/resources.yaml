@@ -1,0 +1,193 @@
+# Fresh isolated proof only. See docs/talos-proof-media.md.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: proof-kometa
+  labels:
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+    pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: proof-kometa
+  labels:
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dns-and-validation
+  namespace: proof-kometa
+  labels:
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: []
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-plex
+  namespace: proof-kometa
+  labels:
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-plex
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: plex
+    ports:
+    - protocol: TCP
+      port: 32400
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: config
+  namespace: proof-kometa
+  labels:
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: proof-local
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kometa
+  namespace: proof-kometa
+  labels: &id001
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  schedule: 0 4 * * *
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 180
+      template:
+        metadata:
+          labels: *id001
+        spec:
+          automountServiceAccountToken: false
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          containers:
+          - name: kometa
+            image: kometateam/kometa:nightly@sha256:c89cd9404aaf13ec5174ee2ddeafcf02887ea53593c1bfc4ef9e9c04a75ddbfe
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: TZ
+              value: Etc/UTC
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                cpu: 1000m
+                memory: 768Mi
+            volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: false
+            args:
+            - --run
+            - --read-only-config
+            - --config
+            - /config/config.yml
+          volumes:
+          - name: config
+            persistentVolumeClaim:
+              claimName: config
+          - name: seed
+            secret:
+              secretName: bootstrap
+              items:
+              - key: seed
+                path: seed
+          terminationGracePeriodSeconds: 30
+          initContainers:
+          - name: seed-fresh-config
+            image: kometateam/kometa:nightly@sha256:c89cd9404aaf13ec5174ee2ddeafcf02887ea53593c1bfc4ef9e9c04a75ddbfe
+            command:
+            - /bin/sh
+            - -ec
+            - mkdir -p /config/.; if [ ! -e /config/config.yml ]; then cp /seed/seed
+              /config/config.yml; chmod 600 /config/config.yml; chown 1000:1000 /config/config.yml;
+              fi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+                add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - FOWNER
+              runAsUser: 0
+              runAsGroup: 0
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                cpu: 200m
+                memory: 128Mi
+            volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: seed
+              mountPath: /seed
+              readOnly: true
+          restartPolicy: Never
