@@ -231,6 +231,11 @@ def guard(group, extra_mib=0, budget_mib=None, protocol_selected=False, provider
     if not alloc.endswith('Ki'):
         raise RuntimeError('unsupported node memory units')
     available = receipt.get('available_mib')
+    if 'kubelet_available_mib' in receipt or 'talos_available_mib' in receipt:
+        readings = [receipt.get(k) for k in ('kubelet_available_mib', 'talos_available_mib')]
+        if not all(number(v) and v > 0 for v in readings):
+            raise RuntimeError('both independent memory observations required')
+        available = min(readings)
     age = time.time() - receipt.get('measured_at', 0)
     if not number(available) or not 0 <= age <= 120 or not 0 < available <= int(alloc[:-2]) / 1024:
         raise RuntimeError('fresh valid guest available-memory receipt required')

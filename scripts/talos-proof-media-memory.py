@@ -36,7 +36,7 @@ def refresh(group, talosctl):
     current, _ = safety.lease(group)
     if current != receipt:
         raise RuntimeError('parent receipt changed during measurement; refuse overwrite')
-    current.update(available_mib=min(kubelet, talos), measured_at=time.time())
+    current.update(kubelet_available_mib=kubelet, talos_available_mib=talos, measured_at=time.time())
     safety.write_private(os.environ['TALOS_PROOF_MEDIA_LEASE'], json.dumps(current), replace=True)
     return {'kubelet_available_mib': kubelet, 'talos_available_mib': talos, 'admission_mib': min(kubelet, talos)}
 

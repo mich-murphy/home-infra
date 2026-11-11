@@ -66,6 +66,18 @@ class Budget(unittest.TestCase):
         for change in changes:
             v=copy.deepcopy(t);change(v)
             with self.assertRaises(RuntimeError):r.pinchflat_budget(v,self.receipt)
+    def test_canonical_cpu_is_exactly_equivalent_not_a_larger_ceiling(self):
+        for template in (base()['spec']['template'], profile()['spec']['template']):
+            main = template['spec']['containers'][0]
+            main['resources']['limits']['cpu'] = '1'
+            self.assertIn(r.pinchflat_budget(template, self.receipt), (256, 512))
+            for value in ('2', '1001m', '999m', True):
+                main['resources']['limits']['cpu'] = value
+                with self.assertRaises(RuntimeError):
+                    r.pinchflat_budget(template, self.receipt)
+        self.controllers[0]['spec']['template']['spec']['containers'][0]['resources']['limits']['cpu']='1'
+        self.guard()
+
     def test_bad_marker_or_limit_never_reaches_mutating_subprocess(self):
         for change in ('marker','limit'):
             d=profile()

@@ -145,6 +145,19 @@ class Safety(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             safety.exclusivity('radarr')
 
+    def test_independent_memory_minimum_overrides_legacy_and_requires_both(self):
+        self.receipt.update(kubelet_available_mib=1800, talos_available_mib=1800)
+        self.receipt.pop('available_mib')
+        self.rewrite_receipt();safety.guard('radarr')
+        self.receipt['available_mib']=1800
+        for field in ('kubelet_available_mib', 'talos_available_mib'):
+            for value in (None, True, -1, 500, float('nan')):
+                self.receipt[field]=value;self.rewrite_receipt()
+                with self.assertRaises(RuntimeError):safety.guard('radarr')
+            self.receipt[field]=1800
+        self.receipt.pop('talos_available_mib');self.rewrite_receipt()
+        with self.assertRaises(RuntimeError):safety.guard('radarr')
+
     def test_stale_or_insufficient_memory(self):
         for field, value in [('measured_at', 0), ('measured_at', time.time() + 300),
                              ('available_mib', 500), ('available_mib', 999999), ('available_mib', -1)]:

@@ -76,8 +76,10 @@ class Lifecycle(unittest.TestCase):
             command = run.call_args.args[0]
             self.assertEqual(command, ['/private/talosctl', '--talosconfig', '/private/talosconfig', '-e', '127.0.0.1:50120', '-n', '172.31.250.10', 'read', '/proc/meminfo'])
             written = json.loads(write.call_args.args[1])
-            self.assertEqual({k: v for k, v in written.items() if k not in ('available_mib', 'measured_at')},
-                             {k: v for k, v in original.items() if k != 'available_mib'})
+            self.assertEqual({k: v for k, v in written.items() if k not in ('kubelet_available_mib', 'talos_available_mib', 'measured_at')},
+                             original)
+            self.assertEqual(written['kubelet_available_mib'], 600)
+            self.assertEqual(written['talos_available_mib'], 500)
             write.reset_mock()
             run.return_value = subprocess.CompletedProcess([], 1, b'')
             with self.assertRaises(RuntimeError):

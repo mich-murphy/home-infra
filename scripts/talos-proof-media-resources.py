@@ -86,7 +86,20 @@ def pinchflat_budget(template, receipt):
     except (ValueError, KeyError, TypeError) as exc:
         raise RuntimeError('invalid Pinchflat effective resource ceiling') from exc
     budget = 512 if provider else 256
-    if ceiling != budget * MIB or pod.get('initContainers') or any(c.get('resources') != approved[c['name']] for c in containers):
+    def exact_resources(container):
+        actual = container.get('resources', {})
+        expected = approved[container['name']]
+        if set(actual) != set(expected):
+            return False
+        try:
+            return all(set(actual[k]) == set(expected[k]) and all(
+                quantity(actual[k][resource], resource) == quantity(value, resource)
+                for resource, value in expected[k].items()) for k in expected)
+        except (ValueError, TypeError):
+            return False
+    # Kubernetes canonicalizes CPU 1000m to 1. Compare exact quantities, not
+    # textual encodings; requests, limits and supported keys stay mandatory.
+    if ceiling != budget * MIB or pod.get('initContainers') or any(not exact_resources(c) for c in containers):
         raise RuntimeError('Pinchflat resource/profile drift from explicit approved ceiling')
     return budget
 
