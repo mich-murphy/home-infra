@@ -64,3 +64,7 @@ Rendered Cilium images:
    rejection. Certificate key stays outside git.
 6. Node reboot recovery/backup restore, if later authorized, are distinct from pod
    restart and not implied by platform manifests.
+
+Checkpoint update: parent reduced initial proposed guest RAM to2560MiB; VM creation
+and `/var/mnt/proof` confirmation are still pending. All live gates above remain open.
+TLS helper now also verifies exact context API server before modifying secrets.

@@ -3,8 +3,9 @@
 ## Scope and topology
 
 This is a capacity-constrained functional proof, not a production migration. The
-provisioning contract is one new Talos VM120 with3GiB RAM,2vCPU and a new64GiB data
-disk; user-mode QEMU/slirp172.31.250.10/24, gateway172.31.250.2. API and Gateway
+provisioning proposal is one new Talos VM120 with **2560MiB initial RAM**
+(reduced from the earlier3GiB proposal by the host capacity guard),2vCPU and a new64GiB
+data disk; no VM existed at this offline checkpoint. Planned networking is user-mode QEMU/slirp172.31.250.10/24, gateway172.31.250.2. API and Gateway
 access use explicit SSH/QEMU proof-only forwards. No LAN bridge, production DNS,
 production NAT rules, existing services, GPU assignment or production volumes change.
 The process/cgroup-scoped VM egress deny must independently protect production private
@@ -64,6 +65,7 @@ it is a trusted exception outside proof-app selection, not a production integrat
 
 ## Capacity budget and staged execution
 
+At2560MiB initial guest RAM the fit is tighter still; no live fit is claimed.
 Steady platform requests: Cilium256Mi/100m, operator64Mi/25m, Envoy64Mi/25m,
 local-path32Mi/10m = **416Mi RAM and160m CPU**. Limits total992Mi. This excludes
 Talos, etcd, API server, scheduler, controller manager, CoreDNS, kernel/BPF maps,
