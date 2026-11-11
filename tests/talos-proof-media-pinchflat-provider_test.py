@@ -25,7 +25,7 @@ class Provider(unittest.TestCase):
         self.assertEqual(deployment['spec']['replicas'],0)
         spec=deployment['spec']['template']['spec']
         app,fixture=spec['containers']
-        self.assertEqual(app['resources']['limits']['memory'],'256Mi')
+        self.assertEqual(app['resources']['limits']['memory'],'384Mi')
         self.assertEqual(fixture['resources']['limits']['memory'],'128Mi')
         self.assertEqual(fixture['name'],'rss-fixture')
         self.assertTrue(all(m.get('readOnly') for m in fixture['volumeMounts'] if m['name']!='rss-stats'))
@@ -42,7 +42,7 @@ class Provider(unittest.TestCase):
             kube.assert_not_called()
         with tempfile.TemporaryDirectory() as tmp:
             state=Path(tmp).resolve();fixture=state/p.INPUT;fixture.write_bytes(b'not playable test input');fixture.chmod(0o600)
-            with patch.object(p.s,'pinchflat_provider_guard'),patch.object(p.s,'require_helpers_deleted'), \
+            with patch.object(p,'check'),patch.object(p.s,'require_helpers_deleted'), \
                  patch.object(p,'INPUT_SHA',hashlib.sha256(fixture.read_bytes()).hexdigest()), \
                  patch.object(p,'kube',return_value=json.dumps({'spec':{'replicas':1}}).encode()) as kube:
                 with self.assertRaisesRegex(RuntimeError,'stopped'):p.prepare(state,fixture)

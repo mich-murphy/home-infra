@@ -300,3 +300,15 @@ See [provider integration preparation](evidence/talos-media/pinchflat-provider-i
 for actual remaining compatibility gaps and unexecuted replacement/two-PVC recovery
 sequence. All old receipts remain revoked. Priority remains Jellyfin→narrow Plex
 native discovery/playback→separately granted provider if ready; no live acceptance.
+
+
+## Offline provider-only384 MiB preparation (no activation grant)
+
+See [bounded704 MiB Pinchflat preparation](evidence/talos-media/pinchflat-384-preparation-c328f284-496f-44bd-8fd4-8e12b1fc11c5.md).
+Only optional RSS main limit changes256→384; ordinary base and prior evidence
+stay unchanged. New exact integer receipt `pinchflat_main_memory_mib: 384` is
+required IN ADDITION to `provider_fixture: pinchflat-rss`. Retained stopped
+PodTemplate resource/profile validation prevents plain activation undercharging.
+Stopped preparation preserves recovered PVC/Secret refs without base reapply.
+This is one future first-OOM-stop experiment, not capacity/provider acceptance;
+all old receipts remain revoked, actual ELF/downloader/overhead checks untested.

@@ -9,9 +9,13 @@ spec:
     metadata:
       annotations:
         talos-proof.home/provider-fixture: pinchflat-rss
+        talos-proof.home/pinchflat-main-memory-mib: '384'
     spec:
       containers:
       - name: pinchflat
+        resources:
+          limits:
+            memory: 384Mi
         env:
         # Per queue only, NOT aggregate yt-dlp concurrency. Native queue control
         # in the verifier serializes index/download stages before acceptance.

@@ -4,6 +4,7 @@
 No kubectl mutation is exposed without rechecking exact target + identity + lease.
 The coordinator owns the lease; this module never creates or refreshes one.
 """
+import importlib
 import json
 import math
 import os
@@ -11,6 +12,8 @@ from pathlib import Path
 import stat
 import subprocess
 import time
+
+resources = importlib.import_module('talos-proof-media-resources')
 
 ROOT = Path(__file__).resolve().parents[1]
 ENDPOINT = 'https://127.0.0.1:64120'
@@ -211,12 +214,13 @@ def protocol_guard(group):
 
 def pinchflat_provider_guard():
     receipt, _ = lease('pinchflat')
-    if receipt.get('provider_fixture') != 'pinchflat-rss':
-        raise RuntimeError('parent receipt must authorize provider_fixture=pinchflat-rss')
+    resources.require_pinchflat_384(receipt)
     return guard('pinchflat', provider_selected=True)
 
 
-def guard(group, extra_mib=0, budget_mib=None, protocol_selected=False, provider_selected=False):
+def guard(group, extra_mib=0, budget_mib=None, protocol_selected=False, provider_selected=False, preparation_template=None):
+    if preparation_template is not None and (group != 'pinchflat' or not provider_selected):
+        raise RuntimeError('prospective preparation requires exact Pinchflat provider profile')
     receipt, node = lease(group)
     exclusivity(group)
     alloc = node['status']['allocatable']['memory']
@@ -233,20 +237,21 @@ def guard(group, extra_mib=0, budget_mib=None, protocol_selected=False, provider
     if group == 'pinchflat':
         controllers = json.loads(kubectl_read('get', 'deployments,statefulsets', '-A', '-o', 'json'))['items']
         pods = json.loads(kubectl_read('get', 'pods', '-A', '-o', 'json'))['items']
-        declared = False
-        for item in [x for x in controllers + pods if x['metadata']['namespace'] == 'proof-pinchflat']:
+        selected = [x for x in controllers if x['metadata']['namespace'] == 'proof-pinchflat']
+        if selected and (len(selected) != 1 or selected[0]['metadata']['name'] != 'pinchflat'):
+            raise RuntimeError('unknown Pinchflat controller profile')
+        if preparation_template is not None:
+            if not provider_selected or len(selected) != 1 or selected[0]['spec'].get('replicas', 1) or any(x['metadata']['namespace'] == 'proof-pinchflat' for x in pods):
+                raise RuntimeError('profile preparation requires exact stopped controller and ALL pods absent')
+            budget = resources.pinchflat_budget(preparation_template, receipt)
+            selected = []  # Only the validated prospective template will be installed while stopped.
+        for item in selected + [x for x in pods if x['metadata']['namespace'] == 'proof-pinchflat'
+                                 and not any(o.get('kind') == 'Job' for o in x['metadata'].get('ownerReferences', []))]:
             template = item['spec'].get('template', item)
-            names = [c['name'] for c in template['spec'].get('containers', [])]
-            profile = template.get('metadata', {}).get('annotations', {}).get('talos-proof.home/provider-fixture')
-            if 'rss-fixture' in names or profile:
-                if profile != 'pinchflat-rss' or names.count('rss-fixture') != 1:
-                    raise RuntimeError('unknown or inconsistent Pinchflat provider profile')
-                declared = True
-        if declared or provider_selected:
-            if receipt.get('provider_fixture') != 'pinchflat-rss':
-                raise RuntimeError('declared provider requires exact parent receipt marker')
-            if budget_mib is None:
-                budget += 128
+            budget = max(budget, resources.pinchflat_budget(template, receipt))
+        if provider_selected:
+            resources.require_pinchflat_384(receipt)
+            budget = max(budget, 512)
     # Charge a live/desired fixture even when activation is invoked through the basic runner.
     if group in ('qbittorrent', 'sabnzbd'):
         controllers = json.loads(kubectl_read('get', 'deployments,statefulsets', '-A', '-o', 'json'))['items']
@@ -284,6 +289,10 @@ def kube(group, *args, data=None, capacity=False, extra_mib=0):
         exclusivity(group)
         if capacity:
             guard(group, extra_mib)
+            if group == 'pinchflat':
+                current = json.loads(kubectl_read('get', 'deployment', 'pinchflat', '-n', 'proof-pinchflat', '-o', 'json'))
+                receipt, _ = lease(group)
+                resources.pinchflat_budget(current['spec']['template'], receipt)
     kubeconfig = private_file(os.environ['KUBECONFIG'])
     result = subprocess.run(['kubectl', '--kubeconfig', str(kubeconfig), *args], input=data,
                             capture_output=True, timeout=960)

@@ -16,62 +16,11 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 safety = importlib.import_module('talos-proof-media-safety')
-MIB = 1024 * 1024
-
-
-def quantity(value, resource):
-    if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise ValueError('unsupported resource quantity')
-    value = str(value)
-    pattern = r'([0-9]+)(Ki|Mi|Gi|Ti)?' if resource == 'memory' else r'([0-9]+)(m)?'
-    match = re.fullmatch(pattern, value)
-    if not match or int(match[1]) <= 0:
-        raise ValueError('unsupported or nonpositive ' + resource + ' quantity')
-    if resource == 'memory':
-        return int(match[1]) * {None: 1, 'Ki': 1024, 'Mi': MIB, 'Gi': 1024**3, 'Ti': 1024**4}[match[2]]
-    return int(match[1]) * (1 if match[2] == 'm' else 1000)
-
-
-def effective_limits(pod):
-    if any(k in pod for k in ('overhead', 'resources', 'ephemeralContainers')):
-        raise ValueError('unsupported pod-level/ephemeral resources; review explicitly')
-    containers = pod.get('containers', [])
-    if not containers:
-        raise ValueError('regular container required')
-    names = set()
-    def limits(c, init=False):
-        if not c.get('name') or c['name'] in names:
-            raise ValueError('missing/duplicate container name')
-        names.add(c['name'])
-        if ('restartPolicy' in c and (not init or c['restartPolicy'] != 'Always')):
-            raise ValueError('unsupported container restart policy')
-        try:
-            values = c['resources']['limits']
-            if set(values) != {'cpu', 'memory'}:
-                raise ValueError('unsupported or missing limits')
-            return {r: quantity(values[r], r) for r in ('cpu', 'memory')}
-        except KeyError as exc:
-            raise ValueError('every container/init needs explicit cpu+memory limits') from exc
-    regular = [limits(c) for c in containers]
-    steady = {r: sum(c[r] for c in regular) for r in ('cpu', 'memory')}
-    prefix = dict(cpu=0, memory=0)
-    peak = dict(cpu=0, memory=0)
-    for c in pod.get('initContainers', []):
-        current = limits(c, init=True)
-        for r in peak:
-            # All prior restartable init sidecars are concurrent with this init.
-            peak[r] = max(peak[r], prefix[r] + current[r])
-        if c.get('restartPolicy') == 'Always':
-            for r in prefix:
-                prefix[r] += current[r]
-    return {r: max(peak[r], steady[r] + prefix[r]) for r in peak}
-
-
-def assert_charge(pod, charged_mib):
-    actual = effective_limits(pod)['memory']
-    if actual > charged_mib * MIB:
-        raise ValueError('undercharged effective pod memory')
-    return actual
+resources = importlib.import_module('talos-proof-media-resources')
+MIB = resources.MIB
+quantity = resources.quantity
+effective_limits = resources.effective_limits
+assert_charge = resources.assert_charge
 
 
 def pod_for(path, kind='Deployment'):

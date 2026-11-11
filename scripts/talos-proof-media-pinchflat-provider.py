@@ -6,6 +6,7 @@ Native failures retain attempts and leave queues paused for explicit cleanup.
 """
 import argparse
 import base64
+import copy
 import hashlib
 import importlib
 import json
@@ -32,7 +33,7 @@ def expect(ok, message):
 
 def check():
     receipt, _ = s.lease('pinchflat')
-    expect(receipt.get('provider_fixture') == 'pinchflat-rss', 'exact provider receipt marker required')
+    s.resources.require_pinchflat_384(receipt)
     s.exclusivity('pinchflat')
 
 
@@ -49,13 +50,16 @@ def kube(*args, **kwargs):
 
 def pod():
     pods = json.loads(kube('get','pods','-l','app.kubernetes.io/name=pinchflat','-o','json'))['items']
+    s.resources.pinchflat_no_restart(pods)
     active = [p for p in pods if not p['metadata'].get('deletionTimestamp') and p['status']['phase']=='Running']
     expect(len(active)==1, 'expected exactly one running native app pod')
     return active[0]['metadata']['name']
 
 
 def remote(container, command, *args):
-    return kube('exec',pod(),'-c',container,'--','/bin/sh','-ec',command,'proof',*args)
+    result = kube('exec',pod(),'-c',container,'--','/bin/sh','-ec',command,'proof',*args)
+    pod()  # Never issue another native command after a known restart/termination.
+    return result
 
 
 # Source-backed OTP27 C-node client, NOT another Elixir/BEAM VM. No -s (start),
@@ -189,7 +193,7 @@ def completion(observed, source_id):
 
 
 def prepare(state, fixture):
-    s.pinchflat_provider_guard();s.require_helpers_deleted('pinchflat')
+    check();s.require_helpers_deleted('pinchflat')
     expect(fixture.name==INPUT and hashlib.sha256(s.read_private(fixture,binary=True)).hexdigest()==INPUT_SHA,
            'exact retained immutable browser fixture required; never regenerate or replace it here')
     deployment = json.loads(kube('get','deployment','pinchflat','-o','json'))
@@ -199,18 +203,38 @@ def prepare(state, fixture):
     source = (s.ROOT/'scripts/talos-proof-media-pinchflat-fixture.py').read_text()
     code_name,input_name = 'rss-code-'+hashlib.sha256(source.encode()).hexdigest()[:16],'rss-input-'+INPUT_SHA[:16]
     labels = {'app.kubernetes.io/part-of':'talos-proof','app.kubernetes.io/name':'pinchflat'}
+    volumes = patch['spec']['template']['spec']['volumes']
+    next(v for v in volumes if v['name']=='rss-code')['configMap']['name']=code_name
+    next(v for v in volumes if v['name']=='rss-input')['secret']['secretName']=input_name
+    # Pure strategic merge of this narrow profile only; preserve every other field,
+    # especially recovered PVCs, bootstrap Secret references and credentials.
+    def merge(old, new):
+        if isinstance(old, dict) and isinstance(new, dict):
+            result = copy.deepcopy(old)
+            for key, value in new.items(): result[key] = merge(result.get(key), value)
+            return result
+        if isinstance(old, list) and isinstance(new, list) and all(isinstance(x, dict) and 'name' in x for x in old+new):
+            result = copy.deepcopy(old)
+            for value in new:
+                found = next((i for i,x in enumerate(result) if x['name']==value['name']),None)
+                if found is None: result.append(copy.deepcopy(value))
+                else: result[found] = merge(result[found],value)
+            return result
+        return copy.deepcopy(new)
+    expected = merge(deployment['spec'],patch['spec'])
+    receipt, _ = s.lease('pinchflat')
+    s.resources.pinchflat_budget(expected['template'],receipt)  # BEFORE first mutation
+    s.guard('pinchflat',provider_selected=True,preparation_template=expected['template'])
     for resource in [
         {'apiVersion':'v1','kind':'ConfigMap','metadata':{'name':code_name,'namespace':NS,'labels':labels},'immutable':True,'data':{'origin.py':source}},
         {'apiVersion':'v1','kind':'Secret','metadata':{'name':input_name,'namespace':NS,'labels':labels},'type':'Opaque','immutable':True,'data':{'fixture.mp4':base64.b64encode(s.read_private(fixture,binary=True)).decode()}}]:
         kube('apply','-f','-',data=json.dumps(resource).encode())
-    volumes = patch['spec']['template']['spec']['volumes']
-    next(v for v in volumes if v['name']=='rss-code')['configMap']['name']=code_name
-    next(v for v in volumes if v['name']=='rss-input')['secret']['secretName']=input_name
-    before = {v['name']:v['persistentVolumeClaim'] for v in deployment['spec']['template']['spec']['volumes'] if 'persistentVolumeClaim' in v}
-    kube('patch','deployment','pinchflat','--type=strategic','-p',json.dumps(patch))
+    kube('patch','deployment','pinchflat','--type=json','-p',json.dumps([
+        {'op':'test','path':'/spec','value':deployment['spec']},
+        {'op':'replace','path':'/spec','value':expected}]))
     actual = json.loads(kube('get','deployment','pinchflat','-o','json'))
+    expect(actual['spec']==expected, 'profile preparation differed from exact preserved spec')
     after = {v['name']:v['persistentVolumeClaim'] for v in actual['spec']['template']['spec']['volumes'] if 'persistentVolumeClaim' in v}
-    expect(before==after and actual['spec']['replicas']==0, 'profile preparation changed retained PVC references or activation state')
     return {'input_sha256':INPUT_SHA,'code_configmap':code_name,'input_secret':input_name,'claims':after,'result':'PREPARED_STOPPED_ONLY'}
 
 
@@ -340,6 +364,14 @@ if __name__=='__main__':
             for stream in ('private_stdout','private_stderr'):
                 if hasattr(exc,stream):
                     s.write_private(state/('pinchflat-native-failure-'+uuid.uuid4().hex+'.log'),getattr(exc,stream))
+            # One-shot failure cleanup; retain observation BEFORE stopping. Never
+            # retry RPC, exercise, or startup, including after an OOM.
+            if sys.argv[1] in ('exercise','verify'):
+                try:
+                    importlib.import_module('talos-proof-media-observe').capture('pinchflat',state)
+                finally:
+                    kube('scale','deployment','pinchflat','--replicas=0')
+                    kube('wait','--for=delete','pod','--all','--timeout=180s')
         except Exception:
             pass
         # Fixed errors only; never echo credentials, native logs or auth URLs.

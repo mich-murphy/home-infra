@@ -67,16 +67,20 @@ class Safety(unittest.TestCase):
     def rewrite_receipt(self):
         safety.write_private(self.path, json.dumps(self.receipt), replace=True)
 
-    def test_pinchflat_optional_profile_requires_marker_and_full_576(self):
-        self.receipt.update(group='pinchflat',provider_fixture='pinchflat-rss',available_mib=575)
+    def test_pinchflat_optional_profile_requires_marker_and_full_704(self):
+        self.receipt.update(group='pinchflat',provider_fixture='pinchflat-rss',pinchflat_main_memory_mib=384,available_mib=703)
         self.rewrite_receipt()
         with self.assertRaisesRegex(RuntimeError,'insufficient'):
             safety.pinchflat_provider_guard()
-        self.receipt['available_mib']=576;self.rewrite_receipt()
+        self.receipt['available_mib']=704;self.rewrite_receipt()
         safety.pinchflat_provider_guard()
-        self.controllers=[{'metadata':{'namespace':'proof-pinchflat','name':'pinchflat'},'spec':{'replicas':0,'template':{
-            'metadata':{'annotations':{'talos-proof.home/provider-fixture':'pinchflat-rss'}},
-            'spec':{'containers':[{'name':'pinchflat'},{'name':'rss-fixture'}]}}}}]
+        import yaml
+        doc = next(x for x in yaml.safe_load_all((safety.ROOT/'kubernetes/apps/media/pinchflat/resources.yaml').read_text()) if x['kind']=='Deployment')
+        template = doc['spec']['template']
+        template['metadata']['annotations'] = {'talos-proof.home/provider-fixture':'pinchflat-rss', 'talos-proof.home/pinchflat-main-memory-mib':'384'}
+        template['spec']['containers'][0]['resources']['limits']['memory']='384Mi'
+        template['spec']['containers'].append({'name':'rss-fixture','resources':{'requests':{'cpu':'10m','memory':'32Mi'},'limits':{'cpu':'200m','memory':'128Mi'}}})
+        self.controllers=[doc]
         safety.guard('pinchflat')
         self.receipt.pop('provider_fixture');self.rewrite_receipt()
         with self.assertRaisesRegex(RuntimeError,'exact parent receipt'):
@@ -86,9 +90,9 @@ class Safety(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'exact pinchflat group'):
             safety.guard('radarr',provider_selected=True)
         self.receipt.update(group='pinchflat',provider_fixture='WRONG');self.rewrite_receipt()
-        with self.assertRaisesRegex(RuntimeError,'authorize'):
+        with self.assertRaisesRegex(RuntimeError,'provider_fixture'):
             safety.pinchflat_provider_guard()
-        self.receipt['provider_fixture']='pinchflat-rss';self.rewrite_receipt()
+        self.receipt.update(provider_fixture='pinchflat-rss',pinchflat_main_memory_mib=384);self.rewrite_receipt()
         for annotation,names in [('unknown',['pinchflat','rss-fixture']),('pinchflat-rss',['pinchflat'])]:
             self.controllers=[{'metadata':{'namespace':'proof-pinchflat','name':'pinchflat'},'spec':{'replicas':0,'template':{
                 'metadata':{'annotations':{'talos-proof.home/provider-fixture':annotation}},

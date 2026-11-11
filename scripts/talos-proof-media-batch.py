@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 
 safety = importlib.import_module('talos-proof-media-safety')
 observe = importlib.import_module('talos-proof-media-observe')
@@ -50,6 +51,16 @@ def main():
             observe.capture(args.service, state)
             kube('-n', ns, 'rollout', 'restart', 'deployment/' + args.service, capacity=True)
         try:
+            if args.service == 'pinchflat':
+                deadline = time.monotonic() + 300
+                while True:
+                    pods = json.loads(safety.kubectl_read('get', 'pods', '-n', ns, '-o', 'json'))['items']
+                    safety.resources.pinchflat_no_restart(pods)
+                    if pods and all(any(c.get('type') == 'Ready' and c.get('status') == 'True' for c in p.get('status', {}).get('conditions', [])) for p in pods):
+                        break
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError('Pinchflat bounded startup timed out')
+                    time.sleep(1)
             kube('-n', ns, 'rollout', 'status', 'deployment/' + args.service, '--timeout=300s')
         except RuntimeError:
             # Preserve failed pod UID/image/last termination and cgroup evidence before deletion.
