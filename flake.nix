@@ -73,6 +73,12 @@
       actionlint = pkgs.actionlint;
       ansible-lint = ansibleToolingFor pkgs;
       docker-compose = pkgs.docker-compose;
+      # Reproducible offline validation and proof-cluster tooling. Cluster/chart
+      # versions are pinned separately in talos/ and kubernetes/platform/.
+      kubectl = pkgs.kubectl;
+      kubernetes-helm = pkgs.kubernetes-helm;
+      kubeconform = pkgs.kubeconform;
+      kubernetes-proof-tools = pkgs.python3.withPackages (ps: [ps.pyyaml]);
       portainer-drift-tools = pkgs.yq-go;
       shellcheck = pkgs.shellcheck;
       terraform-ci = terraformCiFor pkgs;
@@ -104,6 +110,10 @@
           pkgs.alejandra
           self.packages.${system}.actionlint
           self.packages.${system}.docker-compose
+          self.packages.${system}.kubectl
+          self.packages.${system}.kubernetes-helm
+          self.packages.${system}.kubeconform
+          self.packages.${system}.kubernetes-proof-tools
           self.packages.${system}.shellcheck
         ];
       };

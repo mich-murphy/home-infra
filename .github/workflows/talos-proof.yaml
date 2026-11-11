@@ -1,0 +1,60 @@
+name: Talos isolated proof
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/talos-proof.yaml'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'talos/**'
+      - 'infrastructure/proxmox-proof/**'
+      - 'kubernetes/**'
+      - 'scripts/*talos-proof*'
+      - 'tests/*talos-proof*'
+      - 'tests/kubernetes-proof*'
+  push:
+    branches: [main, feat/talos-live-proof]
+    paths:
+      - '.github/workflows/talos-proof.yaml'
+      - 'flake.nix'
+      - 'flake.lock'
+      - 'talos/**'
+      - 'infrastructure/proxmox-proof/**'
+      - 'kubernetes/**'
+      - 'scripts/*talos-proof*'
+      - 'tests/*talos-proof*'
+      - 'tests/kubernetes-proof*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: talos-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install Nix
+        uses: cachix/install-nix-action@91f6a0f59e94dfb2cfed0f4000f36a68ead1d20c # v31
+      - name: Validate isolated manifests and safety gates
+        run: >-
+          nix shell .#kubectl .#kubeconform .#shellcheck .#kubernetes-proof-tools
+          --command bash scripts/check-talos-proof.sh
+      - name: Validate freshly rendered Talos configuration
+        run: |
+          export STATE
+          STATE=$(mktemp -d)
+          trap 'rm -rf "$STATE"' EXIT
+          bash infrastructure/proxmox-proof/bootstrap-tools.sh
+          bash talos/generate.sh
+          bash infrastructure/proxmox-proof/validate.sh
+      - name: Lint workflow
+        run: nix shell .#actionlint --command actionlint .github/workflows/talos-proof.yaml
+      # Deliberately no live deploy, SSH key or Kubernetes credentials in CI.
+      # Passing this job is not evidence of a functional or migration-ready cluster.
