@@ -40,7 +40,7 @@ class Contract(unittest.TestCase):
                     pod = d['spec']['jobTemplate']['spec']['template']['spec']
                 else:
                     continue
-                cost = sum(int(c['resources']['limits']['memory'].removesuffix('Mi')) for c in pod['containers'])
+                cost = sum(int(c['resources']['limits']['memory'].removesuffix('Mi')) for c in pod['containers'] + [c for c in pod.get('initContainers', []) if c.get('restartPolicy') == 'Always'])
                 self.assertEqual(safety.BUDGET[d['metadata']['name']], cost)
 
     def test_render_safety_and_denies(self):

@@ -57,6 +57,10 @@ spec:
           readinessProbe:
             tcpSocket: {port: tracker}
             periodSeconds: 5
+          livenessProbe:
+            tcpSocket: {port: tracker}
+            periodSeconds: 30
+            timeoutSeconds: 3
           volumeMounts:
             - {name: code, mountPath: /fixture, readOnly: true}
       volumes:

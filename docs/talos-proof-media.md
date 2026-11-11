@@ -195,3 +195,8 @@ These are execution preparations and offline regression checks only, **not scaff
 ## Offline hardening after first live checkpoint
 
 See `docs/evidence/talos-media/qbit-5.3-and-lifecycle-followup.md` for exact5.3 source diagnosis, prepared Host-without-port URLRewrite, activation refusal while any helperPod remains, negative no-scale unit evidence,503-only HTTP readiness convergence gate, and fresh dual-metric memory collector. These changes have not run live. Existing receipts are revoked and operations holds the live window; wait for parent grant. Credentials/retained restored PVCs are unchanged. Protocol ownership has transferred from the stopped fixture worker;43 offline methods now include its6 real local socket tests, not real downloader completion.
+
+
+## Explicit real-transfer and helper execution preparation
+
+See `docs/evidence/talos-media/transfer-and-helper-integration.md`: optional protocol-qbittorrent/protocol-sabnzbd profiles and guarded completion/counter/output-SHA/persistence runner; actual two-run Recyclarr sync/no-drift gate; Kometa native loopback synthetic metadata sidecar and private dedicated-CA generator.52 offline tests and four static renders pass; no real-client/helper completion claimed. Parent must authorize receipt `protocol_fixture: download-protocols` and full576MiB prospective admission for qBit/SAB transfer. Existing creds/PVCs preserved; no activation while data holds exclusive window. Kometa main+sidecar ceiling is now512MiB (384+128), not384.

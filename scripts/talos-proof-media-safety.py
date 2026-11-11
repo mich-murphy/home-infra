@@ -29,6 +29,7 @@ def select_pipeline(pair):
     PIPELINE_MEMBERS = frozenset(pair.split('+'))
 
 BUDGET['plex'] += 64
+BUDGET['kometa'] += 128  # Native loopback metadata-contract sidecar, not free helper memory.
 MUTATIONS = {'apply', 'scale', 'exec', 'rollout', 'delete', 'create', 'patch', 'label', 'annotate',
              'run', 'replace', 'cp', 'edit', 'set', 'attach', 'port-forward'}
 
@@ -185,7 +186,16 @@ def require_helpers_deleted(group):
             raise RuntimeError('helper pod still exists; activation requires deletion, not Job completion')
 
 
-def guard(group, extra_mib=0, budget_mib=None):
+def protocol_guard(group):
+    if group not in ('qbittorrent', 'sabnzbd'):
+        raise RuntimeError('protocol fixture requires selected qBittorrent or SAB service')
+    receipt, _ = lease(group)
+    if receipt.get('protocol_fixture') != 'download-protocols':
+        raise RuntimeError('parent lease must explicitly authorize protocol_fixture=download-protocols')
+    return guard(group, extra_mib=128, protocol_selected=True)
+
+
+def guard(group, extra_mib=0, budget_mib=None, protocol_selected=False):
     receipt, node = lease(group)
     exclusivity(group)
     alloc = node['status']['allocatable']['memory']
@@ -196,6 +206,21 @@ def guard(group, extra_mib=0, budget_mib=None):
     if not number(available) or not 0 <= age <= 120 or not 0 < available <= int(alloc[:-2]) / 1024:
         raise RuntimeError('fresh valid guest available-memory receipt required')
     budget = sum(PIPELINE_LIMITS[n] for n in PIPELINE_MEMBERS) if group == 'media-pipeline' else BUDGET[group]
+    # Charge a live/desired fixture even when activation is invoked through the basic runner.
+    if group in ('qbittorrent', 'sabnzbd'):
+        controllers = json.loads(kubectl_read('get', 'deployments,statefulsets', '-A', '-o', 'json'))['items']
+        pods = json.loads(kubectl_read('get', 'pods', '-A', '-o', 'json'))['items']
+        active_fixture = any(x['metadata']['namespace'] == 'proof-' + group and
+            x['metadata'].get('name') == 'download-protocols' and x['spec'].get('replicas', 1) for x in controllers)
+        active_fixture |= any(x['metadata']['namespace'] == 'proof-' + group and
+            x['metadata'].get('labels', {}).get('app.kubernetes.io/name') == 'download-protocols' for x in pods)
+        if active_fixture or protocol_selected:
+            if receipt.get('protocol_fixture') != 'download-protocols':
+                raise RuntimeError('active protocol fixture requires explicit parent lease')
+            if budget_mib is not None:
+                raise RuntimeError('stop and delete fixture pods before stopped-volume helper admission')
+            if not protocol_selected:
+                budget += 128
     if budget_mib is not None:
         if budget_mib != 128 or group == 'media-pipeline':
             raise RuntimeError('only stopped isolated-service recovery helper may override app admission budget')

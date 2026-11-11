@@ -13,9 +13,55 @@ safety = importlib.import_module('talos-proof-media-safety')
 NS = 'proof-media-pipeline'
 
 
+def sync_recyclarr(kube, api, state):
+    """Two actual nonempty syncs: assert real creation, then stable ID+definition."""
+    before = api.call('/api/v3/customformat')
+    if any(x['name'] == 'Proof-Synthetic-Title' for x in before):
+        raise RuntimeError('first actual sync requires synthetic format absent; do not erase prior evidence')
+    cron = json.loads(kube('-n', NS, 'get', 'cronjob', 'recyclarr', '-o', 'json'))
+    run_id = str(__import__('time').time_ns())
+    hashes = []
+    first = None
+    for step in (1, 2):
+        safety.guard('media-pipeline')
+        safety.require_helpers_deleted('media-pipeline')
+        name = 'recyclarr-sync-' + run_id + '-' + str(step)
+        spec = json.loads(json.dumps(cron['spec']['jobTemplate']['spec']))
+        spec['template']['spec']['containers'][0]['args'] = ['sync']  # Real mutation, never preview.
+        job = {'apiVersion': 'batch/v1', 'kind': 'Job', 'metadata': {'name': name, 'namespace': NS,
+               'labels': {'app.kubernetes.io/part-of': 'talos-proof'}}, 'spec': spec}
+        kube('create', '-f', '-', data=json.dumps(job).encode(), capacity=True)
+        try:
+            kube('-n', NS, 'wait', '--for=condition=complete', 'job/' + name, '--timeout=210s')
+        finally:
+            try:
+                logs = kube('-n', NS, 'logs', 'job/' + name)
+                safety.write_private(state / (name + '.log'), logs)
+                hashes.append(hashlib.sha256(logs).hexdigest())
+                # Retain structured failure/image identity privately; do not print arbitrary logs.
+                pods = kube('-n', NS, 'get', 'pods', '-l', 'job-name=' + name, '-o', 'json')
+                sanitized = [importlib.import_module('talos-proof-media-observe').summarize(p) for p in json.loads(pods)['items']]
+                safety.write_private(state / (name + '-pods.json'), json.dumps(sanitized))
+            finally:
+                kube('-n', NS, 'delete', 'job', name, '--wait=true', '--timeout=60s')
+                kube('-n', NS, 'wait', '--for=delete', 'pod', '-l', 'job-name=' + name, '--timeout=180s')
+        after = api.call('/api/v3/customformat')
+        created = [x for x in after if x['name'] == 'Proof-Synthetic-Title']
+        if len(created) != 1 or not created[0].get('specifications') or not created[0].get('id'):
+            raise RuntimeError('actual sync did not create exactly one nonempty synthetic custom format')
+        if step == 1:
+            if sorted((x for x in after if x['name'] != 'Proof-Synthetic-Title'), key=lambda x: x['id']) != sorted(before, key=lambda x: x['id']):
+                raise RuntimeError('sync unexpectedly changed unrelated custom formats')
+            first = sorted(after, key=lambda x: x['id'])
+        elif sorted(after, key=lambda x: x['id']) != first:
+            raise RuntimeError('second actual sync drifted IDs or definitions')
+    safety.write_private(state / ('recyclarr-sync-' + run_id + '-result.json'), json.dumps({'custom_formats': first, 'log_sha256': hashes}))
+    print(json.dumps({'service': 'recyclarr', 'result': 'PASS', 'checks': ['actual nonempty synthetic Create', 'second actual sync stable IDs+definitions; no drift'], 'log_sha256': hashes}))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['verify', 'start', 'stop', 'restart', 'preview-recyclarr'])
+    parser.add_argument('action', choices=['verify', 'start', 'stop', 'restart', 'preview-recyclarr', 'sync-recyclarr'])
     parser.add_argument('--pair', required=True, choices=safety.PIPELINE_PAIRS)
     parser.add_argument('--state', required=True, type=Path)
     parser.add_argument('--ca', type=Path, help='private trusted Gateway CA for helper before/after API checks')
@@ -39,7 +85,7 @@ def main():
         return safety.kube('media-pipeline', *command, **kwargs)
     safety.lease('media-pipeline')
     safety.exclusivity('media-pipeline')
-    if args.action == 'preview-recyclarr':
+    if args.action in ('preview-recyclarr', 'sync-recyclarr'):
         if args.pair != 'radarr+recyclarr' or args.ca is None:
             parser.error('preview requires --pair radarr+recyclarr and trusted --ca')
         api_type = importlib.import_module('talos-proof-media-http').API
@@ -47,6 +93,10 @@ def main():
         api = api_type('https://pipeline-radarr.proof.invalid:18443',
                        {'X-Api-Key': credentials['radarr']['api_key']}, service='pipeline-radarr',
                        ca=safety.private_file(args.ca))
+        api.wait_ready('/')
+        if args.action == 'sync-recyclarr':
+            sync_recyclarr(kube, api, state)
+            return
         before = api.call('/api/v3/customformat')
         if any(x['name'] == 'Proof-Synthetic-Title' for x in before):
             raise RuntimeError('preview requires synthetic format to be absent before execution')

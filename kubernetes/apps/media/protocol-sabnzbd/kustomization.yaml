@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: proof-sabnzbd
+resources:
+- ../fixtures/download-protocols
+- policy.yaml
+labels:
+- pairs:
+    app.kubernetes.io/part-of: talos-proof
+  includeTemplates: true
+patches:
+- target:
+    kind: Deployment
+    name: download-protocols
+  patch: "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: download-protocols\n\
+    spec:\n  template:\n    spec:\n      containers:\n      - args:\n        - serve\n\
+    \        - --bind\n        - 0.0.0.0\n        - --advertise-ip\n        - $(POD_IP)\n\
+    \        - --announce\n        - http://download-protocols:8080/announce\n   \
+    \     - --payload\n        - /payload/synthetic-proof.wav\n        - --name\n\
+    \        - synthetic-proof.wav\n        name: fixture\n        volumeMounts:\n\
+    \        - mountPath: /payload/synthetic-proof.wav\n          name: payload\n\
+    \          readOnly: true\n          subPath: synthetic-proof.wav\n      volumes:\n\
+    \      - configMap:\n          defaultMode: 292\n          name: protocol-payload\n\
+    \        name: payload\n"
+- target:
+    kind: NetworkPolicy
+    name: download-protocols-isolation
+  patch: "$patch: delete\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\n\
+    metadata:\n  name: download-protocols-isolation\n"
