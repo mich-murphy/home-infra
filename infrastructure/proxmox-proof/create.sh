@@ -3,12 +3,16 @@
 set -euo pipefail
 [[ ${APPROVE_TALOS_PROOF:-} == 120 ]] || { echo 'Set APPROVE_TALOS_PROOF=120 after review'; exit 1; }
 [[ ! -e /etc/pve/qemu-server/120.conf ]]
+# Stage this read-only helper alongside create.sh. Reject inherited all-guests
+# backup membership BEFORE creating a VM that could write to production storage.
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+python3 "$SCRIPT_DIR/backup-safety.py" --host
 MEMORY_MIB=${MEMORY_MIB:-2560}
 [[ $MEMORY_MIB == 2560 || $MEMORY_MIB == 3072 ]] || { echo 'Only approved 2560/3072MiB profiles allowed' >&2; exit 1; }
 AVAIL=$(awk '/MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
 (( AVAIL >= MEMORY_MIB + 1536 + 384 )) || { echo "Insufficient headroom: ${AVAIL}MiB"; exit 1; }
-mkdir -p /root/.local/state/home-infra/talos-proof
 umask 077
+mkdir -p /root/.local/state/home-infra/talos-proof
 awk '/SwapFree:/{f=$2}/SwapTotal:/{t=$2}END{print t-f}' /proc/meminfo > /root/.local/state/home-infra/talos-proof/swap-baseline-kib
 cp /proc/vmstat /root/.local/state/home-infra/talos-proof/vmstat-baseline
 cp /proc/pressure/memory /root/.local/state/home-infra/talos-proof/psi-baseline

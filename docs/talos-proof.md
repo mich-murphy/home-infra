@@ -16,11 +16,17 @@
   OAuth/article extraction/CRUD/recovery. Wallabag's exact synthetic fixture needs
   a documented narrow SSRF adapter; this is not production configuration parity.
   Parent independently checked private backup hashes and distinct live PVC UIDs.
-- **Operations:** actual observations/loopback alert delivery and off-node file
-  restore passed; private etcd snapshot captured, **not restored**. Flux refused
-  its unchanged memory gate before installation, so reconciliation is unproved.
-- **Media/heavy data:** staged execution continues. A passing profile CRUD or
-  health check must not be relabelled media download, office editing or ML proof.
+- **Operations:** observations/loopback alerts and off-node file restore passed;
+  private etcd snapshot captured, **not restored**. After a genuine fresh capacity
+  improvement, Flux reconciliation/drift repair/path rollback/negative RBAC passed.
+  The earlier memory refusal and unexplained first apply failure remain recorded.
+- **Media:** Pinchflat profile recovery and Audiobookshelf fixture streaming/state
+  recovery passed. qBit/BEP3 and SAB/NNTP now have actual32,044-byte local transfers,
+  exact output hashes, fixture-off restart and distinct-PVC functional recovery.
+  External providers, browser/player/import/helper criteria remain separate gates.
+- **Heavy data:** CODE established real WOPI read/lock and token/lock negatives,
+  but typing/save/reopen failed; no Office editing acceptance. Actual ML inference
+  and full Nextcloud/Immich integration remain unproved.
 
 See the [all36-service readiness matrix](talos-proof-readiness.md), service-specific
 evidence and [current delivery record](talos-proof-delivery.md) for exact scope,

@@ -19,16 +19,16 @@ for current ownership and leases.
 
 | Source container | Proof replacement | Actual evidence / remaining gate |
 |---|---|---|
-| `couchdb` | Isolated single-node CouchDB + local PVC | **Partial:** TLS401 denial, document create/read, replacement persistence, distinct clean-PVC logical document restore/hash. Revision conflicts, document-level deletion, design views, tenant denial, CORS/replication and full DB security-metadata recovery not proved. |
-| `miniflux` | Miniflux + private PG + synthetic feed | **Bounded pass:** authenticated feed/read-state workflow, replacement and clean-PVC content/state recovery. Star/preferences-specific assertions remain unproved; no production feed/account migration. |
-| `miniflux-db` | Pinned PG18 | **Bounded pass:** logical dump to independent fresh PG PVC, then real Miniflux validation. Initial app scheduler misconfiguration and transient post-DB-restart401 preserved in evidence. |
+| `couchdb` | Isolated single-node CouchDB + local PVC | **Bounded pass5421ecc7:** TLS auth denial, revision update/stale409, executable view, member allow/outsider read+write403, authenticated same-instance replication/deletion propagation, and distinct-PVC restore of actual security/design/docs/hashed proof-user records with permissions/view rechecked. CORS and representative historical datasets remain unproved. |
+| `miniflux` | Miniflux + private PG + synthetic feed | **Bounded pass5421ecc7:** exact article, star/bookmark, read state and theme/page-size preferences persist through PG replacement and distinct fresh-PVC recovery. One initial app pod restarted2times with causes not captured; transient post-PG401 recovered1s. No production feed/account migration. |
+| `miniflux-db` | Pinned PG18 | **Bounded pass:** logical dump to independent fresh PG PVC, then real expanded Miniflux validation. Historical scheduler failure and later2restart/401 caveats preserved. Latest PG peak139.512MiB; fixture63.992/64MiB predominantly file cache—no production capacity claim. |
 | `pocket-id` | Fresh SQLite identity provider | **Bounded pass:** real browser WebAuthn registration/login, signed OIDC PKCE/JWKS/claims/userinfo, restart and fresh-PVC import with same user/passkey. Virtual—not physical—authenticator; browser exact leaf-SPKI pin. Audience-substring check fixed/tested; additional replay/wrong-verifier cases pending. |
 | `wallabag` | Wallabag + private MariaDB/Redis/fixture | **Bounded pass:** real OAuth login, fixture URL extraction, read/update/archive/star/export/delete, DB restart and clean-PVC recovery. Image-fetch and async queue/reconnect coverage remain unproved. Exact fixture FQDN uses documented SHA-pinned Graby SSRF adapter; not unchanged production extraction policy. |
 | `wallabag-mariadb` | Bounded MariaDB profile | **Bounded pass:** clean logical restore and existing-user/article/state/hash verified through Wallabag HTTP. No production dataset/peak-capacity claim. |
 | `wallabag-redis` | Private Redis | **Partial:** running/PING/config observed. Async import-worker/queue integration and restart semantics unproved. |
 | `nextcloud` | Nextcloud + new HTML/config/files PVC | **Pending:** staged WebDAV/share/recovery code; no live acceptance. Version/trash/share/ACL and coordinated DB+files recovery must be checked, not just login. |
 | `nextcloud-cron` | Suspended bounded CronJob | **Pending:** same proof data/DB, explicitly leased one-shot only; no actual background-task result yet. |
-| `nextcloud-office` | Collabora CODE, explicit finite security exception | **Partial/failed editing:** actual HTTPS discovery/editor canvas/WSS passed; keyboard/save dispatch did not prove PutFile/saved bytes. Negative-check exec timed out, failed callback details were lost;640MiB peak/maxevents10/OOM0. Bounded768MiB repair retry active. Full save/reopen and Nextcloud richdocuments integration remain mandatory. |
+| `nextcloud-office` | Collabora CODE, explicit finite security exception | **Partial/failed editing:** actual HTTPS/canvas/WSS and plain-text WOPI CheckFileInfo/GetFile/LOCK passed; bad-token401 and wrong-lock409 preserved file bytes. Six attempts did not prove typing/accepted PutFile/save/reopen. Latest welcome/mode selector corrected offline only; both renewed retries consumed and released.640MiB pressure and767.57/768MiB peak retained; no editing-capacity or full Nextcloud/richdocuments/Office-format pass. |
 | `nextcloud-postgres` | Pinned PG18 + separate PVC | **Pending:** app-validating clean restore not executed for Nextcloud. |
 | `nextcloud-redis` | Authenticated private Redis | **Pending:** lock contention/reconnect must be proved with Nextcloud, not inferred from Redis startup. |
 | `immich` | Immich3 with corrected effective `/data` mount | **Pending:** upload/thumbnail/search/recovery stages prepared. Actual asset↔DB association, ACL/video/metadata and coordinated data recovery remain required. |
@@ -48,9 +48,9 @@ this fresh-state test is **not** an upgrade/migration rehearsal of the source da
 |---|---|---|
 | `pinchflat` | Isolated frontend + config/download PVCs | **Partial:** trusted-TLS profile CRUD, replacement and different-fresh-PVC read-before-write recovery passed. Real provider/download workflow remains unproved. |
 | `audiobookshelf` | Isolated library/config/metadata PVCs | **Bounded pass:** generated audiobook scan, exact stream/range bytes, progress/bookmark CRUD, restart and three fresh-PVC recovery checks. No production library/podcast/provider migration. |
-| `qbittorrent` | Fresh private settings/data | **Blocked:** starts, but initial live login returned401. No preferences/recovery/transfer pass. Exact5.3 source rejects external Host port18443 against8080; route-only hostname rewrite prepared, not live validated. Wrong credentials can also401; retained credentials were not rotated. |
+| `qbittorrent` | Fresh private settings/data + BEP3 fixture | **Bounded pass7ac9f65c:** repaired route, actual5.3 auth204/preferences, real torrent transfer—1 handshake/2 pieces/32,044bytes—and completed on-disk SHA; fixture-off restart and different2PVC functional recovery. Initial401/API-response mismatch and progress1-without-file failure retained. Manual Origin-only401 is not native-browser evidence; browser/CSRF gate open. |
 | `qbitwebui` | Fresh user/instance state and proof qbit dependency | **Pending:** executable exact-version workflow, no live connection/auth/queue-state proof yet. |
-| `sabnzbd` | Fresh downloader + synthetic NNTP provider | **Pending:** real decode/completion/checksum required. NNTP fixture socket tests do not prove SAB compatibility. |
+| `sabnzbd` | Fresh downloader + synthetic NNTP provider | **Bounded pass7ac9f65c:** real NNTP auth/body/yEnc32,044bytes, completed history and exact file SHA, fixture-off restart and different2PVC recovery. Hostname/API/lowercase AUTHINFO/output-name incompatibilities retained and corrected. Temporary provider removed, original directories restored. No real Usenet account/provider parity. |
 | `radarr` | Isolated base + explicit shared `/data` integration profile | **Pending:** meaningful import/library/path/hardlink and recovery, not only root-folder/profile CRUD. |
 | `sonarr` | Same bounded media-pipeline approach | **Pending:** episode workflow and real imported-file identity/persistence. |
 | `lidarr` | Same bounded media-pipeline approach | **Pending:** music workflow and real imported-file identity/persistence. |
@@ -64,13 +64,15 @@ this fresh-state test is **not** an upgrade/migration rehearsal of the source da
 | `jellyplex-watched` | Suspended bounded sync Job | **Pending:** meaningful divergent-state fixture and observed intended sync/dry-run behavior, not empty libraries. |
 
 Evidence: [media runbook](talos-proof-media.md),
-[first live batch including failures](evidence/talos-media/first-live-batch.md), and
+[first live batch including failures](evidence/talos-media/first-live-batch.md),
+[actual transfer/recovery chronology](evidence/talos-media/live-download-transfers.md), and
 [synthetic download protocol contract](evidence/talos-media/download-protocol-fixtures.md).
 The first batch records a stale-Talos observation fallback, temporary helper overlap
 and transient post-restore failures; those are not erased by later successes.
 b06ae56f adds helper deletion waits and actual batch-runner negative tests proving
 no apply/scale/rollout while a Job pod remains, plus an anonymous503-only readiness
-gate (401/403 fail immediately). Parent review precedes further activation.
+gate (401/403 fail immediately). Parent reviewed these exact regressions before the
+subsequent transfer window; its app/fixture/helper pods were all deleted.
 
 ## Infrastructure capabilities:4 source containers
 

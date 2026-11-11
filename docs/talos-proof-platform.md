@@ -94,6 +94,22 @@ retirement, inspect the current job and remove only120 if appropriate. Reapplyin
 the production backup role may overwrite this temporary exclusion; verify it
 before another overnight proof window. No production playbook was run here.
 
+`create.sh` now requires the companion `backup-safety.py` **before VM creation**.
+Stage both files together and execute the script by path, not by piping it to
+`bash -s`. The read-only gate rejects enabled all-guests jobs without120 excluded,
+explicit120 membership, ambiguous pool/tag selectors and unreadable/malformed
+responses. It never changes a job. Check current membership from the workstation:
+
+```sh
+ssh root@proxmox 'pvesh get /cluster/backup --output-format json' | \
+  python3 infrastructure/proxmox-proof/backup-safety.py
+```
+
+Only a safe summary is printed, not raw job/recipient data. An unsafe result
+requires explicit review at https://proxmox:8006/#v1:0:=datacenter:backup ; preserve
+all existing guests/settings while excluding the new proof. This is a creation
+preflight, **not** continuous enforcement against later administrator/job changes.
+
 QEMU slirp uses172.31.250.0/24, private DHCP node `.10`, gateway `.2`, IPv6 disabled.
 No host bridge, LAN IP, DHCP reservation or global forwarding setting is needed.
 The QEMU-cgroup OUTPUT filter blocks new private/CGNAT/loopback/link-local/reserved
