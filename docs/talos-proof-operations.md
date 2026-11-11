@@ -2,7 +2,7 @@
 
 ## Status and design
 
-**Offline staged; live gates NOT executed. No lease or kubeconfig received.** This is not production readiness, HA, production-data recovery, or a deployed monitoring service. VM120 starts at **2560 MiB**, not inventory's superseded 3-GiB planning value. Parent must grant an exclusive resource lease for each run; no concurrent app batches. Production source/host configuration and services are untouched.
+**Offline safety-hardening complete; live gates NOT executed. No live resource lease granted.** This is not production readiness, HA, production-data recovery, or a deployed monitoring service. VM120 starts at **2560 MiB**, not inventory's superseded 3-GiB planning value. Parent must grant an exclusive resource lease for each run; no concurrent app batches. Production source/host configuration and services are untouched.
 
 | Existing capability | Minimal replacement | Current evidence / limits |
 |---|---|---|
@@ -16,7 +16,7 @@ Whole inventory: media worker owns kometa, lidarr, radarr, tautulli, sabnzbd, so
 
 ## Source pins / offline reproduction
 
-- Flux release compatibility explicitly supports K8s 1.36 >=1.36.1; proof 1.36.6 fits. Source: <https://github.com/fluxcd/flux2/releases/tag/v2.10.0>.
+- Flux release compatibility explicitly supports K8s 1.36 >=1.36.1; proof 1.36.5 fits. Source: <https://github.com/fluxcd/flux2/releases/tag/v2.10.0>.
 - `kubernetes/operations/gitops/artifacts.lock.json` pins upstream install YAML SHA256 and registry manifest digests for source-controller and kustomize-controller v1.10.1. Release metadata fetched from GitHub API; image index digests queried from authenticated-anonymous GHCR manifest responses. The release YAML is downloaded/verified at render time, not a floating `kubectl apply URL`.
 - Recovery BusyBox1.37.0 index digest matches the platform's verified pin. No new utility image.
 - Python3 stdlib for live operations; PyYAML required for render/offline tests (use repository environment).
@@ -40,22 +40,46 @@ System namespace is deliberately **not** labeled `part-of: talos-proof` (uses `t
 Keep private state 0700, files 0600. Never print Talos config, kubeconfig, snapshots, raw API objects, secret values or archive bytes. Scripts use restrictive umask and withhold failed subprocess output. Evidence destinations are private timestamped directories under `~/.local/state/home-infra/talos-proof/operations/`. Evidence JSON still needs operator review before publication. The API collector needs pod/node read plus **nodes/proxy GET**; this is a powerful kubelet proxy privilege, unsuitable for ordinary app identities. It runs off-node using the explicitly supplied proof-admin credential, never gives a pod that credential, and never runs against source host. Production should replace proxy permission with a least-privilege supported metrics pipeline.
 
 ```sh
-# Parent supplies exact private filenames; do not guess an ambient current context.
-export KUBECONFIG="$HOME/.local/state/home-infra/talos-proof/kubeconfig"
-export TALOSCONFIG="$HOME/.local/state/home-infra/talos-proof/talosconfig"
-export TALOS_PROOF_OPERATIONS_LEASE=vm120  # ONLY after parent's explicit exclusive grant
+# Parent supplies private mode0600 configs and a short-lived JSON resource receipt.
+export KUBECONFIG="$HOME/.local/state/home-infra/talos-proof/config/kubeconfig"
+export TALOSCONFIG="$HOME/.local/state/home-infra/talos-proof/config/talosconfig"
+export TALOS_PROOF_OPERATIONS_LEASE="$HOME/.local/state/home-infra/talos-proof/operations-lease.json"
 python3 scripts/talos-proof-operations.py monitor --test-alert
-# Repeat monitor before/during/after an approved workload, not continuous in background.
-# default threshold512Mi (~20% of2560Mi); request640Mi for25% headroom:
+# Repeat before/during/after approved work, not continuously in background.
 python3 scripts/talos-proof-operations.py monitor --minimum-available-mib 640
 python3 scripts/talos-proof-operations.py recovery
-python3 scripts/talos-proof-operations.py snapshot --node APPROVED_PROOF_TALOS_ENDPOINT
+python3 scripts/talos-proof-operations.py snapshot
 unset TALOS_PROOF_OPERATIONS_LEASE
 ```
 
+The receipt is coordinator-issued, **not** the former `vm120` environment marker. Its JSON schema is
+`{group, context, endpoint, node_uid, expires, available_mib, measured_at}`; group must be
+`operations` for collector/recovery/snapshot or `operations-flux` for Flux. Times are UTC Unix
+seconds; expiry must be future and the guest available-memory measurement at most120s old
+(not host available RAM). Parent must refresh measurements/receipt during a long operation.
+All private directories under the proof state root are owner-only0700, regular files0600;
+symlinks in the original path or any ancestor are rejected **before** resolve/open.
+
+Every Kubernetes command, including **every exec, wait, mutation and failure cleanup**,
+revalidates the receipt and active kubeconfig context→cluster/user mapping. It requires exactly
+`https://127.0.0.1:64120`, TLS verification enabled, no proxy/TLS-name override or credential
+exec/auth-provider, exactly one node named and hostname-labelled `talos-proof`, only InternalIP
+`172.31.250.10`, and recorded UID `4845bfd5-3bdb-453d-8503-83b43edb7a1e` in both receipt and API.
+Matching but wrong context/server/receipt combinations cannot authorize production. Actual
+commands explicitly pin kubeconfig/context/server. Referenced credential files receive the
+same private-path checks. This is an accidental-target guard, not protection against a malicious
+local same-UID process racing filesystem writes. A node recreation requires explicit reviewed
+identity re-enrollment, never automatic UID adoption.
+
+Snapshot has **no caller-selected target or PATH binary**: only
+`~/.local/state/home-infra/talos-proof/bin/talosctl`, version exactly `v1.14.5`, fixed endpoint
+`127.0.0.1:50120` and node `172.31.250.10`; active private Talos config must agree. TLS remains
+on; no insecure flags. The version check is not a substitute for parent verification of the
+installed official binary provenance. Snapshot output never overwrites a prior artifact.
+
 Collector exports actual kubelet timestamps/workingSetBytes/availableBytes rather than substituting requests/limits. Node capacity includes storage/ephemeral-storage where API reports it. Filesystem and volume stats are actual reported values, not claims that unreported local-volume metrics exist. `ContainerRestartObserved` is an absolute nonzero counter, **not** a new-restart rate. Short-lived jobs or sampling gaps may be missed. No metrics/alerts persist inside the node: JSON history and HTTP receipts persist off-node only; deletion/retention is operator-managed. Injected `ProofDeliveryTest` is marked synthetic and cannot prove resource-exhaustion detection. Low-memory rule is offline-tested with representative measured-shaped data; live low-memory triggering must not intentionally OOM the 2.5-GiB node.
 
-Recovery refuses nonempty source or destination directories and distinct-PV check is mandatory. It does not erase existing data on rerun. Dedicated PVCs remain retained; source pod is deleted before restore and restored pod is left for inspection. `fixture.tar` and `etcd.snapshot` are **off the VM**, on the workstation, never on production NFS. The snapshot includes cluster secrets: never copy it to Git or `/tmp`, publish only reviewed size/checksum metadata. Snapshot checksum shows transport integrity, not successful etcd recovery. Talos machine secrets/config and the correct Talos/Kubernetes versions are separately necessary for disaster recovery. Future authorized etcd restore must use a separate disposable control plane and validate API objects; never run bootstrap `--recover-from` on this proof/source as an incidental test.
+Recovery refuses nonempty source or destination directories and distinct-PV check is mandatory. It does not erase existing data on rerun. An existing recovery namespace is rejected before apply; reruns require separately approved disposal. Both PVC UIDs and PV names must differ, each PV must bind its exact claim UID and use Retain. Dedicated PVCs/PVs remain retained; source pod is deleted before restore, and both pods are removed in guarded finally cleanup on success/failure to release memory. No PVC/PV or data deletion is automated. Source writes use shell noclobber, archives exclusive-create and tar extraction keep-old-files; destination emptiness is rechecked immediately before extraction. `fixture.tar` and `etcd.snapshot` are **off the VM**, on the workstation, never on production NFS. The snapshot includes cluster secrets: never copy it to Git or `/tmp`, publish only reviewed size/checksum metadata. Snapshot checksum shows transport integrity, not successful etcd recovery. Talos machine secrets/config and the correct Talos/Kubernetes versions are separately necessary for disaster recovery. Future authorized etcd restore must use a separate disposable control plane and validate API objects; never run bootstrap `--recover-from` on this proof/source as an incidental test.
 
 For repeated fresh file-recovery runs, parent must authorize disposal/recreation of only the recovery namespace/PVCs and platform-approved handling of Retain PV directories. Namespace deletion alone does not reclaim retained backing directories; no broad `/var/mnt/proof` wipe command is provided. Do not duplicate or mutate `kubernetes/platform/validation` persistence fixtures.
 
@@ -64,29 +88,29 @@ For repeated fresh file-recovery runs, parent must authorize disposal/recreation
 Do not install just because limits sum to384Mi: take real baseline and reserve >=512–640Mi node available through reconciliation; stop on memory pressure/OOM/restart. Install is staged separately from app batches and can be removed before them. Parent must approve any GitHub access through fail-closed node boundary, push exact code SHA, and confirm repository is publicly readable.
 
 ```sh
-# With approved proof kubeconfig and explicit lease; render at real pushed commit first.
-kubectl apply --server-side -f /tmp/operations-flux.yaml
-kubectl -n proof-operations-system rollout status deployment/source-controller --timeout=180s
-kubectl -n proof-operations-system rollout status deployment/kustomize-controller --timeout=180s
-kubectl -n proof-operations-system wait --for=condition=Ready gitrepository/proof-fixture --timeout=180s
-kubectl -n proof-operations-system wait --for=condition=Ready kustomization/proof-fixture --timeout=180s
-kubectl -n proof-operations-gitops wait --for=jsonpath='{.data.revision}'=1 configmap/reconciliation-fixture --timeout=90s
-# Deliberate harmless drift; controller must restore desired Git state without manual apply.
-kubectl -n proof-operations-gitops patch configmap reconciliation-fixture --type=merge -p '{"data":{"revision":"drift"}}'
-kubectl -n proof-operations-gitops wait --for=jsonpath='{.data.revision}'=1 configmap/reconciliation-fixture --timeout=90s
-# Declarative version change, then rollback to original immutable-source fixture path.
-kubectl -n proof-operations-system patch kustomization proof-fixture --type=merge -p '{"spec":{"path":"./kubernetes/operations/gitops/fixture-v2"}}'
-kubectl -n proof-operations-gitops wait --for=jsonpath='{.data.revision}'=2 configmap/reconciliation-fixture --timeout=90s
-kubectl -n proof-operations-system patch kustomization proof-fixture --type=merge -p '{"spec":{"path":"./kubernetes/operations/gitops/fixture-v1"}}'
-kubectl -n proof-operations-gitops wait --for=jsonpath='{.data.revision}'=1 configmap/reconciliation-fixture --timeout=90s
-# Explicit negative privilege proof (must print no):
-kubectl auth can-i create deployments -n proof-operations-gitops --as=system:serviceaccount:proof-operations-system:fixture-reconciler
-kubectl auth can-i get secrets -n proof-operations-gitops --as=system:serviceaccount:proof-operations-system:fixture-reconciler
+# Same exact-target receipt mechanism, but parent must issue group=operations-flux.
+# Render remains offline/nonmutating; run verifies upstream checksum in memory and
+# applies only the generated scoped manifest, not arbitrary caller-selected YAML.
+python3 scripts/talos-proof-operations-flux.py --action run \
+  --revision 5d9a9926106f76346950af20e8afc0ef346ac548
+# On an expired lease, request refreshed receipt before explicit guarded cleanup:
+python3 scripts/talos-proof-operations-flux.py --action cleanup
 ```
+
+Do not use unguarded `kubectl apply/patch/exec` commands from an ambient context. The guarded
+run requires actual kubelet available memory >=896Mi (384Mi controller ceilings +512Mi reserve),
+rejects other active app batches, installs generated controllers, waits for initial fixture1,
+patches harmless ConfigMap drift and verifies repair, changes desired fixture path to2 and
+rolls back to1, then proves fixture identity cannot create Deployments or read Secrets.
+The run always attempts guarded controller cleanup, including on failure. A partial apply
+still attempts Deployment deletion even if suspension fails. Cleanup never removes shared
+CRDs/namespaces or storage. If identity or lease changes it fails closed rather than targeting
+an unverified cluster; parent must renew the receipt to release proof memory. This is not a
+substitute for the independent host resource guard.
 
 Record UTC start/end, source `.status.artifact.revision`, Kustomization `.status.lastAppliedRevision`, ConfigMap values before/after each transition, controller imageIDs/restarts and monitor samples. Rollback above is an actual desired-state path rollback between two checked-in ConfigMap revisions, **not** a claim of Git history revert/app rollback. Both are pinned to the same Git commit, with zero app writes. A full Git commit-revert release workflow remains a separate production gap. Never save full Deployment/Secret API dumps as public evidence.
 
-After approval to release controller memory: suspend fixture Kustomization, delete only source/kustomize Deployments in `proof-operations-system`; do not delete cluster CRDs as app-batch cleanup. Retain small fixture/CRDs or explicitly uninstall owned resources later. Observe memory recovery and return lease to parent. Controller replicas/default resource limits are experimental bounded ceilings, not evidence that startup or large production repositories fit.
+Guarded run cleanup suspends fixture Kustomization and deletes only source/kustomize Deployments in `proof-operations-system`; do not delete cluster CRDs as app-batch cleanup. Retain small fixture/CRDs or explicitly uninstall owned resources later. Observe memory recovery and return lease to parent. Controller replicas/default resource limits are experimental bounded ceilings, not evidence that startup or large production repositories fit.
 
 ## Production gaps / truthful acceptance
 
