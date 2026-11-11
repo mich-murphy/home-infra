@@ -297,6 +297,9 @@ if __name__=='__main__':
             supplied = Path(sys.argv[sys.argv.index('--state')+1])
             state = s.private_dir(supplied)
             save(state,'failure',{'error_type':type(exc).__name__,'http_status':getattr(exc,'code',None)})
+            for stream in ('private_stdout','private_stderr'):
+                if hasattr(exc,stream):
+                    s.write_private(state/('pinchflat-native-failure-'+uuid.uuid4().hex+'.log'),getattr(exc,stream))
         except Exception:
             pass
         # Fixed errors only; never echo credentials, native logs or auth URLs.

@@ -288,5 +288,10 @@ def kube(group, *args, data=None, capacity=False, extra_mib=0):
     result = subprocess.run(['kubectl', '--kubeconfig', str(kubeconfig), *args], input=data,
                             capture_output=True, timeout=960)
     if result.returncode:
-        raise RuntimeError('proof kubectl operation failed (details withheld)')
+        failure = RuntimeError('proof kubectl operation failed (details withheld)')
+        # Never emit raw output. Callers may retain it via exclusive PRIVATE files
+        # for native compatibility diagnosis, not suppress the failed operation.
+        failure.private_stdout = result.stdout
+        failure.private_stderr = result.stderr
+        raise failure
     return result.stdout

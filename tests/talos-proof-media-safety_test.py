@@ -52,6 +52,18 @@ class Safety(unittest.TestCase):
             return json.dumps({'items': self.controllers})
         raise AssertionError('unexpected mocked read')
 
+    def test_failed_kube_keeps_diagnostics_private_without_changing_failure(self):
+        outcome = safety.subprocess.CompletedProcess([],137,stdout=b'PRIVATE-OUT',stderr=b'PRIVATE-ERR')
+        with patch.object(safety,'lease'),patch.object(safety,'exclusivity'), \
+             patch.object(safety,'private_file',return_value=self.state/'kubeconfig'), \
+             patch.dict(os.environ,{'KUBECONFIG':str(self.state/'kubeconfig')}), \
+             patch.object(safety.subprocess,'run',return_value=outcome):
+            with self.assertRaisesRegex(RuntimeError,'details withheld') as caught:
+                safety.kube('pinchflat','exec','proof-pod','--','false')
+        self.assertEqual(caught.exception.private_stdout,b'PRIVATE-OUT')
+        self.assertEqual(caught.exception.private_stderr,b'PRIVATE-ERR')
+        self.assertNotIn('PRIVATE',str(caught.exception))
+
     def rewrite_receipt(self):
         safety.write_private(self.path, json.dumps(self.receipt), replace=True)
 

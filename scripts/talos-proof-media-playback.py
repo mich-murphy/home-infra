@@ -10,6 +10,7 @@ from pathlib import Path
 import secrets
 import sys
 import time
+import uuid
 import urllib.parse
 
 s = importlib.import_module('talos-proof-media-safety')
@@ -82,7 +83,7 @@ def finish(state, ca, bridge, decoder):
     d.expect(len(rows) == 1 and str(rows[0]['rating_key']) == bridge['item'] and
              rows[0].get('machine_id') == bridge['client'] and int(rows[0]['duration']) > 0,
              'no unique durable history for this actual decoder client')
-    s.write_private(state / ('tautulli-decoder-' + secrets.token_hex(6) + '.json'), json.dumps({
+    s.write_private(state / ('tautulli-decoder-' + uuid.uuid4().hex + '.json'), json.dumps({
         'history_id': rows[0]['row_id'], 'rating_key': bridge['item'], 'client': bridge['client'],
         'session': bridge['session'], 'decoder': decoder, 'history_ignore_seconds': 0}))
 
@@ -97,9 +98,9 @@ if __name__ == '__main__':
         if payload:
             try:
                 state = s.private_dir(Path(payload['bridge']['state']))
-                s.write_private(state / ('playback-callback-failure-' + secrets.token_hex(8) + '.json'), json.dumps(failure))
+                s.write_private(state / ('playback-callback-failure-' + uuid.uuid4().hex + '.json'), json.dumps(failure))
                 if isinstance(exc, urllib.error.HTTPError):
-                    s.write_private(state / ('playback-private-http-failure-' + secrets.token_hex(8) + '.log'), exc.read())
+                    s.write_private(state / ('playback-private-http-failure-' + uuid.uuid4().hex + '.log'), exc.read())
             except Exception:
                 pass  # Never hide original failure or emit secret-bearing details.
         print(json.dumps(failure))

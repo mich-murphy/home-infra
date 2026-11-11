@@ -3,6 +3,7 @@
  * Private JSON stdin. No traces, HAR, storage state, DOM or credentials saved.
  */
 import fs from 'node:fs';
+import {randomUUID} from 'node:crypto';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {spawnSync} from 'node:child_process';
@@ -11,6 +12,7 @@ const input=JSON.parse(fs.readFileSync(0,'utf8'));
 const here=path.dirname(fileURLToPath(import.meta.url));
 const result={status:'FAIL',checks:[]};
 let browser,stage='lease';
+const mediaDiagnostics=[];
 function lease() {
   const source='import sys,importlib;sys.path.insert(0,sys.argv[1]);b=importlib.import_module("talos-proof-media-browser");b.check_lease(sys.argv[2],sys.argv[3])';
   const check=spawnSync('python3',['-c',source,path.join(here,'../scripts'),input.service,input.group || input.service],{timeout:30000,stdio:'pipe'});
@@ -60,6 +62,10 @@ try {
     };
   }
   const page=await context.newPage();page.setDefaultTimeout(15000);
+  if(input.service!=='qbittorrent') {
+    page.on('response',r=>{if(mediaDiagnostics.length<40) mediaDiagnostics.push({status:r.status(),path:new URL(r.url()).pathname});});
+    page.on('requestfailed',r=>{if(mediaDiagnostics.length<40) mediaDiagnostics.push({failed:r.failure()?.errorText,path:new URL(r.url()).pathname});});
+  }
   const actualHeaders=await wireHeaders(page);
   if(input.service!=='qbittorrent') {
     stage='actual server MP4 browser decode';
@@ -127,7 +133,7 @@ try {
   result.chrome_version=browser.version();result.status='PASS';
 } catch(error) {
   result.failed_stage=stage;result.failure_type=error.constructor.name;
-  fs.writeFileSync(path.join(input.state,`browser-private-failure-${Date.now()}.log`),String(error.stack || error),{mode:0o600,flag:'wx'});
+  fs.writeFileSync(path.join(input.state,`browser-private-failure-${randomUUID()}.log`),String(error.stack || error)+'\n'+JSON.stringify(mediaDiagnostics),{mode:0o600,flag:'wx'});
   // Deliberately do not emit error.message: Playwright errors can embed secrets.
 } finally {if(browser) await browser.close();}
 console.log(JSON.stringify(result));

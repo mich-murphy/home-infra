@@ -43,6 +43,10 @@ def login(api, credentials):
     check()
     auth = api.call('/Users/AuthenticateByName', 'POST', {'Username': credentials['username'], 'Pw': credentials['password']})
     api.headers['X-Emby-Token'] = auth['AccessToken']
+    # Native12.4 prioritizes the MediaBrowser Authorization header. Preserve
+    # client/device identity AND include the issued token there; an otherwise
+    # tokenless Authorization header shadows X-Emby-Token and yields401.
+    api.headers['Authorization'] += ', Token="' + auth['AccessToken'] + '"'
     expect(api.call('/Users/Me')['Id'] == auth['User']['Id'], 'authenticated user identity mismatch')
     return auth['User']['Id']
 

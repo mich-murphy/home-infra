@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import importlib
 import json
 from pathlib import Path
-import secrets
+import uuid
 import sys
 
 safety = importlib.import_module('talos-proof-media-safety')
@@ -60,7 +60,7 @@ def capture(service, state, group=None):
                 except Exception:
                     container['cgroup_error'] = 'UNAVAILABLE: exec/read failed or unexpected counter format'
         output['pods'].append(entry)
-    filename = service + '-observation-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S') + '-' + secrets.token_hex(4) + '.json'
+    filename = service + '-observation-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S') + '-' + uuid.uuid4().hex + '.json'
     safety.write_private(state / filename, json.dumps(output, indent=2))
     print(json.dumps({'service': service, 'observation_file': filename, 'pods': len(pods), 'result': 'OBSERVATION_ONLY'}))
     return output

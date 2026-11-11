@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Offline creation-contract tests. Native runtime discovery remains unexecuted."""
 import importlib
+import copy
+import json
+import tempfile
 import importlib.util
 from pathlib import Path
 import sys
@@ -13,6 +16,34 @@ sys.path[:0] = [str(ROOT/'scripts'),str(ROOT/'tests')]
 v = importlib.import_module('talos-proof-media-services')
 
 class Discovery(unittest.TestCase):
+    def test_adapter_prepare_stopped_only_and_preserves_entire_other_spec(self):
+        module = importlib.import_module('talos-proof-media-plex-discover')
+        before = {'spec':{'replicas':0,'template':{'spec':{'volumes':[
+            {'name':'local-adapter-code','configMap':{'name':'old'}},
+            {'name':'config','persistentVolumeClaim':{'claimName':'recovered-uuid'}},
+            {'name':'auth','secret':{'secretName':'bootstrap'}}],
+            'containers':[{'name':'plex','image':'unchanged','resources':{'limits':{'memory':'384Mi'}}}]}}}}
+        for active in (False,True):
+            def kube(group,*args,**kwargs):
+                if 'pods' in args:return json.dumps({'items':[{'active':True}] if active else []}).encode()
+                if 'deployments,statefulsets' in args:return b'{"items":[]}'
+                if 'get' in args:
+                    value=copy.deepcopy(before)
+                    if updated[0]:value['spec']=updated[0]
+                    return json.dumps(value).encode()
+                if 'patch' in args:
+                    patch=json.loads(args[-1]);self.assertEqual(patch[0]['value'],before['spec']);updated[0]=patch[1]['value']
+                return b'{}'
+            updated=[None]
+            with tempfile.TemporaryDirectory() as tmp, patch.object(module.s,'guard'),patch.object(module.s,'require_helpers_deleted'),patch.object(module.s,'kube',side_effect=kube) as calls:
+                if active:
+                    with self.assertRaisesRegex(RuntimeError,'must be stopped'):module.prepare_adapter('media-plex-tautulli',Path(tmp).resolve())
+                    self.assertFalse(any('patch' in c.args or 'apply' in c.args for c in calls.call_args_list))
+                else:
+                    module.prepare_adapter('media-plex-tautulli',Path(tmp).resolve())
+                    restored=copy.deepcopy(updated[0]);restored['template']['spec']['volumes'][0]['configMap']['name']='old'
+                    self.assertEqual(restored,before['spec'])
+
     def test_adapter_discovery_exception_exact_get_query_only(self):
         spec = importlib.util.spec_from_file_location('plex_discovery_adapter',ROOT/'kubernetes/apps/media/plex/plex-unclaimed-proxy.py')
         adapter = importlib.util.module_from_spec(spec);spec.loader.exec_module(adapter)

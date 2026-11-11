@@ -9,7 +9,7 @@ import base64
 import hashlib
 import importlib
 import json
-import secrets
+import uuid
 from pathlib import Path
 import socket
 import ssl
@@ -124,7 +124,7 @@ def main():
             result.update(status='FAIL', failed_stage='Jellyfin lifecycle/resume/ACL readback', failure_type=type(exc).__name__)
     # Retain every safe browser verdict, including failures; never credentials,
     # DOM, raw child stderr, cookies or exception messages.
-    safety.write_private(state / ('browser-attempt-' + secrets.token_hex(8) + '.json'), json.dumps(result))
+    safety.write_private(state / ('browser-attempt-' + uuid.uuid4().hex + '.json'), json.dumps(result))
     print(json.dumps(result))
     if process.returncode or result.get('status') != 'PASS':
         raise RuntimeError('browser checks failed; no acceptance')

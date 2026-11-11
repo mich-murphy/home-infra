@@ -14,7 +14,7 @@ export async function decode(page, mediaPath, timeline=false, resumeSeconds=0) {
     function deadline(promise) {
       return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('decoder deadline')),20000))]);
     }
-    function once(name) {return new Promise((resolve,reject)=>{video.addEventListener(name,resolve,{once:true});video.addEventListener('error',()=>reject(new Error('decoder error')),{once:true});});}
+    function once(name) {return new Promise((resolve,reject)=>{video.addEventListener(name,resolve,{once:true});video.addEventListener('error',()=>reject(new Error(`decoder error code=${video.error?.code} message=${video.error?.message} network=${video.networkState} ready=${video.readyState}`)),{once:true});});}
     const metadata=once('loadedmetadata');video.src=path;
     await deadline(metadata);
     if(!Number.isFinite(video.duration) || video.duration<10 || video.videoWidth<1) throw new Error('expected new twelve-second video');

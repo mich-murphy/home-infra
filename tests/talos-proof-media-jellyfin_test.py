@@ -26,6 +26,20 @@ class Jellyfin(unittest.TestCase):
         self.bridge = {'service':'jellyfin','state':str(self.state),'ca':'/unused','group':'jellyfin','session_file':'session.json'}
     def tearDown(self):
         self.guard.stop(); self.tmp.cleanup()
+    def test_login_keeps_native_device_identity_and_issued_token_in_authorization(self):
+        api = Mock();api.headers = {'Authorization':'MediaBrowser Client="TalosProof", DeviceId="proof-jellyfin-decoder"'}
+        def reply(path,*args):
+            if path == '/Users/AuthenticateByName':
+                self.assertNotIn('Token=',api.headers['Authorization'])
+                return {'AccessToken':'OFFLINE-ISSUED','User':{'Id':'owner'}}
+            self.assertEqual(path,'/Users/Me')
+            self.assertIn('DeviceId="proof-jellyfin-decoder"',api.headers['Authorization'])
+            self.assertIn('Token="OFFLINE-ISSUED"',api.headers['Authorization'])
+            self.assertEqual(api.headers['X-Emby-Token'],'OFFLINE-ISSUED')
+            return {'Id':'owner'}
+        api.call.side_effect = reply
+        self.assertEqual(j.login(api,{'username':'offline','password':'offline'}),'owner')
+
     def test_native_start_progress_stop_and_exact_session(self):
         api = Mock();api.last_status = 204
         def reply(path,*args):

@@ -2,6 +2,15 @@
 
 ## Status and review gate
 
+**Latest separate native workflow window released, OFFLINE ONLY:**
+[Jellyfin→Plex/Tautulli→Pinchflat chronology](evidence/talos-media/native-workflows-20261111.md).
+Jellyfin failed actual anonymous-media authorization; Plex native discovery and
+scan/hash/range/watched APIs passed but native browser Origin/Referer401 blocked
+frames/Tautulli; Pinchflat native RPC failed with retained main OOM/restart2.
+All three receipts archived/revoked; all app/helper pods and positive app desired
+replicas absent at release. No lifecycle/provider/recovery or full acceptance.
+The historical sections below are chronology/preparation, not a current lease.
+
 **Limited first live results, NOT full media acceptance.** Pinchflat profile-only and Audiobookshelf synthetic-playback workflows passed restart and distinct-fresh-PVC recovery; qBittorrent remains blocked by HTTP401. Failed attempts and procedural deviations are retained in `docs/evidence/talos-media/first-live-batch.md`. Parent must review tests and live evidence before acceptance. VM120 is now bounded at 3072 MiB configured RAM (reported guest total approximately 2823 MiB); this is not a media lease. Activate **one media Deployment at a time**, only under a coordinator-granted resource lease. Fresh-fixture experiment ceilings are 192–512 MiB per main application, plus explicitly charged sidecars, not evidence that all source services fit simultaneously. Requests are scheduling reservations, not measured steady state. Image unpacking, controllers, storage and init containers also consume resources.
 
 Current source of truth: `docker/{arrs,downloads,plex,jellyfin,jellyplex-watched,audiobookshelf,pinchflat,recyclarr}/compose.yml`. All **16 services** map to explicit Kustomize resources, with exact current Compose image digests (not running-image substitutions). Inventory notes a live-vs-Compose jellyplex-watched difference; this proof pins the requested current Compose and must not claim live-image fidelity for that service.
@@ -255,6 +264,15 @@ is documented; no completion safeguard, resource ceiling or TLS/auth gate is
 lowered. Commands in that evidence are UNEXECUTED, all leases remain revoked.
 UUID-exclusive archives/append-only receipts retained. Reserved Pinchflat research
 files and parent readiness/matrix/brief are untouched.
+
+## Successor offline stage checklist
+
+See [next separate stage gates](evidence/talos-media/next-stage-checklist.md)
+for Jellyfin-first commands, narrow Plex discovery/write boundaries, the newly
+identified existing-adapter ConfigMap update prerequisite, and independent later
+Pinchflat provider/recovery gates. All old media receipts remain revoked; no live
+activation or private-state mutation occurred. Five new arr/recovery worker paths
+remain reserved; parent owns readiness/root integration and acceptance.
 
 ## Offline optional native Pinchflat provider preparation
 
