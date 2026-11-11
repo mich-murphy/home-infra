@@ -15,30 +15,11 @@ import urllib.parse
 import urllib.request
 
 
-class API:
-    def __init__(self, base, headers=None):
-        parsed = urllib.parse.urlparse(base)
-        if parsed.hostname not in ('127.0.0.1', 'localhost', '::1') or parsed.scheme != 'http':
-            raise ValueError('only loopback HTTP port forwards accepted')
-        self.base, self.headers = base.rstrip('/'), headers or {}
-        self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
-
-    def call(self, path, method='GET', data=None, form=None, raw=False, headers=None):
-        hdr = {**self.headers, **(headers or {})}
-        if data is not None:
-            payload = json.dumps(data).encode()
-            hdr['Content-Type'] = 'application/json'
-        elif form is not None:
-            payload = urllib.parse.urlencode(form).encode()
-            hdr['Content-Type'] = 'application/x-www-form-urlencoded'
-        else:
-            payload = None
-        req = urllib.request.Request(self.base + path, data=payload, method=method, headers=hdr)
-        with self.opener.open(req, timeout=30) as response:
-            body = response.read()
-        if raw:
-            return body
-        return json.loads(body) if body else None
+import importlib
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
+safety = importlib.import_module('talos-proof-media-safety')
+API = importlib.import_module('talos-proof-media-http').API
 
 
 def arr(api, service, credential):
@@ -47,7 +28,7 @@ def arr(api, service, credential):
     # API credentials must actually be checked; "External" is only UI auth delegation.
     rejected = False
     try:
-        API(api.base).call(prefix + '/tag')
+        api.anonymous().call(prefix + '/tag')
     except urllib.error.HTTPError as exc:
         rejected = exc.code in (401, 403)
     assert rejected, 'unauthenticated API did not reject the request'
@@ -114,8 +95,7 @@ def jellyfin(api, credential, fixture, state):
     auth = api.call('/Users/AuthenticateByName', 'POST', {'Username': credential['username'], 'Pw': credential['password']}, headers={'Authorization': 'MediaBrowser Client="TalosProof", Device="Loopback", DeviceId="proof-functional", Version="1"'})
     api.headers['X-Emby-Token'] = auth['AccessToken']
     uid = auth['User']['Id']
-    (state / 'jellyfin-session.json').write_text(json.dumps({'token': auth['AccessToken'], 'user_id': uid}))
-    (state / 'jellyfin-session.json').chmod(0o600)
+    safety.write_private(state / 'jellyfin-session.json', json.dumps({'token': auth['AccessToken'], 'user_id': uid}), replace=True)
     libraries = api.call('/Library/VirtualFolders')
     if not any(x['Name'] == 'Proof' for x in libraries):
         api.call('/Library/VirtualFolders?name=Proof&collectionType=music&refreshLibrary=true', 'POST', {'LibraryOptions': {'PathInfos': [{'Path': '/data/media'}], 'EnableInternetProviders': False, 'EnableRealtimeMonitor': False, 'SaveLocalMetadata': False, 'EnableAutomaticSeriesGrouping': False, 'MetadataSavers': [], 'DisabledLocalMetadataReaders': []}})
@@ -129,7 +109,7 @@ def jellyfin(api, credential, fixture, state):
     assert len(items) == 1, 'expected exactly one generated audio fixture'
     item = items[0]['Id']
     payload = api.call(f'/Audio/{item}/stream?static=true', raw=True)
-    expected = fixture.read_bytes()
+    expected = safety.read_private(fixture, binary=True)
     assert hashlib.sha256(payload).digest() == hashlib.sha256(expected).digest(), 'stream bytes differ from synthetic fixture'
     # HTTP byte ranges establish a real seek/read, not just an HTTP 200 health check.
     chunk = api.call(f'/Audio/{item}/stream?static=true', raw=True, headers={'Range': 'bytes=44-107'})
@@ -145,10 +125,14 @@ def main():
     p.add_argument('--base', required=True)
     p.add_argument('--state-dir', required=True, type=Path)
     p.add_argument('--fixture', type=Path)
+    p.add_argument('--ca', required=True, type=Path, help='private trusted proof Gateway CA PEM')
     args = p.parse_args()
-    state = args.state_dir.expanduser().resolve()
-    credentials = json.loads((state / 'credentials.json').read_text())[args.service]
-    api = API(args.base)
+    state = safety.private_dir(args.state_dir)
+    credentials = json.loads(safety.read_private(state / 'credentials.json'))[args.service]
+    safety.lease(args.service)
+    safety.exclusivity(args.service)
+    ca = safety.private_file(args.ca)
+    api = API(args.base, service=args.service, ca=ca)
     try:
         if args.service in ('radarr', 'sonarr', 'lidarr', 'prowlarr'):
             checks = arr(api, args.service, credentials)

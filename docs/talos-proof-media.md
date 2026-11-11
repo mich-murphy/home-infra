@@ -50,10 +50,10 @@ Only after parent provides kubeconfig, approves tests and explicitly grants leas
 
 ```sh
 export KUBECONFIG=/private/path/to/proof-kubeconfig
-export TALOS_PROOF_MEDIA_LEASE=COORDINATOR_GRANTED_LEASE_ID
+export TALOS_PROOF_MEDIA_LEASE=/private/path/to/coordinator-media-lease.json
 bash scripts/talos-proof-media-batch.sh start radarr "$STATE"
 kubectl -n proof-radarr port-forward service/radarr 17878:7878  # separate terminal
-python3 tests/talos-proof-media-functional.py radarr --base http://127.0.0.1:17878 --state-dir "$STATE"
+python3 tests/talos-proof-media-functional.py radarr --base https://radarr.proof.invalid:18443 --ca "$STATE/proof-ca.crt" --state-dir "$STATE"
 bash scripts/talos-proof-media-batch.sh stop radarr "$STATE"
 ```
 
@@ -64,7 +64,7 @@ For Jellyfin, start its batch, seed generated audio into its fresh PVC, then tes
 ```sh
 python3 scripts/talos-proof-media-fixture.py --state-dir "$STATE" --seed jellyfin
 kubectl -n proof-jellyfin port-forward service/jellyfin 18096:8096
-python3 tests/talos-proof-media-functional.py jellyfin --base http://127.0.0.1:18096 --state-dir "$STATE" --fixture "$STATE/proof-tone.wav"
+python3 tests/talos-proof-media-functional.py jellyfin --base https://jellyfin.proof.invalid:18443 --ca "$STATE/proof-ca.crt" --state-dir "$STATE" --fixture "$STATE/proof-tone.wav"
 ```
 
 Seeder uses a transient 120-second Job with the same pinned service image, UID 1000, no token/capabilities, 16-MiB request/64-MiB limit, and only the proof fixture PVC. It streams a generated 32,044-byte two-second mono 440-Hz WAV, then deletes the Job. No external media/download occurs. The generated fixture's SHA256 is emitted for evidence. Jellyfin test performs fresh wizard/admin login, creates an offline music library, bounded scan, byte-identical direct audio stream, HTTP range seek and played-state write/read. It stores its fresh session token **privately** only. API/version incompatibilities fail; they must be fixed with observed evidence, never suppressed.
@@ -106,4 +106,14 @@ All 13 UI services have an explicit HTTPRoute attached to Gateway `proof` in `pr
 
 Policies allow the proof-gateway namespace on only each application HTTP port. Since Cilium Gateway proxies use the reserved `ingress` identity rather than ordinary namespaced pod identity, an additional narrowly selected CiliumNetworkPolicy allows `fromEntities: [ingress]` on the same exact target port. Parent networking review must verify this behavior and that only the dedicated proof Gateway exists; these identity allowances are not a claim of measured enforcement.
 
-Once the platform is ready and a live lease is granted, test both route attachment (`Accepted`/`ResolvedRefs`) and functional traffic through the parent's SSH loopback forwards 18080→30080 and 18443→30443. For example, `curl --resolve radarr.proof.invalid:18443:127.0.0.1 --cacert /private/proof-ca.crt https://radarr.proof.invalid:18443/ping`; then run authenticated CRUD through that same trusted TLS route. Current API harness intentionally only accepts loopback HTTP and still requires an extension for trusted-CA hostname routing; do not treat port-forward success as integrated Gateway acceptance. No such live check has run.
+Once the platform is ready and a live lease is granted, test both route attachment (`Accepted`/`ResolvedRefs`) and functional traffic through the parent's SSH loopback forwards 18080→30080 and 18443→30443. For example, `curl --resolve radarr.proof.invalid:18443:127.0.0.1 --cacert /private/proof-ca.crt https://radarr.proof.invalid:18443/ping`; then run authenticated CRUD through that same trusted TLS route. The API harness now requires verified Gateway HTTPS: hostname/SNI remain the service proof hostname, TCP dials only 127.0.0.1:18443, and the private CA must verify the certificate. Proxy environment variables and cross-origin/downgrade redirects are blocked. Diagnostic port-forwards are not the functional acceptance path. No such live check has run.
+
+## Fail-closed lease/target implementation update
+
+`talos-proof-media-batch.sh` delegates to the small Python lifecycle command; no direct unguarded kubectl remains in it. `talos-proof-media-safety.py` is shared only by owned media scripts, not a templating/deployment framework. `TALOS_PROOF_MEDIA_LEASE` is a **private 0600 JSON file path**, not a nonempty authorization string. The coordinator issues `{group, context, endpoint, node_uid, expires, available_mib, measured_at}`. No live receipt is generated or invented by this worker.
+
+Before every apply/scale/exec/create/delete/restart, the guard validates private owner/modes/no symlink ancestors, exact `https://127.0.0.1:64120`, API TLS verification and explicit CA, kubeconfig context, no credential-exec plugins, exactly one node, node name AND hostname `talos-proof`, and the recorded node UID. Each mutation checks all proof namespace pods and Deployment/StatefulSet desired replicas, including unlabelled/Pending workloads, rejecting concurrent data or other media groups (except platform validation/Gateway). Activation additionally requires a <=120-second-old guest available-memory observation with room for app limit plus 192 MiB reserve. Fixture seeding includes its extra 64-MiB bound. The coordinator remains responsible for global arbitration and safe cleanup if a lease expires.
+
+Private state is mode0700; credential, lease, CA and kubeconfig files must be owned by the current user with mode0600, outside the checkout, without path traversal or symlinks. Existing unsafe modes are rejected, not silently repaired. Credential output uses exclusive no-follow opens; existing bootstrap state is never silently rotated. macOS temporary-directory tests canonicalize the OS `/var` alias before supplying it, rather than weakening the production no-symlink rule.
+
+Offline negative tests: `python3 tests/talos-proof-media-safety_test.py` (7 test methods, including multiple endpoint/node/lease/memory mutants). Real ephemeral-local TLS tests: `python3 tests/talos-proof-media-tls_test.py` (4 methods: trusted success, wrong CA rejection, wrong hostname rejection, cross-origin redirect rejection). These never contact the proof cluster. All 16 offline test methods currently pass.

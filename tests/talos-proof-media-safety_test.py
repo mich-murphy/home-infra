@@ -1,0 +1,138 @@
+#!/usr/bin/env python3
+"""Offline negative mutants: no test contacts or mutates the real proof API."""
+import copy
+import importlib
+import json
+import os
+from pathlib import Path
+import sys
+import tempfile
+import time
+import unittest
+from unittest.mock import patch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
+safety = importlib.import_module('talos-proof-media-safety')
+http = importlib.import_module('talos-proof-media-http')
+
+
+class Safety(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='talos-proof-media-safety-')
+        self.state = Path(self.temp.name).resolve()
+        self.receipt = {'group': 'radarr', 'context': 'fake-proof-context', 'endpoint': safety.ENDPOINT,
+                        'node_uid': 'OFFLINE-FAKE-UID', 'expires': time.time() + 600,
+                        'available_mib': 1800, 'measured_at': time.time()}
+        self.config = {'current-context': 'fake-proof-context', 'clusters': [{'cluster': {
+            'server': safety.ENDPOINT, 'certificate-authority-data': 'OFFLINE-FAKE-CA'}}]}
+        self.node = {'metadata': {'name': 'talos-proof', 'uid': 'OFFLINE-FAKE-UID',
+                                 'labels': {'kubernetes.io/hostname': 'talos-proof'}},
+                     'status': {'allocatable': {'memory': '2400000Ki'}}}
+        self.nodes = [self.node]
+        self.pods, self.controllers = [], []
+        self.path = safety.write_private(self.state / 'lease.json', json.dumps(self.receipt))
+        self.env = patch.dict(os.environ, {'TALOS_PROOF_MEDIA_LEASE': str(self.path)})
+        self.env.start()
+        self.read = patch.object(safety, 'kubectl_read', side_effect=self.fake_read)
+        self.read.start()
+
+    def tearDown(self):
+        self.read.stop()
+        self.env.stop()
+        self.temp.cleanup()
+
+    def fake_read(self, *args):
+        if args[0] == 'config':
+            return json.dumps(self.config)
+        if args[:2] == ('get', 'nodes'):
+            return json.dumps({'items': self.nodes})
+        if args[:2] == ('get', 'pods'):
+            return json.dumps({'items': self.pods})
+        if args[:2] == ('get', 'deployments,statefulsets'):
+            return json.dumps({'items': self.controllers})
+        raise AssertionError('unexpected mocked read')
+
+    def rewrite_receipt(self):
+        safety.write_private(self.path, json.dumps(self.receipt), replace=True)
+
+    def test_valid_fake_receipt(self):
+        safety.guard('radarr')
+
+    def test_wrong_server_tls_context_node_mutants(self):
+        mutations = [
+            lambda: self.config['clusters'][0]['cluster'].update(server='https://production.invalid:6443'),
+            lambda: self.config['clusters'][0]['cluster'].update(server='http://127.0.0.1:64120'),
+            lambda: self.config['clusters'][0]['cluster'].update(**{'insecure-skip-tls-verify': True}),
+            lambda: self.config.update(**{'current-context': 'production'}),
+            lambda: self.node['metadata'].update(name='production'),
+            lambda: self.node['metadata']['labels'].update(**{'kubernetes.io/hostname': 'random-host'}),
+            lambda: self.node['metadata'].update(uid='CHANGED-UID'),
+            lambda: self.nodes.append(copy.deepcopy(self.node)),
+            lambda: self.config.update(users=[{'user': {'exec': {'command': 'evil'}}}]),
+        ]
+        pristine_config, pristine_node = copy.deepcopy(self.config), copy.deepcopy(self.node)
+        for mutate in mutations:
+            self.config, self.node = copy.deepcopy(pristine_config), copy.deepcopy(pristine_node)
+            self.nodes = [self.node]
+            mutate()
+            with self.assertRaises(RuntimeError), patch.object(safety.subprocess, 'run') as execution:
+                safety.kube('radarr', 'apply', '-f', '-')
+            execution.assert_not_called()
+
+    def test_invalid_receipt_mutants(self):
+        for field, value in [('endpoint', 'https://production.invalid'), ('group', 'immich'), ('node_uid', ''),
+                             ('expires', 0), ('expires', float('nan')), ('context', 'wrong')]:
+            saved = self.receipt[field]
+            self.receipt[field] = value
+            self.rewrite_receipt()
+            with self.assertRaises(RuntimeError):
+                safety.lease('radarr')
+            self.receipt[field] = saved
+        self.rewrite_receipt()
+
+    def test_data_and_unlabelled_other_groups_excluded(self):
+        for namespace in ['proof-immich', 'proof-nextcloud', 'proof-jellyfin', 'proof-unknown']:
+            self.pods = [{'metadata': {'namespace': namespace}, 'status': {'phase': 'Pending'}}]
+            with self.assertRaises(RuntimeError):
+                safety.exclusivity('radarr')
+        self.pods = []
+        self.controllers = [{'metadata': {'namespace': 'proof-wallabag'}, 'spec': {'replicas': 1}}]
+        with self.assertRaises(RuntimeError):
+            safety.exclusivity('radarr')
+
+    def test_stale_or_insufficient_memory(self):
+        for field, value in [('measured_at', 0), ('measured_at', time.time() + 300),
+                             ('available_mib', 700), ('available_mib', 999999), ('available_mib', -1)]:
+            saved = self.receipt[field]
+            self.receipt[field] = value
+            self.rewrite_receipt()
+            with self.assertRaises(RuntimeError):
+                safety.guard('radarr')
+            self.receipt[field] = saved
+
+    def test_symlink_and_modes_rejected(self):
+        link = self.state / 'link'
+        link.symlink_to(self.path)
+        with self.assertRaises(RuntimeError):
+            safety.read_private(link)
+        directory_link = self.state / 'dirlink'
+        directory_link.symlink_to(self.state, target_is_directory=True)
+        with self.assertRaises(RuntimeError):
+            safety.private_file(directory_link / 'lease.json')
+        self.path.chmod(0o644)
+        with self.assertRaises(RuntimeError):
+            safety.read_private(self.path)
+        self.state.chmod(0o755)
+        with self.assertRaises(RuntimeError):
+            safety.private_dir(self.state)
+
+    def test_untrusted_http_targets_rejected(self):
+        for base in ['http://127.0.0.1:8080', 'https://production.invalid:18443',
+                     'https://radarr.proof.invalid:443', 'https://user:pass@radarr.proof.invalid:18443',
+                     'https://radarr.proof.invalid:18443?token=secret']:
+            with self.assertRaises((ValueError, FileNotFoundError)):
+                http.API(base, service='radarr', ca='/nonexistent')
+
+
+if __name__ == '__main__':
+    unittest.main()

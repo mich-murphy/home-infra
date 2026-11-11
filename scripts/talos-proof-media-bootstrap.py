@@ -4,6 +4,7 @@ import argparse
 import base64
 import hashlib
 import json
+import importlib
 import os
 from pathlib import Path
 import secrets
@@ -15,13 +16,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--state-dir', type=Path, required=True)
     args = parser.parse_args()
-    root = args.state_dir.expanduser().resolve()
-    repo = Path(__file__).resolve().parents[1]
-    if root == repo or repo in root.parents:
-        parser.error('state directory must be outside the checkout')
+    safety = importlib.import_module('talos-proof-media-safety')
     os.umask(0o077)
-    root.mkdir(parents=True, exist_ok=True, mode=0o700)
-    root.chmod(0o700)
+    root = safety.private_dir(args.state_dir, create=True)
     if (root / 'credentials.json').exists():
         parser.error('credentials already exist; refuse rotation that could desynchronize PVCs')
     credentials = {}
@@ -65,10 +62,19 @@ def main():
                           'metadata': {'name': 'bootstrap', 'namespace': 'proof-' + name,
                                        'labels': {'app.kubernetes.io/part-of': 'talos-proof'}},
                           'type': 'Opaque', 'data': {k: base64.b64encode(v.encode()).decode() for k, v in data.items()}})
-    (root / 'credentials.json').write_text(json.dumps(credentials))
+    # Validate all output paths before creating any file; refuse links/partial rotations.
+    for name in ['credentials.json', *(f'{service}-secret.json' for service in SERVICES)]:
+        output = safety.no_symlinks(root / name)
+        if output.exists():
+            parser.error('bootstrap output already exists; refuse partial rotation')
+    safety.write_private(root / 'credentials.json', json.dumps(credentials))
     for name, manifest in zip(SERVICES, manifests):
-        (root / f'{name}-secret.json').write_text(json.dumps(manifest))
+        safety.write_private(root / f'{name}-secret.json', json.dumps(manifest))
     print(f'Generated private bootstrap state in {root}; no cluster changes.')
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as exc:
+        print('Bootstrap stopped: ' + type(exc).__name__, file=__import__('sys').stderr)
+        raise SystemExit(1)

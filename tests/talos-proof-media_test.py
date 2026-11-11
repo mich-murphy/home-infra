@@ -45,7 +45,7 @@ class Contract(unittest.TestCase):
 
     def test_offline_secrets_are_private_and_not_printed(self):
         with tempfile.TemporaryDirectory(prefix='talos-proof-media-test-') as tmp:
-            state = Path(tmp) / 'private'
+            state = Path(tmp).resolve() / 'private'
             out = subprocess.check_output([sys.executable, str(ROOT / 'scripts/talos-proof-media-bootstrap.py'), '--state-dir', str(state)])
             credentials = json.loads((state / 'credentials.json').read_text())
             self.assertEqual(len(credentials), 16)
@@ -60,7 +60,7 @@ class Contract(unittest.TestCase):
 
     def test_fixture_is_deterministic(self):
         with tempfile.TemporaryDirectory(prefix='talos-proof-media-fixture-') as tmp:
-            command = [sys.executable, str(ROOT / 'scripts/talos-proof-media-fixture.py'), '--state-dir', tmp]
+            command = [sys.executable, str(ROOT / 'scripts/talos-proof-media-fixture.py'), '--state-dir', str(Path(tmp).resolve())]
             first = json.loads(subprocess.check_output(command))
             second = json.loads(subprocess.check_output(command))
             self.assertEqual(first, second)
