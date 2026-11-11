@@ -35,9 +35,9 @@ Use namespace `proof-<service/trust-group>` with namespace label
 `app.kubernetes.io/part-of: talos-proof`, restricted Pod Security, no host networking,
 hostPath or privileged app pods; service account tokens disabled unless justified.
 Start workloads replicas0 and run only bounded staged tests. StorageClass `proof-local`.
-HTTPRoutes attach `proof-gateway/proof`, hostname `<service>.proof.invalid`. Baseline
-permits ingress from validation and Cilium reserved `ingress` identity, **not** all
-pods in the Gateway namespace (Envoy uses the reserved identity). Explicit dependency
+HTTPRoutes attach `proof-gateway/proof`, hostname `<service>.proof.invalid`. App policies must explicitly permit validation and Cilium reserved `ingress` identity
+on each frontend port, **not** all pods in the Gateway namespace (Envoy uses the reserved
+identity). The platform does not globally grant Gateway ingress to every app port. Explicit dependency
 Cilium/Kubernetes policies must grant source egress **and** destination ingress.
 All other ingress/egress defaults denied; CoreDNS TCP/UDP53 is the only baseline
 app egress. Clusterwide `egressDeny` for world, host, remote-node and API server wins

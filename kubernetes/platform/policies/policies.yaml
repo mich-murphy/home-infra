@@ -26,12 +26,6 @@ spec:
         protocol: UDP
       - port: '53'
         protocol: TCP
-  ingress:
-  - fromEndpoints:
-    - matchLabels:
-        k8s:io.kubernetes.pod.namespace: proof-validation
-  - fromEntities:
-    - ingress
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -44,3 +38,33 @@ spec:
   - toEndpoints:
     - matchLabels:
         io.cilium.k8s.namespace.labels.app.kubernetes.io/part-of: talos-proof
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: storage-controller-boundary
+  namespace: local-path-storage
+spec:
+  endpointSelector: {}
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+  egress:
+  - toEntities:
+    - kube-apiserver
+    toPorts:
+    - ports:
+      - port: '6443'
+        protocol: TCP
+      - port: '443'
+        protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: '53'
+        protocol: UDP
+      - port: '53'
+        protocol: TCP

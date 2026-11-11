@@ -180,3 +180,27 @@ spec:
   - backendRefs:
     - name: fixture
       port: 8080
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: fixture-http
+  namespace: proof-network-test
+spec:
+  endpointSelector:
+    matchLabels:
+      app: fixture
+  ingress:
+  - fromEntities:
+    - ingress
+    toPorts:
+    - ports:
+      - port: '8080'
+        protocol: TCP
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: proof-validation
+    toPorts:
+    - ports:
+      - port: '8080'
+        protocol: TCP

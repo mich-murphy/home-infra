@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: local-path-storage
   labels:
-    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/part-of: talos-proof-infrastructure
     pod-security.kubernetes.io/enforce: privileged
 ---
 apiVersion: v1

@@ -47,8 +47,9 @@ Only independently labelled proof pod endpoints may receive explicit dependency
 permissions. App workers must grant both source egress and destination ingress.
 Do not add CIDR/world/host exceptions for convenience.
 
-Validation namespace may reach proof endpoints. Gateway traffic arrives at backends
-as Cilium's reserved `ingress` identity, which is explicitly allowed; a namespace
+Validation namespace has source egress to proof endpoints; destination app policies
+must explicitly permit validation on intended ports. Gateway traffic arrives at backends
+as Cilium's reserved `ingress` identity, which app policies must allow on frontend ports; a namespace
 selector on `proof-gateway` alone would be incorrect for this datapath. GatewayClass
 uses Cilium NodePort parameters, never LoadBalancer or L2 announcement. HTTP and TLS
 listeners accept routes only from labelled proof namespaces under `*.proof.invalid`.
@@ -61,7 +62,9 @@ These policies are not protection against privileged/host-network app pods, clus
 administrators or a compromised node. Enforce restricted PSA in app namespaces,
 disable automatic SA tokens, and never place apps in privileged infrastructure
 namespaces. Local-path infrastructure needs Kubernetes API and hostPath helper access;
-it is a trusted exception outside proof-app selection, not a production integration.
+it is a trusted exception outside proof-app selection (`part-of: talos-proof-infrastructure`),
+with a separate default-deny policy allowing only API TCP443/6443 and CoreDNS TCP/UDP53,
+not a production integration.
 
 ## Capacity budget and staged execution
 

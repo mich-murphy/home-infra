@@ -68,3 +68,23 @@ Rendered Cilium images:
 Checkpoint update: parent reduced initial proposed guest RAM to2560MiB; VM creation
 and `/var/mnt/proof` confirmation are still pending. All live gates above remain open.
 TLS helper now also verifies exact context API server before modifying secrets.
+
+## Live-phase preflight corrections (before installation)
+
+- Corrected actual bug: infrastructure namespace had app label, selecting the hard
+  API deny. It now uses `talos-proof-infrastructure` and a separate default-deny
+  Cilium policy allowing only API TCP443/6443 and CoreDNS TCP/UDP53. App hard deny
+  remains unchanged; no blanket exemptions are given to app namespaces.
+- Removed clusterwide Gateway/validation ingress grants. Destination app policies
+  now own allowed frontend ports; fixture grants only8080. This prevents broad
+  reserved-ingress identity permission from bypassing narrower app port intent.
+- ShellCheck remote `$1` expansion now has a narrowly scoped SC2016 explanation.
+- Re-rendered platform17 and fixtures8 resources; strict kubeconform1.36.0 with
+  checksum-locked exact upstream CRD schemas:25 valid,0 invalid/errors/skipped.
+  ShellCheck and `git diff --check` passed for worker-owned changes.
+- Cilium1.20.4 ServiceConfig schema does not expose nodePort fields:
+  https://github.com/cilium/cilium/blob/v1.20.4/pkg/k8s/apis/cilium.io/v2alpha1/gatewayclassconfig_types.go
+  Generated NodePorts must be mapped by the provision worker into proof-only QEMU
+  forwards; no Service port-forward substitute or unsupported CRD fields.
+- Initial live API/Talos attempts reset; read-only `qm status120` reported stopped.
+  No install was attempted while node was unavailable. Parent notified for repair.

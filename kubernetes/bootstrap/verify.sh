@@ -16,6 +16,7 @@ trap cleanup EXIT
 for d in fixture denied-client; do "${K[@]}" -n proof-network-test rollout status "deploy/$d" --timeout=180s; done
 "${K[@]}" -n proof-validation rollout status deploy/client --timeout=180s
 nonce="synthetic-proof-$(date -u +%Y%m%dT%H%M%SZ)"
+# shellcheck disable=SC2016 # $1 expands inside the remote pod shell, not locally.
 "${K[@]}" -n proof-network-test exec deploy/fixture -- sh -c 'printf "%s\n" "$1" > /data/www/index.html; sync' sh "$nonce"
 fetch() { "${K[@]}" -n proof-validation exec deploy/client -- wget -q -T 5 -O - http://fixture.proof-network-test.svc.cluster.local:8080/; }
 [[ $(fetch) == "$nonce" ]]; echo 'PASS DNS + explicitly allowed cross-namespace HTTP + volume write/read'
