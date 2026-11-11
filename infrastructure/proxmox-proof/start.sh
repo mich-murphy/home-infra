@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
-# QEMU -S means CPUs stay paused until isolation is installed, including after host reboot.
+# Requires reviewed files/units installed and an approved root0600 identity receipt.
+# The oneshot unit supervises even wrapper death; it never enables boot startup.
 set -euo pipefail
-HERE=$(cd "$(dirname "$0")" && pwd)
-[[ $(qm config 120 | grep '^name:') == 'name: talos-proof' ]]
-qm start 120
-if ! bash "$HERE/isolation.sh"; then qm stop 120; exit 1; fi
-qm resume 120
-
-nohup python3 -u "$HERE/resource-guard.py" >>"$HERE/resource-guard.jsonl" 2>&1 </dev/null &
-echo $! >"$HERE/resource-guard.pid"
+[[ $EUID == 0 ]] || { echo 'Run on Proxmox as root' >&2; exit 1; }
+systemctl start talos-proof-start.service
+systemctl is-active --quiet talos-proof-guard.service
+printf '%s\n' 'VM120 startup completed with supervised guard acknowledgement.'

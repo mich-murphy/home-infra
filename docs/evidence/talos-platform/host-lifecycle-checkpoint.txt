@@ -1,0 +1,36 @@
+LOCAL CHECKPOINT / LIVE LEASE INCOMPLETE 2026-11-11T13:01Z
+30 offline tests passed; shellcheck/syntax passed before deployment.
+Installed new proof-only units; legacy guard retired AFTER proof VM stop.
+Known pending Gateway args validated/enrolled; no production settings changed.
+2026-11-11T12:59:19Z
+EXISTING
+08c65bda66e9e5b929136b8008a6909ae5bf4d3ad8f9c6c300f7c7a3b41b2f28  /etc/pve/qemu-server/101.conf
+2d8e0ccc81fb167953b37a295e643a536b0dae4169ed9c34b51303a8755474af  /etc/pve/qemu-server/102.conf
+   2176 Fri Oct  9 15:47:30 2026 kvm
+   2657 Fri Oct  9 15:48:31 2026 kvm
+PROOF
+pid: 3960434
+qmpstatus: running
+status: running
+cgroup_inode=51375
+3962384 python3 -u /root/.local/state/home-infra/talos-proof/resource-guard.py
+RESOURCE
+MemAvailable:    2535972 kB
+SwapTotal:       3911844 kB
+SwapFree:        3911820 kB
+some avg10=0.00 avg60=0.00 avg300=0.00 total=12464847
+full avg10=0.00 avg60=0.00 avg300=0.00 total=12447038
+   52431 28311734 TALOS_PROOF_120  all  --  *      *       0.0.0.0/0            0.0.0.0/0            cgroup qemu.slice/120.scope
+OUTAGE_BEGIN 2026-11-11T13:00:56Z
+Legacy guard retired after VM stop
+POST_STOP {"monotonic": 2880815.841664604, "available_mib": 4546, "swap_used_kib": 24, "swap_io_pages": 9, "psi_totals": {"some": 12464938, "full": 12447130}}
+MEMORY_SELECTED 2560 (3072 admission unavailable)
+Enrolled approved VM120 configuration and original swap baseline; no service activation
+Verified afterward: VM120 STOPPED; start unit failed; guard unit inactive.
+Start failure invoked exact-incarnation STOP confirmed; no VM left unmonitored.
+3072 rejected by fresh post-stop admission (4546MiB available <4992MiB).
+Selected RAM remains2560. Cold-start attempts consumed:1 of max3.
+Guard SIGKILL/watchdog/recovery NOT RUN. Need resumed lease to diagnose failing command.
+Existing VM101/102 config hashes and PID/start times unchanged after attempt.
+Latest local run() diagnostic improvement not yet copied to host.
+No host reboot, app activation, private network probes or other guest mutation.

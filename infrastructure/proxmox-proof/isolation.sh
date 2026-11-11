@@ -2,6 +2,9 @@
 # Run on Proxmox AFTER qm start 120 (QEMU -S pauses CPUs); scope must exist for cgroup match.
 # Only dedicated VM120's userspace-network sockets are affected.
 set -euo pipefail
+# iptables -w alone only serializes individual commands, not the replacement.
+exec 9>/root/.local/state/home-infra/talos-proof/isolation.lock
+flock -n 9 || { echo 'Proof isolation replacement already in progress' >&2; exit 1; }
 [[ -d /sys/fs/cgroup/qemu.slice/120.scope ]]
 for tool in iptables ip6tables; do
   "$tool" -w -I OUTPUT 1 -m cgroup --path qemu.slice/120.scope -j DROP

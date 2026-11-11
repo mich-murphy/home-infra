@@ -1,0 +1,18 @@
+[Unit]
+Description=Serialized paused startup of enrolled Talos proof VM120
+After=pve-cluster.service
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+WorkingDirectory=/root/.local/state/home-infra/talos-proof
+ExecStart=/usr/bin/python3 /root/.local/state/home-infra/talos-proof/host_lifecycle.py start
+ExecStopPost=/usr/bin/python3 /root/.local/state/home-infra/talos-proof/host_lifecycle.py start-cleanup
+TimeoutStartSec=180s
+TimeoutStopSec=25s
+KillMode=control-group
+Restart=no
+StandardOutput=journal
+StandardError=journal
+# No [Install]: operator-started proof only; never enable at boot.
