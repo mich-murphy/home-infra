@@ -85,6 +85,12 @@ capacity result, not grounds to silently resize existing VMs.
 
 See `kubernetes/bootstrap/README.md` for guarded install, TLS generation, synthetic
 fixtures, staged storage/network verification and Gateway tunnel verification.
+The bootstrap guard rejects kubectl target/TLS/auth overrides, including Cobra
+short/combined forms, before execution; `--` terminates inspection so container
+commands remain intact. Helm pins the checked kubeconfig, context and endpoint
+and refuses inherited transport/auth overrides before bootstrap mutations. See
+`docs/evidence/talos-network-storage/target-override-hardening.md` for offline
+regressions and trust-boundary limitations.
 Offline Helm and Kustomize renders passed. Authorized live checkpoint on Kubernetes
 **1.36.5** now passed storage/policy/Gateway checks; see
 `docs/evidence/talos-network-storage/live-summary.md` for actual observations,

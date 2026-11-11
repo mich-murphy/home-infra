@@ -16,7 +16,9 @@ CACHE=${PROOF_ARTIFACT_CACHE:-${TMPDIR:-/tmp}/talos-proof-artifacts}
 python3 "$ROOT/kubernetes/bootstrap/fetch.py" "$CACHE"
 for file in "$CACHE"/gateway-*-1.6.1.yaml; do "${K[@]}" apply --server-side -f "$file"; done
 python3 "$ROOT/kubernetes/bootstrap/proof_guard.py"
-helm upgrade --install cilium "$CACHE/cilium-1.20.4.tgz" --kube-context "$PROOF_CONTEXT" --namespace kube-system --values "$ROOT/kubernetes/platform/cilium/values.yaml" --wait --timeout 10m
+# The guard rejects inherited HELM_KUBE*, Kubernetes fallback and proxy overrides.
+# Pin the actual Helm transport as well as its preceding identity check.
+helm upgrade --install cilium "$CACHE/cilium-1.20.4.tgz" --kubeconfig "$KUBECONFIG" --kube-context "$PROOF_CONTEXT" --kube-apiserver "$PROOF_API_SERVER" --kube-insecure-skip-tls-verify=false --namespace kube-system --values "$ROOT/kubernetes/platform/cilium/values.yaml" --wait --timeout 10m
 # Operator installs Cilium CRDs asynchronously; Helm readiness is not CRD readiness.
 for crd in ciliumnetworkpolicies.cilium.io ciliumclusterwidenetworkpolicies.cilium.io ciliumgatewayclassconfigs.cilium.io; do
   "${K[@]}" wait --for=create "crd/$crd" --timeout=180s

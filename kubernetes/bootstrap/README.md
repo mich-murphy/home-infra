@@ -12,8 +12,15 @@ cert-manager, Mayastor, monitoring, LB pool, L2 announcements or production DNS.
    Run `./kubernetes/bootstrap/install.sh`. Every kubectl operation is wrapped by `proof_guard.py`: hard-pinned TLS endpoint
    `https://127.0.0.1:64120`, explicit CA trust, sole node `talos-proof`, exact
    coordinator-recorded UID and InternalIP from `proof-target.json`. Caller-supplied
-   server/context agreement alone is insufficient. Helm is checked immediately
-   before invocation. Re-created clusters require coordinator review/update of the
+   server/context agreement alone is insufficient. Kubectl rejects target/TLS/auth
+   overrides (including `-sURL` and combined short flags) before execution, but
+   leaves container commands after `--` untouched. Helm is checked immediately
+   before invocation and explicitly pins kubeconfig, context and API endpoint.
+   Unset all `HELM_KUBE*`, `KUBERNETES_MASTER` and upper/lowercase HTTP/HTTPS/ALL
+   proxy variables, even empty ones; inherited overrides fail closed before any
+   bootstrap mutation. Kubeconfig proxy/TLS-name overrides are forbidden. Kubectl
+   preferences are disabled (`KUBECTL_KUBERC=false`); other values are refused.
+   Use one dedicated kubeconfig file, not a path-list. Re-created clusters require coordinator review/update of the
    public target UID; there is deliberately no auto-discovery/override bypass.
    Installer also checks supported kubelet version, verifies locked downloads, installs CRDs before Cilium,
    and applies Kustomize. Require explicit parent authorization before execution.
@@ -71,7 +78,9 @@ volumes require explicit human-approved cleanup. No restore/VM-reboot/HA result 
 ## Live checkpoint commands
 
 `python3 kubernetes/bootstrap/test_safety.py` tests hard target/TLS/UID/IP and mount
-fallback refusals offline. After guarded `verify.sh`, its fixture/client deployments
+fallback refusals plus mock-CLI target/Helm override regressions offline. See
+`docs/evidence/talos-network-storage/target-override-hardening.md` for scope and
+limitations. After guarded `verify.sh`, its fixture/client deployments
 are scaled0. To rerun correlated policy/Gateway evidence, deliberately scale the three
 fixture deployments1 through `proof_guard.py`, wait for their rollout, then run:
 
