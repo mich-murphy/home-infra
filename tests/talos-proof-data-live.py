@@ -331,6 +331,133 @@ def wopi_browser():
     RESULT['limitations'].append('Faithful single-file WOPI fixture + real CODE/browser edit/save ONLY, not Nextcloud/richdocuments integration, account authorization, multieditor, ODF formatting or production capacity.')
 
 
+def odt():
+    buffer=io.BytesIO()
+    with zipfile.ZipFile(buffer,'w') as archive:
+        archive.writestr('mimetype','application/vnd.oasis.opendocument.text',compress_type=zipfile.ZIP_STORED)
+        archive.writestr('content.xml','<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" office:version="1.2"><office:body><office:text><text:p>Synthetic Nextcloud Office proof</text:p></office:text></office:body></office:document-content>')
+        archive.writestr('META-INF/manifest.xml','<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.2"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>')
+    return buffer.getvalue()
+
+
+def office_browser(fileid,marker,edit=True):
+    module=os.environ.get('TALOS_PROOF_PLAYWRIGHT_MODULE')
+    if not module: raise RuntimeError('private pinned playwright-core required')
+    pem=subprocess.run(['openssl','x509','-in',CA,'-pubkey','-noout'],capture_output=True,check=True).stdout
+    der=subprocess.run(['openssl','pkey','-pubin','-outform','DER'],input=pem,capture_output=True,check=True).stdout
+    payload={'mode':'office','state':str(STATEPATH),'module':module,'spki':base64.b64encode(hashlib.sha256(der).digest()).decode(),
+        'port':int(os.environ.get('TALOS_PROOF_GATEWAY_PORT','18443')),'password':CREDS['NEXTCLOUD_ADMIN_PASSWORD'],
+        'fileid':fileid,'marker':marker,'edit':edit}
+    proc=subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-wopi.mjs'))],input=json.dumps(payload).encode(),capture_output=True,timeout=300)
+    browser=json.loads(proc.stdout)
+    RESULT.setdefault('office_browser_runs',[]).append(browser)
+    check('real Nextcloud login/richdocuments CODE editor '+('edit dispatch' if edit else 'reopen'),proc.returncode==0)
+
+
+def office_prepare():
+    subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/'scripts/talos-proof-data-office.py'),
+        'preload','--state',str(STATEPATH)],check=True,timeout=300)
+
+
+def office_saved(base,path,auth,marker):
+    deadline=time.monotonic()+90
+    while True:
+        data=http(base,path,auth=auth,raw=True)
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            text=''.join(ET.fromstring(archive.read('content.xml')).itertext())
+        if marker in text:return data
+        if time.monotonic()>=deadline:check('real WOPI PutFile must persist browser marker in ODT content',False)
+        time.sleep(1)
+
+
+def nextcloud_office(base,auth):
+    office_prepare()
+    path='/remote.php/dav/files/proof/office-'+uuid.uuid4().hex+'.odt'
+    original=odt();http(base,path,'PUT',original,auth,raw=True)
+    fileid=dav_fileid(base,path,auth);marker='OFFICE-SAVED-'+uuid.uuid4().hex
+    office_browser(fileid,marker)
+    saved=office_saved(base,path,auth,marker)
+    check('Nextcloud actual WOPI save changes ODT bytes',saved!=original)
+    check('Office WOPI save creates genuine Nextcloud version',bool(version_hashes(base,fileid,auth)))
+    restart('nextcloud');restart('collabora');office_prepare()  # renew exact callback IP
+    office_browser(fileid,marker,edit=False)
+    check('saved Office ODT survives close/reopen and web/CODE replacement',office_saved(base,path,auth,marker)==saved)
+    RESULT['office_document']={'fileid':fileid,'sha256':hashlib.sha256(saved).hexdigest()}
+    return path,fileid,marker,saved
+
+
+def dav_records(base,path,auth,depth='1'):
+    xml=http(base,path,'PROPFIND',b'<?xml version="1.0"?><d:propfind xmlns:d="DAV:"><d:allprop/></d:propfind>',auth,
+        {'Depth':depth,'Content-Type':'application/xml'},raw=True)
+    return ET.fromstring(xml).findall('{DAV:}response')
+
+
+def dav_fileid(base,path,auth):
+    values=[node.text for record in dav_records(base,path,auth,'0') for node in record.iter('{http://owncloud.org/ns}fileid')]
+    check('DAV exposes one concrete file ID',len(values)==1 and values[0].isdigit())
+    return int(values[0])
+
+
+def nextcloud_file_record(base,path,data,auth):
+    fileid=dav_fileid(base,path,auth)
+    row=execute('postgres',['psql','-U','nextcloud','-d','nextcloud','-Atc',
+        'SELECT fileid,size FROM oc_filecache WHERE fileid='+str(fileid)]).decode().strip()
+    check('DAV file ID and byte length match exact PostgreSQL file record',row==str(fileid)+'|'+str(len(data)))
+    # The PHP config supplies the real proof datadirectory; do not infer it from
+    # production mount paths or expose any other configuration/secret fields.
+    script='$c=[]; include "/var/www/html/config/config.php"; $p=$CONFIG["datadirectory"]."/proof/files/".$argv[1]; echo hash_file("sha256",$p);'
+    digest=execute('nextcloud',['php','-r',script,path.rsplit('/',1)[1]]).decode().strip()
+    check('actual proof file SHA256 matches DAV bytes and DB association',digest==hashlib.sha256(data).hexdigest())
+    RESULT.setdefault('nextcloud_file_records',[]).append({'fileid':fileid,'bytes':len(data),'sha256':digest})
+    return fileid
+
+
+def version_hashes(base,fileid,auth):
+    root='/remote.php/dav/versions/proof/versions/'+str(fileid)
+    hashes={}
+    for record in dav_records(base,root,auth):
+        href=urllib.parse.urlsplit(record.findtext('{DAV:}href')).path
+        if href.rstrip('/')==root:continue
+        hashes[href]=hashlib.sha256(http(base,href,auth=auth,raw=True)).hexdigest()
+    return hashes
+
+
+def nextcloud_versions(base,path,data,auth):
+    fileid=dav_fileid(base,path,auth)
+    time.sleep(2)  # Nextcloud version identifiers have second resolution
+    http(base,path,'PUT',data+b'new version\n',auth,raw=True)
+    versions=version_hashes(base,fileid,auth)
+    expected=hashlib.sha256(data).hexdigest()
+    candidates=[href for href,digest in versions.items() if digest==expected]
+    check('real DAV version stores original overwritten bytes',bool(candidates))
+    http(base,candidates[0],'MOVE',auth=auth,headers={'Destination':base+'/remote.php/dav/versions/proof/restore/'+str(fileid),'Overwrite':'T'},raw=True)
+    check('DAV MOVE into supported versions RestoreFolder restores original bytes',http(base,path,auth=auth,raw=True)==data)
+    versions=version_hashes(base,fileid,auth)
+    check('version history remains after actual restore',bool(versions))
+    return fileid,versions
+
+
+def nextcloud_rename_trash(base,auth):
+    path='/remote.php/dav/files/proof/rename-'+uuid.uuid4().hex+'.txt'
+    target=path.replace('rename-','renamed-')
+    content=b'Synthetic rename and trash recovery'
+    http(base,path,'PUT',content,auth,raw=True)
+    http(base,path,'MOVE',auth=auth,headers={'Destination':base+target,'Overwrite':'F'},raw=True)
+    check('real DAV rename preserves exact bytes',http(base,target,auth=auth,raw=True)==content)
+    http(base,target,'DELETE',auth=auth,raw=True)
+    try:http(base,target,auth=auth,raw=True)
+    except urllib.error.HTTPError as error:check('deleted DAV object is absent before trash restore',error.code==404)
+    else:check('deleted DAV object must be absent',False)
+    prefix='/remote.php/dav/trashbin/proof/trash/'
+    choices=[urllib.parse.urlsplit(r.findtext('{DAV:}href')).path for r in dav_records(base,prefix,auth)]
+    choices=[href for href in choices if target.rsplit('/',1)[1] in urllib.parse.unquote(href)]
+    check('deleted fixture exists in actual DAV trashbin',len(choices)==1)
+    http(base,choices[0],'MOVE',auth=auth,headers={'Destination':base+'/remote.php/dav/trashbin/proof/restore/'+target.rsplit('/',1)[1]},raw=True)
+    check('DAV trash RestoreFolder recovers renamed fixture bytes',http(base,target,auth=auth,raw=True)==content)
+    nextcloud_file_record(base,target,content,auth)
+    http(base,target,'DELETE',auth=auth,raw=True)
+
+
 def nextcloud_ocs(base,path,auth,method='GET',fields=None):
     payload = urllib.parse.urlencode(fields).encode() if fields is not None else None
     response = http(base,'/ocs/v2.php/'+path+('\u0026' if '?' in path else '?')+'format=json',method,payload,auth,
@@ -397,7 +524,11 @@ def nextcloud():
     with forwarded('nextcloud', 80) as base:
         http(base, path, 'PUT', data, auth=auth, raw=True)
         check('authenticated WebDAV PUT/GET exact bytes', http(base, path, auth=auth, raw=True) == data)
+        fileid,versions = nextcloud_versions(base,path,data,auth)
+        nextcloud_rename_trash(base,auth)
+        nextcloud_file_record(base,path,data,auth)
         users = nextcloud_share(base,path,data,auth)
+        office = nextcloud_office(base,auth) if STAGE=='full' else None
     restart('nextcloud')
     with forwarded('nextcloud', 80) as base:
         check('WebDAV content survives Nextcloud pod replacement', http(base, path, auth=auth, raw=True) == data)
@@ -421,6 +552,11 @@ def nextcloud():
                 with forwarded('nextcloud',80) as base:
                     check('coordinated clean DB AND clean HTML/config/files PVCs restore exact WebDAV bytes',http(base,path,auth=auth,raw=True)==data)
                     nextcloud_share(base,path,data,auth,users)
+                    restored_id=nextcloud_file_record(base,path,data,auth)
+                    check('coordinated clean DB/files restore preserves file ID and actual version hashes',restored_id==fileid and version_hashes(base,restored_id,auth)==versions)
+                    if office:
+                        office_browser(office[1],office[2],edit=False)
+                        check('Nextcloud Office ODT existing file ID and saved content survive paired clean-volume restore',office_saved(base,office[0],auth,office[2])==office[3])
     finally:
         scale('nextcloud',1)
         nextcloud_maintenance(False)
@@ -429,9 +565,9 @@ def nextcloud():
         check('source database reattached with same authenticated WebDAV bytes',http(base,path,auth=auth,raw=True)==data)
         http(base,path,'DELETE',auth=auth,raw=True)
         for user in users: nextcloud_ocs(base,'cloud/users/'+user,auth,'DELETE')
-    RESULT['limitations'].append('Prepared coordinated synthetic DB+HTML/files clean-PVC restore, not historical production data or VM/disk-loss recovery. Version restore, trash recovery/rename, Redis contention and Nextcloud WOPI remain unimplemented acceptance gates. Cron requires its separate explicitly leased stage.')
+    RESULT['limitations'].append('Prepared coordinated synthetic DB+HTML/files clean-PVC restore, not historical production data or VM/disk-loss recovery. Redis contention remains an unimplemented acceptance gate; all prepared version/trash/share/recovery assertions still need actual live execution. Cron requires its separate explicitly leased stage.')
     if STAGE == 'full':
-        RESULT['limitations'].append('Full controller availability does not itself prove interactive Collabora editing.')
+        RESULT['limitations'].append('Prepared real Nextcloud/richdocuments ODT editing/reopen/recovery is not a live pass; no multi-user simultaneous editor or production capacity claim.')
 
 
 def miniflux():
@@ -604,26 +740,60 @@ def embedding(response):
     return values
 
 
+def color_png(rgb):
+    def chunk(kind, data):
+        return struct.pack('!I',len(data))+kind+data+struct.pack('!I',zlib.crc32(kind+data)&0xffffffff)
+    rows=(b'\x00'+bytes(rgb)*224)*224
+    return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('!2I5B',224,224,8,2,0,0,0))+chunk(b'IDAT',zlib.compress(rows))+chunk(b'IEND',b'')
+
+
+def cosine(a,b):
+    return sum(x*y for x,y in zip(a,b))/(math.sqrt(sum(x*x for x in a))*math.sqrt(sum(y*y for y in b)))
+
+
+def model_action(action):
+    proc=subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/'scripts/talos-proof-data-models.py'),
+        action,'--state',str(STATEPATH),'--stage',STAGE],capture_output=True,check=True,timeout=660)
+    if action=='verify-cache': return json.loads(proc.stdout)
+
+
 def immich_ml():
-    # Public model artifacts only; preload verifies hashes before the leased copy.
-    subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/'scripts/talos-proof-data-models.py'),
-                    'preload','--state',str(STATEPATH),'--stage',STAGE],check=True,timeout=660)
-    providers = json.loads(execute('ml',['python','-c','import onnxruntime as o,json; print(json.dumps(o.get_available_providers()))']))
-    check('CPU-only ONNX runtime available; no GPU providers', 'CPUExecutionProvider' in providers and set(providers)<= {'CPUExecutionProvider','AzureExecutionProvider'})
-    vectors = {}
-    # TTL expires the worker between models; never assume both model sessions fit concurrently.
+    model_action('preload')
+    RESULT['model_cache_before']=model_action('verify-cache')
+    providers=json.loads(execute('ml',['python','-c','import onnxruntime as o,json; print(json.dumps(o.get_available_providers()))']))
+    check('CPU-only ONNX runtime available; no GPU providers','CPUExecutionProvider' in providers and set(providers)<={'CPUExecutionProvider','AzureExecutionProvider'})
+    vectors={}; timings=[]
+    RESULT['clip_timings']=timings
+    images={'red':color_png((255,0,0)),'blue':color_png((0,0,255))}
+    RESULT['clip_fixtures']={key:hashlib.sha256(value).hexdigest() for key,value in images.items()}
+    def infer(base,mode,key):
+        fields={'entries':json.dumps({'clip':{mode:{'modelName':'ViT-B-32__openai'}}})}
+        if mode=='textual': fields['text']='an entirely '+key+' image'
+        body,headers=multipart(fields,[('image',key+'.png','image/png',images[key])] if mode=='visual' else [])
+        started=time.monotonic()
+        value=embedding(http(base,'/predict','POST',body,headers=headers))
+        timings.append({'mode':mode,'fixture':key,'seconds':time.monotonic()-started})
+        return value
     for mode in ('visual','textual'):
-        fields = {'entries':json.dumps({'clip':{mode:{'modelName':'ViT-B-32__openai'}}})}
-        if mode == 'textual': fields['text']='a red and green image'
-        body, headers = multipart(fields,[('image','proof.png','image/png',png())] if mode=='visual' else [])
         with forwarded('ml',3003) as base:
-            vectors[mode] = embedding(http(base,'/predict','POST',body,headers=headers))
-        check('real CPU ONNX CLIP '+mode+' inference returns512 finite nonzero values')
-        memory_snapshot('ml','after '+mode+' inference')
-        if mode == 'visual': time.sleep(15)  # declared10s TTL +2s poll, not a CI watcher
-    RESULT['clip_inference'] = {'model':'ViT-B-32__openai','dimensions':512,
-        'providers':providers,'vectors_sha256':hashlib.sha256(json.dumps(vectors,sort_keys=True).encode()).hexdigest()}
-    RESULT['limitations'].append('Standalone real image/text CPU inference ONLY; no Immich indexing/search integration, ranking quality, face/OCR/GPU or production capacity claim.')
+            vectors[mode]={key:infer(base,mode,key) for key in ('red','blue')}
+            warm=infer(base,mode,'red')
+        check('real CPU '+mode+' warm inference matches cold-model vector',max(abs(x-y) for x,y in zip(warm,vectors[mode]['red']))<1e-5)
+        memory_snapshot('ml','cold and warm '+mode+' inference')
+        if mode=='visual': time.sleep(15)  # declared10s model TTL +2s poll
+    scores={color:{text:cosine(vectors['visual'][color],vectors['textual'][text]) for text in ('red','blue')} for color in ('red','blue')}
+    RESULT['clip_scores']=scores
+    for color,negative in (('red','blue'),('blue','red')):
+        check('CLIP '+color+' image ranks matching color text above negative '+negative,scores[color][color]>scores[color][negative])
+    RESULT['clip_inference']={'model':'ViT-B-32__openai','dimensions':512,'providers':providers,
+        'vectors_sha256':hashlib.sha256(json.dumps(vectors,sort_keys=True).encode()).hexdigest(),
+        'timing_scope':'First request per mode is cold-model load, NOT cold filesystem/host cache; subsequent requests warm.'}
+    restart('ml')  # same PVC, no second preload: prove model cache survives replacement
+    RESULT['model_cache_after_replacement']=model_action('verify-cache')
+    with forwarded('ml',3003) as base: repeated=infer(base,'visual','red')
+    check('model-cache survives pod replacement with same real inference',max(abs(x-y) for x,y in zip(repeated,vectors['visual']['red']))<1e-5)
+    memory_snapshot('ml','after cache-persistent pod replacement/inference')
+    RESULT['limitations'].append('Standalone CPU inference with synthetic color positives/negatives only; NOT Immich indexing/search integration or general semantic quality. Timing is model-cold/warm, not dropped-cache cold. No production capacity/GPU claim.')
 
 
 def immich_search(asset,headers):

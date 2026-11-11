@@ -1,0 +1,47 @@
+{
+  "status": "failed-no-WOPI-save-proof",
+  "utc": "2026-11-11T15:29:06.224975+00:00",
+  "scope": "exclusive nextcloud/wopi only; no Nextcloud/PG/Redis/ML activation",
+  "budget_mib": {
+    "collabora": 640,
+    "fixture": 64,
+    "reserve": 192
+  },
+  "admitted_available_mib": 1133,
+  "outcome": [
+    "Both components Ready with zero restarts.",
+    "Public verified TLS discovery offers editable txt action.",
+    "Corrected browser reached real CODE rendered canvas and WSS; keyboard/save dispatch not a functional PASS.",
+    "Unique marker not demonstrated in PutFile-saved bytes.",
+    "Negative token/lock command timed out; no live negative PASS.",
+    "No host denial/reopen PASS."
+  ],
+  "failures": [
+    "First host-page form POST failure.",
+    "Second browser input-click timeout.",
+    "Third attempt browser syntax regression, recorded as JSONDecodeError.",
+    "Fourth input-dispatch success but no independently proved saved marker.",
+    "Initial in-container CODE cgroup reads unavailable: image has no shell.",
+    "Negative exec timed out20s and interrupted diagnostic cleanup sequence; immediate separate guarded deactivation succeeded."
+  ],
+  "resource": {
+    "collabora_peak_bytes": 671088640,
+    "collabora_current_bytes": 511934464,
+    "collabora_memory_events_max": 10,
+    "collabora_oom": 0,
+    "collabora_oom_kill": 0,
+    "fixture_peak_bytes": 50954240,
+    "notes": "Talos kernel cgroupfs reads before deletion; not full-concurrency headroom. Prior fixture in-process cgroup observation differs and is retained."
+  },
+  "cleanup": {
+    "selected_deployments_replicas": 0,
+    "pod_deletion_confirmed": true,
+    "global_labelled_pod_count": 0,
+    "lease_window": "released; parent should revoke receipt"
+  },
+  "safety": [
+    "No limits/reserve lowered or raised live.",
+    "No SYS_ADMIN/privileged/global policy, DNS, cache drop, host tuning or source Docker mutation.",
+    "No VM restart or guard bypass."
+  ]
+}

@@ -636,3 +636,68 @@ real saved bytes; they do NOT launch CODE. Two intermediate offline fixture-mock
 failures after adding stricter admission were corrected, not runtime failures.
 No new live functional/recovery/editing/inference PASS is recorded. Existing
 CouchDB/Miniflux/Pocket-ID/Wallabag runtime failure history and evidence are intact.
+
+
+## WOPI live failure checkpoint and additional offline preparation
+
+An explicit parent lease authorized **only CODE + WOPI fixture**, not Nextcloud,
+PG, Redis or ML. Fresh minimum availability1133MiB passed704+192 admission. Both
+components became Ready with0 restarts. Real public verified-TLS discovery offered
+editable txt; the corrected pinned browser reached rendered CODE canvas and real
+WSS. **Editing/save FAILED:** input dispatch did not independently demonstrate
+PutFile bytes containing the unique marker. No full Nextcloud Office claim follows.
+
+All four attempts and diagnostic gaps are preserved in `wopi-live-attempt-*.json`
+and `wopi-live-checkpoint.json`: host-page form error, click timeout, an intervening
+browser syntax regression, then dispatch without saved-marker proof. A negative
+exec timed out; it is NOT a negative-auth/lock PASS. Host rejection/reopen remain
+untested. Fixture callback event/content details were not retained on the failed
+path before emptyDir deletion: that is an explicit evidence gap, not an absence
+of callbacks claim. Subsequent code must preserve fixture evidence even on failure.
+
+CODE has no shell. Instead of weakening the image/capabilities, exact container
+cgroupfs files were read via authenticated Talos under
+`/sys/fs/cgroup/kubepods/burstable/pod<UID>/<container-id>/`. CODE peaked at its full
+671088640-byte640MiB limit, latest511934464bytes, memory.events max10, oom0 and
+ oom_kill0. These are NOT safe peak-headroom figures. Fixture latest kernel peak
+50954240bytes; earlier in-container observations are retained separately. No
+limit raise, SYS_ADMIN/privileged container, global policy or host/cache tuning
+was used. After a diagnostic timeout interrupted its cleanup sequence, an
+immediate separate guarded cleanup successfully scaled only the leased controllers
+to0, waited pod deletion and independently found **global labelled pod count0**.
+The live window is released; no receipt authority is assumed beyond that window.
+
+Before the lease arrived, additional **offline-only, unexecuted** code was prepared:
+
+- ML: locally rehashed all nine existing pinned artifacts; added red/blue image–text
+  positive-vs-negative cosine checks, model-cold/warm timing and repeated-vector
+  tolerance, persistent-cache hash verification and inference after pod replacement
+  with **no re-preload**.1024+192=1216MiB still requires fresh conservative admission;
+  this code is not a live inference/score/cache result. No blind resource change.
+- `scripts/talos-proof-data-memory.py` verifies the existing exact stage receipt
+  and refreshes **only** actual kubelet/Talos memory observations and timestamp,
+  preserving group/stage/controllers/expiry/identity. It never grants a lease.
+- Office: public richdocuments12.0.2 package14642847bytes downloaded privately and
+  verified SHA256 `5deacee4fa1bb8eb7068e86c6dadbdaf0e44f8c79df0298a2254f562e3ed949b`.
+  A full-stage-only guarded preload validates archive paths/type and NC35 metadata,
+  enables the app and supported internal/public/callback URL options, scopes
+  `wopi_allowlist` to the actual current CODE pod IP and never disables HTTPS
+  certificate verification. Packaged CachedRequestService/RemoteOptionsService
+  already permit app-scoped local-address discovery; no global SSRF exception.
+  Existing exact80/9980 policies suffice; CODE aliasgroup3 is exactly
+  `http://nextcloud:80`. No full-stage activation or app preload occurred.
+- Actual Office browser scaffolding uses Nextcloud login and the packaged supported
+  `richdocuments/index?fileId=...` route, a generated valid ODT, marker-in-content.xml
+  save checks, close/reopen/web+CODE replacement, actual versions and paired clean
+  volume recovery. It is not a functional PASS and inherits unresolved browser
+  input/save behavior from this failed component window.
+- Nextcloud DAV scaffolding now uses exact35.0.2 files_versions/files_trashbin Sabre
+  RestoreFolder APIs: overwrite→enumerate real versions→MOVE original version into
+  restore; rename→delete→DAV trash restore; compare DAV file ID/size to PG filecache
+  and actual configured datadirectory file SHA256; require version hashes/file IDs
+  and share ACLs after coordinated DB+HTML/files recovery. All remain live untested.
+
+Immich album/share/metadata/video and coordinated `/data` recovery code is **not
+finished** in this checkpoint. Existing own-worker/full-stage vector search code
+remains capacity-blocked and unrun. No source-only feature-complete assertion is
+made. User/tenant tests use synthetic local accounts, not production/cloud accounts.

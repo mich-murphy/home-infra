@@ -30,6 +30,8 @@ spec:
           value: https://nextcloud.proof.invalid:443
         - name: aliasgroup2
           value: http://wopi-fixture.proof-nextcloud.svc.cluster.local:8082
+        - name: aliasgroup3
+          value: http://nextcloud:80
         - name: dictionaries
           value: en_US
         - name: extra_params

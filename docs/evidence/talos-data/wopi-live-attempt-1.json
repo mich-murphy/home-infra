@@ -1,0 +1,135 @@
+{
+  "group": "nextcloud",
+  "stage": "wopi",
+  "checks": [
+    "TLS Gateway route selected: collabora.proof.invalid",
+    "real CODE discovery offers editable txt action",
+    "discovered CODE editor retains exact public HTTPS origin"
+  ],
+  "limitations": [
+    "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate."
+  ],
+  "wopi_browser": {
+    "status": "failed",
+    "checks": [],
+    "failed_stage": "discovered editor form POST",
+    "failure_type": "Error"
+  },
+  "status": "failed",
+  "failure_type": "RuntimeError",
+  "failed_stage": "GET collabora.proof.invalid/hosting/discovery",
+  "memory_observation_gaps": [
+    {
+      "app": "collabora",
+      "reason": "suite final observation",
+      "error": "RuntimeError"
+    }
+  ],
+  "memory_observations": [
+    {
+      "app": "wopi-fixture",
+      "reason": "suite final observation",
+      "time": 1794410431.8079581,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 63975424
+        },
+        "memory.peak": {
+          "bytes": 63975424
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 42180608,
+          "file": 19816448,
+          "kernel": 1720320,
+          "kernel_stack": 49152,
+          "pagetables": 614400,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 12316672,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 33554432,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 37220352,
+          "active_anon": 4943872,
+          "inactive_file": 18436096,
+          "active_file": 1384448,
+          "unevictable": 0,
+          "slab_reclaimable": 736560,
+          "slab_unreclaimable": 236632,
+          "slab": 973192,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 0,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 527,
+          "pgsteal": 418,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 527,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 418,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 5477,
+          "pgmajfault": 35,
+          "pgrefill": 0,
+          "pgactivate": 29,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 19,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "3b000667-9a39-4c6a-8508-fc33da09ecc2",
+          "containers": [
+            {
+              "name": "wopi-fixture",
+              "image": "sha256:52479c9b30bd5870f5e61ac383075b9e22a0eadff80ecc690f7de7c9d952b1c7",
+              "imageID": "ghcr.io/immich-app/immich-machine-learning@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2",
+              "containerID": "containerd://bea129b3885d962b01e2ed4da91c15354e5f937b8a41054178738d200e81672b",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
