@@ -9,6 +9,9 @@ import os
 from pathlib import Path
 import re
 import socket
+import subprocess
+import sys
+import time
 import tempfile
 import threading
 import unittest
@@ -152,6 +155,91 @@ class ProtocolTests(unittest.TestCase):
             self.assertEqual(request(server, fixture.PATHS[2], headers={"Range": "bytes=-7"})[2], MEDIA[-7:])
             self.assertEqual(server.snapshot()["media_unique_bytes"], len(MEDIA))
             self.assertEqual(server.snapshot()["media_body_bytes"], len(MEDIA) + 7)
+
+    def test_delayed_postwrite_commit_blocks_snapshot_and_publication(self):
+        # Force the precise CI interleaving: duplicate body has reached client,
+        # but the seven-byte handler counter commit has NOT happened yet.
+        entered, release = threading.Event(), threading.Event()
+        original = fixture.Handler.commit_media
+        def delayed(handler, start, end, length):
+            entered.set()
+            if not release.wait(3):
+                raise AssertionError('test did not release delayed counter commit')
+            original(handler, start, end, length)
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);evidence=root/'latest.json';nonce=root/'latest.json.request'
+            with self.origin(snapshot_request_file=nonce) as server:
+                request(server,fixture.PATHS[2])
+                nonce.write_text('a'*32);server.publish(evidence)
+                self.assertEqual(json.loads(evidence.read_text())['media_body_bytes'],len(MEDIA))
+                with patch.object(fixture.Handler,'commit_media',delayed):
+                    try:
+                        self.assertEqual(request(server,fixture.PATHS[2],headers={'Range':'bytes=-7'})[2],MEDIA[-7:])
+                        self.assertTrue(entered.wait(3))
+                        # Deliberately inspect raw state to reproduce old failure.
+                        self.assertEqual(server.media_bytes,len(MEDIA))
+                        nonce.write_text('b'*32)
+                        with self.assertRaises(TimeoutError):server.snapshot(timeout=.02)
+                        with self.assertRaises(TimeoutError):server.publish(evidence,timeout=.02)
+                        stale=json.loads(evidence.read_text())
+                        self.assertEqual(stale['snapshot_token'],'a'*32)
+                        self.assertEqual(stale['media_body_bytes'],len(MEDIA))
+                    finally:
+                        release.set()
+                    server.publish(evidence)
+                    after=json.loads(evidence.read_text())
+                    self.assertTrue(after['settled'])
+                    self.assertEqual(after['snapshot_token'],'b'*32)
+                    self.assertEqual(after['media_body_bytes'],len(MEDIA)+7)
+                    self.assertEqual(after['media_unique_bytes'],len(MEDIA))
+
+    def test_provider_reader_requires_fresh_persisted_nonce_and_phase(self):
+        # Exercise the ACTUAL sidecar reader locally, no proof runtime calls.
+        sys.path.insert(0,str(SCRIPT.parent))
+        provider=__import__('talos-proof-media-pinchflat-provider')
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);evidence=root/'latest.json';nonce=root/'latest.json.request'
+            phase=root/'phase'
+            with self.origin(phase_file=phase,snapshot_request_file=nonce) as server:
+                request(server,fixture.PATHS[2]);server.publish(evidence)
+                old=json.loads(evidence.read_text())
+                child=subprocess.Popen([sys.executable,'-c',provider.STATS_READER,str(root),'download'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                try:
+                    deadline=time.monotonic()+3
+                    while not nonce.exists():
+                        if time.monotonic()>=deadline:raise AssertionError('snapshot nonce was not requested')
+                        threading.Event().wait(.01)  # bounded request-file synchronization
+                    token=nonce.read_text()
+                    self.assertNotEqual(token,old['snapshot_token'])
+                    # Still only the old publication: not enough for this reader.
+                    self.assertIsNone(child.poll())
+                    self.assertEqual(json.loads(evidence.read_text()),old)
+                    server.publish(evidence)
+                    out,err=child.communicate(timeout=3)
+                    self.assertEqual(child.returncode,0,err.decode())
+                    current=json.loads(out)
+                    self.assertEqual(current,json.loads(evidence.read_text()))
+                    self.assertEqual(current['snapshot_token'],token)
+                    self.assertEqual(current['phase'],'download')
+                    self.assertEqual(current['phases']['metadata']['media_body_bytes'],len(MEDIA))
+                    self.assertEqual(current['phases']['download']['media_body_bytes'],0)
+                    self.assertEqual(evidence.stat().st_mode & 0o777,0o600)
+                    self.assertEqual(nonce.stat().st_mode & 0o777,0o600)
+                finally:
+                    if child.poll() is None:child.kill()
+                    child.communicate(timeout=3)
+
+    def test_failed_body_write_reserves_budget_but_never_counts_delivery(self):
+        with self.origin(max_bytes=len(MEDIA)) as server:
+            with patch.object(fixture.Handler,'write_body',side_effect=BrokenPipeError):
+                with self.assertRaises(http.client.IncompleteRead):
+                    request(server,fixture.PATHS[2])
+            snapshot=server.snapshot()
+            self.assertEqual(snapshot['reserved_body_bytes'],len(MEDIA))
+            self.assertEqual(snapshot['sent_body_bytes'],0)
+            self.assertEqual(snapshot['media_body_bytes'],0)
+            self.assertEqual(snapshot['media_unique_bytes'],0)
+            self.assertEqual(request(server,fixture.PATHS[2])[0],429)
 
     def test_invalid_ranges_fail_closed(self):
         with self.origin() as server:

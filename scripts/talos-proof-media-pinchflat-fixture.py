@@ -6,6 +6,7 @@ Input must be a retained immutable twelve-second synthetic H264/AAC MP4, never a
 application download. See docs/evidence/talos-media/pinchflat-fixture-preparation.md.
 """
 import argparse
+from contextlib import contextmanager
 import hashlib
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
@@ -13,6 +14,7 @@ import os
 import re
 import stat
 import time
+import threading
 import uuid
 
 MAX_MEDIA = 2 * 1024 * 1024
@@ -72,7 +74,7 @@ class Fixture(HTTPServer):
     request_queue_size = 4
     allow_reuse_address = False
 
-    def __init__(self, media, port=0, max_requests=MAX_REQUESTS, max_bytes=MAX_BYTES, phase_file=None):
+    def __init__(self, media, port=0, max_requests=MAX_REQUESTS, max_bytes=MAX_BYTES, phase_file=None, snapshot_request_file=None):
         if not 12 <= len(media) <= MAX_MEDIA or media[4:8] != b"ftyp":
             raise ValueError("invalid MP4 snapshot")
         if not 1 <= max_requests <= MAX_REQUESTS or not 1 <= max_bytes <= MAX_BYTES:
@@ -80,13 +82,16 @@ class Fixture(HTTPServer):
         super().__init__(("127.0.0.1", port), Handler)
         self.timeout = 0.25
         self.instance_id = uuid.uuid4().hex
+        self.request_lock = threading.RLock()
+        self.snapshot_request_file = snapshot_request_file
+        self.snapshot_token = None
         self.phase_file = phase_file
         self.phase = 'metadata'
         self.phases = {name: {'media_body_bytes':0, 'coverage':bytearray(len(media)), 'routes':dict.fromkeys(PATHS,0)} for name in ('metadata','download')}
         self.origin = f"http://127.0.0.1:{self.server_port}"
         self.media = bytes(media)
         self.max_requests, self.max_bytes = max_requests, max_bytes
-        self.requests = self.sent_bytes = self.media_bytes = 0
+        self.requests = self.reserved_bytes = self.sent_bytes = self.media_bytes = 0
         self.coverage = bytearray(len(media))
         self.routes = {path: 0 for path in PATHS}
         self.rejected = 0
@@ -137,19 +142,51 @@ class Fixture(HTTPServer):
                 raise ValueError('fixture phase cannot move backwards')
             self.phase = value
 
-    def publish(self, path):
-        self.update_phase()
-        temporary = str(path) + '.' + uuid.uuid4().hex
-        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        with os.fdopen(fd, 'w') as handle:
-            json.dump(self.snapshot(), handle)
-        os.replace(temporary, path)  # ephemeral counter view only, NEVER an archive
+    def process_request(self, request, client_address):
+        # Client Content-Length completion precedes the handler's post-write
+        # commit. Hold this barrier through the ENTIRE synchronous handler.
+        with self.request_lock:
+            super().process_request(request, client_address)
 
-    def snapshot(self):
-        return {"instance_id":self.instance_id, "phase":self.phase,
+    @contextmanager
+    def settled(self, timeout=3):
+        if not self.request_lock.acquire(timeout=timeout):
+            raise TimeoutError('fixture request/counter completion timed out')
+        try:
+            yield
+        finally:
+            self.request_lock.release()
+
+    def publish(self, path, timeout=3):
+        with self.settled(timeout):
+            self.update_phase()
+            # A fresh private request nonce acknowledges a publication AFTER
+            # handler completion; an old, atomically valid JSON is insufficient.
+            if self.snapshot_request_file:
+                try:
+                    with open(self.snapshot_request_file, encoding='ascii') as handle:
+                        token = handle.read(33)
+                except FileNotFoundError:
+                    token = None
+                if token is not None and not re.fullmatch('[a-f0-9]{32}', token):
+                    raise ValueError('invalid fixture snapshot request token')
+                self.snapshot_token = token
+            temporary = str(path) + '.' + uuid.uuid4().hex
+            fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, 'w') as handle:
+                json.dump(self.snapshot(), handle)
+            os.replace(temporary, path)  # ephemeral counter view only, NEVER an archive
+
+    def snapshot(self, timeout=3):
+        with self.settled(timeout):
+            return self._snapshot()
+
+    def _snapshot(self):
+        # Only under the request-completion lock; no delivery counted in advance.
+        return {"settled":True, "snapshot_token":self.snapshot_token, "instance_id":self.instance_id, "phase":self.phase,
                 "phases":{name:{'media_body_bytes':v['media_body_bytes'], 'media_unique_bytes':sum(v['coverage']), 'routes':dict(v['routes'])} for name,v in self.phases.items()}, "origin": self.origin, "requests": self.requests,
                 "rejected": self.rejected, "routes": dict(self.routes),
-                "sent_body_bytes": self.sent_bytes, "media_body_bytes": self.media_bytes,
+                "reserved_body_bytes": self.reserved_bytes, "sent_body_bytes": self.sent_bytes, "media_body_bytes": self.media_bytes,
                 "media_unique_bytes": sum(self.coverage), "media_size": len(self.media),
                 "media_sha256": hashlib.sha256(self.media).hexdigest(),
                 "limits": {"requests": self.max_requests, "body_bytes": self.max_bytes},
@@ -214,24 +251,34 @@ class Handler(BaseHTTPRequestHandler):
             code = 206
             headers["Content-Range"] = f"bytes {start}-{end}/{len(data)}"
         length = end - start + 1
-        if body and fixture.sent_bytes + length > fixture.max_bytes:
+        if body and fixture.reserved_bytes + length > fixture.max_bytes:
             fixture.rejected += 1
             self.reply(429)
             return
         self.reply(code, length, headers)
         if body:
             # Reserve the budget before writing; aborted writes are conservative.
-            fixture.sent_bytes += length
+            fixture.reserved_bytes += length
             try:
-                self.wfile.write(data[start:end + 1])
-                self.wfile.flush()
+                self.write_body(data[start:end + 1])
             except (BrokenPipeError, ConnectionResetError, TimeoutError):
                 return
+            fixture.sent_bytes += length
             if self.path == PATHS[2]:
-                fixture.phases[fixture.phase]["media_body_bytes"] += length
-                fixture.phases[fixture.phase]["coverage"][start:end+1] = b"\x01" * length
-                fixture.media_bytes += length
-                fixture.coverage[start:end + 1] = b"\x01" * length
+                self.commit_media(start, end, length)
+
+    def write_body(self, data):
+        self.wfile.write(data)
+        self.wfile.flush()
+
+    def commit_media(self, start, end, length):
+        # Called only AFTER successful write + flush. This means server-side
+        # write completion, NOT proof of client consumption or durable app output.
+        fixture = self.server
+        fixture.phases[fixture.phase]["media_body_bytes"] += length
+        fixture.phases[fixture.phase]["coverage"][start:end+1] = b"\x01" * length
+        fixture.media_bytes += length
+        fixture.coverage[start:end + 1] = b"\x01" * length
 
     def reply(self, code, length=0, headers=None):
         self.send_response(code)
@@ -256,7 +303,8 @@ def main():
     args = parser.parse_args()
     if not 1 <= args.seconds <= 900 or not 0 <= args.port <= 65535:
         parser.error("seconds must be 1..900 and port 0..65535")
-    with Fixture(load_media(args.mp4), args.port, phase_file=args.phase_file) as fixture:
+    with Fixture(load_media(args.mp4), args.port, phase_file=args.phase_file,
+                 snapshot_request_file=(args.evidence_file + '.request') if args.evidence_file else None) as fixture:
         print(json.dumps({"feed": fixture.origin + PATHS[0],
                           "scope": "offline candidate only"}), flush=True)
         deadline = time.monotonic() + args.seconds

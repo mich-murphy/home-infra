@@ -157,8 +157,47 @@ def stock(state):
     return result
 
 
-def stats():
-    return json.loads(remote('rss-fixture','test -f /proof-stats/latest.json; head -c 65536 /proof-stats/latest.json'))
+# Executed only inside the fixture sidecar under a future grant. File-only
+# nonce/ack barrier: never treat a stale atomic latest.json as a settled result.
+STATS_READER = r'''import json, os, sys, time, uuid
+from pathlib import Path
+root = Path(sys.argv[1])
+phase = sys.argv[2]
+if phase not in ('', 'download'):
+    raise RuntimeError('invalid snapshot phase')
+def replace_private(path, data):
+    temporary = path.with_name(path.name + '.' + uuid.uuid4().hex)
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, 'w') as handle:
+        handle.write(data)
+    os.replace(temporary, path)
+if phase:
+    replace_private(root / 'phase', phase)
+token = uuid.uuid4().hex
+replace_private(root / 'latest.json.request', token)
+deadline = time.monotonic() + 5
+while True:
+    try:
+        with open(root / 'latest.json') as handle:
+            value = json.load(handle)
+    except FileNotFoundError:
+        value = {}
+    if value.get('snapshot_token') == token and value.get('settled') is True:
+        if phase and value.get('phase') != phase:
+            raise RuntimeError('acknowledged snapshot has wrong phase')
+        print(json.dumps(value))
+        break
+    if time.monotonic() >= deadline:
+        raise RuntimeError('fresh settled fixture publication timed out')
+    time.sleep(.02)  # Bounded nonce-ack polling, not a guessed delivery delay.
+'''
+
+
+def stats(phase=''):
+    value = json.loads(remote('rss-fixture','exec python3 -c "$1" "$2" "$3"',STATS_READER,'/proof-stats',phase))
+    expect(value.get('settled') is True and re.fullmatch('[a-f0-9]{32}',value.get('snapshot_token','')),
+           'fixture snapshot is not freshly acknowledged and settled')
+    return value
 
 
 def coverage(before, after):
@@ -293,12 +332,7 @@ def exercise(state, ca):
         time.sleep(2)
     queues(state)
     expect(observed and len(observed['items'])==1 and not observed['items'][0]['media_downloaded_at'], 'slow indexing failed or native download ran before isolated phase')
-    remote('rss-fixture','printf download > /proof-stats/phase')
-    baseline = None
-    for _ in range(10):
-        baseline=stats()
-        if baseline['phase']=='download':break
-        time.sleep(.2)
+    baseline = stats(phase='download')
     expect(baseline['phase']=='download' and baseline['phases']['download']['media_body_bytes']==0, 'no true fresh native-download phase baseline')
     save(state,'download-baseline',baseline)
     queues(state,'media_fetching')

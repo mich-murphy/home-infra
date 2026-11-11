@@ -47,6 +47,16 @@ class Provider(unittest.TestCase):
                  patch.object(p,'kube',return_value=json.dumps({'spec':{'replicas':1}}).encode()) as kube:
                 with self.assertRaisesRegex(RuntimeError,'stopped'):p.prepare(state,fixture)
                 self.assertEqual(kube.call_args.args,('get','deployment','pinchflat','-o','json'))
+    def test_stats_reader_rejects_stale_snapshot_at_bounded_deadline(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp).resolve()
+            (root/'latest.json').write_text(json.dumps({'settled':True,'snapshot_token':'a'*32}))
+            with patch.object(sys,'argv',['reader',str(root),'']),patch.object(p.time,'monotonic',side_effect=[0,6]),patch.object(p.time,'sleep') as delay:
+                with self.assertRaisesRegex(RuntimeError,'fresh settled fixture publication timed out'):
+                    exec(p.STATS_READER,{'__name__':'__main__'})
+                delay.assert_not_called()
+            self.assertEqual(json.loads((root/'latest.json').read_text())['snapshot_token'],'a'*32)
+
     def test_only_download_phase_full_coverage_and_same_instance_can_pass(self):
         before={'instance_id':'one','media_sha256':p.INPUT_SHA,'phases':{'download':{'media_body_bytes':0,'media_unique_bytes':0}}}
         after={'instance_id':'one','media_sha256':p.INPUT_SHA,'media_size':120214,
