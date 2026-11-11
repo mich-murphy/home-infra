@@ -7,6 +7,7 @@ an idle proof cluster. Never scales/stops workloads or changes network policy.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import secrets
 import shlex
@@ -24,6 +25,27 @@ COLLECTOR = STATE + '/collect-isolation.py'
 PERL = ('$s=IO::Socket::INET->new(PeerAddr=>$ARGV[0],PeerPort=>$ARGV[1],'
         'Proto=>"tcp",Timeout=>1) or exit 2; '
         'print $s $ARGV[2]; $s->recv($r,128); exit 0;')
+
+
+PHASE = 'preflight'
+
+
+def private_failure(error, directory=None):
+    directory = directory or Path.home() / '.local/state/home-infra/talos-proof'
+    path = directory / 'node-isolation-last-error.json'
+    temp = directory / ('node-isolation-error.tmp-' + str(os.getpid()))
+    value = {'phase': PHASE, 'reason': 'node_isolation_' + PHASE + '_failed',
+             'error_type': type(error).__name__, 'monotonic': time.monotonic(),
+             'detail': str(error) if isinstance(error, RuntimeError) else type(error).__name__}
+    fd = os.open(temp, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            json.dump(value, stream)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp, path)
+    finally:
+        temp.unlink(missing_ok=True)
 
 
 def require(ok, message):
@@ -97,7 +119,7 @@ def node_command(kubeconfig, pod, port, token):
 def launch_command(run_id, port):
     control = 10000 + (int(run_id[:8], 16) % 3000) * 3
     args = ['--approve', UUID, '--mode', 'node', '--address', '10.77.1.100', '--protocol', 'TCP',
-            '--port', str(port), '--source-port', str(control + 2), '--control-before', str(control),
+            '--port', str(port), '--control-before', str(control),
             '--control-after', str(control + 1), '--run-id', run_id]
     output = STATE + '/isolation-' + run_id + '.json'
     stop = shlex.join(['/usr/bin/python3', '-B', COLLECTOR, '--cleanup', *args])
@@ -131,17 +153,22 @@ def phase(work):
 
 
 def execute(kubeconfig):
+    global PHASE
+    PHASE = 'cluster_validation'
     identity = validate_cluster(kubeconfig)
     run_id = secrets.token_hex(16)
     port = 25000 + secrets.randbelow(4000)
     work = STATE + '/isolation-' + run_id
+    PHASE = 'collector_launch'
     ssh(launch_command(run_id, port))  # independent systemd unit, not SSH child
     print(json.dumps({'phase': 'collector-started'}), flush=True)
     deadline = time.monotonic() + 40
     attempted = False
     while time.monotonic() < deadline:
+        PHASE = 'collector_wait'
         current = phase(work)
         if current == 'armed' and not attempted:
+            PHASE = 'node_precheck'
             require(validate_cluster(kubeconfig) == identity, 'Cilium incarnation changed')
             command = node_command(kubeconfig, identity[0], port, run_id)
             marker(work, 'producer', json.dumps({'node_uid': NODE_UID, 'cilium_pod': identity[0],
@@ -149,11 +176,13 @@ def execute(kubeconfig):
                    'command_sha256': hashlib.sha256(shlex.join(command).encode()).hexdigest()}))
             marker(work, 'claim', 'one')  # never retry this command or the connect
             attempted = True
+            PHASE = 'node_attempt'
             result = run(command, timeout=5, codes=(0, 2, 124, 137))
             marker(work, 'done', 'denied' if result.returncode == 2 else 'failed')
             require(result.returncode == 2, 'node command did not report bounded connect denial')
             print(json.dumps({'phase': 'node-attempt-finished'}), flush=True)
         if current == 'complete':
+            PHASE = 'completion_validation'
             require(attempted and validate_cluster(kubeconfig) == identity, 'post-attempt identity/app state changed')
             status = ssh(['systemctl', 'show', 'talos-proof-isolation-' + run_id + '.service',
                           '--property=ActiveState,Result,ExecMainStatus']).stdout
@@ -178,7 +207,14 @@ def main():
         execute(args.kubeconfig)
         return 0
     except Exception as exc:
-        print(json.dumps({'status': 'failed-no-acceptance', 'error_type': type(exc).__name__}))
+        recorded = False
+        try:
+            private_failure(exc)
+            recorded = True
+        except OSError:
+            pass
+        print(json.dumps({'status': 'failed-no-acceptance', 'reason': 'node_isolation_' + PHASE + '_failed',
+                          'private_diagnostic_written': recorded}))
         return 1
 
 

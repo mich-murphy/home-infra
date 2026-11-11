@@ -187,7 +187,7 @@ class CollectorTests(unittest.TestCase):
         clean, packets = c.remove_counter(instrumented(a, 1), a)
         self.assertEqual(packets, 1)
         self.assertEqual(v.snapshot(clean, 4)[0], v.snapshot(policy(), 4)[0])
-        for text in (instrumented(a).replace('--sport 41000', '--sport 41001'),
+        for text in (instrumented(a).replace('--dport 18081', '--dport 18082'),
                      instrumented(a).replace('--comment', '-j DROP --comment'),
                      instrumented(a).replace('-s 127.0.0.1/32', '-s 10.0.0.1/32')):
             with self.assertRaises(RuntimeError): c.remove_counter(text, a)
@@ -213,70 +213,62 @@ class CollectorTests(unittest.TestCase):
         with patch.object(c.subprocess, 'run', return_value=Mock(returncode=2)):
             with self.assertRaises(RuntimeError): c.cleanup(a)
 
-    def test_worker_failure_pidfd_cleanup(self):
-        worker = Mock()
-        worker.poll.return_value = None
-        with patch.object(c.subprocess, 'Popen', return_value=worker), \
-             patch.object(c.os, 'pidfd_open', return_value=9, create=True), \
-             patch.object(c.signal, 'pidfd_send_signal', create=True) as send, \
-             patch.object(c.os, 'close') as close:
-            owned = c.OwnedChild(['offline-worker'])
-            owned.stop()
-            send.assert_called_once_with(9, c.signal.SIGKILL)
-            worker.wait.assert_called_once_with(timeout=2)
-            close.assert_called_once_with(9)
-
-    def test_exited_worker_never_signalled(self):
-        worker = Mock(); worker.poll.return_value = 1
-        with patch.object(c.subprocess, 'Popen', return_value=worker), \
-             patch.object(c.os, 'pidfd_open', return_value=9, create=True), \
-             patch.object(c.signal, 'pidfd_send_signal', create=True) as send, \
-             patch.object(c.os, 'close'):
-            c.OwnedChild(['offline-worker']).stop()
-            send.assert_not_called()
-
-    def test_pidfd_failure_kills_only_unreleased_popen_child(self):
-        worker = Mock()
-        with patch.object(c.subprocess, 'Popen', return_value=worker), \
-             patch.object(c.os, 'pidfd_open', side_effect=OSError(), create=True):
-            with self.assertRaises(OSError): c.OwnedChild(['offline-worker'])
-            worker.kill.assert_called_once()
-            worker.wait.assert_called_once_with(timeout=2)
-            worker.stdin.write.assert_not_called()
-
-    def test_supervisor_death_child_kernel_contract(self):
-        # Offline ordering check: PDEATHSIG and wall alarm precede GO, cgroup
-        # movement and socket creation. Integration kill test requires Linux.
+    def test_child_execution_removed_pending_budget_proof(self):
         import inspect
-        source = inspect.getsource(c.arm_child)
-        child_source = inspect.getsource(c.child)
-        self.assertIn('libc.prctl(1, signal.SIGKILL', source)
-        self.assertIn('signal.alarm(4)', source)
-        self.assertIn('os.getppid() == parent', source)
-        self.assertLess(child_source.index('arm_child()'), child_source.index('sys.stdin.buffer.read'))
-        self.assertLess(child_source.index('cgroup.procs'), child_source.index('with socket.socket'))
+        source = inspect.getsource(c)
+        self.assertNotIn('subprocess.Popen', source)
+        self.assertNotIn('cgroup.procs', source)
+        self.assertNotIn('RLIMIT_AS', source)
+        with self.assertRaises(RuntimeError):
+            c.collect(SimpleNamespace(mode='child', protocol='TCP', address='127.0.0.1'))
 
-    @unittest.skipUnless(sys.platform == 'linux', 'Linux kernel PDEATHSIG integration')
-    def test_supervisor_crash_reaps_escaped_child_without_network(self):
-        # Child inherits stdout: communicate cannot finish until PDEATHSIG closes
-        # that descriptor. No sockets, cgroups, host access or signals to guests.
-        script = r"""
-import importlib.util, os, signal, sys
-spec = importlib.util.spec_from_file_location('c', sys.argv[1])
-c = importlib.util.module_from_spec(spec); spec.loader.exec_module(c)
-r,w = os.pipe()
-pid = os.fork()
-if pid == 0:
-    os.close(r); c.arm_child(); os.write(w,b'A'); os.close(w)
-    signal.pause()
-else:
-    os.close(w); assert os.read(r,1) == b'A'; os.close(r)
-    os._exit(7)
-"""
-        result = subprocess.run([sys.executable, '-B', '-c', script,
-                                 str(ROOT / 'infrastructure/proxmox-proof/collect-isolation.py')],
-                                capture_output=True, timeout=3)
-        self.assertEqual(result.returncode, 7)
+    def test_cleanup_does_not_resolve_disappeared_scope(self):
+        a = collector_args()
+        def absent_scope(*_args, **_kwargs):
+            raise FileNotFoundError('VM scope removed by guard')
+        with patch.object(Path, 'stat', side_effect=absent_scope), \
+             patch.object(c.subprocess, 'run', side_effect=[Mock(returncode=0), Mock(returncode=1)]) as run, \
+             patch.object(c, 'command') as command:
+            c.cleanup(a)
+            for call in run.call_args_list:
+                self.assertNotIn('--path', call.args[0])
+                self.assertNotIn('cgroup', call.args[0])
+            self.assertNotIn('--path', command.call_args.args[0])
+            self.assertIn('-D', command.call_args.args[0])
+
+    def test_private_diagnostics_and_public_fixed_reason(self):
+        import contextlib
+        import io
+        args = collector_args(); args.cleanup = False
+        with tempfile.TemporaryDirectory() as directory, patch.object(c, 'DIAGNOSTIC_STATE', Path(directory)):
+            c.private_diagnostic(args, 'counter_after', RuntimeError('no predicate instrumentation counter delta'))
+            path = next(Path(directory).glob('*.diagnostic.json'))
+            record = json.loads(path.read_text())
+            self.assertEqual(record['phase'], 'counter_after')
+            self.assertEqual(record['reason'], 'isolation_counter_after_failed')
+            self.assertIn('no predicate', record['detail'])
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            c.private_diagnostic(args, 'node_window', subprocess.TimeoutExpired(['PRIVATE-TOKEN'], 2))
+            self.assertNotIn('PRIVATE-TOKEN', path.read_text())
+        def fail(_args):
+            c.PHASE = 'counter_after'
+            raise RuntimeError('PRIVATE diagnostic detail')
+        stream = io.StringIO()
+        with patch.object(c, 'arguments', return_value=args), patch.object(c, 'mark', return_value=True), \
+             patch.object(c, 'collect', side_effect=fail), patch.object(c, 'private_diagnostic') as diagnostic, \
+             contextlib.redirect_stderr(stream):
+            self.assertEqual(c.main(), 1)
+            self.assertEqual(diagnostic.call_args.args[1], 'counter_after')
+        self.assertIn('isolation_counter_after_failed', stream.getvalue())
+        self.assertNotIn('PRIVATE diagnostic', stream.getvalue())
+
+    def test_diagnostic_failure_cannot_prevent_stoppost_cleanup(self):
+        args = collector_args(); args.cleanup = True
+        with patch.object(c, 'arguments', return_value=args), \
+             patch.object(c, 'private_diagnostic', side_effect=OSError('disk full')), \
+             patch.object(c, 'cleanup') as cleanup:
+            self.assertEqual(c.main(), 0)
+            cleanup.assert_called_once_with(args)
 
     def test_resource_and_swap_abort(self):
         h = Mock(); h.same_process.return_value = True
@@ -308,6 +300,10 @@ class NodeIntegrationTests(unittest.TestCase):
     def test_actual_node_predicate_narrows_endpoint_without_inventing_sport(self):
         args = collector_args(); args.mode = 'node'; args.address = '10.77.1.100'
         self.assertNotIn('--sport', c.rule(args))
+        self.assertNotIn('--path', c.rule(args))
+        self.assertNotIn('cgroup', c.rule(args))
+        alternate = policy().replace('COMMIT', '[0:0] -A OUTPUT -j TALOS_PROOF_120\nCOMMIT')
+        with self.assertRaises(ValueError): v.snapshot(alternate, 4)
         self.assertNotIn('-j', c.rule(args))
         self.assertEqual(c.reject_index(args), 3)
         spec = c.rule(args)[1:]
@@ -394,7 +390,7 @@ class NodeIntegrationTests(unittest.TestCase):
         import shlex
         stop = ['/usr/bin/python3', '-B', str(ROOT / 'infrastructure/proxmox-proof/collect-isolation.py'),
                 '--cleanup', '--approve', c.APPROVAL, '--mode', 'node', '--address', args.address,
-                '--protocol', 'TCP', '--port', str(args.port), '--source-port', str(args.source_port),
+                '--protocol', 'TCP', '--port', str(args.port),
                 '--control-before', '20001', '--control-after', '20002', '--run-id', args.run_id]
         props = ('Transient=yes\nActiveState=active\nMemoryMax=33554432\nRuntimeMaxUSec=40s\n'
                  'TimeoutStopUSec=10s\nCPUQuotaPerSecUSec=100ms\nTasksMax=8\nLimitNOFILE=32\n'
@@ -423,6 +419,14 @@ class NodeIntegrationTests(unittest.TestCase):
         with patch.object(c.socket, 'socket', return_value=client) as socket:
             with self.assertRaises(OSError): c.local_control(args, listener)
             socket.assert_called_once()  # never fallback/retry
+
+    def test_mac_private_error_diagnostic_does_not_store_command_tokens(self):
+        with tempfile.TemporaryDirectory() as directory:
+            n.private_failure(subprocess.TimeoutExpired(['PRIVATE-TOKEN'], 2), Path(directory))
+            path = Path(directory) / 'node-isolation-last-error.json'
+            self.assertNotIn('PRIVATE-TOKEN', path.read_text())
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            self.assertIn('reason', json.loads(path.read_text()))
 
     def test_persistent_endpoint_reservation_refuses_reuse(self):
         args = collector_args(); args.control_before = 20001; args.control_after = 20002

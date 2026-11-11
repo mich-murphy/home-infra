@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """APPROVAL-GATED host collector. No action without --approve and a bounded unit.
 
-Owned-child or externally coordinated node tests. Run only through the
+Actual-node TCP only; child/UDP/IPv6 execution is disabled pending budget proof. Run only through the
 reviewed transient unit shown in docs. No existing service is controlled.
 """
 import argparse
@@ -12,9 +12,7 @@ import ipaddress
 import json
 import os
 from pathlib import Path
-import resource
 import select
-import signal
 import socket
 import subprocess
 import sys
@@ -24,8 +22,50 @@ HERE = Path(__file__).resolve().parent
 SPEC = importlib.util.spec_from_file_location('verify_isolation', HERE / 'verify-isolation.py')
 v = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(v)
-SCOPE = Path('/sys/fs/cgroup/qemu.slice/120.scope')
 APPROVAL = '555e8603-58e6-4fb6-a190-378a3f11c257'
+DIAGNOSTIC_STATE = Path('/root/.local/state/home-infra/talos-proof')
+
+
+PHASE = 'preflight'
+PHASES = {'preflight', 'unit_validation', 'identity_admission', 'listener_bind',
+          'positive_before', 'counter_insert', 'counter_before', 'node_window',
+          'counter_after', 'positive_after', 'cleanup', 'policy_final', 'receipt_write', 'complete'}
+
+
+def private_diagnostic(args, phase, error=None):
+    require(phase in PHASES, 'invalid diagnostic phase')
+    suffix = 'cleanup' if args.cleanup else 'collector'
+    path = DIAGNOSTIC_STATE / ('isolation-' + args.run_id + '.' + suffix + '.diagnostic.json')
+    value = {'phase': phase, 'status': 'error' if error else ('complete' if phase == 'complete' else 'in-progress'),
+             'reason': 'isolation_' + phase + '_failed' if error else 'none',
+             'monotonic': time.monotonic()}
+    if error:
+        value['error_type'] = type(error).__name__
+        # Never preserve subprocess argv/output/configs. Our RuntimeError checks
+        # have fixed diagnostic messages; other errors retain type/errno only.
+        value['detail'] = str(error) if isinstance(error, RuntimeError) else type(error).__name__
+        if isinstance(error, OSError):
+            value['errno'] = error.errno
+    temp = path.with_name(path.name + '.tmp-' + str(os.getpid()))
+    fd = os.open(temp, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            json.dump(value, stream)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp, path)
+    finally:
+        temp.unlink(missing_ok=True)
+
+
+def mark(args, phase):
+    global PHASE
+    PHASE = phase
+    try:
+        private_diagnostic(args, phase)
+        return True
+    except OSError:
+        return False  # diagnostics must NEVER prevent exact-rule cleanup
 
 
 def require(ok, message):
@@ -35,21 +75,19 @@ def require(ok, message):
 
 def command(args, timeout=2):
     result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
-    require(result.returncode == 0, 'bounded host command failed')
+    require(result.returncode == 0, 'bounded host command failed: ' + ' '.join(args[:2]) + ' exit=' + str(result.returncode))
     require(len(result.stdout) <= 262144, 'host output too large')
     return result.stdout
 
 
 def rule(args):
-    # Node mode intentionally omits unknown slirp source port. Endpoint+cgroup
-    # attribution only; owned-child mode retains the exact source-port predicate.
-    spec = [v.CHAIN, '-s', args.address, '-d', args.address,
-            '-p', args.protocol.lower(), '-m', 'cgroup', '--path', v.SCOPE,
-            '-m', args.protocol.lower()]
-    if getattr(args, 'mode', 'child') == 'child':
-        spec += ['--sport', str(getattr(args, 'scoped_port', args.source_port))]
-    return spec + ['--dport', str(args.port), '-m', 'comment',
-                   '--comment', 'proof-isolation-' + args.run_id]
+    # Attribution is inherited from the verified SOLE scoped OUTPUT entry.
+    # Never re-resolve the cgroup path here: StopPost must still delete this
+    # exact rule after guard stop removes the scope. No inner cgroup match.
+    return [v.CHAIN, '-s', args.address, '-d', args.address,
+            '-p', args.protocol.lower(), '-m', args.protocol.lower(),
+            '--dport', str(args.port), '-m', 'comment',
+            '--comment', 'proof-isolation-' + args.run_id]
 
 
 def reject_index(args):
@@ -111,135 +149,6 @@ def cleanup(args):
     require(check.returncode == 1, 'instrumentation remains')
 
 
-class OwnedChild:
-    """Pidfd pins only a Popen child. No numeric-PID or cgroup-wide signals."""
-    def __init__(self, argv):
-        self.process = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=subprocess.DEVNULL)
-        try:
-            self.fd = os.pidfd_open(self.process.pid)
-        except BaseException:
-            # Child has not received GO and cannot join/create sockets. Popen
-            # retains its unreaped child identity until wait; fail closed.
-            self.process.kill()
-            self.process.wait(timeout=2)
-            raise
-
-    def stop(self):
-        try:
-            if self.process.poll() is None:
-                try:
-                    signal.pidfd_send_signal(self.fd, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass  # exited after poll; still reap our own child below
-            self.process.wait(timeout=2)
-        finally:
-            os.close(self.fd)
-
-
-def arm_child():
-    """Linux death/deadline protection, also unit-testable without networking."""
-    # Kernel parent-death kill plus wall alarm remain effective after this child
-    # leaves the transient unit's cgroup. No dependence on the dead supervisor's
-    # pidfd surviving. Check parent again after prctl to close the death race.
-    import ctypes
-    parent = os.getppid()
-    libc = ctypes.CDLL(None, use_errno=True)
-    require(libc.prctl(1, signal.SIGKILL, 0, 0, 0) == 0, 'PDEATHSIG unavailable')
-    require(parent != 1 and os.getppid() == parent, 'parent disappeared')
-    signal.alarm(4)
-
-
-def child(args):
-    """Fresh child waits for parent's pidfd acquisition before cgroup join."""
-    arm_child()
-    require(sys.stdin.buffer.read(1) == b'G', 'no child release')
-    resource.setrlimit(resource.RLIMIT_AS, (32 * 1024 * 1024,) * 2)
-    resource.setrlimit(resource.RLIMIT_CPU, (1, 1))
-    resource.setrlimit(resource.RLIMIT_NOFILE, (24, 24))
-    if args.scoped:
-        unit = 'talos-proof-isolation-' + args.run_id + '.service'
-        require(unit in Path('/proc/self/cgroup').read_text(), 'child not in test unit')
-        import host_lifecycle as h
-        h.approved_config()
-        incarnation = h.load_private('incarnation.json')
-        digest = hashlib.sha256(json.dumps(incarnation, sort_keys=True).encode()).hexdigest()
-        require(digest == args.incarnation_hash and h.same_process(incarnation), 'child identity changed')
-        # Pin the approved directory inode; a recreated scope cannot receive this
-        # child even if lifecycle changes between the membership checks.
-        directory = os.open(SCOPE, os.O_DIRECTORY | os.O_NOFOLLOW)
-        try:
-            require(os.fstat(directory).st_ino == incarnation['cgroup_inode'], 'child scope replaced')
-            membership = os.open('cgroup.procs', os.O_WRONLY | os.O_NOFOLLOW, dir_fd=directory)
-            try:
-                os.write(membership, str(os.getpid()).encode())
-            finally:
-                os.close(membership)
-            require(h.same_process(incarnation), 'incarnation changed at child join')
-        finally:
-            os.close(directory)
-    family = socket.AF_INET if ipaddress.ip_address(args.address).version == 4 else socket.AF_INET6
-    kind = socket.SOCK_STREAM if args.protocol == 'TCP' else socket.SOCK_DGRAM
-    # Socket is created AFTER membership, so xt_cgroup sees the intended scope.
-    with socket.socket(family, kind) as client:
-        client.settimeout(1)
-        client.bind((args.address, args.bind_port or args.source_port))
-        port = client.getsockname()[1]
-        result = 'denied'
-        try:
-            client.connect((args.address, args.port))
-            client.sendall(args.run_id.encode())
-            if client.recv(128) == args.run_id.encode():
-                result = 'response'
-        except (OSError, TimeoutError):
-            pass
-        print(json.dumps({'sport': port, 'result': result}), flush=True)
-
-
-def run_client(args, scoped, listener):
-    argv = [sys.executable, '-B', str(Path(__file__).resolve()), '--child',
-            '--approve', APPROVAL, '--address', args.address, '--port', str(args.port),
-            '--protocol', args.protocol, '--run-id', args.run_id,
-            '--source-port', str(args.scoped_port), '--bind-port', str(args.source_port), '--mode', args.mode,
-            '--control-before', str(args.control_before), '--control-after', str(args.control_after)]
-    if scoped:
-        argv += ['--scoped', '--incarnation-hash', args.incarnation_hash]
-    owned = OwnedChild(argv)
-    received = False
-    acceptances = 0
-    try:
-        owned.process.stdin.write(b'G'); owned.process.stdin.flush()
-        deadline = time.monotonic() + 2
-        while time.monotonic() < deadline:
-            ready, _, _ = select.select([listener, owned.process.stdout], [], [],
-                                        max(0, deadline - time.monotonic()))
-            if listener in ready:
-                acceptances += 1
-                if args.protocol == 'TCP':
-                    connection, _ = listener.accept()
-                    with connection:
-                        connection.settimeout(.25)
-                        payload = connection.recv(128)
-                        received = payload == args.run_id.encode()
-                        if received:
-                            connection.sendall(payload)
-                else:
-                    payload, peer = listener.recvfrom(128)
-                    received = payload == args.run_id.encode()
-                    if received:
-                        listener.sendto(payload, peer)
-            if owned.process.stdout in ready:
-                raw = owned.process.stdout.readline(1024)
-                require(raw and len(raw) < 1024, 'child failed')
-                observation = json.loads(raw)
-                observation['listener_received'] = received
-                observation['acceptances'] = acceptances
-                require(acceptances == (0 if scoped else 1), 'unexpected listener acceptance count')
-                return observation
-        raise RuntimeError('client deadline')
-    finally:
-        owned.stop()
-
 
 def local_control(args, listener):
     """Node-mode positive control: no second Python interpreter or threads.
@@ -284,8 +193,8 @@ def host_checks(h, incarnation, baseline, previous):
 
 def validate_ports(args):
     low, high = map(int, Path('/proc/sys/net/ipv4/ip_local_port_range').read_text().split())
-    ports = (args.control_before, args.control_after, args.scoped_port)
-    require(all(1024 <= p < low for p in ports) and len(set(ports)) == 3,
+    ports = (args.control_before, args.control_after)
+    require(all(1024 <= p < low for p in ports) and len(set(ports)) == 2,
             'control/source ports must be distinct below ephemeral range')
     require(args.port not in ports, 'endpoint conflicts with source port')
 
@@ -348,13 +257,15 @@ def validate_unit(properties, args):
     expected = ['/usr/bin/python3', '-B', str(Path(__file__).resolve()), '--cleanup',
                 '--approve', APPROVAL, '--mode', args.mode, '--address', args.address,
                 '--protocol', args.protocol, '--port', str(args.port),
-                '--source-port', str(args.source_port), '--control-before', str(args.control_before),
+                '--control-before', str(args.control_before),
                 '--control-after', str(args.control_after), '--run-id', args.run_id]
     require(len(commands) == 1 and shlex.split(commands[0]) == expected,
             'StopPost does not match exact run arguments')
 
 
 def collect(args):
+    require(args.mode == 'node' and args.protocol == 'TCP' and args.address == '10.77.1.100',
+            'child/UDP/IPv6 execution disabled pending budget proof')
     require(os.geteuid() == 0, 'root required')
     # Must be enclosed by the separately reviewed systemd unit. This environment
     # marker alone is not authority: verify the actual transient unit properties.
@@ -365,14 +276,15 @@ def collect(args):
                       os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     unit = 'talos-proof-isolation-' + args.run_id + '.service'
+    mark(args, 'unit_validation')
     properties = command(['systemctl', 'show', unit, '--property=Transient,ActiveState,MemoryMax,RuntimeMaxUSec,TimeoutStopUSec,CPUQuotaPerSecUSec,TasksMax,LimitNOFILE,KillMode,ExecStopPost'])
     validate_unit(properties, args)
     require(unit in Path('/proc/self/cgroup').read_text(), 'collector outside bounded unit')
+    mark(args, 'identity_admission')
     import host_lifecycle as h
     h.approved_config()
     incarnation = h.load_private('incarnation.json')
     require(h.same_process(incarnation), 'identity mismatch')
-    args.incarnation_hash = hashlib.sha256(json.dumps(incarnation, sort_keys=True).encode()).hexdigest()
     baseline = h.sample()
     previous = baseline
     started = time.monotonic()
@@ -388,38 +300,41 @@ def collect(args):
     validate_ports(args)
     reserve_endpoint(args, work.parent)
     output = {'kind': 'controlled-host-isolation-capture', 'schema': 1,
-              'origin': 'node-perl' if args.mode == 'node' else 'owned-cgroup-child',
-              'attribution': 'endpoint+cgroup counter, not TRACE or authenticated attestation'
-              if args.mode == 'node' else 'exact-flow adjacent counter, not TRACE or attestation',
+              'origin': 'node-perl',
+              'attribution': 'endpoint counter inheriting sole scoped OUTPUT entry; not TRACE or authenticated attestation',
               'backend': version, 'endpoint': {'address': args.address, 'port': args.port},
-              'claims': [], 'policy_before': before, 'run_id': args.run_id}
+              'claims': [], 'policy_before': before, 'run_id': args.run_id,
+              'test_start_resources': baseline,
+              'historical_enrollment_baseline_note': 'original swap24KiB retained; latest parent report28KiB/IO10 reflects historical4KiB/1page growth, not reset'}
     try:
         previous = host_checks(h, incarnation, baseline, previous)
         fam = socket.AF_INET if family == 4 else socket.AF_INET6
         kind = socket.SOCK_STREAM if args.protocol == 'TCP' else socket.SOCK_DGRAM
+        mark(args, 'listener_bind')
         with socket.socket(fam, kind) as listener:
             if family == 6:
                 listener.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
             listener.bind((args.address, args.port))  # no REUSE*, occupancy fails
             if kind == socket.SOCK_STREAM:
                 listener.listen(1)
+            mark(args, 'positive_before')
             args.source_port = args.control_before
-            output['positive_before'] = local_control(args, listener) if args.mode == 'node' else run_client(args, False, listener)
+            output['positive_before'] = local_control(args, listener)
             require(output['positive_before']['result'] == 'response', 'positive control failed')
             # Unit StopPost owns this exact rule even if supervisor dies here.
+            mark(args, 'counter_insert')
             spec = rule(args)
             command([tool(args), '-w', '1', '-t', 'filter', '-I', spec[0],
                      str(reject_index(args)), *spec[1:]])
             installed = True
+            mark(args, 'counter_before')
             during_before = command([tool(args) + '-save', '-c', '-t', 'filter'])
             normalized, count = remove_counter(during_before, args)
             require(count == 0 and v.snapshot(normalized, family)[0] == v.snapshot(before, family)[0],
                     'pre-attempt instrumentation or policy drift')
-            if args.mode == 'node':
-                output['attempt'], previous = await_node(args, listener, work, h, incarnation, baseline, previous)
-            else:
-                args.source_port = args.scoped_port
-                output['attempt'] = run_client(args, True, listener)
+            mark(args, 'node_window')
+            output['attempt'], previous = await_node(args, listener, work, h, incarnation, baseline, previous)
+            mark(args, 'counter_after')
             during_after = command([tool(args) + '-save', '-c', '-t', 'filter'])
             normalized_after, count = remove_counter(during_after, args)
             require(count > 0, 'no predicate instrumentation counter delta')
@@ -435,70 +350,78 @@ def collect(args):
             output['predicate_packets'] = count
             require(output['attempt']['result'] == 'denied' and
                     not output['attempt']['listener_received'], 'scoped traffic reached listener')
+            mark(args, 'positive_after')
             args.source_port = args.control_after
-            output['positive_after'] = local_control(args, listener) if args.mode == 'node' else run_client(args, False, listener)
+            output['positive_after'] = local_control(args, listener)
             require(output['positive_after']['result'] == 'response', 'post-control failed')
             previous = host_checks(h, incarnation, baseline, previous)
     finally:
         if installed:
+            original_phase = PHASE
+            mark(args, 'cleanup')
             cleanup(args)
+            mark(args, original_phase)
+    mark(args, 'policy_final')
     output['policy_after'] = command([tool(args) + '-save', '-c', '-t', 'filter'])
     require(v.snapshot(before, family)[0] == v.snapshot(output['policy_after'], family)[0],
             'existing filter policy changed')
     require(time.monotonic() - started <= 35, 'collection deadline exceeded')
     output['cleanup_confirmed'] = True
     output['status'] = 'adjacent-counter-capture-pending-human-review'
-    output['remaining_gaps'] = ([] if args.mode == 'node' else ['actual node transport']) + v.GAPS
+    output['remaining_gaps'] = ['owned-child UDP53/IPv6 disabled pending budget proof', *v.GAPS]
     output['memory_peak_bytes'] = command(['systemctl', 'show', unit, '--property=MemoryPeak', '--value']).strip()
+    mark(args, 'receipt_write')
     fd = os.open(args.output, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, 'w') as stream:
         json.dump(output, stream)
         stream.write('\n')
+    mark(args, 'complete')
     (work / 'phase').write_text('complete\n')
 
 
 def arguments():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--approve', required=True, choices=[APPROVAL])
-    p.add_argument('--mode', choices=['child', 'node'], default='child')
-    p.add_argument('--address', required=True, choices=['127.0.0.1', '::1', '10.77.1.100'])
-    p.add_argument('--protocol', choices=['TCP', 'UDP'], default='TCP')
+    p.add_argument('--mode', choices=['node'], default='node')
+    p.add_argument('--address', required=True, choices=['10.77.1.100'])
+    p.add_argument('--protocol', choices=['TCP'], default='TCP')
     p.add_argument('--port', type=int, required=True)
-    p.add_argument('--source-port', type=int, required=True)
     p.add_argument('--control-before', type=int, default=20001)
     p.add_argument('--control-after', type=int, default=20002)
     p.add_argument('--run-id', required=True)
     p.add_argument('--output', default='/root/.local/state/home-infra/talos-proof/isolation-capture.json')
     p.add_argument('--cleanup', action='store_true')
-    p.add_argument('--bind-port', type=int, help=argparse.SUPPRESS)
-    p.add_argument('--child', action='store_true', help=argparse.SUPPRESS)
-    p.add_argument('--scoped', action='store_true', help=argparse.SUPPRESS)
-    p.add_argument('--incarnation-hash', help=argparse.SUPPRESS)
     args = p.parse_args()
     require(len(args.run_id) == 32 and all(c in '0123456789abcdef' for c in args.run_id), 'invalid run id')
-    require(1024 <= args.source_port <= 65535 and args.source_port != args.port, 'invalid source port')
-    require((args.mode == 'node' and args.address == '10.77.1.100' and args.protocol == 'TCP' and
-             20000 <= args.port <= 29999) or
-            (args.mode == 'child' and args.address in ('127.0.0.1', '::1')), 'mode endpoint mismatch')
-    args.scoped_port = args.source_port
-    require(len({args.source_port, args.control_before, args.control_after, args.port}) == 4, 'ports not distinct')
+    require(20000 <= args.port <= 29999, 'node synthetic port outside reviewed range')
+    require(len({args.control_before, args.control_after, args.port}) == 3, 'ports not distinct')
     require(args.port == 53 or 1024 <= args.port <= 65535, 'invalid synthetic port')
     require(not (args.protocol == 'TCP' and args.port == 53), 'TCP53 not in scope')
     return args
 
 
 def main():
+    args = None
     try:
         args = arguments()
         if args.cleanup:
+            mark(args, 'cleanup')
             cleanup(args)
-        elif args.child:
-            child(args)
+            mark(args, 'complete')
         else:
+            require(mark(args, 'preflight'), 'private diagnostic unavailable before admission')
             collect(args)
         return 0
     except Exception as exc:
-        print(json.dumps({'status': 'failed-no-acceptance', 'error_type': type(exc).__name__}), file=sys.stderr)
+        recorded = False
+        if args is not None:
+            try:
+                private_diagnostic(args, PHASE, exc)
+                recorded = True
+            except OSError:
+                pass
+        print(json.dumps({'status': 'failed-no-acceptance', 'reason': 'isolation_' + PHASE + '_failed',
+                          'private_diagnostic_written': recorded}), file=sys.stderr)
         return 1
 
 
