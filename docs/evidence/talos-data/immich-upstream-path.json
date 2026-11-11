@@ -1,0 +1,9 @@
+{
+  "source": "https://raw.githubusercontent.com/immich-app/immich/v3.3.6/docker/docker-compose.yml",
+  "matching_lines": [
+    "      # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file",
+    "      - ${UPLOAD_LOCATION}:/data",
+    "      - ${DB_DATA_LOCATION}:/var/lib/postgresql/data"
+  ],
+  "conclusion": "Fresh proof mounts upload PVC at /data, not obsolete source compose /usr/src/app/upload."
+}

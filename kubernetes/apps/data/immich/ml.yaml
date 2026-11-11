@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ml-data
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: proof-local
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml
+  labels: &id001
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: ml
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ml
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: ml
+        image: ghcr.io/immich-app/immich-machine-learning:v3.3.6@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2
+        ports:
+        - containerPort: 3003
+        env:
+        - name: MACHINE_LEARNING_WORKERS
+          value: '1'
+        - name: MACHINE_LEARNING_MODEL_TTL
+          value: '60'
+        envFrom:
+        - secretRef:
+            name: proof-credentials
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 25m
+            memory: 128Mi
+          limits:
+            cpu: 1000m
+            memory: 384Mi
+        startupProbe:
+          httpGet: &id002
+            path: /ping
+            port: 3003
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 90
+        readinessProbe:
+          httpGet: *id002
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        livenessProbe:
+          httpGet: *id002
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        volumeMounts:
+        - name: data
+          mountPath: /cache
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: ml-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: ml
+spec:
+  selector:
+    app.kubernetes.io/name: ml
+  ports:
+  - name: http
+    port: 3003
+    targetPort: 3003

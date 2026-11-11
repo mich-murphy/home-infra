@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mariadb-data
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: proof-local
+  resources:
+    requests:
+      storage: 4Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+  labels: &id001
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: mariadb
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mariadb
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: mariadb
+        image: mariadb:13.0.2@sha256:f4054da26e3a9dd6c8b5cc97363e544408b15c0fb369d7359c25dc04826eb6e1
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MARIADB_DATABASE
+          value: wallabag
+        - name: MARIADB_USER
+          value: wallabag
+        - name: MARIADB_AUTO_UPGRADE
+          value: '1'
+        envFrom:
+        - secretRef:
+            name: proof-credentials
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - SETUID
+            - SETGID
+            - DAC_OVERRIDE
+            - FOWNER
+            - KILL
+        resources:
+          requests:
+            cpu: 25m
+            memory: 192Mi
+          limits:
+            cpu: 1000m
+            memory: 384Mi
+        startupProbe:
+          exec: &id002
+            command:
+            - healthcheck.sh
+            - --connect
+            - --innodb_initialized
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 90
+        readinessProbe:
+          exec: *id002
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        livenessProbe:
+          exec: *id002
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: mariadb-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: mariadb
+spec:
+  selector:
+    app.kubernetes.io/name: mariadb
+  ports:
+  - name: tcp
+    port: 3306
+    targetPort: 3306

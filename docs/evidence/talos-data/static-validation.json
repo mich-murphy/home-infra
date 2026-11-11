@@ -1,0 +1,12 @@
+{
+  "timestamp_utc": "2026-11-11T12:19:36.876079+00:00",
+  "render_sha256": "0d05df4858125ad107793af9f12aef3f3fd6b86e2d01115d8843ccfbe2b22b87",
+  "offline_unit_tests": 15,
+  "offline_unit_test_result": "passed",
+  "parent_safety_validator": "passed",
+  "live_deployment": "not attempted; no coordinator resource lease/kubeconfig",
+  "live_functional_tests": "NOT RUN",
+  "gateway_tests": "NOT RUN",
+  "resource_capacity": "2560MiB node; large groups may fail conservative guard",
+  "acceptance": "pending parent integration"
+}

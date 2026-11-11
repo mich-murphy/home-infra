@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fixture
+data:
+  feed.xml: <?xml version="1.0"?><rss version="2.0"><channel><title>Proof feed</title><link>http://fixture:8081/</link><description>Synthetic
+    only</description><item><title>Proof article</title><link>http://fixture:8081/article.html</link><guid>proof-article-1</guid><description>Synthetic
+    proof content</description></item></channel></rss>
+  article.html: <!doctype html><html><head><title>Proof article</title></head><body><article><h1>Proof
+    article</h1><p>Synthetic proof content for isolated validation. No production
+    data.</p></article></body></html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fixture
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fixture
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fixture
+        app.kubernetes.io/part-of: talos-proof
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsUser: 33
+        runAsGroup: 33
+        runAsNonRoot: true
+      containers:
+      - name: fixture
+        image: nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2
+        command:
+        - php
+        - -S
+        - 0.0.0.0:8081
+        - -t
+        - /fixture
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 8081
+        readinessProbe:
+          httpGet:
+            path: /feed.xml
+            port: 8081
+        livenessProbe:
+          httpGet:
+            path: /article.html
+            port: 8081
+        volumeMounts:
+        - name: fixture
+          mountPath: /fixture
+          readOnly: true
+      volumes:
+      - name: fixture
+        configMap:
+          name: fixture
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fixture
+spec:
+  selector:
+    app.kubernetes.io/name: fixture
+  ports:
+  - port: 8081
+    targetPort: 8081
