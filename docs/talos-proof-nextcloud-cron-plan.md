@@ -221,3 +221,62 @@ transparent Redis reconnect, logical restore, production capacity or durability.
 Current status remains **OFFLINE PREPARED / EXECUTABLE INTEGRATION BLOCKED** by
 image-source parity, retained-state inspection, Redis config verification,
 serial-helper lease/guard integration, due-job state and restoration safety.
+
+
+## Offline executable payload checkpoint
+
+No live grant or native execution. The integration remains **BLOCKED**, not PASS.
+The previous `tests/talos-proof-data-live.py` nextcloud/cron branch could succeed
+with lastcron alone; that acceptance path is removed. The lifecycle also refuses
+cron activate/run/test before credentials, API calls or mutations. Backend and
+legacy cleanup/deactivate paths are unchanged.
+
+Owned additions:
+
+- `scripts/talos-proof-nextcloud-cron.py`: offline-only private UUID/O_EXCL0600
+  bundle compiler, five serial phase documents,192MiB one-container security
+  envelope, explicit384+64+192+192=832 budget, strict daily due predicate and
+  all-proof-Job-pod barrier (including completed/failed/terminating/unlabelled).
+  No command execution is implemented here; `run` always blocks. Never apply
+  this bundle manually: the documents are not an admitted orchestration path.
+- `scripts/talos-proof-nextcloud-cron.php`: read-only packaged-core hash comparison
+  and shallow PVC-root inventory. This intentionally does NOT execute retained
+  config or claim full inventory/Redis parity. Native fixture/assert/restore
+  functions are drafts behind `MUTATION_INTEGRATION_READY = false`; compiled
+  non-preflight phases cannot run. The source includes null-password creation,
+  genuine session aging, physical row assertions, actual daily due check,
+  exact synthetic cleanup and typed setting snapshot/restore. No fake cron,
+  timestamp/SQL writes or completion-row synthesis. Cgroups are read by PHP
+  itself from the charged container, with explicit unavailable gaps.
+- Generic private forensics now captures raw pod JSON (including lastState),
+  current logs for terminated pods as well as running pods, and previous logs
+  on restart before deletion. Artifact files use UUID/O_EXCL0600. The existing
+  lifecycle may still report a forensic gap and continue cleanup; a future cron
+  supervisor must instead require successful capture before phase deletion.
+
+**Exact critical integration gate:** implement/review a serial supervisor binding
+EVERY operation to exact nextcloud/cron receipt, context/endpoint/node UID and
+lease expiry, independently fresh dual-memory minimum and all-helper barriers.
+Receipt must authorize full sequence and bounded restore window. Implement real
+PVC/Secret/backend UID binding, complete read-only retained inventory, packaged
+Docker/config parity and native authenticated Redis preflight BEFORE install or
+fixture writes. Prove own PVC AND designated PG DB empty before native one-shot
+maintenance:install; otherwise verify installed native status without repair.
+Partial install blocks and is preserved. These are deliberately not implemented
+as guessed passing flags or caller-supplied boolean attestations.
+
+Then implement durable private journal directory creation, off-pod journal export
+and failure recovery (including death between token insert and ID observation),
+fresh-process before observation, actual CronJob-derived native cron invocation
+with documented class filter and end-of-phase cgroups/log capture, serialized
+absence checks, and finally restore even when acceptance assertion fails. Native
+fixture functions alone do not provide these guarantees. The cron phase document
+currently blocks, rather than invoking an unguarded cleanup job. The suspended
+CronJob remains untouched; no schedule, web resources, identities or archives
+changed. A missing local PHP interpreter means syntax/API/runtime validation of
+the draft payload remains outstanding; Python tests are not that evidence.
+
+No actual image source parity, retained state, Redis connectivity, native install,
+native token generation/deletion, cgroup fit or restore success has been observed.
+This checkpoint does not change any Couch/Miniflux/Pocket-ID/Wallabag/media/WOPI
+acceptance boundaries or authorize WOPI, web, ML, heavy or media activation.

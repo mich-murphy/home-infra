@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+"""Offline only: no kubectl, Talos, SSH, image, PHP or other native execution."""
+import importlib.util
+import io
+import json
+import os
+from pathlib import Path
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+from unittest.mock import patch
+import uuid
+
+ROOT = Path(__file__).resolve().parents[1]
+def load(name, path):
+    spec = importlib.util.spec_from_file_location(name, ROOT / path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+cron = load('cron', 'scripts/talos-proof-nextcloud-cron.py')
+life = load('life', 'scripts/talos-proof-data.py')
+
+class NativeCron(unittest.TestCase):
+    def setUp(self):
+        # Any accidental subprocess, including discovery/version commands, fails.
+        self.no_commands = patch.object(subprocess, 'run', side_effect=AssertionError('offline test attempted command'))
+        self.no_commands.start()
+        self.addCleanup(self.no_commands.stop)
+
+    def test_run_unconditionally_blocked_before_external_work(self):
+        with patch.object(sys, 'argv', ['cron', 'run']), self.assertRaisesRegex(RuntimeError, 'live integration blocked'):
+            cron.main()
+
+    def test_lifecycle_old_acceptance_cannot_activate_or_generate_credentials(self):
+        for action in ('activate', 'run', 'test'):
+            with self.subTest(action=action), patch.object(sys, 'argv', ['data', action, '--group', 'nextcloud', '--stage', 'cron', '--state', '/nonexistent']), patch.object(life, 'credentials', side_effect=AssertionError('credential mutation')), patch.object(life, 'kube', side_effect=AssertionError('API access')), self.assertRaisesRegex(RuntimeError, 'BLOCKED'):
+                life.main()
+
+    def test_daily_interval_strict_and_no_reservation_or_future_check(self):
+        now = 200000
+        row = dict(id=1, **{'class':cron.CLASS}, last_run=now-86401, reserved_at=0, last_checked=now)
+        self.assertTrue(cron.due(row, now))
+        for changes in [dict(last_run=now-86400), dict(last_run=now), dict(last_run=-1),
+                        dict(reserved_at=1), dict(last_checked=now+1), dict(last_checked=-1),
+                        dict(id=0), dict(last_run='0'), {'class':'fake'}]:
+            with self.subTest(changes=changes):
+                self.assertFalse(cron.due({**row, **changes}, now))
+
+    def test_every_job_pod_blocks_even_unlabelled_completed_or_terminating(self):
+        for phase in ('Pending', 'Running', 'Succeeded', 'Failed'):
+            for namespace in ('proof-nextcloud', 'proof-validation', 'proof-couchdb'):
+                pod = dict(metadata=dict(namespace=namespace, name='old', deletionTimestamp='now',
+                    ownerReferences=[dict(kind='Job')]), status=dict(phase=phase))
+                with self.subTest(phase=phase, namespace=namespace), self.assertRaises(RuntimeError):
+                    cron.barrier([pod])
+        cron.barrier([dict(metadata=dict(namespace='proof-nextcloud', labels={'app.kubernetes.io/name':n})) for n in ('postgres','redis')])
+        for app in ('nextcloud','collabora','wopi-fixture',None):
+            with self.assertRaises(RuntimeError):
+                cron.barrier([dict(metadata=dict(namespace='proof-nextcloud', labels={'app.kubernetes.io/name':app}))])
+
+    def test_bundle_limits_identity_and_no_admission(self):
+        bundle = cron.compile_bundle()
+        self.assertEqual(bundle['status'], 'OFFLINE_COMPILED_NOT_ADMITTED')
+        self.assertEqual(bundle['budget_mib']['total'], 832)
+        self.assertEqual(sum(v for k,v in bundle['budget_mib'].items() if k != 'total'),832)
+        self.assertEqual(len(bundle['jobs']), 5)
+        for job in bundle['jobs']:
+            self.assertEqual(job['metadata']['namespace'],'proof-nextcloud')
+            self.assertEqual(job['spec']['backoffLimit'], 0)
+            self.assertEqual(job['spec']['activeDeadlineSeconds'],180)
+            pod = job['spec']['template']['spec']
+            self.assertFalse(pod['automountServiceAccountToken'])
+            self.assertEqual(pod['securityContext']['runAsUser'],33)
+            self.assertNotIn('initContainers',pod)
+            self.assertEqual(len(pod['containers']),1)
+            container = pod['containers'][0]
+            self.assertEqual(container['image'],cron.IMAGE)
+            self.assertEqual(container['resources']['limits']['memory'],'192Mi')
+            self.assertNotIn('apache', ' '.join(container['command']).lower())
+        self.assertTrue(bundle['jobs'][0]['spec']['template']['spec']['containers'][0]['volumeMounts'][0]['readOnly'])
+        self.assertGreaterEqual(len(cron.payload_sources()),20)
+
+    def test_artifacts_exclusive_private_uuid_and_no_stdout_payload(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp).resolve() / (str(uuid.uuid4()) + '.json')
+            with patch.object(sys,'argv',['cron','compile','--output',str(target)]), patch('sys.stdout',new_callable=io.StringIO) as stdout:
+                cron.main()
+                self.assertNotIn('native.php', stdout.getvalue())
+                self.assertEqual(stat.S_IMODE(target.stat().st_mode),0o600)
+                with self.assertRaises(FileExistsError): cron.main()
+            alias = Path(temp).resolve() / (str(uuid.uuid4()) + '.json')
+            alias.symlink_to(target)
+            with patch.object(sys,'argv',['cron','compile','--output',str(alias)]), self.assertRaisesRegex(RuntimeError,'symlink'):
+                cron.main()
+
+    def test_native_contract_is_explicitly_unadmitted_and_never_fakes_job_state(self):
+        php = (ROOT / 'scripts/talos-proof-nextcloud-cron.php').read_text()
+        self.assertIn('const MUTATION_INTEGRATION_READY = false;',php)
+        self.assertIn("'proof', 'proof', null, $token['name']",php)
+        self.assertIn("time() - (int)$job['last_run'] > 86400",php)
+        self.assertIn("['memory.current', 'memory.peak', 'memory.events', 'memory.stat']",php)
+        self.assertIn("exclusive($journal . '/before.json', $state)",php)
+        self.assertLess(php.index("exclusive($journal . '/before.json', $state)"), php.index("$config->setSystemValue('session_lifetime', 5)"))
+        self.assertNotIn('invalidateOldTokens(',php)
+        self.assertNotIn('->update(',php)
+        self.assertNotIn('->insert(',php)
+        self.assertNotIn('setLastRun',php)
+        self.assertNotIn('maintenance:install',php) # install blocked pending genuine emptiness/config preflight
+
+    def test_completed_current_previous_logs_and_raw_laststate_saved_before_deletion(self):
+        with tempfile.TemporaryDirectory() as temp:
+            os.chmod(temp,0o700)
+            pod = dict(metadata=dict(uid='test',name='cli-test'),status=dict(phase='Failed',containerStatuses=[
+                dict(name='cli',restartCount=1,state=dict(terminated=dict(exitCode=1)),
+                     lastState=dict(terminated=dict(exitCode=137,reason='OOMKilled')))]))
+            def run(args, **kwargs):
+                data = json.dumps(dict(items=[pod])).encode() if 'get' in args else b'private synthetic log'
+                return subprocess.CompletedProcess(args,0,stdout=data,stderr=b'')
+            with patch.object(life,'LEASE_GROUP','nextcloud'), patch.object(life,'STATE_DIR',Path(temp).resolve()), patch.object(life,'lease',return_value={}), patch.object(subprocess,'run',side_effect=run) as commands:
+                life.capture_forensics('proof-nextcloud','before deletion')
+            self.assertEqual(len(commands.call_args_list),3)
+            files = list(Path(temp).iterdir())
+            self.assertEqual(len(files),4)
+            self.assertTrue(any(p.name.startswith('current-log-') for p in files))
+            self.assertTrue(any(p.name.startswith('previous-log-') for p in files))
+            raw = next(p for p in files if p.name.startswith('pod-status-'))
+            self.assertEqual(json.loads(raw.read_text())['items'][0]['status']['containerStatuses'][0]['lastState']['terminated']['exitCode'],137)
+            for path in files: self.assertEqual(stat.S_IMODE(path.stat().st_mode),0o600)
+
+if __name__ == '__main__': unittest.main()

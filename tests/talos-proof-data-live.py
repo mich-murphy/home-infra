@@ -577,19 +577,7 @@ def nextcloud():
         RESULT['limitations'].append('Discovery ONLY: no WOPI editing/callback or Nextcloud integration proved.')
         return
     if STAGE == 'cron':
-        # Use the actual suspended declarative CronJob, not a web-container exec.
-        job = 'nextcloud-cron-proof'
-        try:
-            k('create','job',job,'--from=cronjob/nextcloud-cron')
-            k('wait','--for=condition=complete','job/'+job,'--timeout=200s')
-            status = json.loads(k('get','job',job,'-o','json'))['status']
-            check('bounded standalone CronJob succeeds with web stopped',status.get('succeeded') == 1 and not status.get('failed'))
-            marker = execute('postgres',['psql','-U','nextcloud','-d','nextcloud','-Atc',
-                "SELECT configvalue FROM oc_appconfig WHERE appid='core' AND configkey='lastcron'"]).decode().strip()
-            check('cron updates persistent Nextcloud lastcron timestamp',marker.isdigit() and 0 <= time.time()-int(marker) < 240)
-        finally:
-            k('delete','job',job,'--ignore-not-found=true','--wait=true','--timeout=180s')
-        return
+        raise RuntimeError('Native cron integration BLOCKED: lastcron alone is not retention/deletion proof; see docs/talos-proof-nextcloud-cron-plan.md')
     data = b'Synthetic proof WebDAV payload\n' + uuid.uuid4().hex.encode()
     path = '/remote.php/dav/files/proof/proof-' + uuid.uuid4().hex + '.txt'
     auth = 'proof:' + CREDS['NEXTCLOUD_ADMIN_PASSWORD']

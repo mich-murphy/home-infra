@@ -400,7 +400,7 @@ Low-resource group behavior/receipts remain compatible except0600 is now enforce
 | Group/stage | Selected controllers | Limits MiB | With192 reserve | Next live purpose |
 |---|---|---:|---:|---|
 | nextcloud/web | nextcloud, postgres, redis |1088|1280|WebDAV bytes, replacement, full DB dump → distinct clean PostgreSQL PVC → existing-user WebDAV bytes; reattach source|
-| nextcloud/cron | postgres, redis + cronjob/nextcloud-cron |640|832|One Job from suspended CronJob, web stopped; success + persistent lastcron timestamp|
+| nextcloud/cron | postgres, redis + cronjob/nextcloud-cron |640|832|BLOCKED: native install/retained verification + token-retention side effect; lastcron-only acceptance removed|
 | nextcloud/collabora | collabora |640|832|Startup/capabilities/discovery only; **NOT editing acceptance**|
 | nextcloud/full | nextcloud, postgres, redis, collabora |1728|1920|Blocked at reported1420 available; no automatic fallback|
 | immich/app | immich, postgres, valkey |1216|1408|Actual PNG upload/original bytes, replacement, generated thumbnail, clean vector-PG PVC application read|
@@ -411,7 +411,9 @@ Controller names in the table mean `deployment/<name>` except the named CronJob.
 Cron's receipt includes `deployment/postgres`, `deployment/redis` and
 `cronjob/nextcloud-cron`, sorted lexically. Its192MiB Job is included in the640MiB
 budget, never added alongside the web stage. The recurring schedule stays suspended.
-The test and lifecycle cleanup delete only the bounded `nextcloud-cron-proof` Job.
+The former lastcron-only test is now disabled before Job creation. Lifecycle
+cleanup retains deletion of the legacy `nextcloud-cron-proof` name only; it is not
+a serial-helper supervisor and must not be used to run compiled UUID Jobs.
 
 **Immich app margin is only12MiB over the admission floor** at the reported
 1420MiB available. Re-measure immediately before activation; refuse if below1408.
@@ -1611,3 +1613,23 @@ serial-helper lease/guard integration, genuinely due job and bounded restoration
 safety. Public source review is not image attestation or192MiB fit evidence.
 The prior lastcron-only cron branch is not this stronger prepared proof. No cron
 live receipt exists, and no HTTP/WebDAV/Office or general cron acceptance is claimed.
+
+
+### Offline native cron payload checkpoint (no admission)
+
+`scripts/talos-proof-nextcloud-cron.py compile --output <canonical-UUID>.json`
+compiles private exclusive0600 artifacts without executing kubectl, Talos, SSH,
+images or PHP. It emits five **inert, unadmitted** bounded Job documents and a
+payload ConfigMap. This command is preparation only, **not an instruction to
+apply the bundle**. `run` always refuses. The ordinary lifecycle now refuses
+nextcloud/cron activate/run/test before credential access or API calls.
+
+See [the exact incomplete integration gates](talos-proof-nextcloud-cron-plan.md#offline-executable-payload-checkpoint).
+Native fixture/assert/restore functions are implementation drafts behind a
+hard-coded false mutation gate. They are not runtime-tested or a completed
+bootstrap/cron integration. No actual image/source, retained-state or Redis
+observation was made. Eight offline unit tests cover strict daily due state,
+serial pod barriers, unchanged832MiB budget, refusal paths, private exclusive
+artifacts and mocked completed/current/previous forensic capture. No PHP
+interpreter is installed locally, so native syntax/runtime validation is also
+outstanding. Do not interpret Python compilation/tests as native PHP validation.

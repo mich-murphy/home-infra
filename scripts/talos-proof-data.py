@@ -13,6 +13,7 @@ import secrets
 import stat
 import subprocess
 import sys
+import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_ENDPOINT = 'https://127.0.0.1:64120'
@@ -105,7 +106,8 @@ def capture_forensics(namespace, phase):
         return {'file':name,'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)}
     lease(LEASE_GROUP)
     proc = subprocess.run(['kubectl','-n',namespace,'get','pods','-o','json'],capture_output=True,check=True,timeout=30)
-    record = {'phase':phase, 'observed_at':time.time(), 'pods':[]}
+    raw_status = write('pod-status-' + str(uuid.uuid4()) + '.json', proc.stdout)
+    record = {'phase':phase, 'observed_at':time.time(), 'pods':[], 'private_raw_status':raw_status}
     for pod in json.loads(proc.stdout)['items']:
         item = {'uid':pod['metadata']['uid'], 'phase':pod.get('status',{}).get('phase'), 'containers':[]}
         for status in pod.get('status',{}).get('initContainerStatuses',[]) + pod.get('status',{}).get('containerStatuses',[]):
@@ -116,12 +118,13 @@ def capture_forensics(namespace, phase):
                     safe = {key:value[key] for key in ('exitCode','signal','startedAt','finishedAt') if key in value}
                     if re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,63}',value.get('reason','')): safe['reason']=value['reason']
                     container[field][kind]=safe
-            if 'running' in status.get('state',{}):
+            # Completed/failed short-lived CLI pods still have current logs.
+            if status.get('state'):
                 lease(LEASE_GROUP)
                 try:
                     logs = subprocess.run(['kubectl','-n',namespace,'logs',pod['metadata']['name'],'-c',status['name'],'--timestamps=true','--tail=2000','--limit-bytes=1048576'],capture_output=True,timeout=30)
                     if logs.returncode==0:
-                        container['current_logs']=write('current-log-'+secrets.token_hex(12)+'.txt',logs.stdout)
+                        container['current_logs']=write('current-log-'+str(uuid.uuid4())+'.txt',logs.stdout)
                     else: container['current_logs_gap']='APIUnavailable'
                 except subprocess.TimeoutExpired:
                     container['current_logs_gap']='TimeoutExpired'
@@ -130,13 +133,13 @@ def capture_forensics(namespace, phase):
                 try:
                     logs = subprocess.run(['kubectl','-n',namespace,'logs',pod['metadata']['name'],'-c',status['name'],'--previous','--timestamps=true','--limit-bytes=1048576'],capture_output=True,timeout=30)
                     if logs.returncode==0:
-                        container['previous_logs']=write('previous-log-'+secrets.token_hex(12)+'.txt',logs.stdout)
+                        container['previous_logs']=write('previous-log-'+str(uuid.uuid4())+'.txt',logs.stdout)
                     else: container['previous_logs_gap']='APIUnavailable'
                 except subprocess.TimeoutExpired:
                     container['previous_logs_gap']='TimeoutExpired'
             item['containers'].append(container)
         record['pods'].append(item)
-    saved = write('pod-forensics-'+str(time.time_ns())+'.json',json.dumps(record).encode())
+    saved = write('pod-forensics-'+str(uuid.uuid4())+'.json',json.dumps(record).encode())
     # No raw states/messages, account data or log contents in public metadata.
     return {'phase':phase,'sha256':saved['sha256']}
 
@@ -321,6 +324,10 @@ def main():
     p.add_argument('--stage', help='explicit heavy-group component stage approved in lease')
     p.add_argument('--state', required=True, help='outside-git private directory, mode0700')
     a = p.parse_args()
+    if a.group == 'nextcloud' and a.stage == 'cron' and a.action in ('activate', 'run', 'test'):
+        # Stop before credentials(), API reads or mutation. The former lastcron-only
+        # path is not the native retention proof and must not earn acceptance.
+        raise RuntimeError('Native cron integration BLOCKED; see docs/talos-proof-nextcloud-cron-plan.md')
     os.umask(0o077)
     state = private(a.state)
     STATE_DIR = state
