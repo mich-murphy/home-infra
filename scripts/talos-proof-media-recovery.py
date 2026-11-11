@@ -126,6 +126,7 @@ def main():
                     raise RuntimeError('restore did not allocate a different PVC')
     finally:
         kube('-n', ns, 'delete', 'job', helper_name, '--wait=true', '--timeout=60s')
+        kube('-n', ns, 'wait', '--for=delete', 'pod', '-l', 'job-name=' + helper_name, '--timeout=180s')
     if args.action == 'snapshot':
         snapshot = {'service': args.service, 'image': image, 'volumes': entries, 'restored': False}
         safety.write_private(manifest_path, json.dumps(snapshot))

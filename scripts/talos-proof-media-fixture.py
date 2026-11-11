@@ -76,6 +76,7 @@ def main():
             k('exec', '-i', pod, '--', '/bin/sh', '-ec', 'cat > "$1"', 'seed', '/fixture/' + subtitle.name, data=safety.read_private(subtitle, binary=True))
     finally:
         k('delete', 'job', 'seed-synthetic-fixture', '--wait=true', '--timeout=60s')
+        k('wait', '--for=delete', 'pod', '-l', 'job-name=seed-synthetic-fixture', '--timeout=180s')
     print('Seeded synthetic fixture; scan/playback verification is a separate required step.')
 
 if __name__ == '__main__':
