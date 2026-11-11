@@ -82,7 +82,7 @@ Every row below is **PENDING LIVE**, not readiness-equivalent success.
 | arrs/lidarr → Deployment | API v1 missing-key rejection, tag CRUD and system status; rootfolder profile settings remain. Synthetic tagged music import/rename requires metadata strategy; no Internet enabled. |
 | arrs/prowlarr → Deployment | Missing-key rejection + tag CRUD + system status. Local mock indexer/search-to-arr flow remains; no real indexers. |
 | downloads/qbittorrent → Deployment | Fresh PBKDF2 login, assert empty torrent list/discovery disabled, preference write/read/restore. Local-only torrent transfer/recheck/persistence remains. |
-| downloads/qbitwebui → Deployment | Private fresh encryption key configured. Fresh admin login/API CRUD and proof-only qBittorrent connection not implemented; initial password potentially in logs. |
+| downloads/qbitwebui → Deployment | Fresh proof user seeded by pinned Bun init with bcrypt (no initial-password log). Executable authenticated instance CRUD, stored-credential connection and empty-queue stats, plus read-before-write persistence verification; requires explicit pipeline pair. PENDING LIVE. |
 | downloads/sabnzbd → Deployment | API-key queue read, assert empty slots; refresh setting write/read/restore. Local NNTP fixture decode/checksum/recovery remains. |
 | plex/plex → Deployment | Fresh unclaimed server and synthetic PVC; local token/library scan/stream/watch state test remains. Cloud claim/account is forbidden without explicit scoped parent authorization. |
 | plex/tautulli → Deployment | Local Plex-only policy. Fresh setup + proof playback history/activity/settings test remains. |
@@ -90,9 +90,9 @@ Every row below is **PENDING LIVE**, not readiness-equivalent success.
 | plex/kometa → suspended CronJob | Native single run with read-only-config (protects config, **not** a Plex mutation dry-run). Empty library/invalid TMDb seed intentionally blocks meaningful run. Need proof library config, upstream CLI validation and approved metadata fixture strategy; do not run/claim success on empty config. |
 | jellyfin/jellyfin → Deployment | Fresh setup/login + offline synthetic audio scan/exact stream/range seek/played flag test. Second-user ACL, resume, video/subtitles, restart/restore remain. No GPU. |
 | jellyplex-watched → suspended CronJob | Real one-pass DRYRUN=True invocation against proof Plex/Jellyfin; fresh tokens still unset. Needs matching proof users/libraries and a deliberately divergent watched item; assert planned change plus no actual mutation. Exit zero alone is not acceptance. |
-| audiobookshelf/audiobookshelf → Deployment | Synthetic WAV seed capability. Fresh admin setup/library scan/stream/bookmark/progress API test remains. |
-| pinchflat/pinchflat → Deployment | Fresh config/download PVCs; all Internet blocked. Safe local media-profile CRUD/settings test remains; YouTube extraction not accepted without explicit experimental approval. |
-| recyclarr/recyclarr → suspended CronJob | Real `sync --preview` with proof keys/endpoints. Upstream caches unavailable offline; needs version/entrypoint validation and nonempty local fixture formats/profiles plus before/after proof arr comparison. No empty-config/blocked fetch reported as success. |
+| audiobookshelf/audiobookshelf → Deployment | Executable fresh root setup/login, offline audiobook scan, exact stream SHA256/range seek, progress/bookmark CRUD and read-before-write durable-state verification. PENDING LIVE. |
+| pinchflat/pinchflat → Deployment | Fresh Basic credentials configured. Executable anonymous rejection, CSRF-protected profile CRUD, retained nonempty profile and read-before-write persistence verification. No Source/YouTube download created. PENDING LIVE. |
+| recyclarr/recyclarr → suspended CronJob | Real `sync --preview` with proof keys/endpoints. Offline fixture ConfigMap now replaces both implicit Git providers and supplies one synthetic custom format. Reviewed pipeline preview command checks planned Create plus unchanged Radarr customformat API before/after. Version/entrypoint/live behavior remain unverified. No empty-config/blocked fetch reported as success. |
 
 Helper execution requires a separately reviewed **dependency batch** and parent allocation; the one-service harness intentionally cannot silently grant concurrent servers. No external Internet needs approved yet. Bring any required experimental allowance to parent before creating it; never allow private production networks.
 
@@ -117,3 +117,32 @@ Before every apply/scale/exec/create/delete/restart, the guard validates private
 Private state is mode0700; credential, lease, CA and kubeconfig files must be owned by the current user with mode0600, outside the checkout, without path traversal or symlinks. Existing unsafe modes are rejected, not silently repaired. Credential output uses exclusive no-follow opens; existing bootstrap state is never silently rotated. macOS temporary-directory tests canonicalize the OS `/var` alias before supplying it, rather than weakening the production no-symlink rule.
 
 Offline negative tests: `python3 tests/talos-proof-media-safety_test.py` (7 test methods, including multiple endpoint/node/lease/memory mutants). Real ephemeral-local TLS tests: `python3 tests/talos-proof-media-tls_test.py` (4 methods: trusted success, wrong CA rejection, wrong hostname rejection, cross-origin redirect rejection). These never contact the proof cluster. All 16 offline test methods currently pass.
+
+## Approved explicit shared-data integration profile (offline implementation)
+
+Parent approved `proof-media-pipeline` as a common media/download trust boundary. `kubernetes/apps/media/integration/` is a separate explicit Kustomization, **not included in the isolated root**. It declares seven zero-replica pipeline Deployments, one suspended Recyclarr CronJob, a single fresh `proof-local` `/data` PVC and distinct service-prefixed config PVCs/Secrets. No production volume or NAS is involved. `/data/torrents`, `/data/usenet`, `/data/media/{movies,tv}` and `/data/music` are on the same filesystem, permitting real atomic move/hardlink import without pretending independent PVCs share bytes. qbitwebui private SQLite/salt move to `/config`; its `/data` content view is read-only. Pod selectors preserve explicit per-service network boundaries inside this justified shared-storage trust group.
+
+Integration routes use `pipeline-<service>.proof.invalid` to avoid ambiguous duplicate routes when isolated bases already exist. Isolated routes remain `<service>.proof.invalid`. Both use the trusted Gateway client and existing wildcard listener, with no production DNS.
+
+The pipeline CLI only accepts enumerated pairs: `qbittorrent+qbitwebui`, `qbittorrent+radarr`, `qbittorrent+sonarr`, `qbittorrent+lidarr`, `sabnzbd+radarr`, `radarr+recyclarr`. Parent must review the selected live batch; **a group lease never starts all pipeline applications**. An unselected third application pod/controller inside the shared namespace is rejected. No live lease exists at this checkpoint.
+
+```sh
+# ONLY with coordinator-issued group=media-pipeline lease and live clearance:
+python3 scripts/talos-proof-media-pipeline.py start --pair qbittorrent+qbitwebui --state "$STATE"
+python3 tests/talos-proof-media-functional.py qbitwebui --group media-pipeline --pair qbittorrent+qbitwebui --base https://pipeline-qbitwebui.proof.invalid:18443 --ca /private/proofconfig/proof-gateway-ca.crt --state-dir "$STATE"
+python3 scripts/talos-proof-media-pipeline.py restart --pair qbittorrent+qbitwebui --state "$STATE"
+# Repeat functional command with --phase verify: existing instance must survive before config writes.
+python3 scripts/talos-proof-media-pipeline.py stop --pair qbittorrent+qbitwebui --state "$STATE"
+```
+
+Experimental fresh-fixture integration memory limits: arrs 384 MiB, Prowlarr 256 MiB, qBittorrent/qbitwebui/SABnzbd/Recyclarr 192 MiB. These are bounded **unmeasured experiment ceilings**, not proven service profiles. Guard sums the selected pair's ceilings plus 192 MiB reserve against the <=120-second-old guest memory receipt; no reduction of isolated heavy-service limits was hidden to force admission. An OOM/failure must be retained and reported; live admission may still fail and does not authorize a VM/host change.
+
+### Real nonempty Recyclarr preview implementation
+
+Current v8.7.3 source confirms `replace_default: true` suppresses implicit official providers. The proof ConfigMap uses local empty *replacement provider indexes* plus one nonempty local `Proof-Synthetic-Title` custom format matching only `PROOF_FIXTURE`. Thus empty provider indexes remove upstream dependencies; they do **not** constitute the preview test. The test must demonstrate an actual planned Create for the nonempty local format. Default bootstrap seed references this local trash ID; pipeline private seed is constrained to the proof Radarr endpoint/key only.
+
+With the separately leased `radarr+recyclarr` pair started, `talos-proof-media-pipeline.py preview-recyclarr --pair radarr+recyclarr --state "$STATE" --ca PRIVATE_CA` runs the actual suspended CronJob once with `sync --preview`, requires a completed bounded Job, confirms planned `Create` + exact synthetic name/ID in private captured output, and compares authenticated proof Radarr customformat state before/after for no mutation. Logs stay private; only sanitized checks/hash print. The Job is deleted afterward. No run has occurred yet, so no helper success is claimed.
+
+### Remaining explicit gaps
+
+These additions supply executable workflows, not live acceptance. Plex local-unclaimed scan/playback, Tautulli actual proof Plex history, Seerr offline request workflow, Kometa meaningful nonempty run, jellyplex watched divergence preview, actual arr manual import/hardlink and clean-PVC restoration still need implementation/live evidence. Public Kometa config source hard-requires TMDb initialization even for local Plex builders. No fake credential, empty config or blocked request will be treated as success. Offline fixture substitution or a narrowly scoped parent-reviewed strategy is still needed.

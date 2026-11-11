@@ -57,7 +57,7 @@ class API:
         self.base, self.headers = base.rstrip('/'), headers or {}
         self.service, self.ca, self.allow_http = service, ca, allow_http
         self.opener = urllib.request.build_opener(*handlers)
-        self.last_status, self.last_headers = None, {}
+        self.last_status, self.last_headers, self.last_url = None, {}, None
 
     def anonymous(self):
         return API(self.base, service=self.service, ca=self.ca, allow_http=self.allow_http)
@@ -74,6 +74,7 @@ class API:
             hdr['Content-Type'] = 'application/x-www-form-urlencoded'
         req = urllib.request.Request(self.base + path, data=payload, method=method, headers=hdr)
         with self.opener.open(req, timeout=45) as response:
+            self.last_url = response.geturl()
             self.last_status = response.status
             self.last_headers = dict(response.headers)
             body = response.read()

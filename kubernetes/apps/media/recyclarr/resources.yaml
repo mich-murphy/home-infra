@@ -1,4 +1,4 @@
-# Fresh isolated proof only. See docs/talos-proof-media.md.
+# Synthetic nonempty offline preview; no upstream provider fetch.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -171,6 +171,13 @@ spec:
               readOnly: false
             - name: tmp
               mountPath: /tmp
+            - name: offline
+              mountPath: /proof-fixtures
+              readOnly: true
+            - name: offline
+              mountPath: /config/settings.yml
+              subPath: settings.yml
+              readOnly: true
             args:
             - sync
             - --preview
@@ -187,6 +194,18 @@ spec:
           - name: tmp
             emptyDir:
               sizeLimit: 64Mi
+          - name: offline
+            configMap:
+              name: offline-resources
+              items:
+              - key: settings.yml
+                path: settings.yml
+              - key: metadata.json
+                path: empty-guide/metadata.json
+              - key: templates.json
+                path: empty-templates/templates.json
+              - key: proof-format.json
+                path: radarr/proof-format.json
           terminationGracePeriodSeconds: 30
           initContainers:
           - name: seed-fresh-config
@@ -222,3 +241,27 @@ spec:
               mountPath: /seed
               readOnly: true
           restartPolicy: Never
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: offline-resources
+  namespace: proof-recyclarr
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: recyclarr
+data:
+  settings.yml: "resource_providers:\n- name: proof-empty-guide\n  type: trash-guides\n\
+    \  path: /proof-fixtures/empty-guide\n  replace_default: true\n- name: proof-empty-templates\n\
+    \  type: config-templates\n  path: /proof-fixtures/empty-templates\n  replace_default:\
+    \ true\n- name: proof-local-radarr\n  type: custom-formats\n  service: radarr\n\
+    \  path: /proof-fixtures/radarr\n"
+  metadata.json: '{"json_paths": {"radarr": {"custom_formats": [], "qualities": [],
+    "naming": [], "custom_format_groups": [], "quality_profiles": [], "quality_profile_groups":
+    []}, "sonarr": {"custom_formats": [], "qualities": [], "naming": [], "custom_format_groups":
+    [], "quality_profiles": [], "quality_profile_groups": []}}}'
+  templates.json: '{"radarr": [], "sonarr": []}'
+  proof-format.json: '{"trash_id": "11111111111111111111111111111111", "name": "Proof-Synthetic-Title",
+    "includeCustomFormatWhenRenaming": false, "specifications": [{"name": "Synthetic
+    fixture only", "implementation": "ReleaseTitleSpecification", "negate": false,
+    "required": true, "fields": {"value": "PROOF_FIXTURE"}}]}'

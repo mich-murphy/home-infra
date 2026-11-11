@@ -6,13 +6,11 @@ not historical-data restore, downloads, metadata lookups or integration readines
 """
 import argparse
 import hashlib
-import http.cookiejar
 import json
 from pathlib import Path
 import time
 import urllib.error
 import urllib.parse
-import urllib.request
 
 
 import importlib
@@ -20,6 +18,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 safety = importlib.import_module('talos-proof-media-safety')
 API = importlib.import_module('talos-proof-media-http').API
+services = importlib.import_module('talos-proof-media-services')
 
 
 def arr(api, service, credential):
@@ -121,20 +120,34 @@ def jellyfin(api, credential, fixture, state):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('service', choices=['radarr', 'sonarr', 'lidarr', 'prowlarr', 'qbittorrent', 'sabnzbd', 'jellyfin'])
+    p.add_argument('service', choices=['radarr', 'sonarr', 'lidarr', 'prowlarr', 'qbittorrent', 'sabnzbd', 'jellyfin', 'audiobookshelf', 'pinchflat', 'qbitwebui'])
     p.add_argument('--base', required=True)
+    p.add_argument('--phase', choices=['exercise', 'verify'], default='exercise')
+    p.add_argument('--group', choices=['media-pipeline'], help='explicit integration profile lease')
+    p.add_argument('--pair', choices=safety.PIPELINE_PAIRS)
     p.add_argument('--state-dir', required=True, type=Path)
     p.add_argument('--fixture', type=Path)
     p.add_argument('--ca', required=True, type=Path, help='private trusted proof Gateway CA PEM')
     args = p.parse_args()
     state = safety.private_dir(args.state_dir)
     credentials = json.loads(safety.read_private(state / 'credentials.json'))[args.service]
-    safety.lease(args.service)
-    safety.exclusivity(args.service)
+    group = args.group or args.service
+    if args.group:
+        safety.select_pipeline(args.pair)
+        if args.service not in safety.PIPELINE_MEMBERS:
+            p.error('functional service must belong to selected pipeline pair')
+    elif args.pair:
+        p.error('--pair requires --group media-pipeline')
+    safety.lease(group)
+    safety.exclusivity(group)
     ca = safety.private_file(args.ca)
-    api = API(args.base, service=args.service, ca=ca)
+    api = API(args.base, service=('pipeline-' if args.group else '') + args.service, ca=ca)
     try:
-        if args.service in ('radarr', 'sonarr', 'lidarr', 'prowlarr'):
+        if args.service in ('audiobookshelf', 'pinchflat', 'qbitwebui'):
+            checks = getattr(services, args.service)(api, credentials, args.fixture, state, args.phase)
+        elif args.phase != 'exercise':
+            p.error('persistence verification phase not implemented for this service yet')
+        elif args.service in ('radarr', 'sonarr', 'lidarr', 'prowlarr'):
             checks = arr(api, args.service, credentials)
         elif args.service == 'qbittorrent':
             checks = qbit(api, credentials)
@@ -151,4 +164,8 @@ def main():
     print(json.dumps({'service': args.service, 'result': 'PASS', 'checks': checks}))
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as exc:
+        print(json.dumps({'result': 'FAIL', 'error_type': type(exc).__name__}))
+        raise SystemExit(1)

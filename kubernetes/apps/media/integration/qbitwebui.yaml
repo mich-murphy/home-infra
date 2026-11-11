@@ -1,0 +1,314 @@
+# Explicit integration replica; maintain alongside isolated base.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qbitwebui-dns-and-validation
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: qbitwebui
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: qbitwebui
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-validation
+    ports:
+    - port: 3000
+      protocol: TCP
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qbitwebui-to-qbittorrent
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: qbitwebui
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: qbitwebui
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: qbittorrent
+    ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbitwebui-config
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: qbitwebui
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: proof-local
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbitwebui
+  namespace: proof-media-pipeline
+  labels: &id001
+    app.kubernetes.io/name: qbitwebui
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  selector: *id001
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbitwebui
+  namespace: proof-media-pipeline
+  labels: &id001
+    app.kubernetes.io/name: qbitwebui
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: *id001
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+      - name: qbitwebui
+        image: ghcr.io/mkbula/qbitwebui:2.44.2@sha256:75907e7013dedbc87226b9c095ac00b64d4eea814fd5550ccbde114d3f216b22
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TZ
+          value: Etc/UTC
+        - name: DISABLE_REGISTRATION
+          value: 'true'
+        - name: DOWNLOADS_PATH
+          value: /data/torrents
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: qbitwebui-bootstrap
+              key: encryption-key
+        - name: DATABASE_PATH
+          value: /config/qbitwebui.db
+        - name: SALT_PATH
+          value: /config/.salt
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 1000m
+            memory: 192Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+          readOnly: false
+        - name: shared-data
+          mountPath: /data
+          readOnly: true
+        ports:
+        - name: http
+          containerPort: 3000
+        startupProbe:
+          tcpSocket:
+            port: http
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 3
+        livenessProbe:
+          tcpSocket:
+            port: http
+          periodSeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 5
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: qbitwebui-config
+      - name: shared-data
+        persistentVolumeClaim:
+          claimName: data
+      terminationGracePeriodSeconds: 30
+      initContainers:
+      - name: prepare-shared-data
+        image: ghcr.io/mkbula/qbitwebui:2.44.2@sha256:75907e7013dedbc87226b9c095ac00b64d4eea814fd5550ccbde114d3f216b22
+        command:
+        - /bin/sh
+        - -ec
+        - mkdir -p /data/torrents /data/usenet/incomplete /data/usenet/complete /data/media/movies
+          /data/media/tv /data/music
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - name: shared-data
+          mountPath: /data
+      - name: fresh-proof-user
+        image: ghcr.io/mkbula/qbitwebui:2.44.2@sha256:75907e7013dedbc87226b9c095ac00b64d4eea814fd5550ccbde114d3f216b22
+        command:
+        - bun
+        - -e
+        - 'const {Database}=require(''bun:sqlite'');
+
+          const db=new Database(''/config/qbitwebui.db'');
+
+          db.exec(''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, created_at INTEGER
+          DEFAULT (unixepoch()))'');
+
+          const count=db.query(''SELECT count(*) AS n FROM users'').get().n;
+
+          if(count===0){const hash=await Bun.password.hash(process.env.PROOF_PASSWORD,{algorithm:''bcrypt'',cost:12});db.run(''INSERT
+          INTO users(username,password_hash) VALUES (?,?)'',[''proof'',hash]);}
+
+          db.close();'
+        env:
+        - name: PROOF_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: qbitwebui-bootstrap
+              key: password
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 500m
+            memory: 128Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qbitwebui-from-proof-gateway
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: qbitwebui
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: qbitwebui
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-gateway
+    ports:
+    - protocol: TCP
+      port: 3000
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: qbitwebui
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: qbitwebui
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  parentRefs:
+  - name: proof
+    namespace: proof-gateway
+  hostnames:
+  - pipeline-qbitwebui.proof.invalid
+  rules:
+  - backendRefs:
+    - name: qbitwebui
+      port: 3000
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: qbitwebui-from-proof-cilium-ingress
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: qbitwebui
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: qbitwebui
+  ingress:
+  - fromEntities:
+    - ingress
+    toPorts:
+    - ports:
+      - port: '3000'
+        protocol: TCP

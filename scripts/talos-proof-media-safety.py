@@ -18,6 +18,16 @@ HOSTNAME = 'talos-proof'
 SERVICES = tuple(('radarr sonarr lidarr prowlarr qbittorrent qbitwebui sabnzbd plex '
                   'tautulli seerr kometa jellyfin jellyplex-watched audiobookshelf pinchflat recyclarr').split())
 BUDGET = {name: (768 if name in ('plex', 'jellyfin', 'kometa', 'seerr') else 512) for name in SERVICES}
+PIPELINE_LIMITS = {'radarr':384, 'sonarr':384, 'lidarr':384, 'prowlarr':256, 'qbittorrent':192, 'qbitwebui':192, 'sabnzbd':192, 'recyclarr':192}
+PIPELINE_PAIRS = ('qbittorrent+qbitwebui', 'qbittorrent+radarr', 'qbittorrent+sonarr', 'qbittorrent+lidarr', 'sabnzbd+radarr', 'radarr+recyclarr')
+PIPELINE_MEMBERS = None
+
+def select_pipeline(pair):
+    global PIPELINE_MEMBERS
+    if pair not in PIPELINE_PAIRS:
+        raise RuntimeError('pipeline requires one explicitly supported bounded pair')
+    PIPELINE_MEMBERS = frozenset(pair.split('+'))
+
 MUTATIONS = {'apply', 'scale', 'exec', 'rollout', 'delete', 'create', 'patch', 'label', 'annotate',
              'run', 'replace', 'cp', 'edit', 'set', 'attach', 'port-forward'}
 
@@ -105,8 +115,10 @@ def number(value):
 
 
 def lease(group):
-    if group not in SERVICES:
+    if group not in (*SERVICES, 'media-pipeline'):
         raise RuntimeError('unknown media lease group')
+    if group == 'media-pipeline' and not PIPELINE_MEMBERS:
+        raise RuntimeError('pipeline lease requires explicit bounded pair selection')
     receipt = json.loads(read_private(os.environ.get('TALOS_PROOF_MEDIA_LEASE', '/nonexistent')))
     now = time.time()
     if receipt.get('group') != group or not number(receipt.get('expires')) or receipt['expires'] <= now:
@@ -146,11 +158,18 @@ def exclusivity(group):
     pods = json.loads(kubectl_read('get', 'pods', '-A', '-o', 'json'))['items']
     for pod in pods:
         ns = pod['metadata']['namespace']
+        if group == 'media-pipeline' and ns == 'proof-media-pipeline' and pod.get('status', {}).get('phase') not in ('Succeeded', 'Failed'):
+            app = pod['metadata'].get('labels', {}).get('app.kubernetes.io/name')
+            if app not in PIPELINE_MEMBERS:
+                raise RuntimeError('unselected application pod in pipeline namespace')
         if ns.startswith('proof-') and ns not in allowed and pod.get('status', {}).get('phase') not in ('Succeeded', 'Failed'):
             raise RuntimeError('another proof group has live or pending pods')
     controllers = json.loads(kubectl_read('get', 'deployments,statefulsets', '-A', '-o', 'json'))['items']
     for controller in controllers:
         ns = controller['metadata']['namespace']
+        if group == 'media-pipeline' and ns == 'proof-media-pipeline' and controller['spec'].get('replicas', 1):
+            if controller['metadata']['name'] not in PIPELINE_MEMBERS:
+                raise RuntimeError('unselected active pipeline controller')
         if ns.startswith('proof-') and ns not in allowed and controller['spec'].get('replicas', 1):
             raise RuntimeError('another proof group is activated, including controllers without pods')
 
@@ -165,7 +184,8 @@ def guard(group, extra_mib=0):
     age = time.time() - receipt.get('measured_at', 0)
     if not number(available) or not 0 <= age <= 120 or not 0 < available <= int(alloc[:-2]) / 1024:
         raise RuntimeError('fresh valid guest available-memory receipt required')
-    if available < BUDGET[group] + extra_mib + 192:
+    budget = sum(PIPELINE_LIMITS[n] for n in PIPELINE_MEMBERS) if group == 'media-pipeline' else BUDGET[group]
+    if available < budget + extra_mib + 192:
         raise RuntimeError('insufficient measured guest headroom for bounded service plus reserve')
     return receipt
 

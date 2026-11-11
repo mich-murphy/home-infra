@@ -49,7 +49,8 @@ def main():
     try:
         k('wait', '--for=condition=Ready', 'pod', '-l', 'job-name=seed-synthetic-fixture', '--timeout=90s')
         pod = k('get', 'pod', '-l', 'job-name=seed-synthetic-fixture', '-o', 'jsonpath={.items[0].metadata.name}').decode()
-        k('exec', '-i', pod, '--', '/bin/sh', '-ec', 'cat > /fixture/proof-tone.wav', data=safety.read_private(path, binary=True))
+        destination = '/fixture/Proof Author/Proof Book/proof-tone.wav' if args.seed == 'audiobookshelf' else '/fixture/proof-tone.wav'
+        k('exec', '-i', pod, '--', '/bin/sh', '-ec', 'mkdir -p "$(dirname "$1")"; cat > "$1"', 'seed', destination, data=safety.read_private(path, binary=True))
     finally:
         k('delete', 'job', 'seed-synthetic-fixture', '--wait=true', '--timeout=60s')
     print('Seeded synthetic fixture; scan/playback verification is a separate required step.')

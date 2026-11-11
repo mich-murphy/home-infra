@@ -56,6 +56,7 @@ def main():
             # Local profiles only. No production config includes or upstream templates.
             data['seed'] = ('radarr:\n  proof:\n    base_url: http://radarr.proof-radarr.svc:7878\n'
                             f'    api_key: {credentials["radarr"]["api_key"]}\n'
+                            '    custom_formats:\n      - trash_ids: ["11111111111111111111111111111111"]\n'
                             'sonarr:\n  proof:\n    base_url: http://sonarr.proof-sonarr.svc:8989\n'
                             f'    api_key: {credentials["sonarr"]["api_key"]}\n')
         manifests.append({'apiVersion': 'v1', 'kind': 'Secret',
