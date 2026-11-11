@@ -1058,3 +1058,133 @@ Offline validation:42 data contracts,11 workflow tests (including actual EXIF
 parsing, quiescence ordering, PG→files→runtime recovery, no mixed-pair rollback
 startup, private log redaction/modes),12 WOPI protocol tests, compilation and diff
 checks. These are regression/contract tests, not new live service passes.
+
+## Offline light-data protocol/image/queue checkpoint
+
+**No live lease, cluster/API observation, controller activation or host/source
+mutation occurred.** Public exact-version source research and local/offline tests
+only. All newly implemented negatives/image/queue sequencing below is **unrun
+live**, not acceptance evidence. Existing expanded CouchDB/Miniflux results and
+all old archives/observations remain unchanged.
+
+### Pocket-ID2.19.2 real protocol negatives prepared
+
+The existing real browser/WebAuthn/OIDC suite now prepares these actual requests,
+not merely claim-validation mocks:
+
+1. Redeem a real browser-issued authorization code successfully; validate signed
+   claims and userinfo first. Then replay the **same redeemed code** with its
+   correct verifier/redirect, requiring400 `invalid_grant` and no returned tokens.
+   Userinfo precedes replay because providers may revoke tokens on code reuse.
+2. Obtain a **different fresh real browser-issued code** and send a syntactically
+   valid43-character but incorrect S256 verifier. Require400 `invalid_grant` with
+   no access/ID/refresh token; unknown-client/malformed-request/500/transport
+   failures do not count as PKCE denial.
+3. Send a real authorization request with an unregistered same-proof-origin
+   callback. Require the issuer's `/interaction/error` response with a
+   redirect-specific error, no authorization code and **zero callback requests**.
+   The forbidden callback is intercepted, never forwarded externally. A generic
+   successful page or unrelated error is not accepted as redirect validation.
+
+Negative outcomes are recorded progressively using only safe HTTP/error enums,
+phase/path and a token-presence boolean—not tokens, codes, verifier values,
+redirect queries or error bodies. Authenticator histories and browser results now
+use exclusive UUID-named0600 files; the old fixed-name files are untouched. The
+newest validated authenticator history supplies future login, including restored
+passkeys. Public-key signature/audience/nonce/subject checks remain mandatory.
+
+Contracts checked against Pocket-ID's exact
+[v2.19.2 authorization handler](https://github.com/pocket-id/pocket-id/blob/v2.19.2/backend/internal/oidc/authorization_handler.go),
+[token handler](https://github.com/pocket-id/pocket-id/blob/v2.19.2/backend/internal/oidc/token_handler.go)
+and [route module](https://github.com/pocket-id/pocket-id/blob/v2.19.2/backend/internal/oidc/module.go).
+No live negative protocol pass is claimed by the pure response-classifier tests.
+
+### Wallabag image and actual Redis import worker prepared
+
+The pinned Docker wrapper2.6.15.1 explicitly bundles application2.6.15
+([Dockerfile](https://github.com/wallabag/docker/blob/2.6.15.1/Dockerfile)). The
+fixture article now includes one harmless SVG at the already-authorized exact
+fixture FQDN. A proof-instance-only Craue setting enables supported image
+capture; the successful suite restores its original value. A real article save
+must rewrite the image to the Wallabag `/assets/images/` origin. HTTP readback
+must parse the known16×16 red SVG, record its SHA256, and retain that same hash
+with the article after MariaDB replacement and distinct fresh-MariaDB restore.
+**Image storage PVC is retained**, so this is not clean image-volume recovery.
+There is no binary/base64 fixture, additional observer process or resource increase.
+
+Source research confirms image downloading is **synchronous**. Redis queues are
+for imports, not image downloads. The prepared async check uses the actual
+`WallabagV2Import` with its supported `setProducer` method and the actual
+`wallabag_import.producer.redis.wallabag_v2` service. It asserts one queued/zero
+synchronously imported entry; real Redis pending depth1 and no visible API
+article before running the real `wallabag:import:redis-worker wallabag_v2
+--maxIterations=1`. A45second process timeout bounds the worker. Afterwards,
+source/processing/failed/error depths must all be0 and authenticated HTTP must
+show the exact imported URL/body/read/star state. A unique **supported tag
+filter**, not an unsupported guessed title filter, isolates the synthetic item.
+No harness `LPUSH`, direct SQL insertion or fake consumer substitutes for this.
+
+After draining the first synthetic job, Redis is replaced and the same workflow
+runs again using new real producer/worker connections. This proves only bounded
+**connection reestablishment by fresh processes** if it passes—not a surviving
+worker's transparent reconnect, queued-message persistence during restart,
+in-flight delivery or exactly-once semantics. Those remain gaps; no unsupported
+queue semantics are fabricated. Worker output remains in append-only0600 private
+logs, and synthetic queue-created articles are deleted through the app API.
+
+Exact sources:
+[image subscriber](https://github.com/wallabag/wallabag/blob/2.6.15/src/Wallabag/CoreBundle/Event/Subscriber/DownloadImagesSubscriber.php),
+[image helper](https://github.com/wallabag/wallabag/blob/2.6.15/src/Wallabag/CoreBundle/Helper/DownloadImages.php),
+[Redis services](https://github.com/wallabag/wallabag/blob/2.6.15/app/config/services_redis.yml),
+[importer](https://github.com/wallabag/wallabag/blob/2.6.15/src/Wallabag/ImportBundle/Import/WallabagImport.php),
+[producer](https://github.com/wallabag/wallabag/blob/2.6.15/src/Wallabag/ImportBundle/Redis/Producer.php),
+[consumer](https://github.com/wallabag/wallabag/blob/2.6.15/src/Wallabag/ImportBundle/Consumer/AbstractConsumer.php),
+[worker command](https://github.com/wallabag/wallabag/blob/2.6.15/src/Wallabag/ImportBundle/Command/RedisWorkerCommand.php).
+`composer.lock` pins Simpleue2.1.0 (`b12ccea…`) and Craue2.7.0 (`5bf3673…`);
+their real queue suffixes, worker iteration bound and setting persistence were
+checked against those exact sources, not inferred from Redis PING.
+
+### Runtime wording correction (historical JSON preserved)
+
+The historical expanded CouchDB JSON still contains its old pre-run “prepared…
+unrun” limitation sentence, despite its recorded live positive checks. The prior
+expanded checkpoint explains that discrepancy; **the JSON is not rewritten**.
+The current CouchDB generator already uses bounded-recovery-only wording; a new
+regression test guards against reintroducing “prepared/unrun” there. Successful
+future suites additionally emit
+`workflow_execution: completed-under-validated-live-lease`; offline preparation
+remains described in this runbook, not misreported in successful runtime results.
+Equivalent stale preparation wording was removed from Immich's runtime limitation.
+
+### Read-only Immich role-sequencing proposal—not implemented or admitted
+
+Pinned Immich3.3.6 supports `IMMICH_WORKERS_INCLUDE=api` and
+`IMMICH_WORKERS_INCLUDE=microservices`; its default includes both. These create
+**genuinely different process roles**, unlike simply reducing an unchanged full
+container limit. The old `start.sh microservices` entrypoint is explicitly
+rejected by the pinned server, so that is not a supported proposal.
+
+A future separately reviewed experiment could upload through API-only, stop that
+role, run microservices-only against the **same** fresh data/PG/Valkey plus real ML
+for own-worker indexing, then stop workers and use API-only + real ML for actual
+text queries. It must prove queue completion, association and access across
+transitions without embedding injection. Microservices-only does not serve the
+existing2283 API health probe; supported readiness/shutdown must be designed and
+measured rather than silently reusing an always-failing probe or a fake ping.
+
+**No feasibility or smaller reservation is established.** Keeping all existing
+limits unchanged, API-only+PG+Valkey still reserves1216MiB plus192MiB headroom
+(minimum1408). Either role with ML still reserves2240+192=2432MiB. Standalone ML
+requires1216MiB and Nextcloud web1280MiB. Parent-reported1069MiB guest minimum
+admits none of these, including API-only. Role separation might change actual
+memory behavior, but it does not currently change the admission result; it needs
+fresh measurements and explicit leases before implementation/activation. Full
+profile and all resource limits remain unchanged.
+
+Source: [environment configuration](https://github.com/immich-app/immich/blob/v3.3.6/server/src/repositories/config.repository.ts),
+[process supervisor](https://github.com/immich-app/immich/blob/v3.3.6/server/src/main.ts),
+and [microservices bootstrap](https://github.com/immich-app/immich/blob/v3.3.6/server/src/workers/microservices.ts).
+
+Offline validation:42 data contracts,14 workflow tests,13 strict audience cases,
+18 negative-response classifier cases,12 WOPI protocol tests, syntax/compilation
+and diff checks. None is new live Pocket-ID/Wallabag/Immich evidence.

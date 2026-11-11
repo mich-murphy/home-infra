@@ -3,11 +3,12 @@ kind: ConfigMap
 metadata:
   name: fixture
 data:
+  proof-image.svg: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#ff0000"/></svg>'
   feed.xml: <?xml version="1.0"?><rss version="2.0"><channel><title>Proof feed</title><link>http://fixture:8080/</link><description>Synthetic
     only</description><item><title>Proof article</title><link>http://fixture:8080/article.html</link><guid>proof-article-1</guid><description>Synthetic
     proof content</description></item></channel></rss>
   article.html: <!doctype html><html><head><meta charset="utf-8"><title>Proof article</title></head><body><main><article><h1>Proof
-    article</h1><p>Synthetic proof content for isolated validation. This paragraph
+    article</h1><img src="http://fixture.proof-wallabag.svc.cluster.local:8080/proof-image.svg" alt="Synthetic proof image"><p>Synthetic proof content for isolated validation. This paragraph
     describes a fictional library with red books, blue shelves, and a quiet reading
     room. No production data or external integrations are present. The library is
     an imaginary place used only to validate article extraction and persistence. A

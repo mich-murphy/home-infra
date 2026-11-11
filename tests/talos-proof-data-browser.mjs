@@ -5,7 +5,7 @@
  * ignoreHTTPSErrors; all non-proof network requests are aborted.
  */
 import fs from 'node:fs';
-import {audienceMatches} from './talos-proof-data-oidc.mjs';
+import {audienceMatches, isInvalidGrant, isWrongRedirectDenial} from './talos-proof-data-oidc.mjs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
@@ -26,7 +26,7 @@ function assert(condition, label) {
 function savePrivate(name, value) {
   const target = path.join(input.state, name);
   if (fs.existsSync(target) && fs.lstatSync(target).isSymbolicLink()) throw new Error('symlink state');
-  const fd = fs.openSync(target, fs.constants.O_CREAT | fs.constants.O_TRUNC | fs.constants.O_WRONLY | fs.constants.O_NOFOLLOW, 0o600);
+  const fd = fs.openSync(target, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY | fs.constants.O_NOFOLLOW, 0o600);
   fs.writeFileSync(fd, JSON.stringify(value));
   fs.closeSync(fd);
 }
@@ -73,8 +73,10 @@ try {
       return response.status === 204 ? null : response.json();
     }, {url,method,data});
   }
-  const credentialFile = path.join(input.state, 'pocket-virtual-authenticator.json');
-  if (fs.existsSync(credentialFile)) {
+  const credentialFiles = fs.readdirSync(input.state).filter(name => /^pocket-virtual-authenticator(?:-[0-9a-f-]+)?\.json$/.test(name)).map(name => path.join(input.state,name));
+  for (const file of credentialFiles) if(fs.lstatSync(file).isSymbolicLink() || (fs.statSync(file).mode & 0o777)!==0o600) throw new Error('unsafe private authenticator history');
+  const credentialFile = credentialFiles.sort((a,b)=>fs.statSync(b).mtimeMs-fs.statSync(a).mtimeMs)[0];
+  if (credentialFile) {
     if (fs.lstatSync(credentialFile).isSymbolicLink() || (fs.statSync(credentialFile).mode & 0o777) !== 0o600) throw new Error('unsafe private authenticator file');
     const stored = JSON.parse(fs.readFileSync(credentialFile,'utf8'));
     for (const credential of stored.credentials) await cdp.send('WebAuthn.addCredential', {authenticatorId,credential});
@@ -90,7 +92,7 @@ try {
     }, options);
     await api('/api/webauthn/register/finish', 'POST', registration);
     assert(true, 'Fresh administrator and real navigator.credentials.create WebAuthn registration through pinned TLS Gateway');
-    savePrivate('pocket-virtual-authenticator.json', await cdp.send('WebAuthn.getCredentials', {authenticatorId}));
+    savePrivate('pocket-virtual-authenticator-'+crypto.randomUUID()+'.json', await cdp.send('WebAuthn.getCredentials', {authenticatorId}));
   }
   // Clear all authentication cookies: subsequent identity MUST come from the
   // registered virtual passkey, not bootstrap/session cookies or one-time tokens.
@@ -105,32 +107,41 @@ try {
   await api('/api/webauthn/login/finish', 'POST', authentication);
   const user = await api('/api/users/me');
   assert(user.username === 'proof' && user.isAdmin === true, 'Fresh-cookie passkey authentication resolves persistent proof administrator');
-  savePrivate('pocket-virtual-authenticator.json', await cdp.send('WebAuthn.getCredentials', {authenticatorId}));
+  savePrivate('pocket-virtual-authenticator-'+crypto.randomUUID()+'.json', await cdp.send('WebAuthn.getCredentials', {authenticatorId}));
   result.user_id = user.id;
   stage = 'isolated public PKCE OIDC client creation';
   const callback = issuer + '/proof-callback';
   const client = await api('/api/oidc/clients', 'POST', {name:'Proof ' + crypto.randomUUID().slice(0,8),callbackURLs:[callback],logoutCallbackURLs:[],isPublic:true,pkceEnabled:true,requiresReauthentication:false,requiresPushedAuthorizationRequests:false,skipConsent:false,isGroupRestricted:false});
-  const verifier = crypto.randomBytes(32).toString('base64url');
-  const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
-  const nonce = crypto.randomBytes(24).toString('base64url');
-  const state = crypto.randomBytes(24).toString('base64url');
-  const params = new URLSearchParams({client_id:client.id,response_type:'code',redirect_uri:callback,scope:'openid profile email',code_challenge:challenge,code_challenge_method:'S256',nonce,state});
   await page.route('**/proof-callback?**', route => route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><title>Isolated proof callback</title>'}));
-  const callbackPromise = page.waitForRequest(req => new URL(req.url()).pathname === '/proof-callback', {timeout:45000}).then(req => new URL(req.url()));
+  async function authorizeCode() {
+    validateLease();
+    const verifier = crypto.randomBytes(32).toString('base64url');
+    const nonce = crypto.randomBytes(24).toString('base64url');
+    const state = crypto.randomBytes(24).toString('base64url');
+    const params = new URLSearchParams({client_id:client.id,response_type:'code',redirect_uri:callback,scope:'openid profile email',code_challenge:crypto.createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256',nonce,state});
+    const callbackPromise = page.waitForRequest(req => new URL(req.url()).pathname === '/proof-callback', {timeout:45000}).then(req => new URL(req.url()));
+    await page.goto(issuer + '/authorize?' + params, {waitUntil:'domcontentloaded'});
+    const callbackURL = await Promise.race([callbackPromise, (async () => {
+      await page.getByRole('button', {name:/^sign in$/i}).click({timeout:30000});
+      return callbackPromise;
+    })()]);
+    assert(callbackURL.searchParams.get('state') === state && callbackURL.searchParams.has('code'), 'OIDC fresh browser authorization-code callback has matching random state');
+    await page.waitForURL(url => url.pathname === '/proof-callback', {waitUntil:'domcontentloaded',timeout:15000});
+    return {verifier,nonce,params,code:callbackURL.searchParams.get('code')};
+  }
+  async function exchangeCode(data) {
+    validateLease();
+    return page.evaluate(async data => {
+      const response = await fetch('/api/oidc/token', {method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(data)});
+      return {ok:response.ok,status:response.status,body:await response.json()};
+    },data);
+  }
   stage = 'OIDC authorization/consent';
-  await page.goto(issuer + '/authorize?' + params, {waitUntil:'domcontentloaded'});
-  const callbackURL = await Promise.race([callbackPromise, (async () => {
-    await page.getByRole('button', {name:/^sign in$/i}).click({timeout:30000});
-    return callbackPromise;
-  })()]);
-  assert(callbackURL.searchParams.get('state') === state && callbackURL.searchParams.has('code'), 'OIDC browser authorization-code callback has matching random state');
-  await page.waitForURL(url => url.pathname === '/proof-callback', {waitUntil:'domcontentloaded',timeout:15000});
+  const authorized = await authorizeCode();
+  const {nonce} = authorized;
+  const grant = {grant_type:'authorization_code',client_id:client.id,redirect_uri:callback,code_verifier:authorized.verifier,code:authorized.code};
   stage = 'OIDC code exchange and signed ID token validation';
-  const exchange = await page.evaluate(async data => {
-    const response = await fetch('/api/oidc/token', {method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(data)});
-    const body = await response.json();
-    return {ok:response.ok,status:response.status,body};
-  }, {grant_type:'authorization_code',client_id:client.id,redirect_uri:callback,code_verifier:verifier,code:callbackURL.searchParams.get('code')});
+  const exchange = await exchangeCode(grant);
   result.token_exchange_status = exchange.status;
   if (!exchange.ok) {
     result.token_exchange_error = ['invalid_client','invalid_grant','invalid_request','unsupported_grant_type','unauthorized_client'].includes(exchange.body.error) ? exchange.body.error : 'withheld';
@@ -154,6 +165,34 @@ try {
     return response.json();
   }, token.access_token);
   assert(info.sub===user.id && info.preferred_username==='proof', 'OIDC access token returns matching userinfo identity');
+  // Replay only after successful signature/userinfo checks: providers may revoke
+  // tokens minted from a replayed code. Never let this disturb the positive proof.
+  result.protocol_negatives = {};
+  const safeGrant = value => ({status:value.status,error:['invalid_grant','invalid_request','invalid_client'].includes(value.body?.error) ? value.body.error : 'withheld',tokens_returned:['access_token','id_token','refresh_token'].some(key => Object.hasOwn(value.body || {},key))});
+  stage = 'negative reused authorization code';
+  const replay = await exchangeCode(grant);
+  result.protocol_negatives.replay = safeGrant(replay);
+  assert(isInvalidGrant(replay), 'OIDC actual previously redeemed code replay denied400 invalid_grant with no tokens');
+  stage = 'negative wrong PKCE verifier for fresh real code';
+  const wrongPKCE = await authorizeCode();
+  const invalidVerifier = crypto.randomBytes(32).toString('base64url');
+  assert(invalidVerifier !== wrongPKCE.verifier && /^[A-Za-z0-9_-]{43}$/.test(invalidVerifier),'Wrong PKCE verifier differs but has valid43-character syntax');
+  const wrong = await exchangeCode({...grant,code:wrongPKCE.code,code_verifier:invalidVerifier});
+  result.protocol_negatives.wrong_pkce = safeGrant(wrong);
+  assert(isInvalidGrant(wrong), 'OIDC fresh real authorization code with wrong S256 PKCE verifier denied400 invalid_grant with no tokens');
+  stage = 'negative unregistered redirect URI';
+  let forbiddenCallbacks = 0;
+  await page.route('**/proof-forbidden-callback**', route => { forbiddenCallbacks++; return route.abort('blockedbyclient'); });
+  const invalidRedirect = new URLSearchParams(wrongPKCE.params);
+  invalidRedirect.set('redirect_uri',issuer+'/proof-forbidden-callback');
+  validateLease();
+  const redirectDenial = await page.evaluate(async query => {
+    const response = await fetch('/authorize?'+query,{redirect:'follow'});
+    const url = new URL(response.url);
+    return {status:response.status,origin:url.origin,path:url.pathname,hasError:url.searchParams.has('error'),hasCode:url.searchParams.has('code'),errorMentionsRedirect:/redirect|callback/i.test(url.searchParams.get('error') || '')};
+  },invalidRedirect.toString());
+  result.protocol_negatives.wrong_redirect = {status:redirectDenial.status,path:redirectDenial.path,callback_requests:forbiddenCallbacks};
+  assert(isWrongRedirectDenial({...redirectDenial,callbackRequests:forbiddenCallbacks}), 'OIDC actual unregistered redirect refused on issuer error route without code or callback request');
   stage = 'negative unknown OIDC client';
   const denied = await page.evaluate(async () => {
     const response = await fetch('/api/oidc/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'client_credentials',client_id:'nonexistent-proof-client',client_secret:'synthetic-invalid'})});
@@ -171,7 +210,7 @@ try {
   if(error.message?.includes('Failed to fetch')) result.safe_failure_code='browser_fetch_failed';
 } finally {
   if(browser) await browser.close();
-  if(leaseValidated) savePrivate('pocket-browser-result.json',result);
+  if(leaseValidated) savePrivate('pocket-browser-'+crypto.randomUUID()+'.json',result);
   console.log(JSON.stringify(result,null,2));
 }
 if(result.status !== 'passed') process.exitCode = 1;

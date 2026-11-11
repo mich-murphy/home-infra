@@ -145,6 +145,54 @@ class Workflows(unittest.TestCase):
             self.assertEqual(stat.S_IMODE(log.stat().st_mode),0o600)
             self.assertEqual(stat.S_IMODE(metadata.stat().st_mode),0o600)
 
+    def test_wallabag_local_image_fetch_and_hash_checks(self):
+        svg=b'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#ff0000"/></svg>'
+        article={'content':'<img src="https://wallabag.proof.invalid/assets/images/a/b/proof.svg">'}
+        with patch.object(live,'http',return_value=svg) as http:
+            digest=live.wallabag_image('https://wallabag.proof.invalid',article,{'Authorization':'private'})
+            self.assertEqual(digest,hashlib.sha256(svg).hexdigest())
+            self.assertEqual(http.call_args.args[1],'/assets/images/a/b/proof.svg')
+            with self.assertRaises(RuntimeError):live.wallabag_image('https://wallabag.proof.invalid',article,{},'wrong-hash')
+        for content in ('<img src="http://fixture.proof-wallabag.svc.cluster.local:8080/proof-image.svg">','<img src="https://other.invalid/assets/images/proof.svg">'):
+            with self.assertRaises(RuntimeError):live.wallabag_image('https://wallabag.proof.invalid',{'content':content},{})
+
+    def test_wallabag_actual_worker_order_and_no_fabricated_job_push(self):
+        events=[]; url=None
+        def execute(app,command,data=None):
+            nonlocal url
+            if command[0]=='timeout':
+                self.assertEqual(command[1],'45')
+                self.assertIn('wallabag:import:redis-worker',command)
+                self.assertIn('--maxIterations=1',command)
+                events.append('worker');return b'private worker output'
+            code=command[-1]
+            self.assertNotIn('lpush',code.lower())
+            if 'setProducer' in code:
+                payload=json.loads(data);url=payload[0]['url']
+                self.assertEqual(payload[0]['tags'],['proof-queue'])
+                self.assertIn('->import()',code)
+                events.append('producer');return b'{"queued":1,"imported":0}'
+            if 'llen' in code:
+                return json.dumps([0,0,0,0] if 'worker' in events else [1,0,0,0]).encode()
+            raise AssertionError('unknown PHP operation')
+        def http(base,query,**kwargs):
+            self.assertIn('tags=proof-queue',query)
+            self.assertNotIn('title=',query)
+            events.append('http-after' if 'worker' in events else 'http-before')
+            return {'_embedded':{'items':[{'id':7,'url':url,'content':'Synthetic queued proof content','is_archived':1,'is_starred':1}] if 'worker' in events else []}}
+        with patch.object(live,'execute',side_effect=execute),patch.object(live,'http',side_effect=http),patch.object(live,'save_private_new'):
+            self.assertEqual(live.wallabag_queue('https://wallabag.proof.invalid',{},'proof-queue'),7)
+        self.assertEqual(events,['producer','http-before','worker','http-after'])
+
+    def test_couch_runtime_limitations_do_not_claim_unrun(self):
+        import ast
+        tree=ast.parse(Path(__file__).with_name('talos-proof-data-live.py').read_text())
+        function=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='couchdb')
+        wording=[n.value for n in ast.walk(function) if isinstance(n,ast.Constant) and isinstance(n.value,str) and 'recovery only.' in n.value]
+        self.assertEqual(len(wording),1)
+        self.assertNotIn('unrun',wording[0].lower())
+        self.assertNotIn('prepared',wording[0].lower())
+
     def test_private_archive_is_exclusive_and_mode0600(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(live, 'STATEPATH', Path(directory)), patch.object(live, 'LIFE') as life:

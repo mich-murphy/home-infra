@@ -652,8 +652,48 @@ def miniflux():
     check('Miniflux feed/category CRUD completed')
 
 
+WALLABAG_BOOT = "chdir('/var/www/wallabag'); require 'vendor/autoload.php'; require_once 'app/AppKernel.php'; $k=new AppKernel('prod',false);$k->boot();$c=$k->getContainer();"
+
+
+def wallabag_image(base, article, headers, expected_hash=None):
+    sources = re.findall(r'<img\b[^>]*\bsrc=[\"\']([^\"\']+)',article['content'],re.I)
+    local = [urllib.parse.urlsplit(url) for url in sources if urllib.parse.urlsplit(url).path.startswith('/assets/images/')]
+    check('Wallabag extraction rewrites actual fixture image to local image storage',len(local)==1 and local[0].hostname=='wallabag.proof.invalid' and not local[0].query)
+    payload = http(base,local[0].path,headers=headers,raw=True)
+    root=ET.fromstring(payload)
+    rects=root.findall('{http://www.w3.org/2000/svg}rect')
+    check('Wallabag fetched local SVG retains exact synthetic dimensions/color',root.tag=='{http://www.w3.org/2000/svg}svg' and root.get('width')=='16' and root.get('height')=='16' and len(rects)==1 and rects[0].get('fill')=='#ff0000')
+    digest=hashlib.sha256(payload).hexdigest()
+    if expected_hash: check('Wallabag downloaded image hash persists with article after replacement/DB restore',digest==expected_hash)
+    return digest
+
+
+def wallabag_queue(base, headers, marker):
+    """Real upstream importer/producer + bounded actual Redis worker, never LPUSH fake jobs."""
+    url='http://fixture.proof-wallabag.svc.cluster.local:8080/article.html?queue='+marker
+    queued={'url':url,'title':marker,'content':'Synthetic queued proof content '+marker,'mimetype':'text/html','is_archived':1,'is_starred':1,'tags':[marker]}
+    code=WALLABAG_BOOT+r"""$u=$c->get('doctrine')->getManager()->getRepository(\Wallabag\UserBundle\Entity\User::class)->findOneByUsername('wallabag');$p=$c->get('wallabag_import.producer.redis.wallabag_v2');$i=$c->get(\Wallabag\ImportBundle\Import\WallabagV2Import::class);$i->setUser($u);$i->setProducer($p);$i->setDisableContentUpdate(true);$path='/tmp/proof-import-'.bin2hex(random_bytes(12)).'.json';umask(0077);$f=fopen($path,'x');fwrite($f,stream_get_contents(STDIN));fclose($f);try {if(!$i->setFilepath($path)->import())throw new \RuntimeException('import failed');echo json_encode($i->getSummary());}finally{unlink($path);}"""
+    summary=json.loads(execute('wallabag',['php','-r',code],json.dumps([queued]).encode()))
+    check('Wallabag actual importer queues one entry without synchronous import',summary['queued']==1 and summary['imported']==0)
+    def depths():
+        code=WALLABAG_BOOT+r"""$r=$c->get(\Predis\Client::class);$r->connect();$a=[];foreach(['','-processing','-failed','-error'] as $suffix)$a[]=(int)$r->llen('wallabag.import.wallabag_v2'.$suffix);$r->disconnect();echo json_encode($a);"""
+        return json.loads(execute('wallabag',['php','-r',code]))
+    check('Wallabag real Redis source queue contains exactly one pending import',depths()==[1,0,0,0])
+    # The pinned API supports tags, not a guessed title filter.
+    query='/api/entries.json?'+urllib.parse.urlencode({'tags':marker,'perPage':100})
+    before=http(base,query,headers=headers)['_embedded']['items']
+    check('Wallabag queued article is not visible before actual worker',not any(e.get('url')==url for e in before))
+    output=execute('wallabag',['timeout','45','php','/var/www/wallabag/bin/console','--env=prod','wallabag:import:redis-worker','wallabag_v2','--maxIterations=1','--no-interaction'])
+    save_private_new('wallabag-worker-'+uuid.uuid4().hex+'.log',output)
+    check('Wallabag actual Redis worker drains source/processing with no failed/error jobs',depths()==[0,0,0,0])
+    items=http(base,query,headers=headers)['_embedded']['items']
+    matched=[e for e in items if e.get('url')==url]
+    check('Wallabag actual consumer import visible through authenticated API with content/read/star state',len(matched)==1 and 'Synthetic queued proof content' in matched[0]['content'] and matched[0]['is_archived']==1 and matched[0]['is_starred']==1)
+    return matched[0]['id']
+
+
 def wallabag():
-    RESULT['limitations'].extend(['Proof-only exact fixture FQDN extractor private-IP exception; no general subnet/Internet exemption.', 'Synchronous capture tested; Redis queue/import-worker integration not claimed.'])
+    RESULT['limitations'].extend(['Proof-only exact fixture FQDN extractor private-IP exception; no general subnet/Internet exemption.', 'Synthetic SVG download and actual bounded Redis import worker only. Redis replacement uses fresh producer/worker connections; no transparent in-flight reconnect, queued-message persistence or exactly-once claim. Image PVC is retained during MariaDB-only recovery.'])
     execute('wallabag', ['sh', '-ec', 'cd /var/www/wallabag; php bin/console --env=prod fos:user:change-password wallabag "$PROOF_ADMIN_PASSWORD" --no-interaction'])
     client_path = LIFE.no_symlinks(STATEPATH/'wallabag-client.json')
     if client_path.exists():
@@ -675,6 +715,7 @@ def wallabag():
             body=urllib.parse.urlencode(body)
             h['Content-Type']='application/x-www-form-urlencoded'
         return http(base,path,method,body,headers=h)
+    settings=json.loads(execute('wallabag',['php','-r',WALLABAG_BOOT+"$s=$c->get('craue_config');echo json_encode(['download_images_enabled'=>$s->get('download_images_enabled')]);$s->set('download_images_enabled','1');"]))
     marker='proof-'+uuid.uuid4().hex
     with forwarded('wallabag',80) as base:
         http(base,'/api/info',raw=True)
@@ -683,6 +724,12 @@ def wallabag():
         entry=created['id']
         original=api(base,f'/api/entries/{entry}.json',headers=headers)
         check('Wallabag OAuth password login and live fixture URL capture/extraction via trusted TLS Gateway','Synthetic proof content' in original['content'] and 'Proof article' in original['title'])
+        image_hash=wallabag_image(base,original,headers)
+        RESULT['downloaded_image_sha256']=image_hash
+        first_queue=wallabag_queue(base,headers,'proof-queue-'+uuid.uuid4().hex)
+        restart('redis')
+        second_queue=wallabag_queue(base,headers,'proof-reconnected-'+uuid.uuid4().hex)
+        for queued_id in (first_queue,second_queue): api(base,f'/api/entries/{queued_id}.json','DELETE',headers=headers)
         content_hash=hashlib.sha256(original['content'].encode()).hexdigest()
         RESULT['article_content_sha256']=content_hash
         changed=api(base,f'/api/entries/{entry}.json','PATCH',{'archive':1,'starred':1,'title':marker},headers)
@@ -694,6 +741,7 @@ def wallabag():
     with forwarded('wallabag',80) as base:
         restored=authenticated_recovery(base,f'/api/entries/{entry}.json',headers=headers)
         check('Wallabag HTTP article survives MariaDB pod replacement',restored['title']==marker)
+        wallabag_image(base,restored,headers,image_hash)
     scale('wallabag',0)
     try:
         dump=execute('mariadb',['sh','-ec','exec mariadb-dump --single-transaction --routines --triggers --events -uroot -p"$MYSQL_ROOT_PASSWORD" --databases wallabag'])
@@ -708,6 +756,7 @@ def wallabag():
                 restored_headers=login(base)
                 restored=authenticated_recovery(base,f'/api/entries/{entry}.json',headers=restored_headers)
                 check('Wallabag existing user OAuth relogin and captured article/archive/content SHA256 survive clean MariaDB PVC restore',restored['title']==marker and restored['is_archived']==1 and hashlib.sha256(restored['content'].encode()).hexdigest()==content_hash)
+                wallabag_image(base,restored,restored_headers,image_hash)
                 api(base,f'/api/entries/{entry}.json','DELETE',headers=restored_headers)
                 try:
                     api(base,f'/api/entries/{entry}.json',headers=restored_headers)
@@ -721,6 +770,7 @@ def wallabag():
         http(base,'/api/info',raw=True)
         source_headers=login(base)
         api(base,f'/api/entries/{entry}.json','DELETE',headers=source_headers)
+    execute('wallabag',['php','-r',WALLABAG_BOOT+"$s=$c->get('craue_config');$s->set('download_images_enabled',json_decode(stream_get_contents(STDIN),true)['download_images_enabled']);"],json.dumps(settings).encode())
     check('Wallabag source article cleaned up through authenticated HTTP API')
 
 
@@ -1122,7 +1172,7 @@ def immich():
         owner=login(base,'proof@example.invalid',password)
         http(base,'/api/shared-links/'+link['id'],'DELETE',headers=owner)
         immich_deny('Immich revoked public share denied401',base,'/api/shared-links/me?key='+urllib.parse.quote(link['key'],safe=''),{},status=401)
-    RESULT['limitations'].append('Prepared synthetic EXIF/album/share ACL/video and coordinated data+PG restore, NOT live evidence. Retained proof users/album/assets for audit; no historical dataset or production capacity/GPU claim.')
+    RESULT['limitations'].append('Bounded synthetic EXIF/album/share ACL/video and coordinated data+PG recovery only. Retained proof users/album/assets for audit; no historical dataset or production capacity/GPU claim.')
     if STAGE!='full': RESULT['limitations'].append('App-only stage disables ML: no inference/indexing/search claim. Full stage requires own-worker embedding and text query, with no harness vector writes.')
 
 
@@ -1204,6 +1254,7 @@ def main():
         RESULT['limitations'][0] = 'Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate.'
         globals()[GROUP.replace('-', '_')]()
         RESULT['status'] = 'functional-checks-passed-with-limitations'
+        RESULT['workflow_execution'] = 'completed-under-validated-live-lease'
     except Exception as e:
         RESULT['status'] = 'failed'
         # Error bodies can contain tokens, usernames or secrets. Keep evidence sanitized.
