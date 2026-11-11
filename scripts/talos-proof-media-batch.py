@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 
 safety = importlib.import_module('talos-proof-media-safety')
+observe = importlib.import_module('talos-proof-media-observe')
 FRONTENDS = tuple(x for x in safety.SERVICES if x not in ('kometa', 'recyclarr', 'jellyplex-watched'))
 
 
@@ -40,16 +41,25 @@ def main():
         elif args.action == 'activate':
             kube('-n', ns, 'scale', 'deployment', args.service, '--replicas=1', capacity=True)
         else:
+            observe.capture(args.service, state)
             kube('-n', ns, 'rollout', 'restart', 'deployment/' + args.service, capacity=True)
         try:
             kube('-n', ns, 'rollout', 'status', 'deployment/' + args.service, '--timeout=300s')
         except RuntimeError:
-            kube('-n', ns, 'scale', 'deployment', args.service, '--replicas=0')
+            # Preserve failed pod UID/image/last termination and cgroup evidence before deletion.
+            try:
+                observe.capture(args.service, state)
+            finally:
+                kube('-n', ns, 'scale', 'deployment', args.service, '--replicas=0')
+                kube('-n', ns, 'wait', '--for=delete', 'pod', '-l', 'app.kubernetes.io/name=' + args.service, '--timeout=180s')
             raise
         print('Startup complete; functional/Gateway/persistence acceptance remains separate.')
     else:
-        kube('-n', ns, 'scale', 'deployment', args.service, '--replicas=0')
-        kube('-n', ns, 'wait', '--for=delete', 'pod', '-l', 'app.kubernetes.io/name=' + args.service, '--timeout=180s')
+        try:
+            observe.capture(args.service, state)
+        finally:
+            kube('-n', ns, 'scale', 'deployment', args.service, '--replicas=0')
+            kube('-n', ns, 'wait', '--for=delete', 'pod', '-l', 'app.kubernetes.io/name=' + args.service, '--timeout=180s')
         print('Service stopped; fresh proof PVC state retained.')
 
 

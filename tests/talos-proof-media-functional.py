@@ -55,21 +55,6 @@ def arr(api, service, credential):
     return ['API denies missing key', 'tag create/read/update/delete', 'local rootfolder settings' if service in ('radarr', 'sonarr') else 'system status version']
 
 
-def qbit(api, credential):
-    result = api.call('/api/v2/auth/login', 'POST', form={'username': credential['username'], 'password': credential['password']}, raw=True)
-    assert result == b'Ok.', 'fresh qBittorrent credential rejected'
-    assert api.call('/api/v2/torrents/info') == [], 'proof must have no actual torrents'
-    prefs = api.call('/api/v2/app/preferences')
-    assert not prefs['dht'] and not prefs['pex'] and not prefs['lsd'], 'discovery must remain disabled'
-    old = prefs['max_active_downloads']
-    try:
-        api.call('/api/v2/app/setPreferences', 'POST', form={'json': json.dumps({'max_active_downloads': 1 if old != 1 else 2})}, raw=True)
-        assert api.call('/api/v2/app/preferences')['max_active_downloads'] != old
-    finally:
-        api.call('/api/v2/app/setPreferences', 'POST', form={'json': json.dumps({'max_active_downloads': old})}, raw=True)
-    return ['fresh credential login', 'empty torrent queue', 'discovery disabled', 'settings write/read/restore']
-
-
 def sab(api, credential):
     def call(mode, **extra):
         return api.call('/api?' + urllib.parse.urlencode({'apikey': credential['api_key'], 'output': 'json', 'mode': mode, **extra}))
@@ -143,14 +128,12 @@ def main():
     ca = safety.private_file(args.ca)
     api = API(args.base, service=('pipeline-' if args.group else '') + args.service, ca=ca)
     try:
-        if args.service in ('audiobookshelf', 'pinchflat', 'qbitwebui', 'plex'):
+        if args.service in ('audiobookshelf', 'pinchflat', 'qbitwebui', 'qbittorrent', 'plex'):
             checks = getattr(services, args.service)(api, credentials, args.fixture, state, args.phase)
         elif args.phase != 'exercise':
             p.error('persistence verification phase not implemented for this service yet')
         elif args.service in ('radarr', 'sonarr', 'lidarr', 'prowlarr'):
             checks = arr(api, args.service, credentials)
-        elif args.service == 'qbittorrent':
-            checks = qbit(api, credentials)
         elif args.service == 'sabnzbd':
             checks = sab(api, credentials)
         else:

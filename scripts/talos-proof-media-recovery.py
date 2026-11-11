@@ -65,6 +65,8 @@ def main():
             safe_archive(payload)
             if hashlib.sha256(payload).hexdigest() != item['sha256']:
                 raise RuntimeError('snapshot checksum mismatch')
+    # Capture current and historical failures before stopping destroys container counters.
+    importlib.import_module('talos-proof-media-observe').capture(group, state)
     # Stop before tar capture: includes SQLite WAL/SHM and app config consistently.
     kube('-n', ns, 'scale', 'deployment', args.service, '--replicas=0')
     kube('-n', ns, 'wait', '--for=delete', 'pod', '-l', 'app.kubernetes.io/name=' + args.service, '--timeout=180s')

@@ -166,6 +166,24 @@ def pinchflat(api, credential, fixture, state, phase):
     return ['fresh Basic authentication', 'anonymous access rejected', 'CSRF-protected profile create/read/update/delete', 'durable nonempty profile retained; no source/download created']
 
 
+def qbittorrent(api, credential, fixture, state, phase):
+    reject_anonymous(api, '/api/v2/app/preferences')
+    result = api.call('/api/v2/auth/login', 'POST', form={'username': credential['username'], 'password': credential['password']}, raw=True)
+    expect(result == b'Ok.', 'fresh qBittorrent credential rejected')
+    expect(api.call('/api/v2/torrents/info') == [], 'settings-only proof requires empty torrent queue')
+    prefs = api.call('/api/v2/app/preferences')
+    expect(not prefs['dht'] and not prefs['pex'] and not prefs['lsd'], 'discovery must remain disabled')
+    if phase == 'verify':
+        marker = existing(state, 'qbittorrent')
+        expect(prefs['max_active_downloads'] == marker['max_active_downloads'], 'qBittorrent durable preference lost across restart/restore')
+        return ['fresh login', 'anonymous preferences rejected', 'discovery disabled', 'existing durable preference verified before writes; no transfer claim']
+    changed = 1 if prefs['max_active_downloads'] != 1 else 2
+    api.call('/api/v2/app/setPreferences', 'POST', form={'json': json.dumps({'max_active_downloads': changed})}, raw=True)
+    expect(api.call('/api/v2/app/preferences')['max_active_downloads'] == changed, 'qBittorrent preference write/read failed')
+    record(state, 'qbittorrent', {'max_active_downloads': changed})
+    return ['fresh login', 'anonymous preferences rejected', 'empty torrent queue; no transfer claim', 'discovery disabled', 'nondefault durable preference write/read retained']
+
+
 def qbitwebui(api, credential, fixture, state, phase):
     reject_anonymous(api, '/api/auth/me')
     auth = api.call('/api/auth/login', 'POST', {'username': credential['username'], 'password': credential['password']})
