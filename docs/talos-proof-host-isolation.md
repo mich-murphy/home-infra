@@ -4,7 +4,7 @@
 RELEASED. No further execution authority.** One start
 failed before any TCP because external timeout could not load under12MiB. The
 parent explicitly approved the wrapper-only Perl-alarm compatibility correction
-and one remaining start, conditional on fresh1888MiB initial admission, app-zero,
+and the second start, conditional on fresh1888MiB initial admission, app-zero,
 identity/guard/backup checks and an unexpired receipt. No platform gate is
 released by this document or by passing offline tests.
 
@@ -177,11 +177,13 @@ starts only the new bounded transient collector unit. Exact unit/client argv
 are in `launch_command()` and `node_command()`; no invented Talos CLI or image
 pull is used. No --collect is passed: preserve failed-unit status for review.
 
-Still unproved: live actual-node private TCP under this method, practical32MiB
-collector/64MiB aggregate fit, live supervisor-failure cleanup, slirp DNS proxy and
-alternate resolver behavior, actual guest IPv6 (disabled), and optional child
-UDP53/IPv6 (implementation disabled). No root-operator bypass, exhaustive
-isolation, readiness or production-cutover claim is made.
+After the bounded live result, still unproved: exhaustive private-endpoint/range
+coverage, forced supervisor-crash/hard-deadline cleanup (ordinary failure cleanup
+was observed), slirp DNS proxy and alternate resolver behavior, actual guest IPv6
+(disabled), and optional child UDP53/IPv6 (implementation disabled). Root32MiB
+fit was observed for this bounded run;96MiB remains the approved planning
+envelope, not a hard global cap or load/soak claim. No root-operator bypass,
+readiness or production-cutover claim is made.
 
 ## Approved wrapper-only loader compatibility correction
 
@@ -204,8 +206,8 @@ Socket-free exact installed chain passed: module VmSize10,612KiB / RSS8,032KiB
 under12MiB; deliberate sleep was terminated with124 and fixed alarm marker in
 3.100s. Neither check created a socket or unit. Offline suite:28 tests pass,
 including alarm-before-constructor, one constructor, alarm-not-denial, retained
-private127/124 exits and transport-timeout diagnostics. The remaining unit start
-requires a fresh full gate; any second failure ends execution with no third start.
+private127/124 exits and transport-timeout diagnostics. The second start passed
+its fresh full gate and completed as recorded below; no third start is authorized.
 
 ## Live outcome and release
 
