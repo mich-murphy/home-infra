@@ -1,4 +1,25 @@
-# Operations live proof — partial acceptance, 2026-11-11
+# Operations live proof — bounded capability acceptance, 2026-11-11
+
+## Follow-up exclusive Flux lease: PASS, 15:06–15:08 UTC
+
+The parent granted a new45-minute `operations-flux` lease after media completed and its receipts were revoked. This worker changed only lease observation fields, refreshed as **min(kubelet availableBytes / 2^20,Talos MemAvailable MiB)** before guarded commands; group, identity and expiry were unchanged. Ordinary earlier app activity had naturally changed cache accounting. No cache dropping, synthetic pressure, host/VM tuning, controller-limit reduction, network widening, flag or RBAC change was used. The independent supervised guard remained parent-owned.
+
+| New gate | Result / receipt |
+|---|---|
+| First newly admitted attempt | `flux-initial-apply-failure.json`: admitted1394.6MiB, then apply failed; suspension cleanup also failed, Deployment deletion attempted in finally. Original subprocess errors were withheld/not retained; exact cause unknown. No configuration changes before retry. |
+| Admission for successful run | `flux-admission.json`: kubelet1241980928bytes (1184.4MiB) >= unchanged939524096bytes (896MiB). Historical `flux-refusal.json` remains unchanged and valid. |
+| Reconcile/drift/path rollback | `flux-live.json`:15:06:54–15:07:52UTC, observed **1 → drift → 1 → 2 → 1**. Public source artifact and applied revision both `sha1:5d9a9926106f76346950af20e8afc0ef346ac548`. Rollback changes fixture path, not Git commit/app release. |
+| Negative RBAC | `flux-live.json`: fixture identity denied `create deployments` and `get secrets` in fixture namespace. No cluster-admin. |
+| Runtime / bounded memory | `flux-measurements.json`: actual source/kustomize imageIDs match locked1.10.1 digests; all captured controller restart counters0. Minimum recorded transition available975474688bytes (930.3MiB), MemoryPressure=False. Per-command private guard additionally checked measured minimum against512MiB. Point samples are not a historical peak/instantaneous-minimum or soak guarantee. |
+| Cleanup and release | `flux-final-state.json`, `flux-lease-release.json`: guarded15:08:36UTC audit found zero operations Deployments, zero active operations/proof-app pods, Kustomization suspended, fixture1, kubelet1161510912bytes (1107.7MiB). Receipt archived unchanged and active path removed immediately after audit. Shared CRDs/fixture retained. |
+
+Private follow-up runner imported the same repository scripts, with no manifest changes. It used the fixed Talos1.14.5 CLI/config at endpoint127.0.0.1:50120/node172.31.250.10 and verified the existing receipt/context/TLS/node guard for Kubernetes commands. It refreshed only actual memory/time observations and checked pressure. The first apply error was not logged; error logging was added privately before the successful retry, which produced no command errors. No specific root-cause diagnosis is claimed. Final cleanup absence is independently evidenced, not inferred from the failed attempt.
+
+Monitoring/loopback delivery, distinct-PVC recovery and private etcd snapshot were **not repeated**. Snapshot still predates Flux and is capture-only, never a restore test or post-Flux sentinel backup. No new VM/control-plane reset/host restart/source access. Parent owns host/source postflight and acceptance brief/gates. Current offline suite remains **15 passing tests**.
+
+## Historical independent operations window — partial acceptance at that time
+
+Everything below describes the earlier completed run only; its Flux refusal and untested status at that time are preserved, not the final follow-up status.
 
 Window: 14:13:35–14:17:18 UTC. Target: VM120 only, enrolled node UID `4845bfd5-3bdb-453d-8503-83b43edb7a1e`, context `admin@talos-proof`, TLS API `https://127.0.0.1:64120`. Coordinator granted exclusive `operations` then `operations-flux` scope; no concurrent app workloads. The coordinator's preceding cold start selected3072MiB; this worker made no host/VM changes.
 

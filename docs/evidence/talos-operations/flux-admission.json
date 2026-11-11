@@ -1,0 +1,10 @@
+{
+  "time": "2026-11-11T15:06:53.216041+00:00",
+  "available_bytes": 1241980928,
+  "required_bytes": 939524096,
+  "controller_ceiling_mib": 384,
+  "reserve_mib": 512,
+  "admitted": true,
+  "memory_source": "kubelet node stats summary",
+  "commit": "5d9a9926106f76346950af20e8afc0ef346ac548"
+}
