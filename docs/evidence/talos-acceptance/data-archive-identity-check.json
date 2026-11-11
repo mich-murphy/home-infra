@@ -1,0 +1,43 @@
+{
+  "recorded_utc": "2026-11-11T14:39:01.952782+00:00",
+  "reviewed_result_commits": [
+    "778d1360",
+    "404a716d",
+    "3b070339"
+  ],
+  "checks": [
+    {
+      "group": "couchdb",
+      "backup_sha256": "277793be71c5818fb01c8d82032a674f60f5602fc995d0aa2e21458c43daf7c8",
+      "private_archive_bytes": 67,
+      "private_mode": "0600",
+      "recorded_live_source_and_distinct_restore_PVC_UIDs_independently_match": true,
+      "workflow_check_count": 13
+    },
+    {
+      "group": "miniflux",
+      "backup_sha256": "82bf0913c61e66498293348a3154424afc323f2bf898829da4b0c64518ed5627",
+      "private_archive_bytes": 51490,
+      "private_mode": "0600",
+      "recorded_live_source_and_distinct_restore_PVC_UIDs_independently_match": true,
+      "workflow_check_count": 12
+    },
+    {
+      "group": "pocket-id",
+      "backup_sha256": "963c674f9118fa0164258933d11d2089431b21f88438abae8e3d3d3e83331fbb",
+      "private_archive_bytes": 245497,
+      "private_mode": "0600",
+      "recorded_live_source_and_distinct_restore_PVC_UIDs_independently_match": true,
+      "workflow_check_count": 11
+    },
+    {
+      "group": "wallabag",
+      "backup_sha256": "4caadbe4724f6dd0c859ba888c6952e1a04a364d8bbae752ec52f791f6c2f1aa",
+      "private_archive_bytes": 37453,
+      "private_mode": "0600",
+      "recorded_live_source_and_distinct_restore_PVC_UIDs_independently_match": true,
+      "workflow_check_count": 12
+    }
+  ],
+  "scope": "Independent archive digest/mode and live retained claim identity cross-check; not independent full workflow rerun or production-data restore."
+}

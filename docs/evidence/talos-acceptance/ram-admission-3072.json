@@ -1,0 +1,79 @@
+{
+  "ram-window-before": {
+    "existing": {
+      "101": {
+        "config_sha256": "08c65bda66e9e5b929136b8008a6909ae5bf4d3ad8f9c6c300f7c7a3b41b2f28",
+        "pid": 2176,
+        "start_ticks": 1036
+      },
+      "102": {
+        "config_sha256": "2d8e0ccc81fb167953b37a295e643a536b0dae4169ed9c34b51303a8755474af",
+        "pid": 2657,
+        "start_ticks": 7142
+      }
+    },
+    "proof": {
+      "boot_id": "e9368a37-3d10-4ce3-98e7-951a2579670b",
+      "cgroup_inode": 57081,
+      "pid": 3972278,
+      "start_ticks": 288117656,
+      "uuid": "555e8603-58e6-4fb6-a190-378a3f11c257"
+    },
+    "resource": {
+      "available_mib": 2786,
+      "monotonic": 2884484.12556669,
+      "psi_totals": {
+        "full": 12752429,
+        "some": 12770253
+      },
+      "swap_io_pages": 9,
+      "swap_used_kib": 24
+    }
+  },
+  "ram-window-admission": {
+    "admission_required_mib": 4992,
+    "chosen_memory_mib": 3072,
+    "existing_unchanged": true,
+    "post_stop_resource": {
+      "available_mib": 5168,
+      "monotonic": 2884484.287867555,
+      "psi_totals": {
+        "full": 12752429,
+        "some": 12770253
+      },
+      "swap_io_pages": 9,
+      "swap_used_kib": 24
+    }
+  },
+  "ram-window-after": {
+    "configured_memory_mib": 3072,
+    "enrollment_memory_mib": 3072,
+    "existing_guests_unchanged": true,
+    "guard_active": "active",
+    "post_boot_resource": {
+      "available_mib": 2438,
+      "monotonic": 2884934.45582511,
+      "psi_totals": {
+        "full": 12837136,
+        "some": 12854960
+      },
+      "swap_io_pages": 9,
+      "swap_used_kib": 24
+    },
+    "swap_baseline_kib": 24
+  },
+  "recorded_utc": "2026-11-11T14:10:05.109870+00:00",
+  "source_commit": "82e20ee0944d891e297709da241052394edbc8b6",
+  "attempts_this_new_window": 1,
+  "proof_node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+  "api_readyz": "ok",
+  "node_ready": true,
+  "persisted_platform_nonce": "synthetic-proof-20261111T124930Z",
+  "gateway_tls": "existing CA/hostname verification passed; request to unmatched storage.proof.invalid returned404, not backend functionality proof",
+  "limitations": [
+    "point snapshots, not representative load/soak",
+    "restart counters include deliberate prior VM fault tests",
+    "no source guest or host tuning changes",
+    "prior3072 rejection retained; new fresh5168MiB post-stop observation passed4992 admission"
+  ]
+}

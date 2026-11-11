@@ -5,6 +5,27 @@
 > functional, recovery, capacity or production-readiness verdict. Current live
 > acceptance and outstanding corrections are in [the delivery record](talos-proof-delivery.md).
 
+## Bounded live evidence so far
+
+- **Platform:** Ready control plane, dedicated XFS/PVC persistence, real NodePort
+  trusted TLS and correlated Cilium policy drops; guard crash/watchdog stop and
+  recovery tested. Host reboot and comprehensive host DNS/IPv6 bypass coverage
+  remain unproved.
+- **Data:** CouchDB document persistence/recovery, Miniflux feed/read-state recovery,
+  actual Pocket-ID browser WebAuthn/signed OIDC and recovery, and Wallabag HTTP
+  OAuth/article extraction/CRUD/recovery. Wallabag's exact synthetic fixture needs
+  a documented narrow SSRF adapter; this is not production configuration parity.
+  Parent independently checked private backup hashes and distinct live PVC UIDs.
+- **Operations:** actual observations/loopback alert delivery and off-node file
+  restore passed; private etcd snapshot captured, **not restored**. Flux refused
+  its unchanged memory gate before installation, so reconciliation is unproved.
+- **Media/heavy data:** staged execution continues. A passing profile CRUD or
+  health check must not be relabelled media download, office editing or ML proof.
+
+See the service-specific evidence and [current delivery record](talos-proof-delivery.md)
+for exact scope, limitations and active ownership. This is not a full concurrent
+replica, a production-data migration rehearsal or approval to retire Docker.
+
 ## Layout and ownership
 
 | Path | Purpose |
@@ -34,7 +55,12 @@ Docker socket to Kubernetes.
 The 32-GiB host already runs two 10-GiB guests. Their allocations, production GPU,
 NAS exports, DNS and router rules are unchanged. Source Docker containers alone
 measured 3.525GiB idle, before Talos/Kubernetes or peak workload demand. The proof
-therefore starts with 2560MiB and tests **one bounded dependency group at a time**.
+therefore started with2560MiB and tests **one bounded dependency group at a time**.
+A later fresh admission safely permitted3072MiB for VM120 only; an earlier attempt
+was refused and remains recorded. Talos MemAvailable and kubelet available memory
+have differed substantially due to active-file-cache accounting. Preserve each
+gate's metric and record both; do not treat optimistic available memory as proof
+of representative capacity. No other guest allocation or host tuning changed.
 All application Deployments default to zero replicas; CronJobs default suspended.
 Applying all app declarations must not start the whole stack.
 
@@ -57,7 +83,8 @@ nix shell .#kubectl .#kubeconform .#shellcheck .#kubernetes-proof-tools \
   --command bash scripts/check-talos-proof.sh
 ```
 
-The gate renders both app groups, requires stopped/suspended defaults, explicit
+The gate renders both app groups and the separate shared media integration profile,
+requires stopped/suspended defaults, explicit
 proof namespaces, immutable images, resource budgets, probes, token suppression,
 restricted mounts/exposure and default isolation. It validates standard resources
 and checksum-locked Cilium/Gateway schemas with **zero missing-schema skips** and
@@ -83,7 +110,10 @@ an existing live identity to refresh a validation fixture.
 1. Read [platform provisioning](talos-proof-platform.md) and inspect measured host
    available memory, swap deltas, PSI and running guests. Create/start **VM120 only**
    through the guarded wrapper, not unrestricted `qm start`. The proof is not
-   automatically started after a Proxmox reboot.
+   automatically started after a Proxmox reboot. Verify the proof-only exclusion
+   from the existing all-guests backup job so experimental data does not silently
+   enter production NAS backups; see the explicit membership exception in the
+   platform runbook. Existing guests' backup settings remain unchanged.
 2. Verify authenticated Talos, etcd, Kubernetes `/readyz`, node identity and the
    **dedicated** `/var/mnt/proof` mount. Do not infer Kubernetes health from healthy
    Talos services or a running VM. Preserve failed experiments in the evidence.

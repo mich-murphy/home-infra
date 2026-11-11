@@ -12,14 +12,28 @@ These facts are not proof of application or production readiness.
 Parent read-only measurements after CNI/local-path startup: guest total2384MiB,
 used1343MiB, available813MiB; Proxmox available2476MiB, QEMU RSS2506MiB,
 unchanged24KiB swap, sampled actual memory PSI0%. Initial allocation is2560MiB.
-A possible3072MiB proof-only increase requires fresh admission and retained host
-margin; no other guest/host cache tuning is authorized.
+The first3072MiB admission was refused (4546MiB available versus4992 required).
+After all app pods were stopped, a later fresh post-stop observation5168MiB passed
+the unchanged requirement. Parent changed only VM120 to **3072MiB**, re-enrolled
+its exact configuration while preserving the original swap baseline, and completed
+one supervised cold start. Existing VM101/102 PID/startticks/config hashes were
+unchanged. API/node, trusted Gateway TLS and the persisted platform nonce survived.
+See [RAM admission evidence](evidence/talos-acceptance/ram-admission-3072.json).
+No other guest or host tuning was performed or authorized.
 
-**Outstanding safety gate:** independent review found lifecycle guard failure
-could leave the VM unmonitored. A supervised fail-closed replacement is being
-implemented under `infrastructure/proxmox-proof/`. Application leases remain
-blocked until this and platform target-identity gates are verified. Refer to the
-[delivery record](talos-proof-delivery.md), not an old checkpoint's status.
+At3072MiB, guest actual total is2823MiB. Talos available1403–1420MiB differs
+materially from kubelet available642–706MiB because working-set accounting includes
+active file cache. The Flux896MiB admission consequently **refused before apply**.
+Do not substitute the optimistic metric for a gate defined against the other;
+new application receipts use the conservative minimum. These are point observations,
+not representative peak/soak or full-concurrency capacity acceptance.
+
+**Safety correction verified:** the supervised replacement demonstrated actual
+SIGKILL and watchdog-hang → exact proof QEMU termination, followed by guarded
+recovery. Target checks pin endpoint/context/TLS/node identity; a follow-up closes
+short kubectl flags and inherited Helm/proxy/preferences overrides with negative
+mock-CLI tests. See the [host lifecycle runbook](talos-proof-host-lifecycle.md) and
+[delivery record](talos-proof-delivery.md) for current leases and remaining gaps.
 
 ## Versions and experiments
 
@@ -54,11 +68,31 @@ Sources:
 
 ## Dedicated resources and isolation
 
-VM120, SMBIOS UUID `555e8603-58e6-4fb6-a190-378a3f11c257`:2vCPU, fixed2560MiB,
+VM120, SMBIOS UUID `555e8603-58e6-4fb6-a190-378a3f11c257`:2vCPU, fixed3072MiB now
+(initially2560MiB),
 32-GiB OS and64-GiB data disks on local-zfs, q35/OVMF, VirtIO SCSI, no GPU or bridged
 NIC. VM101/102 resources are unchanged; VM111 remains stopped. There are no
 production VLAN/DNS/NFS/router modifications. VM120 is not managed by production
 Terraform or the historical Kubernetes cutover switch.
+
+### Production backup membership safeguard
+
+The existing `backup-truenas-daily` job runs at02:30 with `all=1`, targeting
+`truenas-backups`. Creating VM120 would otherwise silently include the temporary
+proof in production NAS backups. Parent made one narrowly scoped membership
+change: exclusions `9001,9003` → `9001,9003,120`, via
+`pvesh set /cluster/backup/backup-truenas-daily --exclude 9001,9003,120`.
+Before/after API objects were compared: **only `exclude` changed, only VM120 was
+removed from membership**, and every existing guest's schedule, membership,
+retention, storage and other settings stayed unchanged. No backup was triggered.
+See [the sanitized receipt](evidence/talos-acceptance/proof-backup-exclusion.json).
+
+This is the explicit existing-job configuration exception for the newly created
+proof, not a claim that no Proxmox setting changed. Do not restore an entire old
+job object during cleanup: it could overwrite later legitimate edits. On proof
+retirement, inspect the current job and remove only120 if appropriate. Reapplying
+the production backup role may overwrite this temporary exclusion; verify it
+before another overnight proof window. No production playbook was run here.
 
 QEMU slirp uses172.31.250.0/24, private DHCP node `.10`, gateway `.2`, IPv6 disabled.
 No host bridge, LAN IP, DHCP reservation or global forwarding setting is needed.
@@ -66,7 +100,9 @@ The QEMU-cgroup OUTPUT filter blocks new private/CGNAT/loopback/link-local/reser
 connections, permits required public HTTP(S), DNS and time traffic, and permits
 established replies to loopback host forwards. Filter refresh installs a temporary
 scope DROP before replacing rules and rebinds the recreated cgroup. Serialized
-refresh, lifecycle failure tests and attributed counters remain acceptance gates.
+refresh, crash/watchdog cleanup and new-scope public packet-counter growth were
+verified. Comprehensive host DNS/IPv6/private-destination bypass coverage remains
+unproved; ordinary counter growth does not by itself establish those denials.
 
 This is **proof-only networking, not native production network parity**. `onboot=0`
 and QEMU `-S` keep cold starts administratively paused until the guarded wrapper

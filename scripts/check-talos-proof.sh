@@ -14,12 +14,13 @@ render=$(mktemp -d)
 trap 'rm -rf "$render"' EXIT
 python3 tests/kubernetes-proof-schemas.py "$render/schemas"
 schema="$render/schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
-for group in media data; do
-  kubectl kustomize "kubernetes/apps/$group" > "$render/$group.yaml"
-  python3 tests/kubernetes-proof.py < "$render/$group.yaml"
+for group in media data media/integration; do
+  printf 'Validating application profile: %s\n' "$group"
+  kubectl kustomize "kubernetes/apps/$group" > "$render/apps.yaml"
+  python3 tests/kubernetes-proof.py < "$render/apps.yaml"
   # Never ignore missing schemas: CRDs come from the exact bootstrap versions.
   kubeconform -strict -summary -kubernetes-version 1.36.0 \
-    -schema-location default -schema-location "$schema" "$render/$group.yaml"
+    -schema-location default -schema-location "$schema" "$render/apps.yaml"
 done
 kubectl kustomize kubernetes/apps > "$render/all-apps.yaml"
 for root in kubernetes/platform kubernetes/platform/validation kubernetes/operations/recovery; do
