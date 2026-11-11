@@ -11,12 +11,20 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_ENDPOINT = 'https://127.0.0.1:64120'
+EXPECTED_HOSTNAME = 'talos-proof'
+LEASE_GROUP = None
+MUTATIONS = {'apply','scale','exec','rollout','delete','create','patch','label','annotate','run','replace','cp','edit','set'}
 GROUPS = ('nextcloud', 'immich', 'miniflux', 'wallabag', 'couchdb', 'pocket-id')
 # Includes fixture, excludes suspended cron. Conservative memory limits, MiB.
 BUDGET = dict(nextcloud=1728, immich=1600, miniflux=448, wallabag=896, couchdb=256, **{'pocket-id':192})
 
 
 def kube(*args, data=None):
+    if MUTATIONS.intersection(args):
+        if LEASE_GROUP not in GROUPS:
+            raise RuntimeError('mutation requires an explicitly selected proof group')
+        lease(LEASE_GROUP)
     result = subprocess.run(['kubectl', *args], input=data, capture_output=True, text=True, timeout=960)
     if result.returncode:
         # Kubernetes errors can contain submitted manifests/credentials; never echo them.
@@ -24,20 +32,40 @@ def kube(*args, data=None):
     return result.stdout
 
 
+def no_symlinks(path):
+    """Check the original path AND each existing ancestor before any resolve/open."""
+    expanded = Path(os.path.expanduser(str(path)))
+    if '..' in expanded.parts:
+        raise RuntimeError('parent traversal is forbidden in private state paths')
+    p = Path(os.path.abspath(expanded))
+    for part in (p, *p.parents):
+        try:
+            info = part.lstat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(info.st_mode):
+            raise RuntimeError('symlinks are forbidden in private state paths')
+    return p
+
+
 def private(path):
-    p = Path(path).expanduser().resolve()
-    if p == ROOT or ROOT in p.parents or p.is_symlink():
+    p = no_symlinks(path)
+    # Check checkout containment using canonical location, after rejecting links.
+    canonical = p.resolve()
+    if canonical == ROOT or ROOT in canonical.parents:
         raise RuntimeError('private state must be outside checkout')
     p.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if stat.S_IMODE(p.stat().st_mode) != 0o700:
+    info = p.lstat()
+    if not stat.S_ISDIR(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o700:
         raise RuntimeError('private state directory must have mode 0700')
     return p
 
 
 def credentials(state):
-    path = state / 'credentials.json'
+    path = no_symlinks(state / 'credentials.json')
     if path.exists():
-        if stat.S_IMODE(path.stat().st_mode) != 0o600:
+        info = path.lstat()
+        if not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600:
             raise RuntimeError('credential file must have mode 0600')
         return json.loads(path.read_text())
     result = {}
@@ -61,22 +89,44 @@ def credentials(state):
         elif g == 'pocket-id':
             e['ENCRYPTION_KEY'] = base64.b64encode(secrets.token_bytes(32)).decode()
         result[g] = e
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, 'w') as f:
         json.dump(result, f)
     return result
 
 
+def target_identity(receipt):
+    """Bind every mutation to exact loopback endpoint and coordinator-recorded node."""
+    config = json.loads(kube('config', 'view', '--minify', '-o', 'json'))
+    clusters = config.get('clusters', [])
+    if len(clusters) != 1:
+        raise RuntimeError('expected exactly one active kubeconfig cluster')
+    cluster = clusters[0]['cluster']
+    if cluster.get('server') != EXPECTED_ENDPOINT or receipt.get('endpoint') != EXPECTED_ENDPOINT:
+        raise RuntimeError('proof endpoint must be exactly https://127.0.0.1:64120')
+    if cluster.get('insecure-skip-tls-verify'):
+        raise RuntimeError('proof API TLS verification must not be disabled')
+    nodes = json.loads(kube('get', 'nodes', '-o', 'json'))['items']
+    if len(nodes) != 1:
+        raise RuntimeError('expected exactly one dedicated proof node')
+    meta = nodes[0]['metadata']
+    if meta.get('name') != EXPECTED_HOSTNAME or meta.get('labels', {}).get('kubernetes.io/hostname') != EXPECTED_HOSTNAME:
+        raise RuntimeError('node must be named and labelled talos-proof')
+    if not receipt.get('node_uid') or meta.get('uid') != receipt['node_uid']:
+        raise RuntimeError('proof node UID differs from coordinator receipt')
+    return nodes[0]
+
+
 def lease(group):
     if not os.environ.get('KUBECONFIG'):
         raise RuntimeError('explicit proof-only KUBECONFIG required')
-    p = Path(os.environ.get('TALOS_PROOF_DATA_LEASE', '/nonexistent'))
-    # Parent supplies a private JSON receipt: {"group":"...", "context":"...", "expires": UNIX_TIME}.
+    p = no_symlinks(os.environ.get('TALOS_PROOF_DATA_LEASE', '/nonexistent'))
     import time
     receipt = json.loads(p.read_text())
     context = kube('config', 'current-context').strip()
-    if receipt['group'] != group or receipt['context'] != context or receipt['expires'] <= time.time():
+    if receipt.get('group') != group or receipt.get('context') != context or receipt.get('expires', 0) <= time.time():
         raise RuntimeError('missing, expired, or mismatched coordinator resource lease')
+    target_identity(receipt)
     return receipt
 
 
@@ -113,8 +163,9 @@ def guard(group):
 
 
 def main():
+    global LEASE_GROUP
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('action', choices=['prepare', 'apply', 'activate', 'deactivate', 'test', 'run'])
+    p.add_argument('action', choices=['prepare', 'apply', 'activate', 'deactivate', 'test', 'run', 'verify'])
     p.add_argument('--group', choices=GROUPS)
     p.add_argument('--state', required=True, help='outside-git private directory, mode0700')
     a = p.parse_args()
@@ -126,8 +177,12 @@ def main():
         return
     if not a.group:
         p.error('--group required for cluster operations')
+    LEASE_GROUP = a.group
     lease(a.group)
     ns = 'proof-' + a.group
+    if a.action == 'verify':
+        print('Verified coordinator lease, exact endpoint and recorded proof node identity.')
+        return
     if a.action == 'apply':
         kube('apply', '-k', str(ROOT / 'kubernetes/apps/data' / a.group))
         manifest = {'apiVersion':'v1','kind':'Secret','metadata':{'name':'proof-credentials','namespace':ns},'type':'Opaque','stringData':creds[a.group]}
@@ -143,7 +198,7 @@ def main():
                 subprocess.run([sys.executable, str(ROOT / 'tests/talos-proof-data-live.py'), a.group, str(state)], check=True, timeout=1800)
         finally:
             if a.action == 'run' or sys.exc_info()[0] is not None:
-                # Cleanup remains valid if the lease expires while the bounded test runs.
+                # Cleanup also revalidates endpoint/node and requires an unexpired lease.
                 kube('-n', ns, 'scale', 'deployment', '--all', '--replicas=0')
                 kube('-n', ns, 'wait', '--for=delete', 'pod', '--all', '--timeout=180s')
     elif a.action == 'deactivate':

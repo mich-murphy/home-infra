@@ -6,6 +6,7 @@ resources:
 - networkpolicy.yaml
 - couchdb.yaml
 - httproute.yaml
+- gateway-policy.yaml
 labels:
 - pairs:
     app.kubernetes.io/part-of: talos-proof

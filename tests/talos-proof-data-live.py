@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Bounded synthetic functional/recovery checks. Called only by lease-gated lifecycle.
-Port-forward intentionally tests functionality, NOT NetworkPolicy or gateway acceptance.
+Frontend checks use verified integrated TLS Gateway; backend exec/ML uses API.
 """
 import base64
 import contextlib
@@ -22,10 +22,12 @@ import urllib.request
 import uuid
 import zlib
 
-GROUP, STATE = sys.argv[1:]
-NS = 'proof-' + GROUP
-CREDS = json.loads((Path(STATE) / 'credentials.json').read_text())[GROUP]
-RESULT = {'group': GROUP, 'checks': [], 'limitations': ['Functional HTTP uses local API port-forward; does not prove NetworkPolicy or gateway routing.']}
+GROUP = STATE = NS = None
+CREDS = None
+LIFE = None
+STATEPATH = None
+CURRENT_STAGE = 'lease/private-state validation'
+RESULT = None
 
 
 class ProofTLSConnection(http.client.HTTPSConnection):
@@ -45,6 +47,7 @@ CA = os.environ.get('TALOS_PROOF_GATEWAY_CA')
 OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), ProofTLSHandler(context=ssl.create_default_context(cafile=CA) if CA else ssl.create_default_context()))
 
 def k(*args, data=None):
+    LIFE.lease(GROUP)
     r = subprocess.run(['kubectl', '-n', NS, *args], input=data, capture_output=True, timeout=660)
     if r.returncode:
         raise RuntimeError('cluster command failed (details withheld to protect credentials)')
@@ -52,6 +55,8 @@ def k(*args, data=None):
 
 
 def execute(app, command, data=None):
+    global CURRENT_STAGE
+    CURRENT_STAGE = 'exec ' + app + ' ' + command[0]
     return k('exec', '-i', 'deployment/' + app, '--', *command, data=data)
 
 
@@ -75,6 +80,7 @@ def forwarded(app, target):
         RESULT['checks'].append('TLS Gateway route selected: ' + app + '.proof.invalid')
         yield 'https://' + app + '.proof.invalid'
         return
+    LIFE.lease(GROUP)
     p = subprocess.Popen(['kubectl', '-n', NS, 'port-forward', 'service/' + app, f'{port}:{target}', '--address=127.0.0.1'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         for _ in range(100):
@@ -106,6 +112,8 @@ def http(base, path, method='GET', body=None, auth=None, headers=None, raw=False
         h['Content-Type'] = 'application/json'
     if isinstance(body, str):
         body = body.encode()
+    global CURRENT_STAGE
+    CURRENT_STAGE = method + ' ' + urllib.parse.urlsplit(base).hostname + path.split('?')[0]
     req = urllib.request.Request(base + path, data=body, headers=h, method=method)
     with OPENER.open(req, timeout=90) as response:
         data = response.read()
@@ -114,14 +122,83 @@ def http(base, path, method='GET', body=None, auth=None, headers=None, raw=False
     return json.loads(data)
 
 
+def save_private(name, data):
+    path = LIFE.no_symlinks(STATEPATH / name)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, 'wb') as f:
+        f.write(data)
+    return path
+
+
+def scale(app, replicas):
+    k('scale', 'deployment/' + app, '--replicas=' + str(replicas))
+    if replicas:
+        k('rollout', 'status', 'deployment/' + app, '--timeout=600s')
+    else:
+        k('wait', '--for=delete', 'pod', '-l', 'app.kubernetes.io/name=' + app, '--timeout=180s')
+
+
+@contextlib.contextmanager
+def fresh_pvc(app, dependents=()):
+    """Sequentially replace one data PVC with a newly provisioned claim, restoring
+    the original binding in finally. No concurrent database or duplicate frontend.
+    Retain both PVCs for audit; never delete source storage.
+    """
+    deployment = json.loads(k('get','deployment',app,'-o','json'))
+    volumes = deployment['spec']['template']['spec']['volumes']
+    index = next(i for i,v in enumerate(volumes) if v.get('name') == 'data' and 'persistentVolumeClaim' in v)
+    old = volumes[index]['persistentVolumeClaim']['claimName']
+    old_claim = json.loads(k('get','pvc',old,'-o','json'))
+    name = app + '-restore-' + uuid.uuid4().hex[:12]
+    spec = {key:old_claim['spec'][key] for key in ('accessModes','storageClassName','resources')}
+    claim = {'apiVersion':'v1','kind':'PersistentVolumeClaim','metadata':{'name':name,'namespace':NS,'labels':{'app.kubernetes.io/part-of':'talos-proof','proof-purpose':'clean-restore'}},'spec':spec}
+    k('apply','-f','-',data=json.dumps(claim).encode())
+    path = '/spec/template/spec/volumes/' + str(index) + '/persistentVolumeClaim/claimName'
+    switched = False
+    try:
+        for frontend in dependents:
+            scale(frontend,0)
+        scale(app,0)
+        k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':path,'value':name}]))
+        switched = True
+        scale(app,1)
+        new_claim = json.loads(k('get','pvc',name,'-o','json'))
+        check('clean restore uses distinct fresh PVC UID and PV: ' + app,
+              new_claim['metadata']['uid'] != old_claim['metadata']['uid'] and
+              new_claim['spec'].get('volumeName') and new_claim['spec'].get('volumeName') != old_claim['spec'].get('volumeName'))
+        RESULT.setdefault('restore_volumes',[]).append({'app':app,'source_pvc':old,'source_uid':old_claim['metadata']['uid'],'restored_pvc':name,'restored_uid':new_claim['metadata']['uid'],'restored_pv':new_claim['spec']['volumeName']})
+        yield
+    finally:
+        if switched:
+            for frontend in dependents:
+                scale(frontend,0)
+            scale(app,0)
+            k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':path,'value':old}]))
+            scale(app,1)
+        for frontend in dependents:
+            scale(frontend,1)
+
+
+def postgres_dump(app_user):
+    dump = execute('postgres',['pg_dump','-U',app_user,'-d',app_user,'-Fc'])
+    save_private(GROUP + '-postgres.dump',dump)
+    RESULT['backup_sha256'] = hashlib.sha256(dump).hexdigest()
+    return dump
+
+
+def clean_postgres_restore(app_user, dump):
+    # Must run while fresh_pvc(postgres) is active and frontend is stopped.
+    count = execute('postgres',['psql','-U',app_user,'-d',app_user,'-Atc',"SELECT count(*) FROM information_schema.tables WHERE table_schema='public'"]).decode().strip()
+    check('clean PostgreSQL PVC contains no source public tables before restore',count == '0')
+    execute('postgres',['pg_restore','-U',app_user,'-d',app_user,'--exit-on-error'],dump)
+    check('full PostgreSQL logical backup restores into clean PVC cluster')
+
+
 def postgres_restore(app_user):
     marker = uuid.uuid4().hex
     execute('postgres', ['psql', '-U', app_user, '-d', app_user, '-v', 'ON_ERROR_STOP=1', '-c', f"CREATE TABLE IF NOT EXISTS proof_roundtrip (marker text PRIMARY KEY); INSERT INTO proof_roundtrip VALUES ('{marker}');"])
     dump = execute('postgres', ['pg_dump', '-U', app_user, '-d', app_user, '-Fc'])
-    path = Path(STATE) / (GROUP + '-postgres.dump')
-    with open(path, 'wb') as f:
-        os.chmod(path, 0o600)
-        f.write(dump)
+    save_private(GROUP + '-postgres.dump', dump)
     execute('postgres', ['dropdb', '-U', app_user, '--if-exists', 'proof_restore'])
     execute('postgres', ['createdb', '-U', app_user, 'proof_restore'])
     execute('postgres', ['pg_restore', '-U', app_user, '-d', 'proof_restore', '--exit-on-error'], dump)
@@ -163,15 +240,27 @@ def miniflux():
         entries = http(base, f'/v1/feeds/{feed}/entries', auth=auth)['entries']
         check('Miniflux fetches synthetic RSS over explicitly allowed fixture flow', any(e['title'] == 'Proof article' for e in entries))
         entry = entries[0]['id']
+        content_hash = hashlib.sha256(entries[0]['content'].encode()).hexdigest()
         http(base, '/v1/entries', 'PUT', {'entry_ids':[entry], 'status':'read'}, auth)
         check('Miniflux entry update persists', http(base, f'/v1/entries/{entry}', auth=auth)['status'] == 'read')
     restart('postgres')
     with forwarded('miniflux', 8080) as base:
         check('Miniflux feed survives PostgreSQL pod replacement', http(base, f'/v1/feeds/{feed}', auth=auth)['id'] == feed)
+    scale('miniflux',0)
+    try:
+        dump = postgres_dump('miniflux')
+        with fresh_pvc('postgres', ('miniflux',)):
+            clean_postgres_restore('miniflux',dump)
+            scale('miniflux',1)
+            with forwarded('miniflux',8080) as base:
+                restored = http(base,f'/v1/entries/{entry}',auth=auth)
+                check('Miniflux authenticated application entry/read-state/content SHA256 match after clean-PVC restore', restored['status']=='read' and hashlib.sha256(restored['content'].encode()).hexdigest()==content_hash)
+    finally:
+        scale('miniflux',1)
+    with forwarded('miniflux',8080) as base:
         http(base, f'/v1/feeds/{feed}', 'DELETE', auth=auth)
         http(base, f'/v1/categories/{cat}', 'DELETE', auth=auth)
     check('Miniflux feed/category CRUD completed')
-    postgres_restore('miniflux')
 
 
 def wallabag():
@@ -188,7 +277,20 @@ def wallabag():
     execute('wallabag', ['sh', '-ec', 'cd /var/www/wallabag; php bin/console wallabag:export wallabag /tmp/proof-export.json --no-interaction'])
     exported = json.loads(execute('wallabag', ['php', '-r', 'echo file_get_contents("/tmp/proof-export.json");']))
     check('Wallabag entry survives MariaDB pod replacement', any(e.get('title') == marker for e in exported))
-    RESULT['limitations'].append('Wallabag CLI import/export is tested; OAuth API/browser login and URL extraction are separate untested acceptance gates.')
+    scale('wallabag',0)
+    try:
+        dump = execute('mariadb',['sh','-ec','exec mariadb-dump --single-transaction --routines --triggers --events -uroot -p"$MYSQL_ROOT_PASSWORD" wallabag'])
+        save_private('wallabag-mariadb.sql',dump)
+        RESULT['backup_sha256'] = hashlib.sha256(dump).hexdigest()
+        with fresh_pvc('mariadb',('wallabag',)):
+            execute('mariadb',['sh','-ec','exec mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" wallabag'],dump)
+            scale('wallabag',1)
+            execute('wallabag',['sh','-ec','cd /var/www/wallabag; php bin/console wallabag:export wallabag /tmp/proof-export.json --no-interaction'])
+            restored = json.loads(execute('wallabag',['php','-r','echo file_get_contents("/tmp/proof-export.json");']))
+            check('Wallabag entry title/content survive logical MariaDB restore into clean PVC',any(e.get('title')==marker and 'Synthetic proof content' in e.get('content','') for e in restored))
+    finally:
+        scale('wallabag',1)
+    RESULT['limitations'].append('Wallabag OAuth API/browser login and URL extraction remain separate acceptance gates.')
 
 
 def couchdb():
@@ -202,7 +304,26 @@ def couchdb():
     restart('couchdb')
     with forwarded('couchdb', 5984) as base:
         check('CouchDB document survives pod replacement', http(base, '/' + db + '/document', auth=auth)['marker'] == marker)
-        http(base, '/' + db, 'DELETE', auth=auth)
+        rows = http(base,'/' + db + '/_all_docs?include_docs=true',auth=auth)['rows']
+        docs = [{k:v for k,v in r['doc'].items() if k!='_rev'} for r in rows]
+        backup = json.dumps(docs,sort_keys=True).encode()
+        save_private('couchdb-documents.json',backup)
+        RESULT['backup_sha256'] = hashlib.sha256(backup).hexdigest()
+    with fresh_pvc('couchdb'):
+        with forwarded('couchdb',5984) as base:
+            databases = http(base,'/_all_dbs',auth=auth)
+            check('fresh CouchDB PVC has no source proof database before restore',db not in databases)
+            http(base,'/'+db,'PUT',auth=auth)
+            responses = http(base,'/'+db+'/_bulk_docs','POST',{'docs':docs},auth=auth)
+            check('CouchDB logical bulk document restore has no errors',all(r.get('ok') for r in responses))
+            restored = http(base,'/'+db+'/document',auth=auth)
+            restored.pop('_rev',None)
+            check('CouchDB restored application document exact canonical checksum',hashlib.sha256(json.dumps([restored],sort_keys=True).encode()).hexdigest()==RESULT['backup_sha256'])
+        restart('couchdb')
+        with forwarded('couchdb',5984) as base:
+            check('CouchDB restored clean-PVC document survives second pod replacement',http(base,'/'+db+'/document',auth=auth)['marker']==marker)
+    with forwarded('couchdb',5984) as base:
+        http(base,'/'+db,'DELETE',auth=auth)
 
 
 def png():
@@ -240,6 +361,22 @@ def immich():
     RESULT['limitations'].append('ML inference/model downloads, facial recognition and GPU acceleration are NOT proved; Internet egress intentionally denied and cache initially empty.')
 
 
+def pocket_browser():
+    module = os.environ.get('TALOS_PROOF_PLAYWRIGHT_MODULE')
+    if not module:
+        raise RuntimeError('private pinned playwright-core module path required for virtual WebAuthn/OIDC proof')
+    LIFE.lease(GROUP)
+    public_pem = subprocess.run(['openssl','x509','-in',CA,'-pubkey','-noout'],capture_output=True,check=True).stdout
+    public_der = subprocess.run(['openssl','pkey','-pubin','-outform','DER'],input=public_pem,capture_output=True,check=True).stdout
+    pin = base64.b64encode(hashlib.sha256(public_der).digest()).decode()
+    payload = {'state':str(STATEPATH),'module':module,'spki':pin,'port':int(os.environ.get('TALOS_PROOF_GATEWAY_PORT','18443'))}
+    proc = subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-browser.mjs'))],input=json.dumps(payload).encode(),capture_output=True,timeout=300)
+    result = json.loads(proc.stdout)
+    RESULT.setdefault('browser_runs',[]).append(result)
+    check('Virtual WebAuthn registration/login and cryptographically verified OIDC code flow',proc.returncode==0 and result.get('status')=='passed')
+    return result
+
+
 def pocket_id():
     with forwarded('pocket-id', 1411) as base:
         doc = http(base, '/.well-known/openid-configuration')
@@ -247,19 +384,31 @@ def pocket_id():
         check('Pocket-ID advertises authorization/token/JWKS endpoints', all(doc.get(k) for k in ['authorization_endpoint','token_endpoint','jwks_uri']))
         path = urllib.parse.urlsplit(doc['jwks_uri']).path
         check('Pocket-ID public JWKS returns signing keys', bool(http(base, path)['keys']))
+    initial = pocket_browser()
     restart('pocket-id')
-    with forwarded('pocket-id', 1411) as base:
-        check('Pocket-ID discovery survives SQLite PVC pod replacement', http(base, '/.well-known/openid-configuration')['issuer'] == doc['issuer'])
-    RESULT['limitations'].append('Interactive administrator bootstrap, WebAuthn/passkey enrollment, OIDC authorization-code/token flow and user persistence require human browser ceremony; NOT proved by discovery/JWKS.')
+    after = pocket_browser()
+    check('Pocket-ID user and registered passkey survive pod replacement',initial['user_id']==after['user_id'])
+    RESULT['limitations'].append('CDP virtual authenticator proves WebAuthn protocol/cryptography, not human physical-device UX, device recovery or hardware attestation.')
 
 
 def main():
+    global LIFE, CREDS, STATEPATH, GROUP, STATE, NS, RESULT
+    GROUP, STATE = sys.argv[1:]
+    NS = 'proof-' + GROUP
+    RESULT = {'group':GROUP, 'checks':[], 'limitations':['Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate.']}
     os.umask(0o077)
     try:
         spec = importlib.util.spec_from_file_location('lifecycle', Path(__file__).resolve().parents[1] / 'scripts/talos-proof-data.py')
         life = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(life)
+        LIFE = life
+        life.LEASE_GROUP = GROUP
         life.lease(GROUP)
+        STATEPATH = life.private(STATE)
+        credential_path = life.no_symlinks(STATEPATH / 'credentials.json')
+        if not credential_path.exists():
+            raise RuntimeError('prepared proof credentials required')
+        CREDS = life.credentials(STATEPATH)[GROUP]
         if not os.environ.get('TALOS_PROOF_GATEWAY_CA'):
             raise RuntimeError('verified Gateway TLS CA required for integrated frontend tests')
         RESULT['limitations'][0] = 'Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate.'
@@ -269,9 +418,14 @@ def main():
         RESULT['status'] = 'failed'
         # Error bodies can contain tokens, usernames or secrets. Keep evidence sanitized.
         RESULT['failure_type'] = type(e).__name__
-    path = Path(STATE) / (GROUP + '-result.json')
-    path.write_text(json.dumps(RESULT, indent=2) + '\n')
-    os.chmod(path, 0o600)
+        RESULT['failed_stage'] = CURRENT_STAGE
+        if isinstance(e, urllib.error.HTTPError):
+            RESULT['http_status'] = e.code
+    if STATEPATH is not None:
+        path = LIFE.no_symlinks(STATEPATH / (GROUP + '-result.json'))
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, 'w') as f:
+            json.dump(RESULT, f, indent=2)
     print(json.dumps(RESULT, indent=2))
     if RESULT['status'] == 'failed':
         sys.exit(1)

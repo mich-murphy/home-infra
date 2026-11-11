@@ -47,8 +47,8 @@ Default-deny ingress AND egress applies in every app namespace. Only CoreDNS
 UDP/TCP53 and explicit directional app-to-backend flows are allowed. Matching
 backend ingress is present; there is no blanket same-namespace allow. Synthetic
 fixture ingress is limited to its frontend. Frontend ingress permits the
-`proof-validation` and `proof-gateway` namespaces. Parent Cilium policy additionally
-permits reserved `ingress` identity; namespace-only matching cannot establish
+`proof-validation` and `proof-gateway` namespaces. App-specific CiliumNetworkPolicies permit reserved `ingress` identity on only
+each frontend port (never PostgreSQL/cache/backend ports); namespace-only matching cannot establish
 Cilium native Gateway access. Verify real datapath tests and drop verdicts before
 claiming isolation, rather than relying on policy YAML.
 
@@ -109,8 +109,13 @@ The script submits Secret objects from memory to kubectl stdin, never renders or
 prints credential values. Treat kubeconfig, dump files and result state as private.
 Do not delete/regenerate credentials while retaining initialized database PVCs.
 
-The parent-authored lease JSON contains `group`, exact kubectl `context`, and
-Unix `expires`. Metrics API is preferred for memory observations. With the
+The parent-authored lease JSON contains `group`, exact kubectl `context`, Unix
+`expires`, `endpoint: "https://127.0.0.1:64120"`, and recorded `node_uid`. Every
+apply/scale/exec/patch/rollout revalidates the exact endpoint with TLS enabled and
+the single node name/hostname `talos-proof` plus that UID, not just context.
+Private state paths and existing ancestors/credential files reject symlinks using
+lstat before resolution. An expired lease also blocks cleanup: parent must grant
+a lease long enough for the bounded run and renew if an exceptional timeout occurs. Metrics API is preferred for memory observations. With the
 intentional no-metrics-server platform, parent additionally provides guest
 `available_mib` and Unix `measured_at`, at most120seconds old. This must measure
 **guest available memory**, not Proxmox host free RAM. A missing/stale observation
@@ -181,9 +186,36 @@ kubectl kustomize kubernetes/apps/data | python3 tests/kubernetes-proof.py
 python3 tests/talos-proof-data_test.py
 ```
 
-The15 offline tests cover parent safety validation, exact boundaries, current
+The24 offline tests cover parent safety validation, exact boundaries, current
 Compose image membership, Immich/PG18 paths, default-deny presence, group-budget
 accounting, no committed Secret manifests, fresh/private credential behavior,
-repository-state refusal, no implicit kubeconfig, expired leases and stale or
-insufficient memory rejection. These are not live assertions. Static result and
+repository-state refusal, no implicit kubeconfig, expired leases, exact endpoint/TLS/node UID enforcement, symlink/ancestor
+refusal, mutation reauthorization, frontend-only reserved ingress ports, and stale
+or insufficient memory rejection. These are not live assertions. Static result and
 render hash are recorded under `docs/evidence/talos-data/`.
+
+## Work in progress after safety review
+
+The lower-resource suites now implement **separate newly provisioned clean-PVC**
+restores, not only a second database on the same disk: CouchDB JSON documents,
+Miniflux full PostgreSQL logical backup, and Wallabag MariaDB logical backup.
+Source frontends/database are stopped before switching the Deployment claim;
+source PVC remains retained and is reattached in finally. Evidence records distinct
+source/restore PVC UIDs and PV names. The restored application validates original
+content/checksum through its real TLS Gateway. These workflows remain **NOT RUN**
+until the parent releases platform lease and grants the data lease.
+
+Pocket-ID browser protocol experiments are implemented in
+`tests/talos-proof-data-browser.mjs` using Mac-local Chrome and pinned
+playwright-core1.58.2 outside git. Python independently verifies Gateway TLS using
+the public self-signed certificate. Chrome uses that exact leaf SPKI pin rather
+than broad ignoreHTTPSErrors or global keychain changes, and browser routing blocks
+non-proof origins. Fresh CDP virtual CTAP2 keys are generated locally, registered
+using navigator.credentials.create, then used with fresh cookies for actual
+WebAuthn login. The harness creates an isolated PKCE client and checks authorization
+code/state, token signature against JWKS, issuer/audience/nonce/sub/expiry and
+userinfo identity. Keys remain0600 outside git; no fixed upstream fixture keys,
+tokens or browser traces are printed/committed. This is not a physical passkey UX
+claim. **The real browser flow remains untested pending lease**, although Chrome
+launch/CDP availability has been verified locally. Set
+`TALOS_PROOF_PLAYWRIGHT_MODULE` to the private installed playwright-core directory.

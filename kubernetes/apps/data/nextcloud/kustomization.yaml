@@ -10,6 +10,7 @@ resources:
 - collabora.yaml
 - cronjob.yaml
 - httproute.yaml
+- gateway-policy.yaml
 labels:
 - pairs:
     app.kubernetes.io/part-of: talos-proof

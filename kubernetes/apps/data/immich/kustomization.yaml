@@ -9,6 +9,7 @@ resources:
 - immich.yaml
 - ml.yaml
 - httproute.yaml
+- gateway-policy.yaml
 labels:
 - pairs:
     app.kubernetes.io/part-of: talos-proof
