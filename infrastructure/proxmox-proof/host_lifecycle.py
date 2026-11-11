@@ -357,7 +357,6 @@ def start():
                 'QEMU not paused/prelaunch')
         approved_config()
         run('bash', str(HERE / 'isolation.sh'), timeout=90)
-        run('systemctl', 'reset-failed', UNIT)
         # Type=notify start does not complete until identity + first safe sample ACK.
         run('systemctl', 'start', UNIT, timeout=45)
         require(run('systemctl', 'show', UNIT, '-p', 'ActiveState', '--value').strip() == 'active',

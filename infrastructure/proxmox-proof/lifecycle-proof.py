@@ -51,9 +51,13 @@ def main():
         h.require(h.run('systemctl', 'show', h.UNIT, '-p', 'ActiveState', '--value').strip() == 'active',
                   'guard not active')
         first = counters()
-        # Observe ordinary node traffic only. No production/network experiment.
-        time.sleep(10)
-        second = counters()
+        # Boot can take longer than ten seconds. Observe ordinary node traffic
+        # only; never manufacture private-target probes to obtain a counter.
+        deadline = time.monotonic() + 90
+        second = first
+        while second['iptables'] <= first['iptables'] and time.monotonic() < deadline:
+            time.sleep(2)
+            second = counters()
         print(json.dumps({'action': 'cold-start', 'old_scope_inode': before['cgroup_inode'],
                           'new_scope_inode': after['cgroup_inode'], 'pid': after['pid'],
                           'jump_packets_before': first, 'jump_packets_after': second,

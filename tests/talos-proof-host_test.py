@@ -163,6 +163,26 @@ class IdentityTests(unittest.TestCase):
             self.assertEqual(send.call_args_list[1].args, (99, signal.SIGKILL))
             command.assert_not_called()  # no VMID-addressed qm stop race
 
+    def test_identity_mutations_cannot_authorize_another_process(self):
+        current = {'pid': 12000, 'start_ticks': 100, 'boot_id': 'boot',
+                   'uuid': h.UUID, 'cgroup_inode': 999}
+        for key, value in (('pid', 12001), ('start_ticks', 101),
+                           ('boot_id', 'other-boot'), ('uuid', 'other-uuid'),
+                           ('cgroup_inode', 1000)):
+            receipt = dict(current); receipt[key] = value
+            with self.subTest(key=key), patch.object(h, 'boot_id', return_value='boot'), \
+                 patch.object(h, 'process_identity', return_value=current):
+                self.assertFalse(h.same_process(receipt))
+
+    def test_scope_move_still_allows_exact_incarnation_cleanup(self):
+        receipt = {'pid': 12000, 'start_ticks': 100, 'boot_id': 'boot',
+                   'uuid': h.UUID, 'cgroup_inode': 999}
+        core = {k: receipt[k] for k in ('pid', 'start_ticks', 'boot_id', 'uuid')}
+        with patch.object(h, 'boot_id', return_value='boot'), \
+             patch.object(h, 'process_identity', return_value=core) as identify:
+            self.assertTrue(h.same_process(receipt, scope=False))
+            identify.assert_called_once_with(12000, scope=False)
+
     def test_private_receipt_symlink_rejected(self):
         with tempfile.TemporaryDirectory() as d, patch.object(h, 'STATE', Path(d)):
             (Path(d)/'target').write_text('{}')
@@ -194,6 +214,13 @@ class GuardTests(unittest.TestCase):
     def test_no_ack_on_unsafe_first_sample(self): self.assertEqual(self.guard_case(False), [])
     def test_ack_after_safe_identity_and_first_sample(self):
         self.assertTrue(self.guard_case()[0].startswith('READY=1\nWATCHDOG=1'))
+
+    def test_config_mutation_never_acknowledges(self):
+        with patch.object(h, 'lock', return_value=99), \
+             patch.object(h, 'approved_config', side_effect=RuntimeError('config changed')), \
+             patch.object(h, 'notify') as notify:
+            with self.assertRaises(RuntimeError): h.guard()
+            notify.assert_not_called()
 
     def test_missing_baseline_receipt_never_acknowledges(self):
         with patch.object(h, 'lock', return_value=99), \
@@ -257,6 +284,10 @@ class StartupTests(unittest.TestCase):
                         calls.index(('qm', 'resume', '120')))
         self.assertEqual(stopped, 0)
         self.assertTrue(saved[-1].args[1]['complete'])
+
+    def test_inactive_guard_does_not_require_reset_failed(self):
+        calls, _, _ = self.exercise()
+        self.assertNotIn(('systemctl', 'reset-failed', h.UNIT), calls)
 
     def test_guard_ack_failure_stops_and_never_resumes(self):
         calls, stopped, _ = self.exercise(failure=('systemctl', 'start'))

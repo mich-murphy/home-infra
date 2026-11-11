@@ -1,8 +1,9 @@
-# VM120 supervised lifecycle (activation awaiting coordinator lease)
+# VM120 supervised lifecycle — live crash/watchdog acceptance
 
 This implementation owns only proof VM120. It does not change existing guests,
 host tuning, global networking, production storage or existing systemd units.
-**Local tests are not live fail-closed acceptance. No host reboot is authorized.**
+**Crash/watchdog/cold-start tests passed on 2026-11-11; this is not production
+readiness or host-reboot acceptance. No host reboot is authorized.**
 
 ## Identity and startup contract
 
@@ -67,9 +68,11 @@ unit/hook is modified. Do not claim protection against a root operator bypassing
 the wrapper. Guest reboot normally retains the process/scope; host reboot remains
 **untested and prohibited here** because it restarts production guests.
 
-## Installation/activation: parent acknowledgement required
+## Installation/activation procedure: parent acknowledgement required
 
-Do NOT run these during the platform owner's active lease. First obtain the
+The initial installation and three successful boots below were performed under
+the coordinator-released exclusive outage lease. For future installations, do NOT
+run these during the platform owner's active lease. First obtain the
 coordinator's checkpoint/outage/install approval and record before/after existing
 guest PIDs/start times and resources. The following are commands for the approved
 window, not a record that they have run:
@@ -123,9 +126,47 @@ PSI rates, missed samples, pidfd reuse recheck, bounded exact-process stop, guar
 ACK suppression/duplicates, startup ordering/failure cleanup and stale invocation
 receipts. Shell syntax/shellcheck are separate gates.
 
-**Still unproved until the live lease:** systemd notify/watchdog behavior on this
-host; actual crash/hang/startup-failure stop; QEMU-exit qmeventd cleanup; recreated
-cgroup counter binding; cold-start healthy API; post-start resource margin under
-platform load. IPv6, DNS-proxy and controlled reachable negative-destination tests
-remain the platform owner's separate authorized network work. No reboot proof is
-claimed and no network timeout is treated as isolation evidence.
+## Live acceptance, 2026-11-11 13:00–13:10 UTC
+
+See [sanitized evidence](evidence/talos-platform/host-lifecycle-live.txt) for exact
+commands, identities, source hashes, counters and supervisor events. Five cold
+start attempts of the approved maximum six were used: two safe startup failures,
+then successful boot, SIGKILL stop, successful boot, watchdog stop, final recovery.
+
+- The early startup failures were a needless `systemctl reset-failed` on an
+  inactive guard unit. Both stopped the captured QEMU. Removed that command and
+  added regression coverage; no gate was weakened. Pending args/memory are now
+  overlaid only for those two allowed fields, fully validated and exact-digested;
+  other pending fields/snapshots are rejected. This matches qm cold-start behavior.
+- READY preceded resume in all three successful boots. Actual guard SIGKILL gave
+  Result=signal and verified original-QEMU exit. Actual SIGSTOP produced the15s
+  watchdog, Result=watchdog and verified original-QEMU exit. Proxmox cleaned up
+  exited scopes/PID files sufficiently for subsequent supervised starts.
+- Recreated scope inodes54270→55942→57081; the latter boots showed IPv4 scoped jump
+  counters0→15 from ordinary node traffic. Exactly one scoped jump per family.
+  Initial ten-second harness observation was too early; extended to a bounded90s
+  rather than manufacturing private-network probes. IPv6 counters remain0: no
+  claim of an IPv6 network test.
+- Final running QEMU3972278, guard3972326, memory2560MiB. 3072MiB was not selected:
+  first fresh post-stop available4546MiB was below4992MiB admission. Later boots
+  also retained2560, with the same4480MiB admission requirement.
+- At13:10 UTC host available2171MiB, QEMU RSS~2528MiB, swap24KiB (no growth),
+  swap IO9pages unchanged. Guard active/watchdog15s. Recent PSI delta rates were
+  below thresholds, later avg10=0. Guest available1083MiB. This is a checkpoint,
+  not a load/peak/soak capacity claim.
+- API readyz=ok; original node UID preserved/Ready, Cilium agent/operator/Envoy,
+  CoreDNS and control-plane containers ready. Gateway Accepted/Programmed true.
+  Actual forwarded18443 TLS1.3 verifies the existing proof certificate; HTTP503 is
+  expected with fixture replicas0, **not functional fixture acceptance**. TLS
+  Secret UID/creation time and bound PVC identity remain pre-outage objects;
+  no application-data checksum/recovery claim is made by this lifecycle work.
+- Existing101/102 config SHA256 and QEMU PIDs/start times identical before/after;
+  no host tuning, other guest operation or production storage/network mutation.
+
+**Remaining unproved:** host reboot (prohibited here); live missing-receipt and
+wrapper-SIGKILL injections (offline coverage only); application data contents and
+representative load/peaks; IPv6/DNS-proxy/controlled negative network paths (owned
+by the platform reviewer). Direct root administrative bypass remains possible.
+New application leases must use the existing supervised monitor and must not
+restart these units. P1 crash/hang supervision and ordinary supervised cold-start
+are demonstrated; broader acceptance remains with the coordinator.

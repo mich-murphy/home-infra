@@ -1,3 +1,4 @@
+HISTORICAL CHECKPOINT — superseded by host-lifecycle-live.txt (final VM running, core P1 tests passed).
 LOCAL CHECKPOINT / LIVE LEASE INCOMPLETE 2026-11-11T13:01Z
 30 offline tests passed; shellcheck/syntax passed before deployment.
 Installed new proof-only units; legacy guard retired AFTER proof VM stop.
