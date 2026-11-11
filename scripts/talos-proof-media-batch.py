@@ -10,6 +10,7 @@ import time
 
 safety = importlib.import_module('talos-proof-media-safety')
 observe = importlib.import_module('talos-proof-media-observe')
+pinchflat_watch = importlib.import_module('talos-proof-media-pinchflat-watch')
 FRONTENDS = tuple(x for x in safety.SERVICES if x not in ('kometa', 'recyclarr', 'jellyplex-watched'))
 
 
@@ -34,6 +35,13 @@ def main():
     def kube(*command, **kwargs):
         return safety.kube(args.service, *command, **kwargs)
     if args.action in ('start', 'restart', 'activate'):
+        if args.service == 'pinchflat':
+            pinchflat_watch.require_not_stopped(state)  # BEFORE any activation mutation
+            try:
+                pinchflat_watch.sample(state)
+            except Exception:
+                pinchflat_watch.stop(state)
+                raise
         safety.guard(args.service)
         safety.require_helpers_deleted(args.service)
         if args.action == 'start':
@@ -56,13 +64,21 @@ def main():
                 while True:
                     pods = json.loads(safety.kubectl_read('get', 'pods', '-n', ns, '-o', 'json'))['items']
                     safety.resources.pinchflat_no_restart(pods)
+                    pinchflat_watch.sample(state,pods=pods)
                     if pods and all(any(c.get('type') == 'Ready' and c.get('status') == 'True' for c in p.get('status', {}).get('conditions', [])) for p in pods):
                         break
                     if time.monotonic() >= deadline:
                         raise RuntimeError('Pinchflat bounded startup timed out')
                     time.sleep(1)
-            kube('-n', ns, 'rollout', 'status', 'deployment/' + args.service, '--timeout=300s')
-        except RuntimeError:
+            if args.service == 'pinchflat':
+                with pinchflat_watch.monitoring(state):
+                    kube('-n', ns, 'rollout', 'status', 'deployment/' + args.service, '--timeout=300s')
+            else:
+                kube('-n', ns, 'rollout', 'status', 'deployment/' + args.service, '--timeout=300s')
+        except Exception:
+            if args.service == 'pinchflat':
+                pinchflat_watch.stop(state)  # Native sample already retained; stop before further exec.
+                raise
             # Preserve failed pod UID/image/last termination and cgroup evidence before deletion.
             try:
                 observe.capture(args.service, state)

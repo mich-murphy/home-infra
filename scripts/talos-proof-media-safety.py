@@ -172,17 +172,21 @@ def lease(group):
 
 
 def exclusivity(group):
-    """Reject data/media/unknown proof groups, including pending pods and active controllers."""
-    allowed = group_namespaces(group) | {'proof-validation', 'proof-gateway'}
+    """ALL other proof application Pods must be deleted, including terminal Pods.
+
+    Cilium Gateway is Service/Envoy infrastructure, not an exemption for arbitrary
+    Pods/controllers placed in proof-gateway or proof-validation.
+    """
+    allowed = group_namespaces(group)
     pods = json.loads(kubectl_read('get', 'pods', '-A', '-o', 'json'))['items']
     for pod in pods:
         ns = pod['metadata']['namespace']
-        if group == 'media-pipeline' and ns == 'proof-media-pipeline' and pod.get('status', {}).get('phase') not in ('Succeeded', 'Failed'):
+        if group == 'media-pipeline' and ns == 'proof-media-pipeline':
             app = pod['metadata'].get('labels', {}).get('app.kubernetes.io/name')
             if app not in PIPELINE_MEMBERS:
                 raise RuntimeError('unselected application pod in pipeline namespace')
-        if ns.startswith('proof-') and ns not in allowed and pod.get('status', {}).get('phase') not in ('Succeeded', 'Failed'):
-            raise RuntimeError('another proof group has live or pending pods')
+        if ns.startswith('proof-') and ns not in allowed:
+            raise RuntimeError('another proof group has remaining pods; ALL previous app/fixture/helper pods must be deleted')
     controllers = json.loads(kubectl_read('get', 'deployments,statefulsets', '-A', '-o', 'json'))['items']
     for controller in controllers:
         ns = controller['metadata']['namespace']

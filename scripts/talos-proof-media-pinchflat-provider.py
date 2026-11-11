@@ -18,6 +18,7 @@ import sys
 import urllib.parse
 
 s = importlib.import_module('talos-proof-media-safety')
+watch = importlib.import_module('talos-proof-media-pinchflat-watch')
 API = importlib.import_module('talos-proof-media-http').API
 NS = 'proof-pinchflat'
 FEED = 'http://127.0.0.1:7913/feed.xml'
@@ -57,7 +58,16 @@ def pod():
 
 
 def remote(container, command, *args):
-    result = kube('exec',pod(),'-c',container,'--','/bin/sh','-ec',command,'proof',*args)
+    watch.checkpoint()
+    try:
+        result = kube('exec',pod(),'-c',container,'--','/bin/sh','-ec',command,'proof',*args)
+    except Exception as exc:
+        try: watch.fail_control(exc)
+        except Exception: pass
+        try: watch.checkpoint()
+        except Exception: pass  # Preserve original exec137/private diagnostics.
+        raise
+    watch.checkpoint()
     pod()  # Never issue another native command after a known restart/termination.
     return result
 
@@ -304,7 +314,11 @@ def exercise(state, ca):
     sys.path.insert(0,str(s.ROOT/'tests'))
     service = importlib.import_module('talos-proof-media-services')
     profile_name='proof-rss-'+uuid.uuid4().hex
-    api.call('/media_profiles','POST',form={'_csrf_token':service.csrf(api.call('/media_profiles/new',raw=True)),
+    def native_post(path, **kwargs):
+        watch.checkpoint()
+        try:return api.call(path,'POST',**kwargs)
+        finally:watch.checkpoint()
+    native_post('/media_profiles',form={'_csrf_token':service.csrf(api.call('/media_profiles/new',raw=True)),
         'media_profile[name]':profile_name,'media_profile[output_path_template]':destination.removeprefix('/downloads/')+'/{{ id }}.{{ ext }}',
         'media_profile[download_metadata]':'false','media_profile[embed_metadata]':'false','media_profile[download_nfo]':'false',
         'media_profile[download_thumbnail]':'false','media_profile[download_source_images]':'false','media_profile[sponsorblock_behaviour]':'disabled'})
@@ -315,7 +329,7 @@ def exercise(state, ca):
     attempt = {'destination':destination,'binary_before':binary,'profile_id':profile_id,'profiles_before':before['profiles']}
     save(state,'attempt',attempt)
     check()
-    api.call('/sources','POST',form={'_csrf_token':service.csrf(api.call('/sources/new',raw=True)),
+    native_post('/sources',form={'_csrf_token':service.csrf(api.call('/sources/new',raw=True)),
         'source[original_url]':FEED,'source[custom_name]':profile_name,'source[media_profile_id]':profile_id,
         'source[fast_index]':'false','source[download_media]':'true','source[cookie_behaviour]':'disabled','source[index_frequency_minutes]':'1440'})
     sources = native(state)['sources']
@@ -381,9 +395,11 @@ def main():
     if a.action=='prepare':
         expect(a.fixture is not None,'prepare needs exact immutable fixture');result=prepare(state,a.fixture)
     elif a.action=='exercise':
-        expect(a.ca is not None,'exercise requires trusted Gateway CA');result=exercise(state,a.ca)
+        expect(a.ca is not None,'exercise requires trusted Gateway CA')
+        with watch.monitoring(state):result=exercise(state,a.ca)
     else:
-        expect(a.record is not None,'verify needs prior passed record');result=verify(state,a.record)
+        expect(a.record is not None,'verify needs prior passed record')
+        with watch.monitoring(state):result=verify(state,a.record)
     name=save(state,a.action+'-result',result)
     print(json.dumps({'action':a.action,'result':result.get('result','PASS'),'record':name}))
 
@@ -391,6 +407,8 @@ def main():
 if __name__=='__main__':
     try:main()
     except Exception as exc:
+        state = None
+        cleanup_failed = False
         try:
             supplied = Path(sys.argv[sys.argv.index('--state')+1])
             state = s.private_dir(supplied)
@@ -398,17 +416,16 @@ if __name__=='__main__':
             for stream in ('private_stdout','private_stderr'):
                 if hasattr(exc,stream):
                     s.write_private(state/('pinchflat-native-failure-'+uuid.uuid4().hex+'.log'),getattr(exc,stream))
-            # One-shot failure cleanup; retain observation BEFORE stopping. Never
-            # retry RPC, exercise, or startup, including after an OOM.
-            if sys.argv[1] in ('exercise','verify'):
-                try:
-                    importlib.import_module('talos-proof-media-observe').capture('pinchflat',state)
-                finally:
-                    kube('scale','deployment','pinchflat','--replicas=0')
-                    kube('wait','--for=delete','pod','--all','--timeout=180s')
         except Exception:
             pass
+        # Cleanup must not be skipped if private evidence writing itself fails.
+        if len(sys.argv)>1 and sys.argv[1] in ('exercise','verify'):
+            try:
+                watch.stop(state)
+            except Exception:
+                cleanup_failed = True
         # Fixed errors only; never echo credentials, native logs or auth URLs.
         print(json.dumps({'result':'FAIL','error_type':type(exc).__name__,'http_status':getattr(exc,'code',None),
-                          'check':str(exc) if isinstance(exc,RuntimeError) else None}))
+                          'check':str(exc) if isinstance(exc,RuntimeError) else None,
+                          'cleanup_failed_parent_action_required':cleanup_failed}))
         raise SystemExit(1)

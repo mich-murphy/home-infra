@@ -109,7 +109,7 @@ class Budget(unittest.TestCase):
                 r.pinchflat_no_restart([{'status':{'containerStatuses':[status]}}])
         batch=(ROOT/'scripts/talos-proof-media-batch.py').read_text()
         self.assertIn('pinchflat_no_restart(pods)',batch)
-        self.assertIn("kube('scale','deployment','pinchflat','--replicas=0')",Path(p.__file__).read_text())
+        self.assertIn("watch.stop(state)",Path(p.__file__).read_text())
 
     def test_prospective_admission_rejects_live_pods_or_replicas(self):
         self.controllers=[base()]

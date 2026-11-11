@@ -126,6 +126,7 @@ class Provider(unittest.TestCase):
         self.assertNotIn('yt-dlp -U',source)
         self.assertIn('command -v yt-dlp',source)
         self.assertIn('binary_after==binary',source)
-        self.assertIn("'/sources','POST'",source)
+        self.assertIn("native_post('/sources'",source)
+        self.assertIn("api.call(path,'POST',**kwargs)",source)
 
 if __name__=='__main__':unittest.main()
