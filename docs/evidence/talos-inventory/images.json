@@ -1,0 +1,281 @@
+{
+  "captured_utc": "2026-11-11T12:04:40.774735+00:00",
+  "images": [
+    {
+      "id": "sha256:018fa74af2636c0940bbef537beb048532d4a50d837d9b250404a3fcb210500f",
+      "digests": [
+        "ghcr.io/pocket-id/pocket-id@sha256:f085157f0b6ea4b2e8aa5ecfd99eada0d83a4960f3a3dcfd46014097d0ef7ab5"
+      ],
+      "created": "2026-10-22T00:49:03.481768367Z",
+      "size_bytes": 87900867
+    },
+    {
+      "id": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+      "digests": [
+        "ghcr.io/linuxserver/tautulli@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5"
+      ],
+      "created": "2026-11-06T03:33:03.167142144Z",
+      "size_bytes": 151029952
+    },
+    {
+      "id": "sha256:0a339d838e29651e2919e2a1b80be1100080b5ee8b1522ed11b5619230d1d432",
+      "digests": [
+        "ghcr.io/linuxserver/prowlarr@sha256:b3b00047ed20f6ce2b16780145cb6a0acb51c9e28ea6aa6f5dcd33c7034f1797"
+      ],
+      "created": "2026-10-20T19:04:15.300764825Z",
+      "size_bytes": 187172819
+    },
+    {
+      "id": "sha256:0c43ea3c808ca131e5d23695e40907de0149851716395a764cd0d1787c936ba7",
+      "digests": [
+        "ghcr.io/linuxserver/sonarr@sha256:44b06045a98bc1f237b9ffefc4b28dab64cb29305e4a2a94875ae93b5224e4cc"
+      ],
+      "created": "2026-10-15T18:59:27.192106664Z",
+      "size_bytes": 203342166
+    },
+    {
+      "id": "sha256:10731763b027649b7cbcbcf76e8c35a0f4f4240475473839e122ea5f19de29a1",
+      "digests": [
+        "mariadb@sha256:4844586367ef1b639ae699953e00a6a18f460f700e52df00401e1101a6ef2450",
+        "mariadb@sha256:f4054da26e3a9dd6c8b5cc97363e544408b15c0fb369d7359c25dc04826eb6e1"
+      ],
+      "created": "2026-10-26T23:25:00.19021506Z",
+      "size_bytes": 363400012
+    },
+    {
+      "id": "sha256:178719aeb38df6f0ce8edc1d8320008379fcf04eb3444e76419cc98d9861e331",
+      "digests": [
+        "ghcr.io/immich-app/postgres@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23"
+      ],
+      "created": "2025-10-07T12:09:13.605869304Z",
+      "size_bytes": 755756304
+    },
+    {
+      "id": "sha256:1c7d52e1015357baa73d4924510c05b767cbc0040a91d80881f4590c8610aa91",
+      "digests": [
+        "collabora/code@sha256:95f29f1c0a1778999125f53f058d968fe0afb37c95e32ebfb9f3444140faebd2"
+      ],
+      "created": "2026-11-07T10:25:49.398081362Z",
+      "size_bytes": 1348323644
+    },
+    {
+      "id": "sha256:264333502478464c62b851430e03b27d11068f732fefb5dfb2030154fb14e131",
+      "digests": [
+        "ghcr.io/linuxserver/lidarr@sha256:a91ef0642c15c9bd7c4260fee98fa99972c61601e37c8a96411d6a9cf0e9ad40"
+      ],
+      "created": "2026-11-11T07:49:24.00378225Z",
+      "size_bytes": 293914631
+    },
+    {
+      "id": "sha256:3733df53e74cd0df7d1b839168e30d2bd7f5e77dd6214ef3d8056ee1f21392b7",
+      "digests": [
+        "traefik@sha256:1336e85aaed293bd63d005086e0dd013b04078b26aaeb1c18b26a2f928af7e65"
+      ],
+      "created": "2026-10-21T22:55:46.036314361Z",
+      "size_bytes": 194353735
+    },
+    {
+      "id": "sha256:3906c5c0e19bf611f160a8ffb0a2637c80f8e2491af180be0e83939f666bd60d",
+      "digests": [
+        "henrygd/beszel@sha256:8514a69d9bbbcb74f371a3205561ee231fc0289739cea64e8131f341d695b770"
+      ],
+      "created": "2026-10-22T17:13:08.86160415Z",
+      "size_bytes": 34065159
+    },
+    {
+      "id": "sha256:398e92fbba00c8ec4e0dfe6eab403027d27bae95d86196fb0f88b284dab7025d",
+      "digests": [
+        "portainer/portainer-ee@sha256:0cd22f754ac52fcfceb362d5ce8f47ee23a5f6427484db17ebfaa4c8a00f7718"
+      ],
+      "created": "2026-09-17T00:29:59.251555104Z",
+      "size_bytes": 223573533
+    },
+    {
+      "id": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+      "digests": [
+        "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5"
+      ],
+      "created": "2026-11-05T06:46:59.676174Z",
+      "size_bytes": 185199699
+    },
+    {
+      "id": "sha256:40d6dd961ecbd75e18635213ddb04e73e8678cf78f828efc01d0a5fcd36924fe",
+      "digests": [
+        "kometateam/kometa@sha256:c89cd9404aaf13ec5174ee2ddeafcf02887ea53593c1bfc4ef9e9c04a75ddbfe"
+      ],
+      "created": "2026-11-11T11:53:37.785200718Z",
+      "size_bytes": 480053496
+    },
+    {
+      "id": "sha256:428769644edafa69beffc66ea45e4e1458a0f2b52e77e914d46068ca4b9fe53b",
+      "digests": [
+        "ghcr.io/advplyr/audiobookshelf@sha256:b897c33f05972fb1bf484f7487bc878fa91ec8691335c1db6e2929c3a7658efa"
+      ],
+      "created": "2026-10-23T19:39:46.547383449Z",
+      "size_bytes": 359835877
+    },
+    {
+      "id": "sha256:4b074edfbc1b5928636cc57a9f18827f441e812b4a1ddd05cfae22ca1e1dcb01",
+      "digests": [
+        "ghcr.io/linuxserver/radarr@sha256:51a9ac2a9eb47afc833541e5fd6c11b86eb9f810694c22fa2429e3078e9194b2"
+      ],
+      "created": "2026-11-08T20:53:12.249835988Z",
+      "size_bytes": 212599175
+    },
+    {
+      "id": "sha256:4e875186a553158498e9d68487703991aa0512c8255f7262e62ea1d8185fe7ec",
+      "digests": [
+        "luigi311/jellyplex-watched@sha256:e3b33047846cee76f906eb2cb316f9b6f04d3b78fdf3317d826d83c09db97a47"
+      ],
+      "created": "2026-10-26T14:33:28.578782072Z",
+      "size_bytes": 111539656
+    },
+    {
+      "id": "sha256:52479c9b30bd5870f5e61ac383075b9e22a0eadff80ecc690f7de7c9d952b1c7",
+      "digests": [
+        "ghcr.io/immich-app/immich-machine-learning@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2"
+      ],
+      "created": "2026-11-04T17:26:33.65204456Z",
+      "size_bytes": 738073828
+    },
+    {
+      "id": "sha256:54297791dce6edfce6eea8e74e1350f312b4a92af511a97a3a94c41e264e769e",
+      "digests": [
+        "plexinc/pms-docker@sha256:6d778d41daae68f89115aa87a44ae14a96b23e71a2093da173b5a9aac4091336"
+      ],
+      "created": "2026-10-13T07:57:12Z",
+      "size_bytes": 356829781
+    },
+    {
+      "id": "sha256:59be8425089e9930dbe20bc644cf902ceeeb66cd3d849e9587dc25b9aac2f0a2",
+      "digests": [
+        "wallabag/wallabag@sha256:2e9d9fbbba6feee060109351d1235386fa4ac495f98c82d94a250d56feaeaeeb"
+      ],
+      "created": "2026-10-28T13:12:29.225686192Z",
+      "size_bytes": 283547660
+    },
+    {
+      "id": "sha256:5d03dcfbdfdcfae9aa374ece6d2099383a52e1c892b91b18c8c2b01ff33dd034",
+      "digests": [
+        "couchdb@sha256:907eab5b7e55ab7cfd241d39b90b2a335ea40bef82acee5a37388c08bf201dda"
+      ],
+      "created": "2026-11-05T07:38:45.844589036Z",
+      "size_bytes": 299611950
+    },
+    {
+      "id": "sha256:61f6fa0cf472caa95736d00fa624aea848f687b2ac899c2370a509de93e8abba",
+      "digests": [
+        "ghcr.io/seerr-team/seerr@sha256:d8fab675b55ad293ded98fd71efcfd46054cbad9746534ae1cc4794a88c0b3be"
+      ],
+      "created": "2026-10-21T15:40:13Z",
+      "size_bytes": 889726585
+    },
+    {
+      "id": "sha256:73c09865113935331f04f1f9ff4733e7b0ee785fe9d3613b0745a98d4899de53",
+      "digests": [
+        "ghcr.io/kieraneglin/pinchflat@sha256:4e975edf58f0861a5cbfe8fc6aac4851ff5a02dfc3f05ffeea4982e3084a5a4a"
+      ],
+      "created": "2025-06-06T21:42:50.902033549Z",
+      "size_bytes": 685511866
+    },
+    {
+      "id": "sha256:86027d8080a77ae8025763f386a02f4ba16d724954053683e91d916077385843",
+      "digests": [
+        "ghcr.io/mkbula/qbitwebui@sha256:75907e7013dedbc87226b9c095ac00b64d4eea814fd5550ccbde114d3f216b22"
+      ],
+      "created": "2026-07-04T13:42:40.204735511Z",
+      "size_bytes": 404769049
+    },
+    {
+      "id": "sha256:8bca9649e52d948114ccc8164b55b7ab26b64e729893e420114bb5c87bf7c7cc",
+      "digests": [
+        "postgres@sha256:bd5dfa494a5a259704365813dbfa5fa6b3e69be7348d43b547f540c730478583",
+        "postgres@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42"
+      ],
+      "created": "2026-11-05T07:29:44.528257177Z",
+      "size_bytes": 456705264
+    },
+    {
+      "id": "sha256:8c78a9d757ed2b3c05956ce9337aad063df88a5ba371dd5418b4f66cfb5b1b4d",
+      "digests": [
+        "valkey/valkey@sha256:546304417feac0874c3dd576e0952c6bb8f06bb4093ea0c9ca303c73cf458f63"
+      ],
+      "created": "2025-12-22T19:52:34.675568743Z",
+      "size_bytes": 112686234
+    },
+    {
+      "id": "sha256:978293674c6b207a799aa6003064828846a7771cd521603c41e9a4c7f28ec4dc",
+      "digests": [
+        "redis@sha256:1f88291b4c57bdf249f02eb085a8669889b2d2954e91d4de5118a5da6b78dd53"
+      ],
+      "created": "2026-11-05T07:36:42.330039317Z",
+      "size_bytes": 146075587
+    },
+    {
+      "id": "sha256:995797bf87597b4247190e0034827f7887b34e75a4f603374591eab4f44172cb",
+      "digests": [
+        "jellyfin/jellyfin@sha256:fea863d0cd9ec445985d9c75fc6ed64e38a1d2766cf0c250a33d553f4fc1b771"
+      ],
+      "created": "2026-10-26T21:19:40.243471992Z",
+      "size_bytes": 1717674290
+    },
+    {
+      "id": "sha256:a14e639cf2a202e87bb83f21ff041885098f295dbbbb18e2f3a8f078f90dfdcc",
+      "digests": [
+        "ghcr.io/tecnativa/docker-socket-proxy@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459"
+      ],
+      "created": "2026-07-27T09:28:37.570257436Z",
+      "size_bytes": 43470505
+    },
+    {
+      "id": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+      "digests": [
+        "nextcloud@sha256:57ef13427eb50e6fac64933e0f50cc4a2abaa142dfaf52dfb6c658382dd103a8",
+        "nextcloud@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+        "nextcloud@sha256:d88929dc8386420b8963f86cabb667fdaf733eef9dcf8fc98e226801a32c023c"
+      ],
+      "created": "2026-11-05T08:46:50.466044755Z",
+      "size_bytes": 1481059168
+    },
+    {
+      "id": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+      "digests": [
+        "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f"
+      ],
+      "created": "2026-10-25T12:06:45.338549111Z",
+      "size_bytes": 230635514
+    },
+    {
+      "id": "sha256:d8642290c6a46f22d8ba0de16c5006b66a63b13412e5b8624912aaeecbc7f525",
+      "digests": [
+        "redis@sha256:71885d8cc6e42f2bc0aa2eb853bfc4be200b5108a46ac50e117ae1df0531fb80"
+      ],
+      "created": "2026-11-05T19:17:30.285077829Z",
+      "size_bytes": 119619414
+    },
+    {
+      "id": "sha256:e01acf089048efe5b315858054563e724f080240864a0fa6b35f63ac08e876ff",
+      "digests": [
+        "ghcr.io/recyclarr/recyclarr@sha256:9c6c74d52cfc6f740a5a3624aa83867e171bb70b90453ddb7a4048b8c80445f9"
+      ],
+      "created": "2026-10-05T23:45:05.242677353Z",
+      "size_bytes": 130026512
+    },
+    {
+      "id": "sha256:fb0c7c1a1b2a553c1c60e4bbb3d999d3d1483c9a223807e0856cd42d30b9cbea",
+      "digests": [
+        "ghcr.io/immich-app/immich-server@sha256:e1981983b1c13f6024b57d72e7ecae3342eed1581201ab09fb248932d86c593a"
+      ],
+      "created": "2026-11-04T17:27:50.116984439Z",
+      "size_bytes": 1682512090
+    },
+    {
+      "id": "sha256:fd622fa7310da7f0c2c5cd627a2fd38f23e8250b28eaf8698f6353215fe1b686",
+      "digests": [
+        "miniflux/miniflux@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9"
+      ],
+      "created": "2026-11-02T03:37:53.806935302Z",
+      "size_bytes": 35621166
+    }
+  ]
+}
