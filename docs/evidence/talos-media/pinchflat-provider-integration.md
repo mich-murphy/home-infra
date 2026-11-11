@@ -22,7 +22,9 @@ retained observations; a manifest is not proof of effective isolation.
 Origin code is provisioned as a hash-named immutable ConfigMap. Input is ONLY the
 retained `Proof Browser Fixture (2000).mp4`,120214bytes, SHA256
 `9f754faabc2f1d7a460a8b3ff0ef3f9124c9cab7407af3e66a649c720ae348cb`, in a
-hash-named immutable Secret mounted read-only by the fixture only. No binary in
+hash-named immutable Secret mounted read-only by the fixture only. Its exact
+fixture.mp4 subPath is a regular bind-mounted file: the origin retains O_NOFOLLOW
+and does not weaken its input loader to follow projected-volume symlinks. No binary in
 Git. Fixture cannot mount either app PVC, and the app has no fixture input/code/
 stats mount or API token. It must fetch bytes through stock native downloader.
 Prepare never generates the MP4 or reapplies base Deployment/PVC references.

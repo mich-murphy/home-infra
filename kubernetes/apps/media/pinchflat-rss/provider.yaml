@@ -73,7 +73,8 @@ spec:
           mountPath: /proof-origin
           readOnly: true
         - name: rss-input
-          mountPath: /proof-input
+          mountPath: /proof-input/fixture.mp4
+          subPath: fixture.mp4
           readOnly: true
         - name: rss-stats
           mountPath: /proof-stats
