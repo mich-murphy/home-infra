@@ -1,0 +1,99 @@
+{
+  "observations": [
+    {
+      "sha256": "cc835c16119cb728ec4858ad1d09d3651161fb4f7eea2269a40f07fb04ad11a6",
+      "phase": "before destructive suite mutation",
+      "pod_count": 2,
+      "current_logs": 2,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "c978e258dc2da9cfcbaf7cb902c72065132873a4767df97c83a80721d445a5b4",
+      "phase": "before destructive suite mutation",
+      "pod_count": 4,
+      "current_logs": 4,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "2dfbe4fb4fd3ec800a2d4b01adddaa1c920db91463b5d2294c95ccb9407b2c8b",
+      "phase": "before destructive suite mutation",
+      "pod_count": 3,
+      "current_logs": 3,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "b992493e219ce4036f644a4f8bf3d1ae85e4daba17d0cd4b1510bf8a7e25e90e",
+      "phase": "before mutation",
+      "pod_count": 4,
+      "current_logs": 4,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "2093b28a4412da007ea7cdcec914a99aa6fa81f8c9e817c193b9c731f801715d",
+      "phase": "before mutation",
+      "pod_count": 0,
+      "current_logs": 0,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "f141fd366a326e4e974d42e278b4cbe507dd1dfbf95f1530aea581986b682450",
+      "phase": "before destructive suite mutation",
+      "pod_count": 4,
+      "current_logs": 4,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "48a71c8c35c08898007b1339500971c29617920eb5d1282738a9f289405c973f",
+      "phase": "before mutation",
+      "pod_count": 0,
+      "current_logs": 0,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "759fa057949ba960dc0f2d54cd2baf86b4f8ac6dbaaf10ade64d01ba3ce50ef5",
+      "phase": "before destructive suite mutation",
+      "pod_count": 3,
+      "current_logs": 3,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "3877fb811cd8e6c0b588bfc81d7323b8cec0dd050cb3c32135ecdd008dd64c30",
+      "phase": "before destructive suite mutation",
+      "pod_count": 4,
+      "current_logs": 4,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "cc14c57e240000522bc5ad4f1bc991dbf6f27af9ba97f72981c40adebc7b1ee7",
+      "phase": "before destructive suite mutation",
+      "pod_count": 3,
+      "current_logs": 3,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "820db1d6e3fc31313dadef962851f5a98ca083a0083d984705cb5c871724dea6",
+      "phase": "before destructive suite mutation",
+      "pod_count": 2,
+      "current_logs": 2,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "8c641a98108c6374594109addfd8ae87b86ceced4eb51d7514435d3ed90d0dc0",
+      "phase": "before destructive suite mutation",
+      "pod_count": 3,
+      "current_logs": 3,
+      "previous_logs": 0
+    },
+    {
+      "sha256": "6ec7c4e62514c2f814564abae1cc8175dd010d2c4a87300c010f2f78a3e8f073",
+      "phase": "before destructive suite mutation",
+      "pod_count": 4,
+      "current_logs": 4,
+      "previous_logs": 0
+    }
+  ],
+  "current_log_count": 36,
+  "max_observed_restart_count": 0,
+  "previous_logs_applicable": false,
+  "gaps": []
+}

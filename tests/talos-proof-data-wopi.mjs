@@ -139,7 +139,7 @@ try {
   }
   // Observed only in the seventh plain-text attempt: selecting Editing Mode
   // opens this exact format-loss confirmation. Do not dismiss arbitrary dialogs.
-  if(input.mode!=='office') {
+  if(input.mode!=='office' && (input.format || 'txt')==='txt') {
     const notice=frame.getByText('This document may contain formatting or content that cannot be saved in the current file format.',{exact:true});
     if(await notice.waitFor({state:'visible',timeout:5000}).then(()=>true).catch(()=>false)) {
       stage='observed plain-text format-warning Continue editing';

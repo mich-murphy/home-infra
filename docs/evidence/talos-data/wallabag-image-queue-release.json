@@ -1,0 +1,28 @@
+{
+  "observed_at": 1794425333.942792,
+  "proof_pods_remaining": 0,
+  "proof_controllers": 21,
+  "all_proof_controller_replicas_zero": true,
+  "all_proof_cronjobs_suspended": true,
+  "baseline_files_hash_unchanged": 79,
+  "changed_files": [],
+  "receipt_archived_mode": "0600",
+  "receipt_removed": true,
+  "archive_sha256": "e40a8849dc250769399df632387cf5f6869b535db39ef0bc74f2b5e27e095b56",
+  "post_deletion_memory": {
+    "kubelet_available_mib": 1148,
+    "talos_available_mib": 1068,
+    "available_mib": 1068,
+    "measured_at": 1794425333.712757
+  },
+  "admission_minimum_mib": 1158,
+  "grant_threshold_mib": 1120,
+  "actual_unchanged_container_limits_mib": {
+    "wallabag": 192,
+    "mariadb": 256,
+    "redis": 64,
+    "fixture": 64
+  },
+  "budget_discrepancy": "Grant stated928MiB; actual unchanged four-controller limits sum576MiB. Stricter grant threshold1120MiB was independently required before activation. No limits or reserve lowered.",
+  "result_sha256": "8900e46f8ffdafdf49cf3d5af724eb0a0eaaebbb1884e9d1070489909b957bd4"
+}

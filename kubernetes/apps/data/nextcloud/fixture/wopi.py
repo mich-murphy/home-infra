@@ -2,6 +2,9 @@
 """Bounded concurrent single-document WOPI fixture, NOT Nextcloud/conformance.
 No raw request logging: WOPI carries secrets in query strings.
 """
+import io
+import zipfile
+import xml.etree.ElementTree as ET
 import hashlib
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -16,13 +19,33 @@ MAX_BYTES = 1024 * 1024
 INITIAL = b'Synthetic WOPI proof document\n'
 
 
+def odt():
+    buffer=io.BytesIO()
+    with zipfile.ZipFile(buffer,'w') as archive:
+        archive.writestr('mimetype','application/vnd.oasis.opendocument.text',compress_type=zipfile.ZIP_STORED)
+        archive.writestr('content.xml','<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" office:version="1.2"><office:body><office:text><text:p>Synthetic Nextcloud Office proof</text:p></office:text></office:body></office:document-content>')
+        archive.writestr('META-INF/manifest.xml','<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.2"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>')
+    return buffer.getvalue()
+
+
+def document_marker(data, format, marker):
+    if format == "txt": return marker.encode() in data
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        if archive.read("mimetype") != b"application/vnd.oasis.opendocument.text":
+            raise ValueError("not an ODT document")
+        content = ET.fromstring(archive.read("content.xml"))
+    return marker in "".join(content.itertext())
+
+
 class Host:
-    def __init__(self, root, token):
+    def __init__(self, root, token, format="txt"):
         if not token:
             raise ValueError('fresh private proof token required')
         self.token = token
-        self.path = Path(root) / 'proof.txt'
-        if not self.path.exists(): self.path.write_bytes(INITIAL)
+        if format not in ('txt','odt'): raise ValueError('unsupported fixture format')
+        self.format = format
+        self.path = Path(root) / ('proof.' + format)
+        if not self.path.exists(): self.path.write_bytes(odt() if format=='odt' else INITIAL)
         self.lock = ''
         self.lock_expires = 0
         self.events = []
@@ -47,7 +70,8 @@ class Host:
             data = self.path.read_bytes()
             return {'events':list(self.events),'requests':list(self.requests),
                     'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data),
-                    'marker_present':b'WOPI-SAVED-' in data}
+                    'format':self.format,
+                    'marker_present':document_marker(data,self.format,'WOPI-SAVED-')}
 
     def record(self, event, status, size):
         with self.mutex:
@@ -147,7 +171,7 @@ def handler(host):
             with host.mutex:
                 if path=='/wopi/files/proof':
                     self.operation='CheckFileInfo';host.event(self.operation)
-                    return self.reply(200,{'BaseFileName':'proof.txt','OwnerId':'synthetic-owner',
+                    return self.reply(200,{'BaseFileName':host.path.name,'OwnerId':'synthetic-owner',
                         'UserId':'synthetic-editor','UserFriendlyName':'Synthetic Editor',
                         'Size':host.path.stat().st_size,'Version':host.version(),
                         'UserCanWrite':True,'ReadOnly':False,'SupportsUpdate':True,
@@ -197,4 +221,4 @@ def handler(host):
 
 if __name__=='__main__':
     os.umask(0o077)
-    Server(('0.0.0.0',8082),handler(Host('/data',os.environ['NEXTCLOUD_ADMIN_PASSWORD']))).serve_forever(poll_interval=.2)
+    Server(('0.0.0.0',8082),handler(Host('/data',os.environ['NEXTCLOUD_ADMIN_PASSWORD'],os.environ.get('PROOF_WOPI_FORMAT','txt')))).serve_forever(poll_interval=.2)

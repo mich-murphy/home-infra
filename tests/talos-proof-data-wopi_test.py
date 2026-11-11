@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Offline WOPI fixture protocol regressions; never connects to proof API."""
+import io
+import zipfile
 import hashlib
 import http.client
 import importlib.util
@@ -36,6 +38,45 @@ class WOPIProtocol(unittest.TestCase):
         c=http.client.HTTPConnection('127.0.0.1',self.server.server_port,timeout=5)
         c.request(method,'/wopi/files/proof'+suffix+'?access_token='+token,body,h)
         r=c.getresponse();value=(r.status,dict(r.getheaders()),r.read());c.close();return value
+
+    def test_native_odt_info_lock_save_and_reopen_offline(self):
+        self.host = fixture.Host(self.directory.name,'synthetic-offline-token','odt')
+        self.server.RequestHandlerClass = fixture.handler(self.host)
+        info=json.loads(self.request()[2])
+        self.assertEqual(info['BaseFileName'],'proof.odt')
+        original=self.request(suffix='/contents')[2]
+        with zipfile.ZipFile(io.BytesIO(original)) as archive:
+            first=archive.infolist()[0]
+            self.assertEqual((first.filename,first.compress_type),('mimetype',zipfile.ZIP_STORED))
+            self.assertEqual(archive.read('mimetype'),b'application/vnd.oasis.opendocument.text')
+            members={n:archive.read(n) for n in archive.namelist()}
+        marker='WOPI-SAVED-offline-protocol-only'
+        # This is an offline fixture protocol test, NOT evidence of CODE editing.
+        members['content.xml']=members['content.xml'].replace(b'Synthetic Nextcloud Office proof',marker.encode())
+        output=io.BytesIO()
+        with zipfile.ZipFile(output,'w') as archive:
+            for name,data in members.items():archive.writestr(name,data)
+        saved=output.getvalue()
+        self.assertEqual(self.request('POST',op='LOCK',lock='editor')[0],200)
+        self.assertEqual(self.request('POST','/contents',lock='wrong',body=saved)[0],409)
+        self.assertEqual(self.host.path.read_bytes(),original)
+        self.assertEqual(self.request('POST','/contents',lock='editor',body=saved)[0],200)
+        self.assertTrue(fixture.document_marker(self.request(suffix='/contents')[2],'odt',marker))
+        reopened=fixture.Host(self.directory.name,'synthetic-offline-token','odt')
+        self.assertEqual(reopened.path.read_bytes(),saved)
+        self.assertTrue(reopened.evidence()['marker_present'])
+        self.assertEqual(self.request(token='wrong')[0],401)
+
+    def test_odt_marker_must_be_in_content_xml_not_zip_metadata(self):
+        marker='WOPI-SAVED-decoy'
+        output=io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(fixture.odt())) as original, zipfile.ZipFile(output,'w') as target:
+            for name in original.namelist():target.writestr(name,original.read(name))
+            target.writestr('styles.xml',marker)
+            target.comment=marker.encode()
+        self.assertFalse(fixture.document_marker(output.getvalue(),'odt',marker))
+        with self.assertRaises(zipfile.BadZipFile):fixture.document_marker(b'not odt','odt',marker)
+        with self.assertRaises(ValueError):fixture.Host(self.directory.name,'token','docx')
 
     def test_token_required_for_info_read_and_write(self):
         for method,suffix,op in [('GET','',None),('GET','/contents',None),('POST','','LOCK'),('POST','/contents',None)]:

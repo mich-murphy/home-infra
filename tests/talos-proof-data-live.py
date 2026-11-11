@@ -314,10 +314,15 @@ def wopi_browser():
     module = os.environ.get('TALOS_PROOF_PLAYWRIGHT_MODULE')
     if not module:
         raise RuntimeError('private pinned playwright-core module required')
+    format = os.environ.get('TALOS_PROOF_WOPI_FORMAT','txt')
+    if format not in ('txt','odt'): raise RuntimeError('unsupported WOPI format')
+    if LIFE.lease(GROUP).get('document_format','txt') != format:
+        raise RuntimeError('WOPI format differs from explicit parent grant')
+    RESULT['wopi_document_format'] = format
     with forwarded('collabora',9980) as base:
         discovery = ET.fromstring(http(base,'/hosting/discovery',raw=True))
-    actions = [a for a in discovery.iter('action') if a.get('name')=='edit' and a.get('ext')=='txt']
-    check('real CODE discovery offers editable txt action',bool(actions))
+    actions = [a for a in discovery.iter('action') if a.get('name')=='edit' and a.get('ext')==format]
+    check('real CODE discovery offers editable '+format+' action',bool(actions))
     action = actions[0].attrib['urlsrc']
     # WOPI discovery uses optional <key=value&> substitution templates. Only
     # remove optional templates; never invent an editor URL or change its origin.
@@ -336,7 +341,7 @@ def wopi_browser():
     payload = {'state':str(STATEPATH),'module':module,'spki':base64.b64encode(hashlib.sha256(der).digest()).decode(),
         'port':int(os.environ.get('TALOS_PROOF_GATEWAY_PORT','18443')),'action':action,
         'source':'http://wopi-fixture.proof-nextcloud.svc.cluster.local:8082/wopi/files/proof',
-        'token':CREDS['NEXTCLOUD_ADMIN_PASSWORD'],'marker':marker,
+        'token':CREDS['NEXTCLOUD_ADMIN_PASSWORD'],'marker':marker,'format':format,
         'outputPrefix':os.environ.get('TALOS_PROOF_WOPI_OUTPUT_PREFIX','wopi-'+uuid.uuid4().hex)}
     proc = subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-wopi.mjs'))],
         input=json.dumps(payload).encode(),capture_output=True,timeout=240)
@@ -350,7 +355,7 @@ def wopi_browser():
         if 'PutFile' in evidence['events']:
             with forwarded('wopi-fixture',8082) as source:
                 saved=http(source,'/wopi/files/proof/contents?access_token='+CREDS['NEXTCLOUD_ADMIN_PASSWORD'],raw=True)
-            evidence['marker_present']=marker.encode() in saved
+            evidence['marker_present']=wopi_document_tools().document_marker(saved,format,marker)
         RESULT['wopi_last_callback_evidence']=evidence
         if evidence['marker_present'] and 'PutFile' in evidence['events']:
             break
@@ -366,7 +371,7 @@ def wopi_browser():
     check('real CODE document close/reopen reaches loaded editable state',reopened.returncode==0)
     with forwarded('wopi-fixture',8082) as source:
         reopened_bytes=http(source,'/wopi/files/proof/contents?access_token='+CREDS['NEXTCLOUD_ADMIN_PASSWORD'],raw=True)
-    check('WOPI saved marker and exact bytes survive real browser close/reopen',reopened_bytes==saved and marker.encode() in reopened_bytes)
+    check('WOPI saved marker and exact bytes survive real browser close/reopen',reopened_bytes==saved and wopi_document_tools().document_marker(reopened_bytes,format,marker))
     payload['source']='http://denied-wopi.proof.invalid:8082/wopi/files/proof'
     payload['expectHostDenial']=True
     denied=subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-wopi.mjs'))],input=json.dumps(payload).encode(),capture_output=True,timeout=75)
@@ -376,14 +381,15 @@ def wopi_browser():
     RESULT['limitations'].append('Faithful single-file WOPI fixture + real CODE/browser edit/save ONLY, not Nextcloud/richdocuments integration, account authorization, multieditor, ODF formatting or production capacity.')
 
 
-def odt():
-    buffer=io.BytesIO()
-    with zipfile.ZipFile(buffer,'w') as archive:
-        archive.writestr('mimetype','application/vnd.oasis.opendocument.text',compress_type=zipfile.ZIP_STORED)
-        archive.writestr('content.xml','<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" office:version="1.2"><office:body><office:text><text:p>Synthetic Nextcloud Office proof</text:p></office:text></office:body></office:document-content>')
-        archive.writestr('META-INF/manifest.xml','<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.2"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>')
-    return buffer.getvalue()
+def wopi_document_tools():
+    path = Path(__file__).resolve().parents[1] / 'kubernetes/apps/data/nextcloud/fixture/wopi.py'
+    spec = importlib.util.spec_from_file_location('wopi_document_tools', path)
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
 
+
+def odt():
+    return wopi_document_tools().odt()
 
 def office_browser(fileid,marker,edit=True):
     module=os.environ.get('TALOS_PROOF_PLAYWRIGHT_MODULE')

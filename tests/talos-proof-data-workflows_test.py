@@ -26,6 +26,14 @@ class Workflows(unittest.TestCase):
         live.RESULT = {'checks':[], 'limitations':[]}
         live.CREDS = {'COUCHDB_PASSWORD':'offline-only', 'ADMIN_PASSWORD':'offline-only'}
 
+    def test_native_odt_requires_matching_explicit_receipt_before_discovery(self):
+        from types import SimpleNamespace
+        for selected,receipt in [('odt',{}),('odt',{'document_format':'txt'}),('txt',{'document_format':'odt'})]:
+            with patch.dict('os.environ',{'TALOS_PROOF_PLAYWRIGHT_MODULE':'offline-module','TALOS_PROOF_WOPI_FORMAT':selected}), patch.object(live,'LIFE',SimpleNamespace(lease=lambda group:receipt)), patch.object(live,'forwarded') as forwarded:
+                with self.assertRaises(RuntimeError):live.wopi_browser()
+                forwarded.assert_not_called()
+        self.assertEqual(live.odt()[:4],b'PK\x03\x04')
+
     def test_immich_fixture_real_exif_and_valid_png_chunks(self):
         image=live.immich_fixture(); offset=8; chunks={}
         while offset<len(image):
@@ -227,7 +235,7 @@ class Workflows(unittest.TestCase):
 
     def test_wopi_format_warning_fix_is_exact_and_plain_text_only(self):
         source=Path(__file__).with_name('talos-proof-data-wopi.mjs').read_text()
-        self.assertIn("if(input.mode!=='office')",source)
+        self.assertIn("if(input.mode!=='office' && (input.format || 'txt')==='txt')",source)
         self.assertIn("name:'Continue editing',exact:true",source)
         self.assertIn('This document may contain formatting or content that cannot be saved in the current file format.',source)
         self.assertNotIn("'wopi-failure.png'",source)

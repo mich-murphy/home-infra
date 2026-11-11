@@ -23,7 +23,7 @@ def main():
     state=Path.home()/'.local/state/home-infra/talos-proof'
     summary=json.loads(life.kube('get','--raw','/api/v1/nodes/talos-proof/proxy/stats/summary'))
     kubelet=math.floor(summary['node']['memory']['availableBytes']/1024/1024)
-    proc=subprocess.run([str(state/'bin/talosctl'),'--talosconfig',str(state/'config/talosconfig'),'-n','172.31.250.10','read','/proc/meminfo'],capture_output=True,check=True,timeout=30,text=True)
+    proc=subprocess.run([str(state/'bin/talosctl'),'--talosconfig',str(state/'config/talosconfig'),'-e','127.0.0.1:50120','-n','172.31.250.10','read','/proc/meminfo'],capture_output=True,check=True,timeout=30,text=True)
     mem=dict((line.split(':',1)[0],int(line.split()[1])) for line in proc.stdout.splitlines() if ':' in line)
     talos=math.floor(mem['MemAvailable']/1024)
     life.lease(args.group)

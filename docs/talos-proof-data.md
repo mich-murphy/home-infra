@@ -1393,3 +1393,97 @@ performed. No source, production, GPU, other guest or host settings were changed
 Offline regression checks pass:42 data contracts,18 workflow/boundary tests,
 12 WOPI protocol tests, Python compilation, browser syntax and diff checks. These
 checks do not turn the new warning-handler or current-log branch into live passes.
+
+## Exclusive Wallabag image/import live checkpoint — released
+
+The new exclusive Wallabag grant was used once for the prepared630e63d4
+workflow. **Bounded image and real Redis import checks passed.** Only Wallabag,
+MariaDB, Redis and the owned HTTP fixture were activated; all proof pods were
+absent before activation. No Office, Nextcloud, Immich, ML or media activation
+occurred. No source Docker, existing guest, production data/credentials, DNS,
+router, GPU, storage layout or host-guard baseline was changed.
+
+[Immutable live result](evidence/talos-data/wallabag-image-queue-live-result.json):
+
+- Real OAuth/TLS article capture fetched the fixture SVG and rewrote it to the
+  Wallabag `/assets/images/` origin. Independent local HTTP readback parsed the
+ 16×16 red rectangle; SHA256 was
+  `374a79521a94551d740b0f1340fda1ce6d1782dcafcdd5c8a15bb9c885f6f231`.
+- Real `WallabagV2Import` + native Redis producer queued one/zero synchronous
+  imports. Actual pending/processing/failed/error depths were1/0/0/0 and the
+  article was absent from authenticated API results before the worker. The real
+  `wallabag:import:redis-worker wallabag_v2 --maxIterations=1` completed within
+  the45second process bound; all depths became0 and API content/read/star state
+  matched. A supported unique tag filter isolated the job.
+- Redis was replaced only after draining; a second native producer/worker pair
+  repeated the same assertions. This proves **fresh-process connection
+  reestablishment**, not transparent reconnect of a surviving worker, persistence
+  of pending/in-flight messages, delivery guarantees or exactly-once semantics.
+  No completion rows, fake jobs or harness Redis pushes were inserted.
+- The same image SHA and article survived MariaDB replacement and logical restore
+  into a distinct fresh PVC/PV. Existing-user OAuth relogin, article/content hash,
+  archive state and delete404 passed. **The image PVC remained retained**; this
+  is not fresh image-volume recovery. Native API cleanup removed synthetic
+  articles and the original image-download setting was restored.
+
+### Admission and resource caveats
+
+Fresh genuine dual readings immediately before activation were kubelet1288MiB /
+Talos1158MiB, minimum1158. Talos used the private binary with explicit
+`-e127.0.0.1:50120 -n172.31.250.10`; the memory-refresh helper now always supplies
+that exact endpoint. Only measured memory/time receipt fields were refreshed.
+Identity, group and expiry were unchanged. The grant's stricter **928+192=1120MiB**
+threshold was separately asserted. The unchanged live/repository four-controller
+limits actually sum **576MiB** (Wallabag192 + MariaDB256 + Redis64 + fixture64),
+not928; this discrepancy is recorded rather than editing the grant or limits.
+
+A real transient500 after MariaDB replacement recovered within1second. One
+Wallabag cgroup exec before scale0 failed and remains an explicit observation
+gap. Sampled max/oom/oom_kill were0 and observed restart counts0, but Wallabag's
+inclusive lifetime peak reached192MiB and fixture64MiB, equal to their limits.
+These are not anonymous-memory usage or safe production-capacity claims. The
+result retains anon/file/stat observations and the gap; no workload limit,
+reserve, cache or baseline was reset to improve the outcome.
+
+### Forensics, immutability and release
+
+[Forensic index](evidence/talos-data/wallabag-image-queue-forensics.json) records
+13 append-only private manifests and36 bounded current logs captured **before**
+destructive mutations/deletion. They preserve Pod UID, container identity,
+state/lastState and restart counts; all observed counts were0, so previous logs
+were inapplicable rather than silently lost. No current-log capture gap occurred.
+Raw logs remain0600/private and are not committed. Two native worker logs and a
+new UUID-named MariaDB dump also remain0600/private.
+
+[Release/preservation](evidence/talos-data/wallabag-image-queue-release.json)
+independently verifies all proof app/helper pods absent, all21 proof controllers0,
+all proof CronJobs suspended, lease archived0600 then removed, and **79 preexisting
+private artifacts hash-unchanged**. Credentials, authenticator histories, old
+archives and historical failures were not overwritten. Final genuine readings
+were kubelet1148/Talos1068/minimum1068MiB; these are post-deletion observations,
+not a new admission/grant. Parent retains host-guard/root/readiness ownership.
+
+## Offline native-ODT option after Wallabag release — NOT activated
+
+The seven historical TXT failures remain reproducible and unchanged. No eighth
+TXT attempt or ODT attempt was run. The exact observed TXT “Continue editing”
+handler remains TXT-only. An optional `--format odt` path now prepares a genuinely
+native ODT ZIP from the existing minimal ODT utility, shared with the WOPI fixture:
+first uncompressed `mimetype`, XML `content.xml`, and ODF manifest. CheckFileInfo
+advertises `proof.odt`; the browser selects the actual discovery **edit/odt**
+action rather than a guessed URL. Default TXT behavior is retained.
+
+Future save assertions require the browser marker in parsed **content.xml**, not
+raw ZIP bytes, comments or another ZIP member. Real accepted PutFile and
+CheckFileInfo/GetFile/LOCK callbacks are still required; browser reopen must
+preserve exact saved bytes and parsed marker. Offline protocol tests manually
+exercise fixture lock/save/read/reopen and decoy rejection; these are **not CODE
+editing evidence**. No helper PutFile is added to the live acceptance path.
+
+ODT requires a **new explicit parent receipt with `document_format: "odt"`**,
+existing exact wopi stage/controllers/UID/endpoint, fresh dual memory admission,
+and an unused bounded attempt. Both the supervisor and direct live browser suite
+reject a format/grant mismatch. CODE768 + fixture64 + reserve192 stay unchanged;
+no grant, fit, headroom, formatting fidelity or full Nextcloud Office acceptance
+is inferred from offline preparation. Current1068MiB cannot admit ML1216,
+Nextcloud web1280 or Immich app1408; prepared heavy workflows remain unrun.

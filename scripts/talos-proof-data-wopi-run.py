@@ -19,12 +19,15 @@ ROOT=Path(__file__).resolve().parents[1]
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--attempt',required=True,type=int,choices=[1,2]);parser.add_argument('--state',required=True)
+    parser=argparse.ArgumentParser();parser.add_argument('--attempt',required=True,type=int,choices=[1,2]);parser.add_argument('--state',required=True);parser.add_argument('--format',choices=['txt','odt'],default='txt')
     args=parser.parse_args();os.umask(0o077)
     spec=importlib.util.spec_from_file_location('life',ROOT/'scripts/talos-proof-data.py')
     life=importlib.util.module_from_spec(spec);spec.loader.exec_module(life)
     life.LEASE_GROUP='nextcloud';life.LEASE_STAGE='wopi'
     state=life.private(args.state);life.STATE_DIR=state;receipt=life.lease('nextcloud')
+    if receipt.get('document_format','txt') != args.format:
+        raise RuntimeError('native ODT requires explicit new format-bound parent grant')
+    os.environ['TALOS_PROOF_WOPI_FORMAT']=args.format
     maximum=receipt.get('max_attempts')
     if not receipt.get('lease_id') or maximum not in (1,2) or args.attempt>maximum:
         raise RuntimeError('explicit bounded attempt receipt required')
@@ -41,7 +44,7 @@ def main():
     if pods:raise RuntimeError('attempt requires all group pods deleted first')
     prefix='wopi-'+str(time.time_ns())+'-'+uuid.uuid4().hex
     os.environ['TALOS_PROOF_WOPI_OUTPUT_PREFIX']=prefix
-    result={'output_prefix':prefix,'status':'started','attempt':args.attempt,'started':time.time(),'scope':'CODE768 + WOPI fixture64 ONLY','observations':{},'cleanup':{}}
+    result={'output_prefix':prefix,'status':'started','attempt':args.attempt,'started':time.time(),'document_format':args.format,'scope':'CODE768 + WOPI fixture64 ONLY','observations':{},'cleanup':{}}
     lock=threading.RLock()
     def save():
         with lock:
@@ -69,7 +72,7 @@ def main():
                         'time':time.time(),'cgroup':{},'read_times':{}}
                 for name in ('memory.current','memory.peak','memory.events','memory.stat'):
                     life.lease('nextcloud')
-                    proc=subprocess.run([str(parent/'bin/talosctl'),'--talosconfig',str(parent/'config/talosconfig'),'-n','172.31.250.10','read',base+'/'+name],capture_output=True,text=True,timeout=10)
+                    proc=subprocess.run([str(parent/'bin/talosctl'),'--talosconfig',str(parent/'config/talosconfig'),'-e','127.0.0.1:50120','-n','172.31.250.10','read',base+'/'+name],capture_output=True,text=True,timeout=10)
                     sample['cgroup'][name]=proc.stdout if proc.returncode==0 else 'unavailable'
                     sample['read_times'][name]=time.time()
                 events=dict(line.split() for line in sample['cgroup'].get('memory.events','').splitlines() if len(line.split())==2)
@@ -93,7 +96,10 @@ def main():
                   (kind=='NetworkPolicy' and (not d['spec']['podSelector'] or app in ('collabora','wopi-fixture'))) or
                   (kind=='CiliumNetworkPolicy' and d['spec']['endpointSelector']['matchLabels']['app.kubernetes.io/name']=='collabora') or
                   (kind=='HTTPRoute' and d['spec'].get('hostnames')==['collabora.proof.invalid']))
-            if keep:approved.append(d)
+            if keep:
+                if kind=='Deployment' and name=='wopi-fixture':
+                    d['spec']['template']['spec']['containers'][0]['env']=[{'name':'PROOF_WOPI_FORMAT','value':args.format}]
+                approved.append(d)
         actual={d['metadata']['name']:int(d['spec']['template']['spec']['containers'][0]['resources']['limits']['memory'][:-2]) for d in approved if d['kind']=='Deployment'}
         if actual!={'collabora':768,'wopi-fixture':64}:raise RuntimeError('unchanged exact controller limits required')
         life.kube('--request-timeout=15s','apply','-f','-',data=json.dumps({'apiVersion':'v1','kind':'List','items':approved}))
