@@ -27,7 +27,7 @@ for current ownership and leases.
 | `wallabag-mariadb` | Bounded MariaDB profile | **Bounded pass:** clean logical restore and existing-user/article/state/hash verified through Wallabag HTTP. No production dataset/peak-capacity claim. |
 | `wallabag-redis` | Private Redis | **Bounded pass5622c159:** actual native producer→pending depth1/API absent→real worker completion/authenticated content/read/star, repeated after Redis replacement using fresh processes. Not transparent reconnect, in-flight durability or exactly-once delivery. |
 | `nextcloud` | Nextcloud + new HTML/config/files PVC | **Pending:** staged WebDAV/share/recovery code; no live acceptance. Version/trash/share/ACL and coordinated DB+files recovery must be checked, not just login. |
-| `nextcloud-cron` | Suspended bounded CronJob | **Pending:** same proof data/DB, explicitly leased one-shot only; no actual background-task result yet. |
+| `nextcloud-cron` | Suspended192MiB CronJob | **Pending:** native synthetic-age cleanup runner prepared, but parent failure/identity/bootstrap review gaps are under repair. Actual Nextcloud PVCs absent; stopped creation/binding and a new832MiB grant required. No lastcron-only or draft acceptance. |
 | `nextcloud-office` | Collabora CODE, explicit finite security exception | **Partial/failed editing:** eight retained attempts (sevenTXT, one nativeODT). ActualODT loaded with edit permission and CheckFileInfo/GetFile/LOCK; token401/lock409 preserved bytes. Session warning blocked welcome close; no marker/acceptedPutFile/save/reopen/hostdeny. Dialog fixes and known-running alternate-host control prepared offline only. Inclusive peak768/768 with sampled OOM0 is not anonymous-use/headroom proof. No Office editing/full Nextcloud integration pass. |
 | `nextcloud-postgres` | Pinned PG18 + separate PVC | **Pending:** app-validating clean restore not executed for Nextcloud. |
 | `nextcloud-redis` | Authenticated private Redis | **Pending:** lock contention/reconnect must be proved with Nextcloud, not inferred from Redis startup. |
@@ -46,7 +46,7 @@ this fresh-state test is **not** an upgrade/migration rehearsal of the source da
 
 | Source container | Proof replacement | Actual evidence / remaining gate |
 |---|---|---|
-| `pinchflat` | Isolated frontend + config/download PVCs | **Partial:** trusted-TLS profile CRUD, replacement and different-fresh-PVC read-before-write recovery passed. Optional native RSS profile attempted756385cc but initial RPC control failed twice; second exit137, main restart2/lastOOMKilled137. Additional BEAM is candidate overhead, not proved cause. No downloader identity/Source/index/download pass; no limit increase. Existing CRUD recovery is not provider recovery. |
+| `pinchflat` | Isolated frontend + config/download PVCs | **Partial:** trusted-TLS profile CRUD, replacement and different-fresh-PVC read-before-write recovery passed. Optional RSS trial756385cc failed before provider proof. Later kernel correlation found3memcg OOMs in that pod: first2twoBEAM, third1BEAM plus yt-dlp/Python; RPC is not the sole established cause. New provider-only384+128+192=704 profile is OFFLINE, not granted. Public image hashes verified; runtime identity/Source/index/download unproved. Existing CRUD recovery is not provider recovery. |
 | `audiobookshelf` | Isolated library/config/metadata PVCs | **Bounded pass:** generated audiobook scan, exact stream/range bytes, progress/bookmark CRUD, restart and three fresh-PVC recovery checks. No production library/podcast/provider migration. |
 | `qbittorrent` | Fresh private settings/data + BEP3 fixture | **Bounded pass7ac9f65c:** repaired route, actual5.3 auth204/preferences, real torrent transfer—1 handshake/2 pieces/32,044bytes—and completed on-disk SHA; fixture-off restart and different2PVC functional recovery. Initial401/API-response mismatch and progress1-without-file failure retained. Follow-upd65fce12 native browser login204/prefs200 and hostile same-site form with exact authenticated cookie denied/state unchanged passed. Six harness failures retained. Cookie lacked Secure behind TLS termination—separate security gap, not production auth parity. |
 | `qbitwebui` | Fresh user/instance state and proof qbit dependency | **Pending:** executable exact-version workflow, no live connection/auth/queue-state proof yet. |
@@ -55,7 +55,7 @@ this fresh-state test is **not** an upgrade/migration rehearsal of the source da
 | `sonarr` | Same bounded media-pipeline approach | **Pending:** episode workflow and real imported-file identity/persistence. |
 | `lidarr` | Same bounded media-pipeline approach | **Pending:** music workflow and real imported-file identity/persistence. |
 | `prowlarr` | Isolated indexer manager + local provider fixtures | **Pending:** actual test/query/result integration, not only empty configuration. |
-| `jellyfin` | Fresh local server, no GPU/devices | **Security failure756385cc:** independent anonymous client received exact120214B video/SHA, not a health page. Real library/outsider created, but setup marker withheld; do not reset retained state. No decoded lifecycle/resume/outsider ACL/recovery pass. Native LAN/proxy/auth classification needs source-backed diagnosis, not bypass. |
+| `jellyfin` | Fresh local server, no GPU/devices | **Security failure756385cc:** independent anonymous client received exact120214B video/SHA, not a health page. Real library/outsider created, but setup marker withheld; do not reset retained state. No decoded lifecycle/resume/outsider ACL/recovery pass. Pinned source review found undecorated stream actions/no fallback policy and no supported require-auth switch; LAN/proxy reclassification is not a fix. No bypass or configuration change. |
 | `plex` | Fresh unclaimed server + authenticated local-only adapter | **Partial756385cc:** native agent discovery explicitly supplied xn; real scan/exactbytes/range/watched CRUD passed. Browser media401 with actual Origin/Referer blocks decoding; neither header stripped. Prior collision/restart5/400 retained. No decoded playback/history/recovery pass. Adapter key is **not** a native/cloud token; account/client parity unproved. |
 | `tautulli` | Fresh monitor state against proof Plex | **Pending:** native API/empty-history preparation reached756385cc, but Plex browser failed before frames. No actual matching playback/history/statistics or recovery pass. |
 | `seerr` | Fresh request manager + isolated media/provider dependencies | **Pending:** actual authenticated request lifecycle/dependency behavior. |
@@ -96,7 +96,11 @@ plus6new archive hashes/modes and6distinct live PVC/PV/XFS paths:
 [follow-up review](evidence/talos-acceptance/followup-archive-and-host-review.json).
 Operations: [live evidence](evidence/talos-operations/README.md).
 Generic off-node file restore passed; the12,443,680-byte private etcd snapshot is
-**capture only**, not Talos/etcd disaster-recovery acceptance.
+**capture only**, not Talos/etcd disaster-recovery acceptance. Parent independently
+matched the original hash/mode/size and embedded SHA256 trailer, not engine restore.
+The [same-VM recovery proposal](talos-proof-etcd-recovery-plan.md) is blocked on
+explicit human exception to the existing separate-target restriction; no reset or
+reboot authority exists.
 
 ## Source protection and remaining delivery gate
 

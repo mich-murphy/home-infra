@@ -1,0 +1,13 @@
+{
+  "captured_utc": "2026-11-11T22:10:56.169304+00:00",
+  "review": "Independent existing off-node capture integrity only; not engine restore or snapshot object inspection.",
+  "original_metadata": "docs/evidence/talos-operations/snapshot-capture.json",
+  "bytes": 12443680,
+  "sha256": "c31c33eb3cb07640a764c8beb148d28fe21ff0ccc28d5349146d49847b0e7760",
+  "mode": "0600",
+  "unchanged_original_hash": true,
+  "embedded_sha256_trailer_matches_payload": true,
+  "restore_tested": false,
+  "contains_secrets": true,
+  "old_snapshot_not_modified": true
+}
