@@ -22,6 +22,7 @@ import urllib.request
 import uuid
 import zlib
 import io
+import math
 import zipfile
 
 GROUP = STATE = NS = None
@@ -30,6 +31,7 @@ LIFE = None
 STATEPATH = None
 CURRENT_STAGE = 'lease/private-state validation'
 RESULT = None
+STAGE = None
 
 
 class ProofTLSConnection(http.client.HTTPSConnection):
@@ -69,6 +71,7 @@ def check(label, condition=True):
 
 
 def restart(app):
+    memory_snapshot(app, "before replacement")
     k('rollout', 'restart', 'deployment/' + app)
     k('rollout', 'status', 'deployment/' + app, '--timeout=600s')
 
@@ -141,7 +144,35 @@ def save_private(name, data):
     return path
 
 
+def memory_snapshot(app, reason):
+    """Read cgroup v2 before deleting each observed container; no cache/anon conflation."""
+    try:
+        raw = k('exec', 'deployment/' + app, '--', 'sh', '-ec',
+                'for f in memory.current memory.peak memory.events memory.stat; do '
+                'echo "FILE:$f"; test ! -r /sys/fs/cgroup/$f || head -c 16384 /sys/fs/cgroup/$f; done')
+        sections = {}
+        current = None
+        for line in raw.decode().splitlines():
+            if line.startswith('FILE:'):
+                current = line[5:]
+                sections[current] = {}
+            elif current:
+                fields = line.split()
+                if len(fields) == 1:
+                    sections[current]['bytes'] = int(fields[0])
+                elif len(fields) == 2:
+                    sections[current][fields[0]] = int(fields[1])
+        pods = json.loads(k('get','pods','-l','app.kubernetes.io/name='+app,'-o','json'))['items']
+        RESULT.setdefault('memory_observations', []).append({
+            'app':app, 'reason':reason, 'time':time.time(), 'cgroup':sections,
+            'pods':[{'uid':p['metadata']['uid'],'containers':[{key:c[key] for key in ('name','image','imageID','containerID','restartCount','ready','started') if key in c} for c in p.get('status',{}).get('containerStatuses',[])]} for p in pods]})
+    except Exception as error:
+        RESULT.setdefault('memory_observation_gaps', []).append({'app':app,'reason':reason,'error':type(error).__name__})
+
+
 def scale(app, replicas):
+    if not replicas:
+        memory_snapshot(app, 'before scale0')
     k('scale', 'deployment/' + app, '--replicas=' + str(replicas))
     if replicas:
         k('rollout', 'status', 'deployment/' + app, '--timeout=600s')
@@ -185,7 +216,7 @@ def fresh_pvc(app, dependents=(), bootstrap=False):
             container['command'] = ['/bin/sh','-c','sleep 1800']
             container.pop('args',None)
             for probe in ('startupProbe','readinessProbe','livenessProbe'):
-                container[probe] = {'exec':{'command':['/bin/sh','-c','test -d '+container['volumeMounts'][0]['mountPath']]},'periodSeconds':2,'timeoutSeconds':2,'failureThreshold':30}
+                container[probe] = {'exec':{'command':['/bin/sh','-c','test -d '+next(m['mountPath'] for m in container['volumeMounts'] if m['name']=='data')]},'periodSeconds':2,'timeoutSeconds':2,'failureThreshold':30}
             k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':'/spec/template/spec/containers/0','value':container}]))
         scale(app,1)
         new_claim = json.loads(k('get','pvc',name,'-o','json'))
@@ -256,6 +287,26 @@ def postgres_restore(app_user):
 
 
 def nextcloud():
+    if STAGE == 'collabora':
+        with forwarded('collabora', 9980) as base:
+            discovery = http(base, '/hosting/discovery', raw=True)
+            check('Collabora WOPI discovery advertises actions', b'<action' in discovery)
+        RESULT['limitations'].append('Discovery ONLY: no WOPI editing/callback or Nextcloud integration proved.')
+        return
+    if STAGE == 'cron':
+        # Use the actual suspended declarative CronJob, not a web-container exec.
+        job = 'nextcloud-cron-proof'
+        try:
+            k('create','job',job,'--from=cronjob/nextcloud-cron')
+            k('wait','--for=condition=complete','job/'+job,'--timeout=200s')
+            status = json.loads(k('get','job',job,'-o','json'))['status']
+            check('bounded standalone CronJob succeeds with web stopped',status.get('succeeded') == 1 and not status.get('failed'))
+            marker = execute('postgres',['psql','-U','nextcloud','-d','nextcloud','-Atc',
+                "SELECT configvalue FROM oc_appconfig WHERE appid='core' AND configkey='lastcron'"]).decode().strip()
+            check('cron updates persistent Nextcloud lastcron timestamp',marker.isdigit() and 0 <= time.time()-int(marker) < 240)
+        finally:
+            k('delete','job',job,'--ignore-not-found=true','--wait=true','--timeout=180s')
+        return
     data = b'Synthetic proof WebDAV payload\n' + uuid.uuid4().hex.encode()
     path = '/remote.php/dav/files/proof/proof-' + uuid.uuid4().hex + '.txt'
     auth = 'proof:' + CREDS['NEXTCLOUD_ADMIN_PASSWORD']
@@ -265,18 +316,24 @@ def nextcloud():
     restart('nextcloud')
     with forwarded('nextcloud', 80) as base:
         check('WebDAV content survives Nextcloud pod replacement', http(base, path, auth=auth, raw=True) == data)
-        http(base, path, 'DELETE', auth=auth, raw=True)
-    postgres_restore('nextcloud')
+    # Keep Nextcloud files/config/data PVC; independently restore the entire database.
+    scale('nextcloud',0)
+    try:
+        dump = postgres_dump('nextcloud')
+        with fresh_pvc('postgres', ('nextcloud',)):
+            clean_postgres_restore('nextcloud',dump)
+            scale('nextcloud',1)
+            with forwarded('nextcloud',80) as base:
+                check('existing-user authenticated WebDAV bytes survive clean PostgreSQL PVC restore',http(base,path,auth=auth,raw=True)==data)
+    finally:
+        scale('nextcloud',1)
     restart('postgres')
-    with forwarded('nextcloud', 80) as base:
-        check('Nextcloud remains installed after PostgreSQL pod replacement', http(base, '/status.php')['installed'])
-    # One bounded execution, not an unsuspended recurring schedule.
-    execute('nextcloud', ['su', '-s', '/bin/sh', 'www-data', '-c', 'php -f /var/www/html/cron.php'])
-    check('Nextcloud cron.php completes under proof credentials')
-    with forwarded('collabora', 9980) as base:
-        discovery = http(base, '/hosting/discovery', raw=True)
-        check('Collabora WOPI discovery advertises actions', b'<action' in discovery)
-    RESULT['limitations'].append('Collabora discovery is not an interactive document editing proof; richdocuments app is not fetched from Internet. WOPI edit/callback remains untested.')
+    with forwarded('nextcloud',80) as base:
+        check('source database reattached with same authenticated WebDAV bytes',http(base,path,auth=auth,raw=True)==data)
+        http(base,path,'DELETE',auth=auth,raw=True)
+    RESULT['limitations'].append('Database-only clean-PVC restore retains Nextcloud files/config PVC. File-volume disaster recovery and WOPI integration remain unproved. Cron requires its separate explicitly leased stage.')
+    if STAGE == 'full':
+        RESULT['limitations'].append('Full controller availability does not itself prove interactive Collabora editing.')
 
 
 def miniflux():
@@ -428,7 +485,53 @@ def png():
     return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('!2I5B', 2, 2, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(b'\x00\xff\x00\x00\x00\xff\x00' * 2)) + chunk(b'IEND', b'')
 
 
+def multipart(fields, files=()):
+    boundary = 'proof' + uuid.uuid4().hex
+    chunks = []
+    for key, value in fields.items():
+        chunks.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n'.encode())
+    for key, filename, content_type, data in files:
+        chunks.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"; filename="{filename}"\r\nContent-Type: {content_type}\r\n\r\n'.encode()+data+b'\r\n')
+    return b''.join(chunks) + f'--{boundary}--\r\n'.encode(), {'Content-Type':'multipart/form-data; boundary='+boundary}
+
+
+def embedding(response):
+    value = response['clip']
+    values = json.loads(value) if isinstance(value,str) else value
+    if not isinstance(values,list) or len(values)!=512 or not all(type(v) in (int,float) and math.isfinite(v) for v in values):
+        raise RuntimeError('CLIP must return exactly512 finite embedding values')
+    norm = math.sqrt(sum(v*v for v in values))
+    if norm < 1e-6:
+        raise RuntimeError('CLIP zero embedding is not inference proof')
+    return values
+
+
+def immich_ml():
+    # Public model artifacts only; preload verifies hashes before the leased copy.
+    subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/'scripts/talos-proof-data-models.py'),
+                    'preload','--state',str(STATEPATH),'--stage',STAGE],check=True,timeout=660)
+    providers = json.loads(execute('ml',['python','-c','import onnxruntime as o,json; print(json.dumps(o.get_available_providers()))']))
+    check('CPU-only ONNX runtime available; no GPU providers', 'CPUExecutionProvider' in providers and set(providers)<= {'CPUExecutionProvider','AzureExecutionProvider'})
+    vectors = {}
+    # TTL expires the worker between models; never assume both model sessions fit concurrently.
+    for mode in ('visual','textual'):
+        fields = {'entries':json.dumps({'clip':{mode:{'modelName':'ViT-B-32__openai'}}})}
+        if mode == 'textual': fields['text']='a red and green image'
+        body, headers = multipart(fields,[('image','proof.png','image/png',png())] if mode=='visual' else [])
+        with forwarded('ml',3003) as base:
+            vectors[mode] = embedding(http(base,'/predict','POST',body,headers=headers))
+        check('real CPU ONNX CLIP '+mode+' inference returns512 finite nonzero values')
+        memory_snapshot('ml','after '+mode+' inference')
+        if mode == 'visual': time.sleep(15)  # declared10s TTL +2s poll, not a CI watcher
+    RESULT['clip_inference'] = {'model':'ViT-B-32__openai','dimensions':512,
+        'providers':providers,'vectors_sha256':hashlib.sha256(json.dumps(vectors,sort_keys=True).encode()).hexdigest()}
+    RESULT['limitations'].append('Standalone real image/text CPU inference ONLY; no Immich indexing/search integration, ranking quality, face/OCR/GPU or production capacity claim.')
+
+
 def immich():
+    if STAGE == 'ml':
+        immich_ml()
+        return
     password = CREDS['PROOF_ADMIN_PASSWORD']
     payload = png()
     with forwarded('immich', 2283) as base:
@@ -451,10 +554,42 @@ def immich():
     restart('immich')
     with forwarded('immich', 2283) as base:
         check('Immich original survives pod replacement on /data PVC', http(base, '/api/assets/' + asset + '/original', headers=headers, raw=True) == payload)
-    postgres_restore('immich')
-    with forwarded('ml', 3003) as base:
-        check('Immich ML ping responds', bool(http(base, '/ping', raw=True)))
-    RESULT['limitations'].append('ML inference/model downloads, facial recognition and GPU acceleration are NOT proved; Internet egress intentionally denied and cache initially empty.')
+    # Check generated thumbnail, not merely original storage or /ping.
+    with forwarded('immich', 2283) as base:
+        deadline = time.monotonic() + 180
+        while True:
+            try:
+                thumbnail = http(base, '/api/assets/' + asset + '/thumbnail?size=preview', headers=headers, raw=True)
+                check('Immich generated nonempty image thumbnail',len(thumbnail)>32 and (thumbnail.startswith(b'\xff\xd8') or thumbnail[8:12]==b'WEBP'))
+                break
+            except urllib.error.HTTPError as error:
+                if error.code not in (400,404,500) or time.monotonic() >= deadline:
+                    raise
+                time.sleep(2)
+    scale('immich',0)
+    try:
+        dump = postgres_dump('immich')
+        with fresh_pvc('postgres',('immich',)):
+            clean_postgres_restore('immich',dump)
+            scale('immich',1)
+            with forwarded('immich',2283) as base:
+                check('Immich authenticated original survives clean vector PostgreSQL PVC restore',http(base,'/api/assets/'+asset+'/original',headers=headers,raw=True)==payload)
+    finally:
+        scale('immich',1)
+    if STAGE == 'full':
+        # This is intentionally a separate real integration gate, not satisfied by ML component vectors.
+        with forwarded('immich',2283) as base:
+            deadline = time.monotonic() + 240
+            while True:
+                found = http(base,'/api/search/smart','POST',{'query':'a red and green image'},headers=headers)
+                if any(item['id']==asset for item in found.get('assets',{}).get('items',[])):
+                    check('Immich real smart text search returns uploaded asset after CLIP inference')
+                    break
+                if time.monotonic() >= deadline:
+                    check('Immich CLIP indexing/text search did not complete within bounded window',False)
+                time.sleep(2)
+    else:
+        RESULT['limitations'].append('App-only stage: ML indexing and integrated smart text search NOT proved. Retains original /data PVC during database recovery; no file-volume disaster recovery claim.')
 
 
 def pocket_browser():
@@ -503,10 +638,16 @@ def pocket_id():
 
 
 def main():
-    global LIFE, CREDS, STATEPATH, GROUP, STATE, NS, RESULT
-    GROUP, STATE = sys.argv[1:]
+    global LIFE, CREDS, STATEPATH, GROUP, STATE, NS, RESULT, STAGE
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('group')
+    parser.add_argument('state')
+    parser.add_argument('--stage')
+    args = parser.parse_args()
+    GROUP, STATE, STAGE = args.group, args.state, args.stage
     NS = 'proof-' + GROUP
-    RESULT = {'group':GROUP, 'checks':[], 'limitations':['Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate.']}
+    RESULT = {'group':GROUP, 'stage':STAGE, 'checks':[], 'limitations':['Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate.']}
     os.umask(0o077)
     try:
         spec = importlib.util.spec_from_file_location('lifecycle', Path(__file__).resolve().parents[1] / 'scripts/talos-proof-data.py')
@@ -514,7 +655,10 @@ def main():
         spec.loader.exec_module(life)
         LIFE = life
         life.LEASE_GROUP = GROUP
+        life.LEASE_STAGE = STAGE
+        life.selection(GROUP)
         life.lease(GROUP)
+        life.participants(GROUP)
         STATEPATH = life.private(STATE)
         credential_path = life.no_symlinks(STATEPATH / 'credentials.json')
         if not credential_path.exists():
@@ -533,6 +677,17 @@ def main():
         if isinstance(e, urllib.error.HTTPError):
             RESULT['http_status'] = e.code
     if STATEPATH is not None:
+        names, _ = LIFE.selection(GROUP)
+        for name in names or ():
+            memory_snapshot(name, 'suite final observation')
+        for observation in RESULT.get('memory_observations', []):
+            events = observation['cgroup'].get('memory.events', {})
+            if events.get('oom', 0) or events.get('oom_kill', 0):
+                RESULT['status'] = 'failed'
+                RESULT['resource_failure'] = 'observed cgroup OOM; retained even if functional checks passed'
+        # Never discard earlier failures when a later attempt succeeds.
+        history = GROUP + '-' + (STAGE or 'group') + '-' + str(time.time_ns()) + '-result.json'
+        save_private(history, json.dumps(RESULT, indent=2).encode())
         path = LIFE.no_symlinks(STATEPATH / (GROUP + '-result.json'))
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
         with os.fdopen(fd, 'w') as f:

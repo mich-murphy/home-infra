@@ -42,8 +42,19 @@ spec:
         env:
         - name: MACHINE_LEARNING_WORKERS
           value: '1'
+        # Single-user bounded CPU inference; no concurrent model requests.
+        - name: MACHINE_LEARNING_REQUEST_THREADS
+          value: '1'
+        - name: MACHINE_LEARNING_MODEL_INTER_OP_THREADS
+          value: '1'
+        - name: MACHINE_LEARNING_MODEL_INTRA_OP_THREADS
+          value: '1'
+        - name: MACHINE_LEARNING_MODEL_ARENA
+          value: 'false'
         - name: MACHINE_LEARNING_MODEL_TTL
-          value: '60'
+          value: '10'
+        - name: MACHINE_LEARNING_MODEL_TTL_POLL_S
+          value: '2'
         - name: MACHINE_LEARNING_MODEL_REVISION
           value: a857c8de2c07bbcfa6646adfcf31b798845afa1e
         - name: HF_HUB_OFFLINE
@@ -64,7 +75,7 @@ spec:
             memory: 128Mi
           limits:
             cpu: 1000m
-            memory: 384Mi
+            memory: 1024Mi
         startupProbe:
           httpGet: &id002
             path: /ping

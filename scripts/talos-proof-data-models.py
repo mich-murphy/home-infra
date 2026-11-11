@@ -26,6 +26,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('action',choices=['download','preload'])
     p.add_argument('--state',required=True)
+    p.add_argument('--stage', choices=['ml','full'])
     a = p.parse_args()
     os.umask(0o077)
     spec = importlib.util.spec_from_file_location('life',ROOT/'scripts/talos-proof-data.py')
@@ -73,10 +74,13 @@ def main():
         (ROOT/'docs/evidence/talos-data/ml-model-artifacts.json').write_text(json.dumps(manifest,indent=2)+'\n')
     else:
         life.LEASE_GROUP = 'immich'
+        life.LEASE_STAGE = a.stage
         life.lease('immich')
         manifest = json.loads(life.no_symlinks(manifest_path).read_text())
         if manifest['revision'] != REVISION or manifest['model'] != MODEL:
             raise RuntimeError('unexpected artifact manifest')
+        if {entry['path'] for entry in manifest['files']} != set(FILES) or len(manifest['files']) != len(FILES):
+            raise RuntimeError('model manifest must contain all nine pinned files exactly once')
         archive = life.no_symlinks(state/'model-preload.tar')
         with tarfile.open(archive,'w') as tar:
             for entry in manifest['files']:

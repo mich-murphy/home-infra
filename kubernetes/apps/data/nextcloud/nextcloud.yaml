@@ -104,9 +104,16 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 6
         volumeMounts:
+        - name: apache-proof
+          mountPath: /etc/apache2/mods-available/mpm_prefork.conf
+          subPath: mpm_prefork.conf
+          readOnly: true
         - name: data
           mountPath: /var/www/html
       volumes:
+      - name: apache-proof
+        configMap:
+          name: nextcloud-apache-proof
       - name: data
         persistentVolumeClaim:
           claimName: nextcloud-data
@@ -125,3 +132,20 @@ spec:
   - name: http
     port: 80
     targetPort: 80
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextcloud-apache-proof
+data:
+  mpm_prefork.conf: |
+    # One synthetic user; do not inherit Apache's many-worker production defaults.
+    <IfModule mpm_prefork_module>
+        StartServers 1
+        MinSpareServers 1
+        MaxSpareServers 1
+        ServerLimit 1
+        MaxRequestWorkers 1
+        MaxConnectionsPerChild 100
+    </IfModule>

@@ -94,6 +94,7 @@ class DataContract(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir='/private/tmp' if Path('/private/tmp').exists() else None) as tmp:
             p = Path(tmp) / 'lease.json'
             p.write_text(json.dumps({'group':'couchdb','context':'proof','expires':time.time()-1}))
+            p.chmod(0o600)
             with patch.dict(os.environ, {'KUBECONFIG':'fake','TALOS_PROOF_DATA_LEASE':str(p)}), patch.object(life, 'kube', return_value='proof\n'), self.assertRaises(RuntimeError):
                 life.lease('couchdb')
 
@@ -114,8 +115,8 @@ class DataContract(unittest.TestCase):
             if args[1] == 'nodes':
                 return '{"items":[{"status":{"allocatable":{"memory":"2400000Ki"}}}]}'
             raise RuntimeError('metrics unavailable')
-        with patch.object(life, 'kube', side_effect=kube), patch.object(life, 'lease', return_value={'measured_at':time.time(),'available_mib':1000}), self.assertRaises(RuntimeError):
-            life.guard('immich')
+        with patch.object(life, 'kube', side_effect=kube), patch.object(life, 'lease', return_value={'measured_at':time.time(),'available_mib':400}), self.assertRaises(RuntimeError):
+            life.guard('couchdb')
 
     def target_fake(self, server='https://127.0.0.1:64120', name='talos-proof', uid='node-123', insecure=False):
         def kube(*args, **kwargs):
@@ -233,6 +234,89 @@ class DataContract(unittest.TestCase):
         deployment=next(d for d in DOCS if d['kind']=='Deployment' and d['metadata']['namespace']=='proof-miniflux' and d['metadata']['name']=='miniflux')
         factor=next(e['value'] for e in deployment['spec']['template']['spec']['containers'][0]['env'] if e['name']=='SCHEDULER_ENTRY_FREQUENCY_FACTOR')
         self.assertGreaterEqual(int(factor),1)
+
+    def test_heavy_stages_require_explicit_selection(self):
+        for group in life.STAGES:
+            with patch.object(life,'LEASE_STAGE',None), self.assertRaises(RuntimeError):
+                life.selection(group)
+        with self.assertRaises(RuntimeError):
+            life.selection('couchdb','ml')
+
+    def test_stage_budgets_match_declarative_containers(self):
+        for group, stages in life.STAGES.items():
+            for stage, names in stages.items():
+                actual = sum(int(c['resources']['limits']['memory'][:-2]) for d in DOCS
+                    if d['kind']=='Deployment' and d['metadata']['namespace']=='proof-'+group and d['metadata']['name'] in names
+                    for c in d['spec']['template']['spec']['containers'])
+                if stage=='cron':
+                    cron=next(d for d in DOCS if d['kind']=='CronJob')
+                    actual+=int(cron['spec']['jobTemplate']['spec']['template']['spec']['containers'][0]['resources']['limits']['memory'][:-2])
+                self.assertEqual(life.selection(group,stage)[1],actual,(group,stage))
+        self.assertEqual(life.selection('nextcloud','web')[1],1088)
+        self.assertEqual(life.selection('immich','app')[1],1216)
+        self.assertEqual(life.selection('immich','ml')[1],1024)
+
+    def test_stage_scales_only_exact_selected_deployments(self):
+        with patch.object(life,'LEASE_GROUP','nextcloud'), patch.object(life,'LEASE_STAGE','web'), patch.object(life,'kube') as kube:
+            life.scale_selected('proof-nextcloud',1)
+        command=kube.call_args_list[0].args
+        self.assertNotIn('--all',command)
+        self.assertNotIn('deployment/collabora',command)
+        self.assertEqual(set(x for x in command if x.startswith('deployment/')),{'deployment/nextcloud','deployment/postgres','deployment/redis'})
+
+    def test_lease_requires_exact_stage_and_controller_receipt(self):
+        with tempfile.TemporaryDirectory(dir='/private/tmp' if Path('/private/tmp').exists() else None) as tmp:
+            path=Path(tmp)/'lease.json'
+            receipt={'group':'nextcloud','context':'proof','expires':time.time()+60,'stage':'web',
+                'selected_controllers':['deployment/nextcloud','deployment/postgres','deployment/redis']}
+            def store(value):
+                path.write_text(json.dumps(value)); path.chmod(0o600)
+            store(receipt)
+            with patch.dict(os.environ,{'KUBECONFIG':'fake','TALOS_PROOF_DATA_LEASE':str(path)}), patch.object(life,'LEASE_STAGE','web'), patch.object(life,'kube',return_value='proof'), patch.object(life,'target_identity'):
+                life.lease('nextcloud')
+                for bad in ({'stage':'full'},{'selected_controllers':['deployment/nextcloud']},{'selected_controllers':receipt['selected_controllers']+['deployment/collabora']}):
+                    store(dict(receipt,**bad))
+                    with self.assertRaises(RuntimeError): life.lease('nextcloud')
+                store(receipt); path.chmod(0o644)
+                with self.assertRaises(RuntimeError): life.lease('nextcloud')
+
+    def test_stage_rejects_unselected_controllers_and_pods(self):
+        for deployments,pods in (
+            ([{'metadata':{'name':'collabora'},'spec':{'replicas':1}}],[]),
+            ([],[{'metadata':{'namespace':'proof-nextcloud','labels':{'app.kubernetes.io/name':'collabora'}},'status':{'phase':'Running'}}]),
+            ([],[{'metadata':{'namespace':'proof-nextcloud','labels':{'app.kubernetes.io/name':'nextcloud'},'ownerReferences':[{'kind':'Job'}]},'status':{'phase':'Pending'}}]),
+            ([],[{'metadata':{'namespace':'proof-ops'},'status':{'phase':'Running'}}]),
+        ):
+            def kube(*args,**kwargs):
+                return json.dumps({'items':deployments if 'deployments' in args else pods if 'pods' in args else []})
+            with patch.object(life,'LEASE_STAGE','web'),patch.object(life,'kube',side_effect=kube),self.assertRaises(RuntimeError):
+                life.guard('nextcloud')
+
+    def test_stage_memory_admission_preserves_reserve(self):
+        def kube(*args,**kwargs):
+            if any(x in args for x in ('deployments','pods','jobs','cronjobs')): return '{"items":[]}'
+            if 'nodes' in args: return '{"items":[{"status":{"allocatable":{"memory":"2890752Ki"}}}]}'
+            raise RuntimeError('metrics unavailable')
+        with patch.object(life,'LEASE_STAGE','web'),patch.object(life,'kube',side_effect=kube):
+            for available,ok in ((1279,False),(1280,True),(1420,True)):
+                with patch.object(life,'lease',return_value={'measured_at':time.time(),'available_mib':available}):
+                    if ok: life.guard('nextcloud')
+                    else:
+                        with self.assertRaises(RuntimeError): life.guard('nextcloud')
+
+    def test_embedding_validation_rejects_fake_health_and_nan(self):
+        spec=importlib.util.spec_from_file_location('live_embedding',ROOT/'tests/talos-proof-data-live.py')
+        live=importlib.util.module_from_spec(spec);spec.loader.exec_module(live)
+        self.assertEqual(len(live.embedding({'clip':json.dumps([0.1]*512)})),512)
+        for bad in ([0]*512,[float('nan')]*512,[1]*511,[True]*512):
+            with self.assertRaises(RuntimeError): live.embedding({'clip':bad})
+
+    def test_nextcloud_is_explicitly_single_worker_and_cron_has_redis_host(self):
+        config=next(d for d in DOCS if d['kind']=='ConfigMap' and d['metadata']['name']=='nextcloud-apache-proof')
+        self.assertIn('MaxRequestWorkers 1',config['data']['mpm_prefork.conf'])
+        cron=next(d for d in DOCS if d['kind']=='CronJob')
+        self.assertTrue(cron['spec']['suspend'])
+        self.assertIn({'name':'REDIS_HOST','value':'redis'},cron['spec']['jobTemplate']['spec']['template']['spec']['containers'][0]['env'])
 
 
 if __name__ == '__main__':

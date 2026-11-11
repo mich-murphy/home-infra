@@ -130,13 +130,15 @@ available memory >= summed group limits +192Mi reserve:
 | Group | Sum of Deployment memory limits (MiB) |
 |---|---:|
 | Nextcloud + PG + Redis + Collabora |1728|
-| Immich + ML + PG + Valkey |1600|
+| Immich + ML + PG + Valkey |2240|
 | Miniflux + PG + fixture |448|
 | Wallabag + MariaDB + Redis + fixture |576|
 | CouchDB |256|
 | Pocket-ID |192|
 
-The actual node is only2560MiB. Heavy groups may **not fit**, even sequentially,
+The initial node was2560MiB; parent subsequently approved3072MiB for VM120 only
+(actual guest total approximately2823MiB, available approximately1420MiB after stop).
+Full heavy groups still **do not fit**, even sequentially,
 after control plane/Cilium/system overhead. Do not bypass the guard, lower safety
 reserve, resize existing VMs or claim complete proof on that basis. Parent must
 coordinate an honest resource-safe plan (including potentially testing Collabora
@@ -190,7 +192,7 @@ python3 tests/talos-proof-data_test.py
 node tests/talos-proof-data-oidc_test.mjs
 ```
 
-The29 offline tests cover parent safety validation, exact boundaries, current
+The37 offline tests cover parent safety validation, exact boundaries, current
 Compose image membership, Immich/PG18 paths, default-deny presence, group-budget
 accounting, no committed Secret manifests, fresh/private credential behavior,
 repository-state refusal, no implicit kubeconfig, expired leases, exact endpoint/TLS/node UID enforcement, symlink/ancestor
@@ -362,3 +364,120 @@ null/object/number/empty inputs. The browser flow imports that helper. This fix
 was offline tested after the successful Pocket-ID runs; no extra Pocket-ID
 activation overlapped Wallabag. Authorization-code replay and wrong-PKCE-verifier
 negative live tests remain untested and are not implied by unknown-client denial.
+
+
+## Offline heavy-stage checkpoint (live lease NOT held)
+
+Ownership of the stopped data scope was explicitly reassigned after Wallabag
+commit `3b070339`. Existing completed evidence is retained unchanged. During this
+checkpoint **no cluster commands, app mutations, credential regeneration, source
+Docker calls or host/VM changes were performed**. OPS owns the exclusive live
+lease; media precedes the next data window. Preparation is not a runtime PASS.
+
+### Explicit stage admission
+
+Heavy groups now require `--stage` on **every** lifecycle/test/preload invocation.
+A private regular0600 parent receipt must match `group`, `stage` and the exact
+sorted `selected_controllers` array, in addition to all previous context,
+endpoint/TLS/UID/expiry checks. Example web selection:
+
+```json
+{
+  "group": "nextcloud",
+  "stage": "web",
+  "selected_controllers": ["deployment/nextcloud", "deployment/postgres", "deployment/redis"]
+}
+```
+
+This fragment is not a usable lease: parent still supplies context, endpoint,
+node_uid, expires and fresh available_mib/measured_at privately. The CLI does not
+write/renew the receipt or grant itself authority. An omitted stage must never
+implicitly activate the full group. Only exact selected Deployment names are
+scaled; tests also refuse unselected active controllers/pods, active Jobs and
+unsuspended schedules in the same boundary. Other proof groups remain excluded.
+Low-resource group behavior/receipts remain compatible except0600 is now enforced.
+
+| Group/stage | Selected controllers | Limits MiB | With192 reserve | Next live purpose |
+|---|---|---:|---:|---|
+| nextcloud/web | nextcloud, postgres, redis |1088|1280|WebDAV bytes, replacement, full DB dump → distinct clean PostgreSQL PVC → existing-user WebDAV bytes; reattach source|
+| nextcloud/cron | postgres, redis + cronjob/nextcloud-cron |640|832|One Job from suspended CronJob, web stopped; success + persistent lastcron timestamp|
+| nextcloud/collabora | collabora |640|832|Startup/capabilities/discovery only; **NOT editing acceptance**|
+| nextcloud/full | nextcloud, postgres, redis, collabora |1728|1920|Blocked at reported1420 available; no automatic fallback|
+| immich/app | immich, postgres, valkey |1216|1408|Actual PNG upload/original bytes, replacement, generated thumbnail, clean vector-PG PVC application read|
+| immich/ml | ml |1024|1216|Pinned model preload; real image + text CPU ONNX /predict,512 finite nonzero values each|
+| immich/full | immich, ml, postgres, valkey |2240|2432|Blocked; integrated CLIP indexing + real /api/search/smart uploaded-asset result remains a separate gate|
+
+Controller names in the table mean `deployment/<name>` except the named CronJob.
+Cron's receipt includes `deployment/postgres`, `deployment/redis` and
+`cronjob/nextcloud-cron`, sorted lexically. Its192MiB Job is included in the640MiB
+budget, never added alongside the web stage. The recurring schedule stays suspended.
+The test and lifecycle cleanup delete only the bounded `nextcloud-cron-proof` Job.
+
+**Immich app margin is only12MiB over the admission floor** at the reported
+1420MiB available. Re-measure immediately before activation; refuse if below1408.
+The192MiB reserve is unchanged and is not a capacity/headroom claim. Fresh
+measurement and parent approval are needed independently for every stage.
+
+### Declarative single-user tuning and resource evidence
+
+Nextcloud retains640MiB limit and PHP256MiB/64MiB opcache, with explicit Apache
+prefork **one** worker. PG retains384MiB limit with64MiB shared_buffers,
+16 connections,2MiB work_mem and32MiB maintenance_work_mem. Cron now explicitly
+receives REDIS_HOST, matching the image's environment-derived Redis configuration.
+These are untested single-user proof settings, not production recommendations.
+
+ML's original384MiB limit was not a credible allocation for610,837,857 bytes of
+model artifacts plus runtime/session/workspace. It is now declaratively1024MiB
+for its isolated component stage; full group budget therefore increases to2240.
+One worker, one request thread, one intra/inter-op thread, disabled ONNX arena,
+10s TTL and2s TTL polling are configured. Visual and textual requests run
+sequentially with15s idle expiry between them. Actual model/runtime fit remains
+unknown until measured; OOM must remain a failure, not trigger a hidden limit bump.
+No Internet egress is added; nine existing private artifacts are rehashed on preload.
+
+Public upstream API/config inspected at immutable release tag `v3.3.6`:
+`machine-learning/immich_ml/{main.py,pipeline.py,config.py,models/base.py,models/transforms.py,sessions/ort.py}`.
+The real multipart `/predict` contract uses `entries.clip.visual/textual.modelName`;
+its CLIP output is a JSON-serialized vector string, not a /ping response. App-only
+checks do not invoke ML or claim text search. Component vectors are **not** a
+substitute for app-side indexing/search. Current full-stage search code is prepared
+but cannot be executed within the measured budget. Richdocuments/WOPI editing
+is not implemented by this checkpoint and is not marked passed.
+
+The heavy suites collect cgroup v2 memory.current, memory.peak, memory.events and
+memory.stat before explicit replacement/scale0 and after inference/final checks,
+with observed pod UIDs/image IDs/restart counts. Anonymous vs file cache can thus
+be reviewed; available memory is still a separate parent guest observation.
+Observed oom/oom_kill fails the result even after successful functional checks.
+Snapshot failures are explicit evidence gaps. Unexpected deaths between samples
+and the short completed cron Job can escape per-container peak capture; no
+whole-run minimum/headroom or absence-of-OOM claim follows from missing data.
+Each invocation saves an additional unique private result-history JSON, so reruns
+cannot erase earlier failures. No private result/ONNX/dump contents enter git.
+
+### WOPI routing prerequisite — proposal only, not a policy change
+
+Source Gateway declarations use the native Cilium NodePort Gateway with HTTPS443.
+Current data policy permits Nextcloud↔Collabora direct9980, not Collabora egress
+to the public Nextcloud HTTPS origin. No cluster Gateway IP was queried in this
+checkpoint. Before full WOPI work, parent must inspect the generated Gateway
+Service/ClusterIP and actual Cilium identity/drop verdicts. A minimal proposal is
+**pod-scoped** proof-only hostAliases for exactly nextcloud.proof.invalid and
+collabora.proof.invalid to that verified Gateway address, verified proof CA trust,
+and exact frontend-client egress to Gateway TCP443 with the matching native
+Gateway client policy as determined by datapath evidence. No global CoreDNS
+rewrite, production DNS, broad CIDR/world/cluster allow, TLS bypass or removal of
+the global hard-deny is authorized. Parent owns any required platform policy.
+If this cannot fit or be narrowly authorized, retain the integration blocker;
+a future component WOPI fixture must explicitly disclose its narrower coverage.
+
+### Validation at this checkpoint
+
+`python3 tests/talos-proof-data_test.py`:37 offline tests pass, including stage
+budgets vs rendered limits, exact stage/controller receipts, no implicit heavy
+selection, selected-only scaling, same-boundary participant rejection,0600 leases,
+reserve boundary and finite/nonzero embedding validation. Rendered app safety and
+13 strict OIDC audience cases also pass. A first new-test run found a mocked
+CronJob response mismatch after adding schedule checks; the fixture was corrected
+and all tests rerun. This was offline test failure, not a hidden runtime failure.
+No Nextcloud, cron, Collabora or Immich live result is claimed.

@@ -44,6 +44,9 @@ spec:
               limits:
                 cpu: 500m
                 memory: 192Mi
+            env:
+            - name: REDIS_HOST
+              value: redis
             envFrom:
             - secretRef:
                 name: proof-credentials

@@ -14,10 +14,59 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_ENDPOINT = 'https://127.0.0.1:64120'
 EXPECTED_HOSTNAME = 'talos-proof'
 LEASE_GROUP = None
+LEASE_STAGE = None
 MUTATIONS = {'apply','scale','exec','rollout','delete','create','patch','label','annotate','run','replace','cp','edit','set'}
 GROUPS = ('nextcloud', 'immich', 'miniflux', 'wallabag', 'couchdb', 'pocket-id')
 # Includes fixture, excludes suspended cron. Conservative memory limits, MiB.
-BUDGET = dict(nextcloud=1728, immich=1600, miniflux=448, wallabag=576, couchdb=256, **{'pocket-id':192})
+BUDGET = dict(nextcloud=1728, immich=2240, miniflux=448, wallabag=576, couchdb=256, **{'pocket-id':192})
+
+# Explicit coordinator-approved component stages; no implicit heavy-group activation.
+STAGES = {
+    'nextcloud': {
+        'web': ('nextcloud', 'postgres', 'redis'),
+        'cron': ('postgres', 'redis'),
+        'collabora': ('collabora',),
+        'full': ('nextcloud', 'postgres', 'redis', 'collabora'),
+    },
+    'immich': {
+        'app': ('immich', 'postgres', 'valkey'),
+        'ml': ('ml',),
+        'full': ('immich', 'ml', 'postgres', 'valkey'),
+    },
+}
+LIMITS = {'nextcloud':640, 'postgres-nextcloud':384, 'redis':64, 'collabora':640,
+          'immich':768, 'ml':1024, 'postgres-immich':384, 'valkey':64}
+
+
+def selection(group, stage=None):
+    stage = LEASE_STAGE if stage is None else stage
+    if group not in STAGES:
+        if stage is not None:
+            raise RuntimeError('component stages are only defined for heavy groups')
+        return None, BUDGET[group]
+    if stage not in STAGES[group]:
+        raise RuntimeError('heavy group requires an explicit component stage')
+    names = STAGES[group][stage]
+    budget = sum(LIMITS.get(name + '-' + group, LIMITS.get(name, 0)) for name in names)
+    if group == 'nextcloud' and stage == 'cron':
+        budget += 192  # one bounded Job from the suspended CronJob, never concurrent web
+    return names, budget
+
+
+def selected_controllers(group):
+    names, _ = selection(group)
+    result = ['deployment/' + name for name in names] if names else []
+    if group == 'nextcloud' and LEASE_STAGE == 'cron':
+        result.append('cronjob/nextcloud-cron')
+    return sorted(result)
+
+
+def scale_selected(ns, replicas):
+    names, _ = selection(LEASE_GROUP)
+    targets = ['deployment/' + name for name in names] if names else ['deployment', '--all']
+    kube('-n', ns, 'scale', *targets, '--replicas=' + str(replicas))
+    if replicas:
+        kube('-n', ns, 'wait', '--for=condition=available', *targets, '--timeout=900s')
 
 
 def kube(*args, data=None):
@@ -122,19 +171,47 @@ def lease(group):
         raise RuntimeError('explicit proof-only KUBECONFIG required')
     p = no_symlinks(os.environ.get('TALOS_PROOF_DATA_LEASE', '/nonexistent'))
     import time
+    info = p.lstat()
+    if not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600:
+        raise RuntimeError('resource lease must be a regular private 0600 file')
     receipt = json.loads(p.read_text())
     context = kube('config', 'current-context').strip()
     if receipt.get('group') != group or receipt.get('context') != context or receipt.get('expires', 0) <= time.time():
         raise RuntimeError('missing, expired, or mismatched coordinator resource lease')
+    if group in STAGES:
+        selection(group)
+        if receipt.get('stage') != LEASE_STAGE or receipt.get('selected_controllers') != selected_controllers(group):
+            raise RuntimeError('lease must explicitly approve stage and exact sorted selected_controllers')
     target_identity(receipt)
     return receipt
 
 
-def guard(group):
+def participants(group):
+    names, _ = selection(group)
+    if names:
+        deployments = json.loads(kube('-n', 'proof-' + group, 'get', 'deployments', '-o', 'json'))['items']
+        if any(d['metadata']['name'] not in names and d['spec'].get('replicas', 0) for d in deployments):
+            raise RuntimeError('unselected controller has active replicas in staged boundary')
+        cronjobs = json.loads(kube('-n', 'proof-' + group, 'get', 'cronjobs', '-o', 'json'))['items']
+        jobs = json.loads(kube('-n', 'proof-' + group, 'get', 'jobs', '-o', 'json'))['items']
+        if any(not c['spec'].get('suspend', False) for c in cronjobs) or any(j.get('status', {}).get('active', 0) for j in jobs):
+            raise RuntimeError('staged admission requires suspended schedules and no active Jobs')
     # Fail closed without metrics. Limits plus measured node working set must leave 192MiB.
     pods = json.loads(kube('get', 'pods', '-A', '-l', 'app.kubernetes.io/part-of=talos-proof', '-o', 'json'))
     if any(p['metadata']['namespace'] not in ('proof-' + group, 'proof-validation', 'proof-gateway') and p.get('status', {}).get('phase') not in ('Succeeded', 'Failed') for p in pods['items']):
         raise RuntimeError('another proof group has live pods; release its lease first')
+    if names:
+        for pod in pods['items']:
+            if pod['metadata']['namespace'] != 'proof-' + group or pod.get('status', {}).get('phase') in ('Succeeded','Failed'):
+                continue
+            # Cron may only run after the admission check, never alongside a previous Job.
+            owners = pod['metadata'].get('ownerReferences', [])
+            app = pod['metadata'].get('labels', {}).get('app.kubernetes.io/name')
+            if app not in names or any(o['kind'] == 'Job' for o in owners):
+                raise RuntimeError('unselected participant has live pods in staged boundary')
+def guard(group):
+    participants(group)
+    _, budget = selection(group)
     nodes = json.loads(kube('get', 'nodes', '-o', 'json'))['items']
     if len(nodes) != 1:
         raise RuntimeError('expected dedicated single proof node')
@@ -158,15 +235,16 @@ def guard(group):
         if not metric.endswith('Ki'):
             raise RuntimeError('unsupported metrics memory units')
         available = (int(alloc[:-2]) - int(metric[:-2])) / 1024
-    if available < BUDGET[group] + 192:
+    if available < budget + 192:
         raise RuntimeError('insufficient memory headroom for group limits plus 192MiB reserve')
 
 
 def main():
-    global LEASE_GROUP
+    global LEASE_GROUP, LEASE_STAGE
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('action', choices=['prepare', 'apply', 'activate', 'deactivate', 'test', 'run', 'verify'])
     p.add_argument('--group', choices=GROUPS)
+    p.add_argument('--stage', help='explicit heavy-group component stage approved in lease')
     p.add_argument('--state', required=True, help='outside-git private directory, mode0700')
     a = p.parse_args()
     os.umask(0o077)
@@ -178,34 +256,38 @@ def main():
     if not a.group:
         p.error('--group required for cluster operations')
     LEASE_GROUP = a.group
+    LEASE_STAGE = a.stage
+    selection(a.group)
     lease(a.group)
     ns = 'proof-' + a.group
     if a.action == 'verify':
         print('Verified coordinator lease, exact endpoint and recorded proof node identity.')
         return
     if a.action == 'apply':
+        participants(a.group)
         kube('apply', '-k', str(ROOT / 'kubernetes/apps/data' / a.group))
         manifest = {'apiVersion':'v1','kind':'Secret','metadata':{'name':'proof-credentials','namespace':ns},'type':'Opaque','stringData':creds[a.group]}
         kube('apply', '-f', '-', data=json.dumps(manifest))
     elif a.action in ('activate', 'run'):
         guard(a.group)
         try:
-            kube('-n', ns, 'scale', 'deployment', '--all', '--replicas=1')
-            kube('-n', ns, 'wait', '--for=condition=available', 'deployment', '--all', '--timeout=900s')
+            scale_selected(ns, 1)
             if a.group == 'wallabag':
                 kube('-n', ns, 'exec', 'deployment/wallabag', '--', 'sh', '-ec', 'cd /var/www/wallabag; php bin/console --env=prod fos:user:change-password wallabag "$PROOF_ADMIN_PASSWORD" --no-interaction')
             if a.action == 'run':
-                subprocess.run([sys.executable, str(ROOT / 'tests/talos-proof-data-live.py'), a.group, str(state)], check=True, timeout=1800)
+                subprocess.run([sys.executable, str(ROOT / 'tests/talos-proof-data-live.py'), a.group, str(state), *(['--stage', a.stage] if a.stage else [])], check=True, timeout=1800)
         finally:
             if a.action == 'run' or sys.exc_info()[0] is not None:
                 # Cleanup also revalidates endpoint/node and requires an unexpired lease.
-                kube('-n', ns, 'scale', 'deployment', '--all', '--replicas=0')
+                if a.group == 'nextcloud' and a.stage == 'cron':
+                    kube('-n', ns, 'delete', 'job', 'nextcloud-cron-proof', '--ignore-not-found=true', '--wait=true', '--timeout=180s')
+                scale_selected(ns, 0)
                 kube('-n', ns, 'wait', '--for=delete', 'pod', '--all', '--timeout=180s')
     elif a.action == 'deactivate':
-        kube('-n', ns, 'scale', 'deployment', '--all', '--replicas=0')
+        scale_selected(ns, 0)
         kube('-n', ns, 'wait', '--for=delete', 'pod', '--all', '--timeout=180s')
     else:
-        subprocess.run([sys.executable, str(ROOT / 'tests/talos-proof-data-live.py'), a.group, str(state)], check=True, timeout=1800)
+        subprocess.run([sys.executable, str(ROOT / 'tests/talos-proof-data-live.py'), a.group, str(state), *(['--stage', a.stage] if a.stage else [])], check=True, timeout=1800)
     print(a.action + ': ' + a.group + ' completed')
 
 
