@@ -1,10 +1,12 @@
 # Controlled host isolation — node-only collector
 
-**Implementation/method approved; deployment and live execution NOT approved.**
-The data owner currently has the exclusive CouchDB→Miniflux window. Earlier
-application-zero observations are stale. Wait for release, fresh parent resource
-review and a separate explicit execution grant. No platform gate is released by
-this document or by passing offline tests.
+**Current authority: revised exclusive node-only window, maximum TWO unit
+starts including failures, under the new96MiB planning envelope.** One start
+failed before any TCP because external timeout could not load under12MiB. The
+parent explicitly approved the wrapper-only Perl-alarm compatibility correction
+and one remaining start, conditional on fresh1888MiB initial admission, app-zero,
+identity/guard/backup checks and an unexpired receipt. No platform gate is
+released by this document or by passing offline tests.
 
 ## Evidence gap and precise method
 
@@ -83,7 +85,7 @@ the current suite has no platform-specific skip.
    records private producer assertions and exclusively claims one attempt with
    noclobber. Never retry after an uncertain SSH/exec result.
 8. Execute the installed Perl IO::Socket::INET constructor **once**, against the
-   literal controlled address/port. Existing `timeout 3`, guest address-space
+   literal controlled address/port. Perl `alarm 3` armed before the single constructor, guest address-space
    limit12MiB, CPU1s and fd16 apply before Perl starts; `&&` prevents fallback if
    limit setup fails. There is no DNS, image pull, proxy, redirect, registry,
    new pod or service modification. `node_command()` constructs exact argv.
@@ -125,13 +127,16 @@ verdicts, stops existing units or touches other guests.
   Actual unit properties and exact parsed cleanup argv must match the run.
 - Node controls are in-process. Native iptables/systemctl helpers share the32MiB
   cap. No second Python image initializes before a cgroup join: that route is gone.
-- Guest timeout+Perl inherit12MiB address-space limits each before exec, giving a
-  conservative24MiB guest-process allowance. With the32MiB host cap this leaves
-  8MiB of the64MiB plan for transport overhead. Existing SSH/API overhead is not
-  independently capped by the test unit; **measured total fit remains a parent
-  pre-grant gate**, not an assertion from RLIMIT_AS or MemoryMax alone.
+- Guest Perl inherits12MiB address-space limit before exec. The parent retains
+  the full24MiB guest-process allowance despite removing external timeout; it is
+  not silently reclaimed. Revised envelope is96MiB:32root+24guest+40transport.
+  Measured session+helper RSS29.35MiB leaves10.65MiB transport margin. Existing
+  daemon baseline is explicitly excluded, not claimed hard-capped. SSH/API
+  overhead is not independently capped by the unit. Initial floor1888MiB,
+  during-test floor1792MiB; existing guard1536MiB and original baseline unchanged.
 - Capture systemd MemoryPeak. OOM, unsupported property serialization, too-small
-  Perl limit or timeout fails closed. Do not raise the aggregate64MiB budget.
+  Perl limit or timeout fails closed. Do not exceed the explicitly revised96MiB planning envelope; root32MiB and
+  Perl12MiB/CPU1s/fd16 limits remain unchanged.
 
 ## Private diagnostics and historical resources
 
@@ -177,3 +182,27 @@ collector/64MiB aggregate fit, live supervisor-failure cleanup, slirp DNS proxy 
 alternate resolver behavior, actual guest IPv6 (disabled), and optional child
 UDP53/IPv6 (implementation disabled). No root-operator bypass, exhaustive
 isolation, readiness or production-cutover claim is made.
+
+## Approved wrapper-only loader compatibility correction
+
+Start1 used frozen root collector/verifier and old wrapper. External timeout
+failed to map libsystemd.so.0 under12MiB (exit127), before Perl or any TCP. Root
+reported node-window expiry, not policy success. StopPost completed and unit
+MemoryPeak was13,131,776bytes (12.52MiB). Original private journal/diagnostics are
+retained, as is the earlier64MiB refusal evidence.
+
+The parent approved replacing external timeout with Perl's own alarm3. The alarm
+is armed BEFORE the only IO::Socket::INET constructor; handler emits a fixed
+marker and exits124. Only exit2 can be a connect-denial candidate, still requiring
+all host counter/control evidence. Alarm124 is explicitly failed, never denied.
+Limits are applied before Perl exec. No retries, extra constructor, collector
+change or verifier redeployment is involved. Private per-command0600 records
+retain exit/stderr before any phaseDone marker, including loader errors or outer
+transport timeout; argv/stdout are omitted.
+
+Socket-free exact installed chain passed: module VmSize10,612KiB / RSS8,032KiB
+under12MiB; deliberate sleep was terminated with124 and fixed alarm marker in
+3.100s. Neither check created a socket or unit. Offline suite:28 tests pass,
+including alarm-before-constructor, one constructor, alarm-not-denial, retained
+private127/124 exits and transport-timeout diagnostics. The remaining unit start
+requires a fresh full gate; any second failure ends execution with no third start.

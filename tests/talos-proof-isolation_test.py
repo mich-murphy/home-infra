@@ -339,7 +339,7 @@ class NodeIntegrationTests(unittest.TestCase):
                           Mock(stdout='a' * 64 + ' private-path')]), \
              patch.object(n, 'phase', side_effect=['armed', 'armed', 'complete']), \
              patch.object(n, 'marker') as marker, \
-             patch.object(n, 'run', return_value=Mock(returncode=2)) as run, \
+             patch.object(n, 'run_node', return_value=Mock(returncode=2)) as run, \
              patch.object(n.time, 'sleep'), contextlib.redirect_stdout(stream):
             n.execute(Path('/not-read'))
             run.assert_called_once()
@@ -350,6 +350,41 @@ class NodeIntegrationTests(unittest.TestCase):
         self.assertNotIn('SYNTHETIC', stream.getvalue())
         self.assertEqual(n.PERL.count('IO::Socket::INET->new'), 1)
         self.assertNotIn('while', n.PERL)
+
+    def test_perl_alarm_precedes_only_constructor_and_is_not_denial(self):
+        command = n.node_command(Path('/not-read'), 'pod', 25001, 'token')
+        self.assertNotIn('exec timeout', ' '.join(command))
+        self.assertIn('ulimit -v 12288 && ulimit -t 1 && ulimit -n 16 && exec perl', ' '.join(command))
+        self.assertLess(n.PERL.index('alarm 3'), n.PERL.index('IO::Socket::INET->new'))
+        self.assertEqual(n.PERL.count('IO::Socket::INET->new'), 1)
+        self.assertIn('exit 124', n.PERL_DEADLINE)
+        import contextlib
+        import io
+        with patch.object(n, 'validate_cluster', return_value=('pod', 'uid')), \
+             patch.object(n, 'ssh'), patch.object(n, 'phase', return_value='armed'), \
+             patch.object(n, 'marker') as marker, patch.object(n, 'run_node', return_value=Mock(returncode=124)), \
+             contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(RuntimeError): n.execute(Path('/not-read'))
+            self.assertEqual(marker.call_args.args[1:], ('done', 'failed'))
+
+    def test_node_private_exit_stderr_retained_before_failure_classification(self):
+        for code in (2, 124, 127):
+            with tempfile.TemporaryDirectory() as directory, \
+                 patch.object(n.subprocess, 'run', return_value=Mock(returncode=code, stderr='fixed diagnostic', stdout='PRIVATE STDOUT')):
+                result = n.run_node(['PRIVATE-ARGV'], Path(directory))
+                self.assertEqual(result.returncode, code)
+                path = next(Path(directory).glob('node-isolation-command-*.json'))
+                record = json.loads(path.read_text())
+                self.assertEqual(record['returncode'], code)
+                self.assertEqual(record['stderr'], 'fixed diagnostic')
+                self.assertNotIn('PRIVATE', path.read_text())
+                self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(n.subprocess, 'run', side_effect=subprocess.TimeoutExpired(['PRIVATE'], 5, stderr=b'bounded stderr')):
+            with self.assertRaises(RuntimeError): n.run_node(['PRIVATE'], Path(directory))
+            record = json.loads(next(Path(directory).glob('node-isolation-command-*.json')).read_text())
+            self.assertTrue(record['transport_timeout'])
+            self.assertEqual(record['stderr'], 'bounded stderr')
 
     def test_wrapper_never_launches_when_apps_active(self):
         with patch.object(n, 'validate_cluster', side_effect=RuntimeError('busy')), \

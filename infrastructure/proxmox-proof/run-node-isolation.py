@@ -22,9 +22,10 @@ STATE = '/root/.local/state/home-infra/talos-proof'
 COLLECTOR = STATE + '/collect-isolation.py'
 # One constructor invocation, no DNS, proxy, HTTP redirect, registry or retry.
 # Return 2 only on connect failure; the host counter must independently correlate.
-PERL = ('$s=IO::Socket::INET->new(PeerAddr=>$ARGV[0],PeerPort=>$ARGV[1],'
+PERL_DEADLINE = '$SIG{ALRM}=sub{print STDERR "proof-node-alarm-expired\\n";exit 124}; alarm 3; '
+PERL = (PERL_DEADLINE + '$s=IO::Socket::INET->new(PeerAddr=>$ARGV[0],PeerPort=>$ARGV[1],'
         'Proto=>"tcp",Timeout=>1) or exit 2; '
-        'print $s $ARGV[2]; $s->recv($r,128); exit 0;')
+        'print $s $ARGV[2]; $s->recv($r,128); alarm 0; exit 0;')
 
 
 PHASE = 'preflight'
@@ -56,6 +57,34 @@ def require(ok, message):
 def run(argv, timeout=5, codes=(0,)):
     result = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
     require(result.returncode in codes and len(result.stdout) <= 2_000_000, 'bounded command failed')
+    return result
+
+
+def run_node(argv, directory=None):
+    """Retain private exit/stderr even for loader failure before phaseDone.
+
+    Never persist argv/stdout (which could include synthetic tokens/configs).
+    Unique files preserve each failed attempt rather than overwriting history.
+    """
+    directory = directory or Path.home() / '.local/state/home-infra/talos-proof'
+    failure = None
+    try:
+        result = subprocess.run(argv, capture_output=True, text=True, timeout=5)
+        value = {'returncode': result.returncode, 'transport_timeout': False, 'stderr': result.stderr[:8192]}
+    except subprocess.TimeoutExpired as exc:
+        failure = exc
+        stderr = exc.stderr or ''
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode('utf-8', errors='replace')
+        value = {'returncode': None, 'transport_timeout': True, 'stderr': stderr[:8192]}
+    value['phase'] = 'node_attempt'
+    path = directory / ('node-isolation-command-' + str(time.monotonic_ns()) + '.json')
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, 'w') as stream:
+        json.dump(value, stream)
+        stream.flush()
+        os.fsync(stream.fileno())
+    require(failure is None, 'node exec transport deadline exceeded; private stderr retained')
     return result
 
 
@@ -109,9 +138,9 @@ def validate_cluster(kubeconfig):
 
 
 def node_command(kubeconfig, pod, port, token):
-    # Limit the guest-side interpreter, not QEMU. timeout also bounds a blocked
-    # receive after an unexpected successful connection. Exactly one connect.
-    script = 'ulimit -v 12288 && ulimit -t 1 && ulimit -n 16 && exec timeout 3 perl -MIO::Socket::INET -e "$1" -- "$2" "$3" "$4"'
+    # Limit the interpreter before exec. Perl alarm bounds both connect/receive;
+    # its exit124 is NEVER the connect-failure exit2. Exactly one constructor.
+    script = 'ulimit -v 12288 && ulimit -t 1 && ulimit -n 16 && exec perl -MIO::Socket::INET -e "$1" -- "$2" "$3" "$4"'
     return kube(kubeconfig, '-n', 'kube-system', 'exec', pod, '-c', 'cilium-agent', '--',
                 'bash', '-c', script, 'proof-isolation', PERL, '10.77.1.100', str(port), token)
 
@@ -173,11 +202,14 @@ def execute(kubeconfig):
             command = node_command(kubeconfig, identity[0], port, run_id)
             marker(work, 'producer', json.dumps({'node_uid': NODE_UID, 'cilium_pod': identity[0],
                    'cilium_pod_uid': identity[1], 'all_proof_app_pods_zero': True, 'host_network': True,
-                   'command_sha256': hashlib.sha256(shlex.join(command).encode()).hexdigest()}))
+                   'command_sha256': hashlib.sha256(shlex.join(command).encode()).hexdigest(),
+                   'planning_envelope_mib': 96, 'root_unit_cap_mib': 32,
+                   'guest_process_allowance_mib': 24, 'transport_allowance_mib': 40,
+                   'initial_host_floor_mib': 1888, 'during_host_floor_mib': 1792}))
             marker(work, 'claim', 'one')  # never retry this command or the connect
             attempted = True
             PHASE = 'node_attempt'
-            result = run(command, timeout=5, codes=(0, 2, 124, 137))
+            result = run_node(command)
             marker(work, 'done', 'denied' if result.returncode == 2 else 'failed')
             require(result.returncode == 2, 'node command did not report bounded connect denial')
             print(json.dumps({'phase': 'node-attempt-finished'}), flush=True)
