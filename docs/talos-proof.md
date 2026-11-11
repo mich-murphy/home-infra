@@ -22,8 +22,9 @@
 - **Media/heavy data:** staged execution continues. A passing profile CRUD or
   health check must not be relabelled media download, office editing or ML proof.
 
-See the service-specific evidence and [current delivery record](talos-proof-delivery.md)
-for exact scope, limitations and active ownership. This is not a full concurrent
+See the [all36-service readiness matrix](talos-proof-readiness.md), service-specific
+evidence and [current delivery record](talos-proof-delivery.md) for exact scope,
+limitations and active ownership. This is not a full concurrent
 replica, a production-data migration rehearsal or approval to retire Docker.
 
 ## Layout and ownership

@@ -79,6 +79,7 @@
       kubernetes-helm = pkgs.kubernetes-helm;
       kubeconform = pkgs.kubeconform;
       kubernetes-proof-tools = pkgs.python3.withPackages (ps: [ps.pyyaml]);
+      nodejs = pkgs.nodejs;
       portainer-drift-tools = pkgs.yq-go;
       shellcheck = pkgs.shellcheck;
       terraform-ci = terraformCiFor pkgs;
@@ -114,6 +115,7 @@
           self.packages.${system}.kubernetes-helm
           self.packages.${system}.kubeconform
           self.packages.${system}.kubernetes-proof-tools
+          self.packages.${system}.nodejs
           self.packages.${system}.shellcheck
         ];
       };

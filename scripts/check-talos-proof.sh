@@ -2,7 +2,7 @@
 # Static checks only. No cluster credentials, SSH, apply, or production access.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-for tool in kubectl python3 kubeconform shellcheck; do
+for tool in kubectl python3 node kubeconform shellcheck; do
   command -v "$tool" >/dev/null || { echo "Missing tool: $tool" >&2; exit 1; }
 done
 python3 tests/kubernetes-proof_test.py
@@ -10,11 +10,19 @@ python3 kubernetes/bootstrap/test_safety.py
 for suite in tests/talos-proof-*_test.py; do
   python3 "$suite"
 done
+# Parse every browser harness without executing it; execute only explicitly
+# offline *_test modules (including the OIDC exact-audience regression suite).
+for source in tests/talos-proof-*.mjs; do
+  node --check "$source"
+done
+for suite in tests/talos-proof-*_test.mjs; do
+  node "$suite"
+done
 render=$(mktemp -d)
 trap 'rm -rf "$render"' EXIT
 python3 tests/kubernetes-proof-schemas.py "$render/schemas"
 schema="$render/schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
-for group in media data media/integration; do
+for group in media data media/integration media/protocol-qbittorrent media/protocol-sabnzbd; do
   printf 'Validating application profile: %s\n' "$group"
   kubectl kustomize "kubernetes/apps/$group" > "$render/apps.yaml"
   python3 tests/kubernetes-proof.py < "$render/apps.yaml"
