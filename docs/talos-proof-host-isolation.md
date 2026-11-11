@@ -1,7 +1,7 @@
 # Controlled host isolation — node-only collector
 
-**Current authority: revised exclusive node-only window, maximum TWO unit
-starts including failures, under the new96MiB planning envelope.** One start
+**Completed: two unit starts under the revised96MiB envelope; node window
+RELEASED. No further execution authority.** One start
 failed before any TCP because external timeout could not load under12MiB. The
 parent explicitly approved the wrapper-only Perl-alarm compatibility correction
 and one remaining start, conditional on fresh1888MiB initial admission, app-zero,
@@ -206,3 +206,24 @@ under12MiB; deliberate sleep was terminated with124 and fixed alarm marker in
 including alarm-before-constructor, one constructor, alarm-not-denial, retained
 private127/124 exits and transport-timeout diagnostics. The remaining unit start
 requires a fresh full gate; any second failure ends execution with no third start.
+
+## Live outcome and release
+
+The approved second/final start succeeded. Fresh initial host2003MiB, captured
+start1961MiB, post2016MiB; swap28KiB/IO10 unchanged and original enrolled/file
+baseline24KiB retained. Predicate0→2, adjacent existing10/8 REJECT0→2, scoped
+OUTPUT+230; bracketed controls each1accept/response, node-window0accept. One
+Perl constructor, unknown slirp source port retained. Full canonical policy
+unchanged, including independent postcheck. Root MemoryPeak13,312,000bytes
+(12.695MiB); both units have no remaining processes/cgroup members or memory
+accounting. Guard and VM101/102/120 identity/configuration hashes unchanged;
+no instrumentation/listener remains.
+
+Sanitized receipts: `evidence/talos-platform/controlled-host-isolation-node-live.md`
+and `.json`. Private raw receipt SHA256
+`79dc13fe74a43b3c196989b441112b6f2ff3888abeb1c5efa08c9e8517fd104a`.
+This demonstrates only the approved bounded endpoint/cgroup-attributed node TCP
+REJECT, not TRACE/authenticated/full5tuple/exhaustive DNS/IPv6 isolation. Parent
+owns acceptance. All authorized starts consumed; obtain a new lease for any
+further execution. Earlier resource refusal and first loader failure remain
+retained rather than rewritten as successes.

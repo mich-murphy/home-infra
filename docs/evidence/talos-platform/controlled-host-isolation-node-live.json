@@ -1,0 +1,180 @@
+{
+  "method": "endpoint counter inheriting verified sole QEMU-cgroup OUTPUT entry; not TRACE or authenticated attestation",
+  "receipt_sha256": "79dc13fe74a43b3c196989b441112b6f2ff3888abeb1c5efa08c9e8517fd104a",
+  "endpoint": {
+    "address": "10.77.1.100",
+    "port": 28614
+  },
+  "predicate": {
+    "source": "10.77.1.100",
+    "destination": "10.77.1.100",
+    "protocol": "TCP",
+    "destination_port": 28614,
+    "source_port": "unknown/omitted",
+    "inner_cgroup_match": false,
+    "target": "none/continue",
+    "comment": "proof-isolation-<redacted-run>"
+  },
+  "counter_before": 0,
+  "counter_after": 2,
+  "counter_delta": 2,
+  "original_reject_rule_number_before_insertion": 3,
+  "reject_rule": [
+    "-d",
+    "10.0.0.0/8",
+    "-j",
+    "REJECT",
+    "--reject-with",
+    "icmp-port-unreachable"
+  ],
+  "reject_packets_before": 0,
+  "reject_packets_after": 2,
+  "reject_packet_delta": 2,
+  "scoped_output_jump_delta": 230,
+  "canonical_policy_before_after_and_independent_postcheck_equal": true,
+  "canonical_policy_sha256": "294f7c3fa11e491adbfdbfc5c7342d8c72f17714c95a3de283b5136c0be7df73",
+  "unrelated_policy_structure_sha256": "2062061aac995f96a027eb871ae01535fd8deac3faa44edd39889c4bff336fe7",
+  "controls": [
+    {
+      "sport": 11008,
+      "result": "response",
+      "listener_received": true,
+      "acceptances": 1,
+      "outside_proof_cgroup": true
+    },
+    {
+      "sport": 11009,
+      "result": "response",
+      "listener_received": true,
+      "acceptances": 1,
+      "outside_proof_cgroup": true
+    }
+  ],
+  "node_attempt": {
+    "result": "denied",
+    "listener_received": false,
+    "node_connect_calls": 1,
+    "slirp_source_port": "unknown",
+    "window_ms": 1209
+  },
+  "root_memory_peak_bytes_during_collection": 13312000,
+  "test_start_resources": {
+    "monotonic": 2898344.563727765,
+    "available_mib": 1961,
+    "swap_used_kib": 28,
+    "swap_io_pages": 10,
+    "psi_totals": {
+      "some": 13851852,
+      "full": 13831203
+    }
+  },
+  "postcheck": {
+    "guard": "active",
+    "incarnation_matches": true,
+    "qemu_pid": 3987981,
+    "scope_inode": 61718,
+    "sample": {
+      "monotonic": 2898406.580087636,
+      "available_mib": 2016,
+      "swap_used_kib": 28,
+      "swap_io_pages": 10,
+      "psi_totals": {
+        "some": 13852009,
+        "full": 13831360
+      }
+    },
+    "vms": {
+      "101": {
+        "pid": 2176,
+        "start_ticks": 1036,
+        "config_sha256": "08c65bda66e9e5b929136b8008a6909ae5bf4d3ad8f9c6c300f7c7a3b41b2f28"
+      },
+      "102": {
+        "pid": 2657,
+        "start_ticks": 7142,
+        "config_sha256": "2d8e0ccc81fb167953b37a295e643a536b0dae4169ed9c34b51303a8755474af"
+      },
+      "120": {
+        "pid": 3987981,
+        "start_ticks": 288449562,
+        "config_sha256": "095f5903dbb5b79c0114dd8d435fce6423842c35761d75492ae7ad8a6230a89c"
+      }
+    },
+    "listeners": [],
+    "instrumentation_rules": 0,
+    "swap_baseline_file_kib": 24,
+    "enrolled_swap_baseline_kib": 24,
+    "code_hashes": {
+      "host_lifecycle.py": "ef58d97d423d1e283b2917a0b2e024420c6786b58fb232c1dad2941e11e2f4c5",
+      "isolation.sh": "81675b61ca2867a41e942d54fa9980c4aa37e9472981bbc9ab469eb5a4de8f94",
+      "collect-isolation.py": "0db4ceda68774120930ca0113ec24141f602116766422d6d434a05729ef8eb48",
+      "verify-isolation.py": "181a25120da865c669a20f67820f0d5613a360f4774cc1a4137125acf657572b"
+    }
+  },
+  "narrow_claim": "One bounded actual-node private TCP attempt matched the unique endpoint predicate and existing adjacent REJECT, bracketed by live controls. Not full-five-tuple tracing or comprehensive DNS/IPv6/private isolation.",
+  "test_unit_resources_after_cleanup": [
+    {
+      "active_state": "failed",
+      "main_pid": 0,
+      "control_pid": 0,
+      "cgroup_member_count": 0,
+      "tasks_current": "[not set]",
+      "memory_current": "[not set]"
+    },
+    {
+      "active_state": "inactive",
+      "main_pid": 0,
+      "control_pid": 0,
+      "cgroup_member_count": 0,
+      "tasks_current": "[not set]",
+      "memory_current": "[not set]"
+    }
+  ],
+  "status": "bounded-node-endpoint-rejection-demonstrated-pending-parent-acceptance",
+  "unit_starts_used": 2,
+  "unit_starts_allowed": 2,
+  "planning_envelope": {
+    "approved_total_mib": 96,
+    "root_unit_cap_mib": 32,
+    "guest_allowance_mib_retained": 24,
+    "transport_allowance_mib": 40,
+    "initial_host_floor_mib": 1888,
+    "during_host_floor_mib": 1792,
+    "observed_session_plus_helper_rss_kib": 30052,
+    "existing_daemon_baseline_excluded": true,
+    "transport_is_not_hard_cgroup_capped": true
+  },
+  "first_start": {
+    "status": "failed-not-network-proof",
+    "root_collector_phase": "node_window",
+    "root_cause": "Mac/node attempt deadline expired",
+    "cleanup": "complete",
+    "root_memory_peak_bytes": 13131776,
+    "loader_diagnosis": "External timeout libsystemd.so.0 mapping failure under inherited12MiB; socket-free exact-chain reproduction exit127. Original wrapper did not retain client stderr/exit; forensic diagnostics and reproduction retained privately.",
+    "predicate_after_failure": "not retained; no delta invented",
+    "actual_node_tcp_connects": 0
+  },
+  "second_start": {
+    "status": "success",
+    "node_command_returncode": 2,
+    "alarm_exit124_is_not_denial": true,
+    "root_collector_and_cleanup_diagnostics": "complete",
+    "root_collector_verifier_source": "c9e19152 unchanged",
+    "wrapper_source": "b7da6d29 approved Perl-alarm compatibility",
+    "wrapper_sha256": "f5e38405c8eadce9e0148cdcaf9a0dcf766a6d42ec6504591cd6793707f2f05a",
+    "private_client_stderr_empty": false,
+    "stderr_classification": "kubectl remote-command exit2 diagnostic only; no alarm marker",
+    "stderr_sha256": "7c47f86dec63a9574bf8fc6eab58e9e34ef9c931a2fc3cfcef544814c1d1d626"
+  },
+  "baseline_disclosure": {
+    "original_enrollment_swap_kib": 24,
+    "original_swap_io_pages": 9,
+    "test_start_and_post_swap_kib": 28,
+    "test_start_and_post_swap_io_pages": 10,
+    "historical_growth_kib": 4,
+    "historical_growth_pages": 1,
+    "baseline_reset": false
+  },
+  "app_zero_and_same_ready_node_cilium_pre_and_post": true,
+  "release": "Exclusive node window released after two starts; no further starts authorized."
+}
