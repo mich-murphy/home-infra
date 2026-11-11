@@ -47,7 +47,7 @@ def main():
                             'Session\\LSDEnabled=false\nSession\\DefaultSavePath=/data/torrents\n')
         elif name == 'sabnzbd':
             data['seed'] = (f'[misc]\nhost = 0.0.0.0\nport = 8080\napi_key = {key}\n'
-                            'inet_exposure = 5\nenable_https = 0\n'
+                            'inet_exposure = 5\nenable_https = 0\nhost_whitelist = sabnzbd.proof.invalid,pipeline-sabnzbd.proof.invalid\n'
                             'download_dir = /data/usenet/incomplete\ncomplete_dir = /data/usenet/complete\n')
         elif name == 'kometa':
             data['seed'] = ('libraries:\n  Proof:\n    collection_files:\n      - file: /proof-fixtures/collections.yml\n'

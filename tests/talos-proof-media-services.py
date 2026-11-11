@@ -169,8 +169,14 @@ def pinchflat(api, credential, fixture, state, phase):
 def qbittorrent(api, credential, fixture, state, phase):
     reject_anonymous(api, '/api/v2/app/preferences')
     result = api.call('/api/v2/auth/login', 'POST', form={'username': credential['username'], 'password': credential['password']}, raw=True)
-    expect(result == b'Ok.', 'fresh qBittorrent credential rejected')
-    expect(api.call('/api/v2/torrents/info') == [], 'settings-only proof requires empty torrent queue')
+    expect((api.last_status == 204 and result == b'') or (api.last_status == 200 and result == b'Ok.'), 'fresh qBittorrent credential rejected')
+    torrents = api.call('/api/v2/torrents/info')
+    transfer_path = state / 'qbittorrent-transfer.json'
+    if phase == 'verify' and transfer_path.exists():
+        transfer = json.loads(safety.read_private(transfer_path))
+        expect(len(torrents) == 1 and torrents[0]['hash'] == transfer['infohash'], 'unexpected torrent state during durable settings verification')
+    else:
+        expect(torrents == [], 'settings-only proof requires empty torrent queue')
     prefs = api.call('/api/v2/app/preferences')
     expect(not prefs['dht'] and not prefs['pex'] and not prefs['lsd'], 'discovery must remain disabled')
     if phase == 'verify':

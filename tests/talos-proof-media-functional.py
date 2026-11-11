@@ -62,7 +62,7 @@ def sab(api, credential):
     before = call('get_config', section='misc', keyword='refresh_rate')['config']['misc']['refresh_rate']
     changed = 2 if int(before) != 2 else 3
     try:
-        assert call('set_config', section='misc', keyword='refresh_rate', value=changed)['status']
+        call('set_config', section='misc', keyword='refresh_rate', value=changed)
         assert int(call('get_config', section='misc', keyword='refresh_rate')['config']['misc']['refresh_rate']) == changed
     finally:
         call('set_config', section='misc', keyword='refresh_rate', value=before)

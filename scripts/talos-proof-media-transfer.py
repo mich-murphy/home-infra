@@ -57,12 +57,12 @@ def remote(service, script, *args):
 def empty_destination(service, path):
     expect(path.startswith('/data/') and '..' not in PurePosixPath(path).parts, 'unsafe proof output path')
     # Exclusive directory creation is a prerequisite, not a cleanup of a preexisting output.
-    remote(service, 'test ! -e "$1"; mkdir -p "$(dirname "$1")"; mkdir "$1"; test -z "$(ls -A "$1")"', path)
+    remote(service, 'test ! -e "$1"; mkdir -p "$(dirname "$1")"; mkdir "$1"; chown 1000:1000 "$1"; chmod 750 "$1"; test -z "$(ls -A "$1")"', path)
 
 
 def output_hash(service, path, marker):
     p = PurePosixPath(path)
-    expect(p.is_absolute() and str(p).startswith('/data/') and '..' not in p.parts and p.name == NAME, 'output escaped proof destination')
+    expect(p.is_absolute() and str(p).startswith('/data/') and '..' not in p.parts and p.name in (NAME, 'synthetic-proof.1.1.wav'), 'output escaped proof destination')
     values = remote(service, 'test -f "$1"; test ! -L "$1"; wc -c < "$1"; sha256sum "$1"', str(p)).decode().splitlines()
     expect(len(values) == 2 and int(values[0]) == marker['size'] and values[1].split()[0] == marker['sha256'], 'completed output checksum/size differs from fixture')
 
@@ -77,18 +77,21 @@ def counters(before, after, service, size):
 
 
 def qbit(api, service, credentials, state, phase):
-    expect(api.call('/api/v2/auth/login', 'POST', form={'username': credentials['username'], 'password': credentials['password']}, raw=True) == b'Ok.', 'qBit login rejected')
+    login = api.call('/api/v2/auth/login', 'POST', form={'username': credentials['username'], 'password': credentials['password']}, raw=True)
+    expect((api.last_status == 204 and login == b'') or (api.last_status == 200 and login == b'Ok.'), 'qBit login rejected')
     prefs = api.call('/api/v2/app/preferences')
     expect(not prefs['dht'] and not prefs['pex'] and not prefs['lsd'], 'qBit discovery must remain disabled')
     if phase == 'exercise':
         expect(api.call('/api/v2/torrents/info') == [], 'qBit transfer requires empty queue')
         before = json.loads(fixture_get(service, '/stats'))
         marker = {k: before[k] for k in ('name', 'size', 'sha256', 'infohash')}
+        marker['fixture_before'] = before
         marker['destination'] = '/data/torrents/protocol-' + secrets.token_hex(6)
         empty_destination(service, marker['destination'])
         safety.write_private(state / (service + '-transfer-attempt.json'), json.dumps(marker))
         body, headers = multipart({'savepath': marker['destination'], 'autoTMM': 'false'}, 'torrents', 'proof.torrent', fixture_get(service, '/artifact.torrent'))
-        expect(api.call('/api/v2/torrents/add', 'POST', payload=body, headers=headers, raw=True) == b'Ok.', 'torrent submission rejected')
+        result = api.call('/api/v2/torrents/add', 'POST', payload=body, headers=headers, raw=True)
+        expect((api.last_status == 204 and result == b'') or (api.last_status == 200 and result == b'Ok.'), 'torrent submission rejected')
     else:
         marker = json.loads(safety.read_private(state / (service + '-transfer.json')))
     torrent = None
@@ -99,7 +102,7 @@ def qbit(api, service, credentials, state, phase):
             break
         if phase == 'exercise':
             time.sleep(2)
-    expect(torrent is not None and torrent['amount_left'] == 0 and torrent['completed'] == marker['size'], 'qBit did not report actual completed payload')
+    expect(torrent is not None and torrent.get('state') not in ('error', 'missingFiles', 'unknown') and torrent['amount_left'] == 0 and torrent['completed'] == marker['size'], 'qBit did not report actual completed payload')
     output_hash(service, marker['destination'] + '/' + NAME, marker)
     if phase == 'exercise':
         after = json.loads(fixture_get(service, '/stats'))
@@ -117,10 +120,11 @@ def sab(api, service, credential, state, phase):
     if phase == 'exercise':
         expect(call('queue')['queue']['noofslots'] == 0, 'SAB transfer requires empty queue')
         expect(not call('history')['history']['slots'], 'SAB transfer requires fresh history')
-        servers = call('get_config', section='servers')['config']['servers']
+        servers = call('get_config', section='servers')['config'].get('servers', [])
         expect(not servers, 'refuse to alter existing SAB provider configuration')
         before = json.loads(fixture_get(service, '/stats'))
         marker = {k: before[k] for k in ('name', 'size', 'sha256', 'infohash')}
+        marker['fixture_before'] = before
         marker['destination'] = '/data/usenet/protocol-' + secrets.token_hex(6)
         empty_destination(service, marker['destination'])
         # Preserve misc config privately; restore in a separately explicit cleanup action.
@@ -130,7 +134,7 @@ def sab(api, service, credential, state, phase):
             call('set_config', section='misc', keyword=key, value=value)
         call('set_config', section='servers', keyword='proof-fixture', host='download-protocols', port=8119,
              username='fixture', password='fixture-public', ssl=0, enable=1, connections=2, retention=0, send_group=0)
-        configured = call('get_config', section='servers')['config']['servers']
+        configured = call('get_config', section='servers')['config'].get('servers', [])
         expect(len(configured) == 1, 'SAB must have exactly one fixture server')
         body, headers = multipart({'apikey': credential['api_key'], 'output': 'json', 'mode': 'addfile', 'pp': '0', 'script': 'None', 'nzbname': 'synthetic-proof'},
                                   'nzbfile', 'proof.nzb', fixture_get(service, '/artifact.nzb'))
@@ -150,7 +154,7 @@ def sab(api, service, credential, state, phase):
     expect(complete is not None and complete['status'] == 'Completed' and not complete.get('fail_message'), 'SAB did not report successful completed history')
     storage = PurePosixPath(complete['storage'])
     expect(str(storage).startswith(marker['destination'] + '/'), 'SAB output escaped unique empty destination')
-    output = str(storage) if storage.name == NAME else str(storage / NAME)
+    output = str(storage) if storage.name in (NAME, 'synthetic-proof.1.1.wav') else str(storage / NAME)
     output_hash(service, output, marker)
     marker['output'] = output
     if phase == 'exercise':
@@ -196,6 +200,7 @@ def main():
         kube('rollout', 'status', 'deployment/download-protocols', '--timeout=120s')
         stats = json.loads(fixture_get(svc, '/stats'))
         expect(stats['sha256'] == hashlib.sha256(payload).hexdigest(), 'fixture content identity differs')
+        safety.write_private(state / (svc + '-fixture-start-' + secrets.token_hex(4) + '.json'), json.dumps(stats))
         print(json.dumps({'service': svc, 'fixture': 'STARTED', 'source': stats}))
         return
     expect(args.ca is not None, 'trusted Gateway CA required')
@@ -217,7 +222,7 @@ def main():
         sab_call(api, credential, 'del_config', section='servers', keyword='proof-fixture')
         for key in ('download_dir', 'complete_dir'):
             sab_call(api, credential, 'set_config', section='misc', keyword=key, value=retained['original_misc'][key])
-        expect(not sab_call(api, credential, 'get_config', section='servers')['config']['servers'], 'temporary server not removed')
+        expect(not sab_call(api, credential, 'get_config', section='servers')['config'].get('servers', []), 'temporary server not removed')
         print(json.dumps({'service': svc, 'result': 'TEMPORARY_PROVIDER_REMOVED', 'outputs_retained': True}))
         return
     marker = (qbit if svc == 'qbittorrent' else sab)(api, svc, credential, state, args.action)

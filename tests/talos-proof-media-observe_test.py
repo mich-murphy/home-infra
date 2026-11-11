@@ -18,6 +18,7 @@ services = importlib.import_module('talos-proof-media-services')
 class QbitAPI:
     def __init__(self, preference=7):
         self.preference = preference
+        self.last_status = 200
         self.writes = 0
     def anonymous(self):
         class Anonymous:

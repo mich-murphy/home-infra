@@ -89,7 +89,7 @@ class Lifecycle(unittest.TestCase):
                                ('integration/qbittorrent.yaml', 'pipeline-qbittorrent.proof.invalid')]:
             route = next(d for d in yaml.safe_load_all((ROOT / 'kubernetes/apps/media' / file).read_text()) if d['kind'] == 'HTTPRoute')
             self.assertEqual(route['spec']['hostnames'], [hostname])
-            self.assertEqual(route['spec']['rules'][0]['filters'], [{'type': 'URLRewrite', 'urlRewrite': {'hostname': hostname}}])
+            self.assertEqual(route['spec']['rules'][0]['filters'][0], {'type': 'URLRewrite', 'urlRewrite': {'hostname': hostname}})
         self.assertIn('HostHeaderValidation=true', (ROOT / 'scripts/talos-proof-media-bootstrap.py').read_text())
         self.assertIn('CSRFProtection=true', (ROOT / 'scripts/talos-proof-media-bootstrap.py').read_text())
 

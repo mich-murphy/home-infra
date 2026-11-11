@@ -205,3 +205,8 @@ See `docs/evidence/talos-media/transfer-and-helper-integration.md`: optional pro
 ## Dependency workflow preparation checkpoint
 
 See `docs/evidence/talos-media/dependency-workflow-preparation.md` for explicit groups/budgets, actual Tautulli playback/history, Kometa collection+second-run checks, real non-dry-run jellyplex mutation orchestration, staged Jellyfin-auth Seerr permission/request/approval against real Radarr, and strict separate Skyhook metadata contract. All remain PENDING LIVE; jellyplex cloud-discovery boundary may block genuine upstream mapping. Isolated Seerr and Radarr now each512MiB including128MiB native metadata sidecar; integration Radarr remains384MiB. No lease implied, credentials/retained state unchanged.
+
+
+## Actual local download milestone
+
+`docs/evidence/talos-media/live-download-transfers.md` and companion sanitized observations now record real qBit BEP3 and SAB NNTP/yEnc32044-byte WAV completion, positive fixture counters, exact actual-output SHA, fixtureOFF restart and different-fresh-PVC recovery PASS. All failed attempts and compatibility fixes retained. Native-browser qbit auth/CSRF remains OPEN (manual Origin-only401 does not prove browser broken). All app/fixture/helper pods deleted and media live lease released. No external provider/MP4/arr import/full-media acceptance claim.

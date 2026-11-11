@@ -302,10 +302,11 @@ class NNTPHandler(socketserver.StreamRequestHandler):
             elif command == 'MODE' and arg.upper() == 'READER':
                 reply('200 reader mode')
             elif command == 'AUTHINFO':
-                if arg == 'USER ' + PUBLIC_USER:
+                subcommand, _, credential = arg.partition(' ')
+                if subcommand.upper() == 'USER' and credential == PUBLIC_USER:
                     user_ok = True
                     reply('381 password required')
-                elif user_ok and arg == 'PASS ' + PUBLIC_PASSWORD:
+                elif user_ok and subcommand.upper() == 'PASS' and credential == PUBLIC_PASSWORD:
                     authenticated = True
                     f.count('nntp_auth')
                     reply('281 authentication accepted')

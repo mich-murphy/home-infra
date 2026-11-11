@@ -89,7 +89,7 @@ class Transfer(unittest.TestCase):
             if path.endswith('preferences'): return dict(dht=False, pex=False, lsd=False)
             if path.startswith('/api/v2/torrents/info?'): return [dict(progress=1, completed=10, amount_left=0)]
             raise AssertionError('unexpected mutation or request: ' + path)
-        api = Mock(); api.call.side_effect = call
+        api = Mock(last_status=200); api.call.side_effect = call
         with patch.object(s, 'read_private', return_value=json.dumps(marker)), patch.object(t, 'output_hash') as output, \
              patch.object(t, 'fixture_get', side_effect=AssertionError('verify must not read fixture')), \
              patch.object(t, 'empty_destination', side_effect=AssertionError('verify must not create output')):

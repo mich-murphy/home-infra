@@ -17,6 +17,11 @@ spec:
     - type: URLRewrite
       urlRewrite:
         hostname: qbittorrent.proof.invalid
+    - type: RequestHeaderModifier
+      requestHeaderModifier:
+        set:
+        - name: X-Forwarded-Host
+          value: qbittorrent.proof.invalid:18443
     backendRefs:
     - name: qbittorrent
       port: 8080

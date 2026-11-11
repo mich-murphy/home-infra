@@ -1,0 +1,797 @@
+{
+  "scope": "actual bounded synthetic protocol transfers; no external providers",
+  "observations": [
+    {
+      "service": "qbittorrent",
+      "observed_utc": "2026-11-11T16:14:43.185634+00:00",
+      "pods": [
+        {
+          "name": "download-protocols-79876dc944-qx58z",
+          "uid": "9d54faee-4e17-4cd1-ab36-fc466d4dfd5c",
+          "created": "2026-11-11T16:13:02Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "fixture",
+              "image": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+              "imageID": "ghcr.io/linuxserver/tautulli@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+              "containerID": "containerd://693943716a3c29067956fd4a582c1b61ecc7f4dd4ca80029e0e1bb37529a037a",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:13:12Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n17108992\nFILE memory.peak\n26525696\nFILE memory.stat\nanon 15355904\nfile 0\nkernel 1531904\nkernel_stack 98304\npagetables 651264\nsec_pagetables 0\npercpu 480\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 15327232\ninactive_file 0\nactive_file 0\nunevictable 0\nslab_reclaimable 437456\nslab_unreclaimable 252016\nslab 689472\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 0\npgsteal 0\npswpin 0\npswpout 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 33301\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        },
+        {
+          "name": "qbittorrent-55c7c7f94f-2m2hq",
+          "uid": "55ecefc6-f78d-4240-a3c0-49d83007daf8",
+          "created": "2026-11-11T16:12:08Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+              "imageID": "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+              "containerID": "containerd://db9de0026ded88192fb213dfa4329df50719e20905bf5b53706f6f5ca8aa5e5f",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://db9de0026ded88192fb213dfa4329df50719e20905bf5b53706f6f5ca8aa5e5f",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T16:12:09Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T16:12:09Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup": null
+            },
+            {
+              "name": "qbittorrent",
+              "image": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+              "imageID": "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+              "containerID": "containerd://f804bb7e4dd849d8e147db8e307b0e2f0ffb694b1eb5907ef8c09f2314639e6a",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:12:10Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n74727424\nFILE memory.peak\n77778944\nFILE memory.stat\nanon 9756672\nfile 60215296\nkernel 4620288\nkernel_stack 409600\npagetables 1159168\nsec_pagetables 0\npercpu 1056\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 22355968\nfile_dirty 4096\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 8757248\nactive_anon 954368\ninactive_file 55324672\nactive_file 4890624\nunevictable 0\nslab_reclaimable 2418848\nslab_unreclaimable 520160\nslab 2939008\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 458\npgsteal 375\npswpin 0\npswpout 0\npgscan_kswapd 458\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 375\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 28654\npgmajfault 64\npgrefill 41\npgactivate 68\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "qbittorrent",
+      "observed_utc": "2026-11-11T16:16:17.150361+00:00",
+      "pods": [
+        {
+          "name": "download-protocols-79876dc944-27d5c",
+          "uid": "a4ad45c1-407b-423f-aff9-bd5b174405e0",
+          "created": "2026-11-11T16:15:34Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "fixture",
+              "image": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+              "imageID": "ghcr.io/linuxserver/tautulli@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+              "containerID": "containerd://f2db727c86c09ee13a27da806adadc5f7a1051a0988a0d22b7a9f842062ea408",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:15:35Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n16883712\nFILE memory.peak\n26390528\nFILE memory.stat\nanon 15351808\nfile 0\nkernel 1400832\nkernel_stack 98304\npagetables 610304\nsec_pagetables 0\npercpu 480\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 15319040\ninactive_file 0\nactive_file 0\nunevictable 0\nslab_reclaimable 362840\nslab_unreclaimable 236256\nslab 599096\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 0\npgsteal 0\npswpin 0\npswpout 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 27270\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        },
+        {
+          "name": "qbittorrent-55c7c7f94f-2m2hq",
+          "uid": "55ecefc6-f78d-4240-a3c0-49d83007daf8",
+          "created": "2026-11-11T16:12:08Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+              "imageID": "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+              "containerID": "containerd://db9de0026ded88192fb213dfa4329df50719e20905bf5b53706f6f5ca8aa5e5f",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://db9de0026ded88192fb213dfa4329df50719e20905bf5b53706f6f5ca8aa5e5f",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T16:12:09Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T16:12:09Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup": null
+            },
+            {
+              "name": "qbittorrent",
+              "image": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+              "imageID": "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+              "containerID": "containerd://f804bb7e4dd849d8e147db8e307b0e2f0ffb694b1eb5907ef8c09f2314639e6a",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:12:10Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n74670080\nFILE memory.peak\n77819904\nFILE memory.stat\nanon 9801728\nfile 60313600\nkernel 4476928\nkernel_stack 376832\npagetables 1077248\nsec_pagetables 0\npercpu 1056\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 22401024\nfile_dirty 4096\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 8749056\nactive_anon 1003520\ninactive_file 55357440\nactive_file 4956160\nunevictable 0\nslab_reclaimable 2433880\nslab_unreclaimable 476216\nslab 2910096\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 458\npgsteal 375\npswpin 0\npswpout 0\npgscan_kswapd 458\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 375\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 34728\npgmajfault 65\npgrefill 41\npgactivate 68\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "qbittorrent",
+      "observed_utc": "2026-11-11T16:16:59.140784+00:00",
+      "pods": [
+        {
+          "name": "qbittorrent-55c7c7f94f-2m2hq",
+          "uid": "55ecefc6-f78d-4240-a3c0-49d83007daf8",
+          "created": "2026-11-11T16:12:08Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+              "imageID": "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+              "containerID": "containerd://db9de0026ded88192fb213dfa4329df50719e20905bf5b53706f6f5ca8aa5e5f",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://db9de0026ded88192fb213dfa4329df50719e20905bf5b53706f6f5ca8aa5e5f",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T16:12:09Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T16:12:09Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup": null
+            },
+            {
+              "name": "qbittorrent",
+              "image": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+              "imageID": "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+              "containerID": "containerd://f804bb7e4dd849d8e147db8e307b0e2f0ffb694b1eb5907ef8c09f2314639e6a",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:12:10Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n74719232\nFILE memory.peak\n77819904\nFILE memory.stat\nanon 9842688\nfile 60317696\nkernel 4526080\nkernel_stack 393216\npagetables 1097728\nsec_pagetables 0\npercpu 1056\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 22388736\nfile_dirty 4096\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 8749056\nactive_anon 1032192\ninactive_file 55361536\nactive_file 4956160\nunevictable 0\nslab_reclaimable 2437072\nslab_unreclaimable 483128\nslab 2920200\nworkingset_refault_anon 0\nworkingset_refault_file 1\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 458\npgsteal 375\npswpin 0\npswpout 0\npgscan_kswapd 458\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 375\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 37202\npgmajfault 65\npgrefill 41\npgactivate 68\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "qbittorrent",
+      "observed_utc": "2026-11-11T16:17:11.763184+00:00",
+      "pods": [
+        {
+          "name": "qbittorrent-f87dfbccf-tp68b",
+          "uid": "ece35cff-6eb8-40b8-8738-c0271fb24cec",
+          "created": "2026-11-11T16:17:03Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+              "imageID": "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+              "containerID": "containerd://b7b7a1d2daf9e3f5e92bf8e7cd4b0f68ea3e27b97f302bc10cbc058115813b22",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://b7b7a1d2daf9e3f5e92bf8e7cd4b0f68ea3e27b97f302bc10cbc058115813b22",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T16:17:04Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T16:17:04Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup": null
+            },
+            {
+              "name": "qbittorrent",
+              "image": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+              "imageID": "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+              "containerID": "containerd://06d88e521aff536894c23f84bae7abf51c938709fa2dc77c7d97f004326ab611",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:17:05Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n14700544\nFILE memory.peak\n18018304\nFILE memory.stat\nanon 9695232\nfile 1753088\nkernel 3252224\nkernel_stack 393216\npagetables 1093632\nsec_pagetables 0\npercpu 1056\nsock 8192\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 0\nfile_dirty 274432\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 9637888\ninactive_file 1740800\nactive_file 12288\nunevictable 0\nslab_reclaimable 1152872\nslab_unreclaimable 497504\nslab 1650376\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 0\npgsteal 0\npswpin 0\npswpout 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 23071\npgmajfault 1\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "qbittorrent",
+      "observed_utc": "2026-11-11T16:17:51.117885+00:00",
+      "pods": [],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "qbittorrent",
+      "observed_utc": "2026-11-11T16:18:40.273487+00:00",
+      "pods": [
+        {
+          "name": "qbittorrent-bd6d664c8-m9scx",
+          "uid": "214aa985-1576-45e4-961b-a033dc77662e",
+          "created": "2026-11-11T16:18:32Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+              "imageID": "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+              "containerID": "containerd://530b69b371c3c57ab8bfd39373e5b065465ddda0540db1d0e882da8029fd2e26",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://530b69b371c3c57ab8bfd39373e5b065465ddda0540db1d0e882da8029fd2e26",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T16:18:33Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T16:18:33Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup": null
+            },
+            {
+              "name": "qbittorrent",
+              "image": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+              "imageID": "lscr.io/linuxserver/qbittorrent@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+              "containerID": "containerd://9f29e7dab6eb620dec0ffdd71d9ff56c9e458e670aacfaad63528b3998a7b8c3",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:18:33Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n50630656\nFILE memory.peak\n53653504\nFILE memory.stat\nanon 9723904\nfile 37421056\nkernel 3440640\nkernel_stack 393216\npagetables 1097728\nsec_pagetables 0\npercpu 1056\nsock 8192\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 18915328\nfile_dirty 282624\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 9695232\ninactive_file 1818624\nactive_file 35602432\nunevictable 0\nslab_reclaimable 1347392\nslab_unreclaimable 491240\nslab 1838632\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 0\npgsteal 0\npswpin 0\npswpout 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 22952\npgmajfault 56\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "sabnzbd",
+      "observed_utc": "2026-11-11T16:25:37.443872+00:00",
+      "pods": [
+        {
+          "name": "download-protocols-79876dc944-w6zsd",
+          "uid": "c0072afd-d37b-4123-afa7-9453d0170381",
+          "created": "2026-11-11T16:21:14Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "fixture",
+              "image": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+              "imageID": "ghcr.io/linuxserver/tautulli@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+              "containerID": "containerd://618de28edcd807c8eb98fbdf5d9b522ef06063ad4e66df0be42714cccdd767c6",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:21:15Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n19353600\nFILE memory.peak\n30158848\nFILE memory.stat\nanon 15319040\nfile 2588672\nkernel 1449984\nkernel_stack 98304\npagetables 630784\nsec_pagetables 0\npercpu 480\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 233472\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 14577664\nactive_anon 667648\ninactive_file 1912832\nactive_file 675840\nunevictable 0\nslab_reclaimable 379240\nslab_unreclaimable 245160\nslab 624400\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 501\npgsteal 493\npswpin 0\npswpout 0\npgscan_kswapd 501\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 493\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 33840\npgmajfault 22\npgrefill 0\npgactivate 2\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        },
+        {
+          "name": "sabnzbd-79d564985d-6m49n",
+          "uid": "9da21350-e2cf-410b-b751-b54162160f21",
+          "created": "2026-11-11T16:19:33Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+              "imageID": "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+              "containerID": "containerd://bf17c76f9444cae627023706e62eb57131f0a2ea6838497043eb505069fe2e80",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://bf17c76f9444cae627023706e62eb57131f0a2ea6838497043eb505069fe2e80",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T16:19:46Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T16:19:46Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup": null
+            },
+            {
+              "name": "sabnzbd",
+              "image": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+              "imageID": "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+              "containerID": "containerd://6be3719f31780ebf24e5c404f4adba6f7cb1029ceb880e444a90043ab3c559c9",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:19:47Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n93454336\nFILE memory.peak\n104579072\nFILE memory.stat\nanon 76468224\nfile 9834496\nkernel 6934528\nkernel_stack 557056\npagetables 1318912\nsec_pagetables 0\npercpu 1056\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 466944\nfile_dirty 4096\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 48934912\nactive_anon 27500544\ninactive_file 3268608\nactive_file 6565888\nunevictable 0\nslab_reclaimable 4259112\nslab_unreclaimable 689040\nslab 4948152\nworkingset_refault_anon 0\nworkingset_refault_file 3\nworkingset_activate_anon 0\nworkingset_activate_file 2\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 150\npgsteal 62\npswpin 0\npswpout 0\npgscan_kswapd 150\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 62\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 114375\npgmajfault 60\npgrefill 71\npgactivate 77\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "sabnzbd",
+      "observed_utc": "2026-11-11T16:26:36.773237+00:00",
+      "pods": [
+        {
+          "name": "download-protocols-8499559b7c-629vr",
+          "uid": "2c84b4bf-c809-48bc-964e-ac7462582907",
+          "created": "2026-11-11T16:25:46Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "fixture",
+              "image": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+              "imageID": "ghcr.io/linuxserver/tautulli@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+              "containerID": "containerd://8fcfbee367367ab69cdfd220333e8e416c32ae44231975efdb1fec39138c2603",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:25:47Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n19144704\nFILE memory.peak\n28983296\nFILE memory.stat\nanon 15364096\nfile 2437120\nkernel 1482752\nkernel_stack 98304\npagetables 655360\nsec_pagetables 0\npercpu 480\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 15331328\ninactive_file 2437120\nactive_file 0\nunevictable 0\nslab_reclaimable 383488\nslab_unreclaimable 254960\nslab 638448\nworkingset_refault_anon 0\nworkingset_refault_file 493\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 0\npgsteal 0\npswpin 0\npswpout 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 33154\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        },
+        {
+          "name": "sabnzbd-79d564985d-6m49n",
+          "uid": "9da21350-e2cf-410b-b751-b54162160f21",
+          "created": "2026-11-11T16:19:33Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+              "imageID": "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+              "containerID": "containerd://bf17c76f9444cae627023706e62eb57131f0a2ea6838497043eb505069fe2e80",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://bf17c76f9444cae627023706e62eb57131f0a2ea6838497043eb505069fe2e80",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T16:19:46Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T16:19:46Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup": null
+            },
+            {
+              "name": "sabnzbd",
+              "image": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+              "imageID": "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+              "containerID": "containerd://6be3719f31780ebf24e5c404f4adba6f7cb1029ceb880e444a90043ab3c559c9",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:19:47Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n97390592\nFILE memory.peak\n104579072\nFILE memory.stat\nanon 80465920\nfile 9936896\nkernel 6983680\nkernel_stack 557056\npagetables 1335296\nsec_pagetables 0\npercpu 1056\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 475136\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 48934912\nactive_anon 31498240\ninactive_file 3358720\nactive_file 6578176\nunevictable 0\nslab_reclaimable 4291240\nslab_unreclaimable 687792\nslab 4979032\nworkingset_refault_anon 0\nworkingset_refault_file 3\nworkingset_activate_anon 0\nworkingset_activate_file 2\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 150\npgsteal 62\npswpin 0\npswpout 0\npgscan_kswapd 150\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 62\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 131783\npgmajfault 61\npgrefill 71\npgactivate 77\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "sabnzbd",
+      "observed_utc": "2026-11-11T16:26:44.422979+00:00",
+      "pods": [
+        {
+          "name": "sabnzbd-79d564985d-6m49n",
+          "uid": "9da21350-e2cf-410b-b751-b54162160f21",
+          "created": "2026-11-11T16:19:33Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+              "imageID": "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+              "containerID": "containerd://bf17c76f9444cae627023706e62eb57131f0a2ea6838497043eb505069fe2e80",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://bf17c76f9444cae627023706e62eb57131f0a2ea6838497043eb505069fe2e80",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T16:19:46Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T16:19:46Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup": null
+            },
+            {
+              "name": "sabnzbd",
+              "image": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+              "imageID": "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+              "containerID": "containerd://6be3719f31780ebf24e5c404f4adba6f7cb1029ceb880e444a90043ab3c559c9",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:19:47Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n98508800\nFILE memory.peak\n104579072\nFILE memory.stat\nanon 81575936\nfile 9936896\nkernel 6979584\nkernel_stack 557056\npagetables 1331200\nsec_pagetables 0\npercpu 1056\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 479232\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 48934912\nactive_anon 32612352\ninactive_file 3358720\nactive_file 6578176\nunevictable 0\nslab_reclaimable 4291640\nslab_unreclaimable 689712\nslab 4981352\nworkingset_refault_anon 0\nworkingset_refault_file 3\nworkingset_activate_anon 0\nworkingset_activate_file 2\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 150\npgsteal 62\npswpin 0\npswpout 0\npgscan_kswapd 150\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 62\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 135206\npgmajfault 61\npgrefill 71\npgactivate 77\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "sabnzbd",
+      "observed_utc": "2026-11-11T16:26:57.261795+00:00",
+      "pods": [
+        {
+          "name": "sabnzbd-75bddc69d5-c7wkf",
+          "uid": "d3132acc-4da5-4286-b5c9-346349d5e17a",
+          "created": "2026-11-11T16:26:49Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+              "imageID": "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+              "containerID": "containerd://2943192bf0519986b429bdae138e73be80115578bd229947b5dd2c959e671acf",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://2943192bf0519986b429bdae138e73be80115578bd229947b5dd2c959e671acf",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T16:26:49Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T16:26:49Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup": null
+            },
+            {
+              "name": "sabnzbd",
+              "image": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+              "imageID": "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+              "containerID": "containerd://7ec869b942fe53a23c647b9b8c92db6d2b078dfe499d522d0f2e2ba780545984",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:26:50Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n81539072\nFILE memory.peak\n85102592\nFILE memory.stat\nanon 69271552\nfile 6959104\nkernel 5541888\nkernel_stack 557056\npagetables 1294336\nsec_pagetables 0\npercpu 1056\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 499712\nfile_dirty 286720\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 69238784\ninactive_file 5296128\nactive_file 1662976\nunevictable 0\nslab_reclaimable 2901784\nslab_unreclaimable 680752\nslab 3582536\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 0\npgsteal 0\npswpin 0\npswpout 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 80554\npgmajfault 22\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "sabnzbd",
+      "observed_utc": "2026-11-11T16:27:37.145036+00:00",
+      "pods": [],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    },
+    {
+      "service": "sabnzbd",
+      "observed_utc": "2026-11-11T16:28:26.517750+00:00",
+      "pods": [
+        {
+          "name": "sabnzbd-6c8b4795f5-xw2c2",
+          "uid": "19228c4f-2865-4471-a31a-198904d2d027",
+          "created": "2026-11-11T16:28:17Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+              "imageID": "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+              "containerID": "containerd://3a9c63430f8fb0e4fc6dc9a2ebf0dbc2bc768940a0760130cb378a96ac1dba34",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://3a9c63430f8fb0e4fc6dc9a2ebf0dbc2bc768940a0760130cb378a96ac1dba34",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T16:28:18Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T16:28:18Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup": null
+            },
+            {
+              "name": "sabnzbd",
+              "image": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+              "imageID": "ghcr.io/linuxserver/sabnzbd@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+              "containerID": "containerd://14034378e95d8cb8a99ec1558dc72c1bb0b32d3a6113b1736b5de3e783482162",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T16:28:19Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup": "FILE memory.current\n79728640\nFILE memory.peak\n82788352\nFILE memory.stat\nanon 70144000\nfile 3756032\nkernel 5554176\nkernel_stack 557056\npagetables 1277952\nsec_pagetables 0\npercpu 1056\nsock 0\nvmalloc 73728\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 0\nfile_dirty 16384\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 70111232\ninactive_file 2043904\nactive_file 1712128\nunevictable 0\nslab_reclaimable 2920768\nslab_unreclaimable 691240\nslab 3612008\nworkingset_refault_anon 0\nworkingset_refault_file 2\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 1\npgsteal 0\npswpin 0\npswpout 0\npgscan_kswapd 1\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 81612\npgmajfault 10\npgrefill 0\npgactivate 1\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nFILE memory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+            }
+          ]
+        }
+      ],
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ]
+    }
+  ],
+  "services": {
+    "qbittorrent": {
+      "name": "synthetic-proof.wav",
+      "size": 32044,
+      "sha256": "3efcae84508fce7c87b5366774aa9cc25b54281a4b5f9301761c270c90b12562",
+      "infohash": "39c09f83ce1e97c317d71167203c62585f23dbbc",
+      "destination": "/data/torrents/protocol-d125a966d446",
+      "protocol_delta": {
+        "tracker_announces": 1,
+        "peer_handshakes": 1,
+        "piece_requests": 2,
+        "piece_bytes": 32044
+      },
+      "fixture_before": {
+        "counters": {
+          "nntp_auth": 0,
+          "nntp_body_requests": 0,
+          "nntp_payload_bytes": 0,
+          "peer_handshakes": 0,
+          "piece_bytes": 0,
+          "piece_requests": 0,
+          "rejected": 0,
+          "tracker_announces": 0
+        },
+        "infohash": "39c09f83ce1e97c317d71167203c62585f23dbbc",
+        "message_id": "3efcae84508fce7c87b5366774aa9cc25b54281a4b5f9301761c270c90b12562@synthetic.invalid",
+        "name": "synthetic-proof.wav",
+        "sha256": "3efcae84508fce7c87b5366774aa9cc25b54281a4b5f9301761c270c90b12562",
+        "size": 32044
+      },
+      "fixture_after": {
+        "counters": {
+          "nntp_auth": 0,
+          "nntp_body_requests": 0,
+          "nntp_payload_bytes": 0,
+          "peer_handshakes": 1,
+          "piece_bytes": 32044,
+          "piece_requests": 2,
+          "rejected": 1,
+          "tracker_announces": 1
+        },
+        "infohash": "39c09f83ce1e97c317d71167203c62585f23dbbc",
+        "message_id": "3efcae84508fce7c87b5366774aa9cc25b54281a4b5f9301761c270c90b12562@synthetic.invalid",
+        "name": "synthetic-proof.wav",
+        "sha256": "3efcae84508fce7c87b5366774aa9cc25b54281a4b5f9301761c270c90b12562",
+        "size": 32044
+      },
+      "restored_volumes": [
+        {
+          "volume": "config",
+          "index": 0,
+          "source_claim": "config",
+          "source_uid": "ee55f0dc-eca7-42b1-a173-48647c5594ee",
+          "storage": "1Gi",
+          "archive": "qbittorrent-config-snapshot.tar",
+          "sha256": "5842c04bdbbfeeebba105400ccadb57acd1add9fb2e3ce31d17f5d892065f5f7",
+          "bytes": 26112,
+          "destination_claim": "recovery-config-39bb8019",
+          "destination_uid": "dfaccc7f-aaa0-4002-b291-ba085ce1f7b7"
+        },
+        {
+          "volume": "fixture",
+          "index": 1,
+          "source_claim": "fixture",
+          "source_uid": "fbfa9fee-4b2c-4252-9150-71d4d8d690c4",
+          "storage": "1Gi",
+          "archive": "qbittorrent-fixture-snapshot.tar",
+          "sha256": "239d5f19817591490bbf5d498d2c0fe59717c0732c6711ddefb804e517fb4d87",
+          "bytes": 35328,
+          "destination_claim": "recovery-fixture-569068d7",
+          "destination_uid": "1f99edfa-b4de-4ee0-a641-089a671916d8"
+        }
+      ]
+    },
+    "sabnzbd": {
+      "name": "synthetic-proof.wav",
+      "size": 32044,
+      "sha256": "3efcae84508fce7c87b5366774aa9cc25b54281a4b5f9301761c270c90b12562",
+      "infohash": "39c09f83ce1e97c317d71167203c62585f23dbbc",
+      "destination": "/data/usenet/protocol-406224ebec29",
+      "protocol_delta": {
+        "nntp_auth": 1,
+        "nntp_body_requests": 1,
+        "nntp_payload_bytes": 32044
+      },
+      "fixture_before": {
+        "counters": {
+          "nntp_auth": 0,
+          "nntp_body_requests": 0,
+          "nntp_payload_bytes": 0,
+          "peer_handshakes": 0,
+          "piece_bytes": 0,
+          "piece_requests": 0,
+          "rejected": 0,
+          "tracker_announces": 0
+        },
+        "infohash": "39c09f83ce1e97c317d71167203c62585f23dbbc",
+        "message_id": "3efcae84508fce7c87b5366774aa9cc25b54281a4b5f9301761c270c90b12562@synthetic.invalid",
+        "name": "synthetic-proof.wav",
+        "sha256": "3efcae84508fce7c87b5366774aa9cc25b54281a4b5f9301761c270c90b12562",
+        "size": 32044
+      },
+      "fixture_after": {
+        "counters": {
+          "nntp_auth": 1,
+          "nntp_body_requests": 1,
+          "nntp_payload_bytes": 32044,
+          "peer_handshakes": 0,
+          "piece_bytes": 0,
+          "piece_requests": 0,
+          "rejected": 1,
+          "tracker_announces": 0
+        },
+        "infohash": "39c09f83ce1e97c317d71167203c62585f23dbbc",
+        "message_id": "3efcae84508fce7c87b5366774aa9cc25b54281a4b5f9301761c270c90b12562@synthetic.invalid",
+        "name": "synthetic-proof.wav",
+        "sha256": "3efcae84508fce7c87b5366774aa9cc25b54281a4b5f9301761c270c90b12562",
+        "size": 32044
+      },
+      "nzo_id": "134c28af-5d46-4ee8-9fd7-d4f115908143",
+      "restored_volumes": [
+        {
+          "volume": "config",
+          "index": 0,
+          "source_claim": "config",
+          "source_uid": "b7795c44-9d0a-41f3-9c4e-0e52720758de",
+          "storage": "1Gi",
+          "archive": "sabnzbd-config-snapshot.tar",
+          "sha256": "3d612104dc46e2d22f0d1097b6d03f023ed8f861b0b0874709ba44dd2589bc46",
+          "bytes": 88576,
+          "destination_claim": "recovery-config-200f4bc3",
+          "destination_uid": "3f9ca0dd-0865-4e08-998b-9e426209f16d"
+        },
+        {
+          "volume": "fixture",
+          "index": 1,
+          "source_claim": "fixture",
+          "source_uid": "cef1e33c-576d-497c-b620-1d845c6daf59",
+          "storage": "1Gi",
+          "archive": "sabnzbd-fixture-snapshot.tar",
+          "sha256": "b1c6bc573058652ce1617a4e6bd0c21a97bbaff73a598f07c8ae254c3247c2f1",
+          "bytes": 37888,
+          "destination_claim": "recovery-fixture-8b0c88e8",
+          "destination_uid": "a767ace7-1e6f-4d1c-8e44-17ed0f8336d9"
+        }
+      ]
+    }
+  }
+}
