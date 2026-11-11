@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """APPROVAL-GATED host collector. No action without --approve and a bounded unit.
 
-Owned-child tests ONLY: not actual node/guest transport. Run only through the
+Owned-child or externally coordinated node tests. Run only through the
 reviewed transient unit shown in docs. No existing service is controlled.
 """
 import argparse
@@ -41,17 +41,24 @@ def command(args, timeout=2):
 
 
 def rule(args):
-    # Targetless counting rule: continue immediately to the existing REJECT.
-    # Source port is fresh and used by ONLY the one scoped child.
-    return [v.CHAIN, '-s', args.address, '-d', args.address,
+    # Node mode intentionally omits unknown slirp source port. Endpoint+cgroup
+    # attribution only; owned-child mode retains the exact source-port predicate.
+    spec = [v.CHAIN, '-s', args.address, '-d', args.address,
             '-p', args.protocol.lower(), '-m', 'cgroup', '--path', v.SCOPE,
-            '-m', args.protocol.lower(), '--sport', str(args.source_port),
-            '--dport', str(args.port), '-m', 'comment',
-            '--comment', 'proof-isolation-' + args.run_id]
+            '-m', args.protocol.lower()]
+    if getattr(args, 'mode', 'child') == 'child':
+        spec += ['--sport', str(getattr(args, 'scoped_port', args.source_port))]
+    return spec + ['--dport', str(args.port), '-m', 'comment',
+                   '--comment', 'proof-isolation-' + args.run_id]
 
 
 def reject_index(args):
-    return 5 if ipaddress.ip_address(args.address).version == 4 else 2
+    if ipaddress.ip_address(args.address).version == 6:
+        return 2
+    for index, entry in enumerate(v.expected(4), 1):
+        if '-d' in entry and ipaddress.ip_address(args.address) in ipaddress.ip_network(entry[1]):
+            return index
+    raise RuntimeError('no matching private REJECT')
 
 
 def remove_counter(text, args):
@@ -176,7 +183,7 @@ def child(args):
     # Socket is created AFTER membership, so xt_cgroup sees the intended scope.
     with socket.socket(family, kind) as client:
         client.settimeout(1)
-        client.bind((args.address, args.source_port if args.scoped else 0))
+        client.bind((args.address, args.bind_port or args.source_port))
         port = client.getsockname()[1]
         result = 'denied'
         try:
@@ -193,11 +200,13 @@ def run_client(args, scoped, listener):
     argv = [sys.executable, '-B', str(Path(__file__).resolve()), '--child',
             '--approve', APPROVAL, '--address', args.address, '--port', str(args.port),
             '--protocol', args.protocol, '--run-id', args.run_id,
-            '--source-port', str(args.source_port)]
+            '--source-port', str(args.scoped_port), '--bind-port', str(args.source_port), '--mode', args.mode,
+            '--control-before', str(args.control_before), '--control-after', str(args.control_after)]
     if scoped:
         argv += ['--scoped', '--incarnation-hash', args.incarnation_hash]
     owned = OwnedChild(argv)
     received = False
+    acceptances = 0
     try:
         owned.process.stdin.write(b'G'); owned.process.stdin.flush()
         deadline = time.monotonic() + 2
@@ -205,6 +214,7 @@ def run_client(args, scoped, listener):
             ready, _, _ = select.select([listener, owned.process.stdout], [], [],
                                         max(0, deadline - time.monotonic()))
             if listener in ready:
+                acceptances += 1
                 if args.protocol == 'TCP':
                     connection, _ = listener.accept()
                     with connection:
@@ -223,10 +233,37 @@ def run_client(args, scoped, listener):
                 require(raw and len(raw) < 1024, 'child failed')
                 observation = json.loads(raw)
                 observation['listener_received'] = received
+                observation['acceptances'] = acceptances
+                require(acceptances == (0 if scoped else 1), 'unexpected listener acceptance count')
                 return observation
         raise RuntimeError('client deadline')
     finally:
         owned.stop()
+
+
+def local_control(args, listener):
+    """Node-mode positive control: no second Python interpreter or threads.
+
+    Collector is outside the proof cgroup. Endpoint/ports are already reserved;
+    failure never causes fallback to another address, service or source port.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
+        client.settimeout(.5)
+        client.bind((args.address, args.source_port))
+        client.connect((args.address, args.port))
+        require(select.select([listener], [], [], .5)[0], 'control listener not ready')
+        client.sendall(args.run_id.encode())
+        connection, peer = listener.accept()
+        with connection:
+            connection.settimeout(.5)
+            require(peer[0] == args.address and peer[1] == args.source_port, 'control source mismatch')
+            payload = connection.recv(128)
+            require(payload == args.run_id.encode(), 'control token mismatch')
+            connection.sendall(payload)
+        require(client.recv(128) == args.run_id.encode(), 'control response mismatch')
+        require(not select.select([listener], [], [], 0)[0], 'unexpected extra acceptance')
+        return {'sport': args.source_port, 'result': 'response',
+                'listener_received': True, 'acceptances': 1, 'outside_proof_cgroup': True}
 
 
 def host_checks(h, incarnation, baseline, previous):
@@ -245,19 +282,91 @@ def host_checks(h, incarnation, baseline, previous):
     return current
 
 
+def validate_ports(args):
+    low, high = map(int, Path('/proc/sys/net/ipv4/ip_local_port_range').read_text().split())
+    ports = (args.control_before, args.control_after, args.scoped_port)
+    require(all(1024 <= p < low for p in ports) and len(set(ports)) == 3,
+            'control/source ports must be distinct below ephemeral range')
+    require(args.port not in ports, 'endpoint conflicts with source port')
+
+
+def reserve_endpoint(args, state):
+    # Persistent reservation means this collector never reuses its own listener
+    # endpoint or positive-control source ports. No conntrack deletion/reuse.
+    for suffix in ('endpoint-' + args.address.replace(':', '_') + '-' + str(args.port),
+                   'control-' + str(args.control_before), 'control-' + str(args.control_after)):
+        path = state / ('isolation-reserved-' + suffix)
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(hashlib.sha256(args.run_id.encode()).hexdigest())
+
+
+def await_node(args, listener, work, h, incarnation, baseline, previous):
+    # No test processes or probes are launched here. Mac may make exactly one
+    # claimed attempt. Loss of Mac is a deadline failure, never inferred denial.
+    (work / 'phase').write_text('armed\n')
+    claimed_at = None
+    deadline = time.monotonic() + 20
+    next_check = time.monotonic()
+    while time.monotonic() < deadline:
+        readable, _, _ = select.select([listener], [], [], .1)
+        require(not readable, 'unexpected listener acceptance during node window')
+        now = time.monotonic()
+        if now >= next_check:
+            previous = host_checks(h, incarnation, baseline, previous)
+            next_check = now + 1
+        if (work / 'claim').exists() and claimed_at is None:
+            require((work / 'claim').read_text() == 'one', 'invalid node claim')
+            require((work / 'producer').stat().st_size <= 4096, 'producer receipt too large')
+            producer = json.loads((work / 'producer').read_text())
+            require(producer['node_uid'] == '4845bfd5-3bdb-453d-8503-83b43edb7a1e' and
+                    producer['all_proof_app_pods_zero'] is True and
+                    producer['host_network'] is True, 'invalid Mac producer assertions')
+            claimed_at = now
+            deadline = min(deadline, now + 6)
+        if (work / 'done').exists():
+            require(claimed_at is not None and (work / 'done').read_text() == 'denied',
+                    'missing claim or non-denial node result')
+            require(not select.select([listener], [], [], 0)[0], 'node reached listener')
+            return {'result': 'denied', 'listener_received': False, 'node_connect_calls': 1,
+                    'slirp_source_port': 'unknown', 'mac_producer_assertions': producer, 'window_ms': int((now - claimed_at) * 1000)}, previous
+    raise RuntimeError('Mac/node attempt deadline expired')
+
+
+def validate_unit(properties, args):
+    fields = dict(line.split('=', 1) for line in properties.splitlines() if '=' in line)
+    expected_fields = {'Transient': 'yes', 'ActiveState': 'active', 'MemoryMax': '33554432',
+                       'RuntimeMaxUSec': '40s', 'TimeoutStopUSec': '10s',
+                       'CPUQuotaPerSecUSec': '100ms', 'TasksMax': '8', 'LimitNOFILE': '32',
+                       'KillMode': 'control-group'}
+    require(all(fields.get(key) == value for key, value in expected_fields.items()),
+            'bounded cleanup unit missing')
+    import re
+    import shlex
+    stop_line = next((line for line in properties.splitlines() if line.startswith('ExecStopPost=')), '')
+    commands = re.findall(r'argv\[\]=(.*?);', stop_line)
+    expected = ['/usr/bin/python3', '-B', str(Path(__file__).resolve()), '--cleanup',
+                '--approve', APPROVAL, '--mode', args.mode, '--address', args.address,
+                '--protocol', args.protocol, '--port', str(args.port),
+                '--source-port', str(args.source_port), '--control-before', str(args.control_before),
+                '--control-after', str(args.control_after), '--run-id', args.run_id]
+    require(len(commands) == 1 and shlex.split(commands[0]) == expected,
+            'StopPost does not match exact run arguments')
+
+
 def collect(args):
     require(os.geteuid() == 0, 'root required')
     # Must be enclosed by the separately reviewed systemd unit. This environment
     # marker alone is not authority: verify the actual transient unit properties.
-    lock_fd = os.open('/root/.local/state/home-infra/talos-proof/isolation.lock',
-                      os.O_RDWR | os.O_NOFOLLOW)
+    # Do NOT retain the supervisor/isolation flock: guard-stop/lifecycle cleanup
+    # must never wait for a test. Concurrent changes invalidate the capture.
+    # Test-only lock, unrelated to lifecycle/isolation locks; never delays guard.
+    lock_fd = os.open('/root/.local/state/home-infra/talos-proof/controlled-host-isolation.lock',
+                      os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     unit = 'talos-proof-isolation-' + args.run_id + '.service'
-    properties = command(['systemctl', 'show', unit, '--property=Transient,ActiveState,MemoryMax,RuntimeMaxUSec,KillMode,ExecStopPost'])
-    require('Transient=yes' in properties and 'ActiveState=active' in properties and
-            'MemoryMax=33554432' in properties and 'RuntimeMaxUSec=50s' in properties and
-            'KillMode=control-group' in properties and '--cleanup' in properties and
-            args.run_id in properties, 'bounded cleanup unit missing')
+    properties = command(['systemctl', 'show', unit, '--property=Transient,ActiveState,MemoryMax,RuntimeMaxUSec,TimeoutStopUSec,CPUQuotaPerSecUSec,TasksMax,LimitNOFILE,KillMode,ExecStopPost'])
+    validate_unit(properties, args)
     require(unit in Path('/proc/self/cgroup').read_text(), 'collector outside bounded unit')
     import host_lifecycle as h
     h.approved_config()
@@ -274,8 +383,15 @@ def collect(args):
     before = command([tool(args) + '-save', '-c', '-t', 'filter'])
     family = ipaddress.ip_address(args.address).version
     v.snapshot(before, family)
+    work = Path('/root/.local/state/home-infra/talos-proof') / ('isolation-' + args.run_id)
+    work.mkdir(mode=0o700)  # exclusive per-run; never resume/reuse a prior endpoint
+    validate_ports(args)
+    reserve_endpoint(args, work.parent)
     output = {'kind': 'controlled-host-isolation-capture', 'schema': 1,
-              'origin': 'owned-cgroup-child', 'backend': version,
+              'origin': 'node-perl' if args.mode == 'node' else 'owned-cgroup-child',
+              'attribution': 'endpoint+cgroup counter, not TRACE or authenticated attestation'
+              if args.mode == 'node' else 'exact-flow adjacent counter, not TRACE or attestation',
+              'backend': version, 'endpoint': {'address': args.address, 'port': args.port},
               'claims': [], 'policy_before': before, 'run_id': args.run_id}
     try:
         previous = host_checks(h, incarnation, baseline, previous)
@@ -287,7 +403,8 @@ def collect(args):
             listener.bind((args.address, args.port))  # no REUSE*, occupancy fails
             if kind == socket.SOCK_STREAM:
                 listener.listen(1)
-            output['positive_before'] = run_client(args, False, listener)
+            args.source_port = args.control_before
+            output['positive_before'] = local_control(args, listener) if args.mode == 'node' else run_client(args, False, listener)
             require(output['positive_before']['result'] == 'response', 'positive control failed')
             # Unit StopPost owns this exact rule even if supervisor dies here.
             spec = rule(args)
@@ -298,22 +415,28 @@ def collect(args):
             normalized, count = remove_counter(during_before, args)
             require(count == 0 and v.snapshot(normalized, family)[0] == v.snapshot(before, family)[0],
                     'pre-attempt instrumentation or policy drift')
-            output['attempt'] = run_client(args, True, listener)
+            if args.mode == 'node':
+                output['attempt'], previous = await_node(args, listener, work, h, incarnation, baseline, previous)
+            else:
+                args.source_port = args.scoped_port
+                output['attempt'] = run_client(args, True, listener)
             during_after = command([tool(args) + '-save', '-c', '-t', 'filter'])
             normalized_after, count = remove_counter(during_after, args)
-            require(count > 0, 'no exact-flow instrumentation counter delta')
+            require(count > 0, 'no predicate instrumentation counter delta')
             old_structure, old_counts = v.snapshot(normalized, family)
             new_structure, new_counts = v.snapshot(normalized_after, family)
             require(old_structure == new_structure, 'policy changed around attempt')
             reject = reject_index(args) - 1
+            require(new_counts['OUTPUT'][0][0] > old_counts['OUTPUT'][0][0], 'no scoped OUTPUT jump delta')
             require(new_counts[v.CHAIN][reject][0] - old_counts[v.CHAIN][reject][0] >= count,
-                    'existing REJECT delta smaller than adjacent exact-flow count')
+                    'existing REJECT delta smaller than adjacent predicate count')
             output['instrumented_before'] = during_before
             output['instrumented_after'] = during_after
-            output['exact_flow_packets'] = count
+            output['predicate_packets'] = count
             require(output['attempt']['result'] == 'denied' and
                     not output['attempt']['listener_received'], 'scoped traffic reached listener')
-            output['positive_after'] = run_client(args, False, listener)
+            args.source_port = args.control_after
+            output['positive_after'] = local_control(args, listener) if args.mode == 'node' else run_client(args, False, listener)
             require(output['positive_after']['result'] == 'response', 'post-control failed')
             previous = host_checks(h, incarnation, baseline, previous)
     finally:
@@ -322,32 +445,43 @@ def collect(args):
     output['policy_after'] = command([tool(args) + '-save', '-c', '-t', 'filter'])
     require(v.snapshot(before, family)[0] == v.snapshot(output['policy_after'], family)[0],
             'existing filter policy changed')
-    require(time.monotonic() - started <= 45, 'collection deadline exceeded')
+    require(time.monotonic() - started <= 35, 'collection deadline exceeded')
     output['cleanup_confirmed'] = True
     output['status'] = 'adjacent-counter-capture-pending-human-review'
-    output['remaining_gaps'] = ['actual node transport', *v.GAPS]
+    output['remaining_gaps'] = ([] if args.mode == 'node' else ['actual node transport']) + v.GAPS
+    output['memory_peak_bytes'] = command(['systemctl', 'show', unit, '--property=MemoryPeak', '--value']).strip()
     fd = os.open(args.output, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, 'w') as stream:
         json.dump(output, stream)
         stream.write('\n')
+    (work / 'phase').write_text('complete\n')
 
 
 def arguments():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--approve', required=True, choices=[APPROVAL])
-    p.add_argument('--address', required=True, choices=['127.0.0.1', '::1'])
+    p.add_argument('--mode', choices=['child', 'node'], default='child')
+    p.add_argument('--address', required=True, choices=['127.0.0.1', '::1', '10.77.1.100'])
     p.add_argument('--protocol', choices=['TCP', 'UDP'], default='TCP')
     p.add_argument('--port', type=int, required=True)
     p.add_argument('--source-port', type=int, required=True)
+    p.add_argument('--control-before', type=int, default=20001)
+    p.add_argument('--control-after', type=int, default=20002)
     p.add_argument('--run-id', required=True)
     p.add_argument('--output', default='/root/.local/state/home-infra/talos-proof/isolation-capture.json')
     p.add_argument('--cleanup', action='store_true')
+    p.add_argument('--bind-port', type=int, help=argparse.SUPPRESS)
     p.add_argument('--child', action='store_true', help=argparse.SUPPRESS)
     p.add_argument('--scoped', action='store_true', help=argparse.SUPPRESS)
     p.add_argument('--incarnation-hash', help=argparse.SUPPRESS)
     args = p.parse_args()
     require(len(args.run_id) == 32 and all(c in '0123456789abcdef' for c in args.run_id), 'invalid run id')
     require(1024 <= args.source_port <= 65535 and args.source_port != args.port, 'invalid source port')
+    require((args.mode == 'node' and args.address == '10.77.1.100' and args.protocol == 'TCP' and
+             20000 <= args.port <= 29999) or
+            (args.mode == 'child' and args.address in ('127.0.0.1', '::1')), 'mode endpoint mismatch')
+    args.scoped_port = args.source_port
+    require(len({args.source_port, args.control_before, args.control_after, args.port}) == 4, 'ports not distinct')
     require(args.port == 53 or 1024 <= args.port <= 65535, 'invalid synthetic port')
     require(not (args.protocol == 'TCP' and args.port == 53), 'TCP53 not in scope')
     return args

@@ -193,7 +193,8 @@ rule counts then continues; it neither allows nor denies. For IPv4 loopback this
 is rule5; for IPv6 rule2. The existing REJECT moves one position while the rule
 is present and is never replaced.
 
-The collector holds the existing isolation flock, verifies the exact reviewed
+The current collector holds only its NEW test-specific lock (not the existing
+isolation/lifecycle lock), verifies the exact reviewed
 policy, brackets one child attempt with outside-cgroup token controls, validates
 exact counter serialization and adjacency, requires exact counter growth and at
 least matching growth of the adjacent original REJECT, removes the exact rule,
@@ -214,8 +215,8 @@ only one small socket exchange, bounded by its CPU/wall limits.
 
 Normal/error cleanup uses the retained owned-child pidfd. If the supervisor is
 SIGKILLed, PDEATHSIG kills the escaped child; independent systemd ExecStopPost
-removes the exact counter. Runtime50s plus StopPost timeout10s bounds the unit
-lifecycle to60s. The collector rejects runtime/memory/cgroup/unit mismatches and
+removes the exact counter. Runtime40s plus main stop10s plus StopPost timeout10s bounds the unit
+lifecycle to60s. The collector rejects runtime/memory/cgroup/unit/StopPost-argument mismatches and
 checks the1792MiB floor, unchanged swap/IO and bounded PSI at checkpoints. These
 checks supplement, never replace or stop, the existing guard.
 
@@ -232,9 +233,9 @@ an execution receipt:
 STATE=/root/.local/state/home-infra/talos-proof
 COL=$STATE/collect-isolation.py
 ID=$(python3 -c 'import secrets; print(secrets.token_hex(16))')
-ARGS="--approve 555e8603-58e6-4fb6-a190-378a3f11c257 --address 127.0.0.1 --protocol TCP --port 18081 --source-port 41000 --run-id $ID"
+ARGS="--approve 555e8603-58e6-4fb6-a190-378a3f11c257 --mode child --address 127.0.0.1 --protocol TCP --port 18081 --source-port 20003 --control-before 20001 --control-after 20002 --run-id $ID"
 systemd-run --unit="talos-proof-isolation-$ID.service" --service-type=exec \
-  --property=RuntimeMaxSec=50 --property=TimeoutStopSec=10 \
+  --property=RuntimeMaxSec=40 --property=TimeoutStopSec=10 \
   --property=MemoryMax=32M --property=CPUQuota=10% --property=TasksMax=8 \
   --property=LimitNOFILE=32 --property=UMask=0077 \
   --property="ExecStopPost=/usr/bin/python3 -B $COL --cleanup $ARGS" \
@@ -246,7 +247,8 @@ reviewed UDP53 or ::1 trial changes only the endpoint/protocol arguments in BOTH
 ExecStopPost and ExecStart, uses fresh ID/source port, and requires explicit
 optional-child approval. Do not run concurrent collectors.
 
-Actual node private TCP remains unimplemented. A concrete available-client
+The earlier checkpoint did not integrate node TCP. The node wrapper described
+below now integrates this available-client
 candidate, whose interpreter/module presence is confirmed but whose network
 execution is **not** performed/approved, is:
 
@@ -260,6 +262,122 @@ KUBECONFIG="$HOME/.local/state/home-infra/talos-proof/config/kubeconfig" \
 Do not run this against an absent listener or treat it as standalone denial
 proof. It needs its own private-host-bound synthetic listener and controls, exact
 host-visible slirp tuple attribution, and parent-reviewed integration. No curl
-image pull or imaginary Talos command is required. The implemented loopback
-collector does **not** provide that listener and must not be misrepresented as
-completing the actual-node requirement.
+image pull or imaginary Talos command is required. The child mode does **not** provide that listener. The implementation extension
+below adds a distinct node mode; only a separately approved successful live
+collection could complete the actual-node requirement.
+
+## Actual-node integration checkpoint — implementation only
+
+The parent has approved **targetless-counter bounded attribution**, not live
+execution/deployment. This extension supersedes the earlier loopback-only scope
+and pending-method decision. The method is explicitly **not TRACE and not an
+authenticated attestation**.
+
+New Mac entry point (DO NOT RUN until media releases and a new parent grant):
+
+```sh
+python3 -B infrastructure/proxmox-proof/run-node-isolation.py \
+  --approve-live-window 555e8603-58e6-4fb6-a190-378a3f11c257
+```
+
+There is deliberately no deploy/copy command in the wrapper. The parent must
+approve staging the new collector/verifier alongside the unchanged lifecycle
+module separately. The flag records operator intent; it does not itself confer
+authority or override an active application lease.
+
+### One actual node attempt
+
+1. The wrapper forces Kubernetes server `https://127.0.0.1:64120`, validates the
+   single Ready node UID4845bfd5-3bdb-453d-8503-83b43edb7a1e, and finds exactly one
+   Ready hostNetwork Cilium agent on that node. It refuses **any active proof-*
+   application/fixture pod**, nonzero Deployment/StatefulSet replicas, app
+   DaemonSets, unsuspended CronJobs, or unfinished unsuspended Jobs. It does not
+   stop or scale anything. This is intentionally conservative and may block
+   non-application proof namespaces too; do not bypass it by stopping infrastructure.
+2. It chooses a fresh32hex run id, a high TCP destination25000–28999 on the
+   existing host address10.77.1.100, and three distinct non-ephemeral candidate
+   source ports10000–18999. Root collector checks the actual ephemeral range,
+   requires source ports below it, exclusively reserves endpoint and control
+   source ports on disk, and binds without REUSE*. Reservation collision or
+   occupancy fails closed, with no automatic endpoint retry. Old reservations
+   remain private freshness metadata; do not delete them to force port reuse.
+3. The wrapper starts only the new transient unit with the same32MiB MemoryMax,
+   CPUQuota10%, TasksMax8 and fd32 limit. **Corrected hard deadline accounting:**
+   RuntimeMaxSec40 + up to10s main termination + up to10s ExecStopPost =60s,
+   rather than assuming TimeoutStopSec applies only once. Collector's own success
+   deadline is35s. It validates actual unit properties and the exact parsed
+   ExecStopPost argv, including all endpoint/control arguments.
+4. The collector takes only `controlled-host-isolation.lock`, a new nonblocking
+   test-only mutex. **It never takes the original isolation/lifecycle lock**, so
+   the guard's existing stop path is unblocked. Any concurrent policy/incarnation
+   change invalidates the evidence rather than being delayed by the test.
+5. Collector binds the dedicated literal-address TCP echo listener. The first
+   positive control runs in-process outside the proof cgroup, binds the reserved
+   source address/port, checks the exact accepted peer and synthetic token, and
+   requires exactly one acceptance. No second Python interpreter/thread is
+   needed in node mode. The second control uses the other fresh source port.
+6. The node predicate is exactly QEMU cgroup + sourceHostIP10.77.1.100 +
+   destinationHostIP10.77.1.100 + TCP + unique destination port. **Unknown slirp
+   source port is deliberately omitted**, not invented. For this address the
+   targetless counter is directly adjacent to the existing10/8 REJECT (rule3
+   before insertion). No intervening rule or new verdict is allowed. Reviewed
+   canonical policy, instrumentation serialization/adjacency and initial zero
+   counter are checked before publishing `armed`.
+7. The Mac revalidates idle workloads and the same Cilium UID, writes a private
+   producer-assertion record, and exclusively claims one attempt with noclobber.
+   No retry is allowed even after uncertain SSH/exec failure. It executes the
+   installed Perl IO::Socket::INET constructor **once**, under existing `timeout 3`
+   with guest address-space limit12MiB, CPU1s and fd16. Limit setup uses `&&`, so failure
+   cannot run an unbounded fallback. No DNS, image pull, shell network probe,
+   proxy, redirect, new pod or registry is involved. The actual command is built
+   by `node_command()` and passed as argv, not interpolated into a remote shell.
+8. Collector waits at most20s for a claim and6s after seeing it, checking guard,
+   exact identity,1792MiB floor, unchanged swap/IO and PSI at least once per
+   second in that window. Missing Mac/result is **failure**, never denial.
+   Any readable listener connection during the node window is failure. Root
+   requires the Mac's denied-connect result, positive predicate counter delta,
+   scoped OUTPUT jump growth and at least matching growth in the immediately
+   adjacent original REJECT. Retransmissions can produce multiple packets but
+   there is only one node connection-constructor call.
+9. Repeat the outside-cgroup control, remove the exact predicate, verify the
+   unchanged canonical policy, and close the owned listener. Normal failures
+   remove instrumentation; uncertain insertion or supervisor death is handled by
+   the independent exact-argv systemd ExecStopPost. No VM stop, process movement,
+   QEMU signal, conntrack clearing, module/backend/sysctl change or global rule
+   flush occurs. Node mode does not join any child to the VM cgroup.
+10. The wrapper rechecks idle workloads/producer identity and requires the unit
+    inactive with Result=success and ExecMainStatus0, including completed
+    StopPost. It outputs **phase/status/receipt SHA256 only**. Raw capture and
+    synthetic token remain in root-private state. Marker producer fields are
+    explicitly Mac assertions, not authenticated kernel observations.
+
+The resulting capture labels the method `endpoint+cgroup counter, not TRACE or
+authenticated attestation`, records `slirp_source_port: unknown`, predicate packet
+count and original policy snapshots. Human review must retain the narrower
+endpoint/cgroup claim. A single controlled endpoint does not prove exhaustive
+private-network/DNS bypass coverage. No live result exists yet.
+
+### Resource practicality and remaining gates
+
+The32MiB unit cap is unchanged. In-process node controls remove the largest
+avoidable subprocess overhead; native iptables/systemctl helpers still share
+that cap, and the receipt records systemd MemoryPeak. Fit has **not** been
+measured live. OOM, unsupported property serialization, too-small Perl12MiB
+limit, stale ports or timeout yields failure and cleanup, not a budget increase
+or weaker test. Existing SSH/Kubernetes transport overhead is not bounded by the
+unit's cgroup; the parent must include it in the64MiB total-extra-resource review
+and fresh headroom check. Do not claim that MemoryMax alone measures all added
+host/guest overhead. If adequate margin or the total budget cannot be established,
+refuse execution rather than raise limits.
+
+Optional owned-child UDP53/IPv6 remain implemented but **not authorized to run**.
+The Linux no-network PDEATHSIG integration test can be run in fresh CI using
+`PYTHONDONTWRITEBYTECODE=1 python3 tests/talos-proof-isolation_test.py`; this macOS
+checkpoint skips that one test. No existing workflow was edited by this owner.
+
+Resource planning is32MiB for all collector/native helper processes plus at most
+24MiB combined guest address space for timeout+Perl (each inherits12MiB), leaving
+8MiB of the64MiB budget for SSH/control-transport overhead. That8MiB allowance is
+not independently enforced by this unit; it is an explicit pre-grant measurement
+gate, not a claim of demonstrated fit. No increased limit or live run is
+authorized by this planning arithmetic.

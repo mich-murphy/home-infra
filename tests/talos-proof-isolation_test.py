@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 from types import SimpleNamespace
 
 sys.dont_write_bytecode = True
@@ -287,6 +287,148 @@ else:
                             {'swap_io_pages': 11}, {'psi_totals': dict(some=0, full=10000)}):
                 h.sample.return_value = {**base, 'monotonic': 2, **updates}
                 with self.assertRaises(RuntimeError): c.host_checks(h, {}, base, base)
+
+
+WRAPPER_SPEC = importlib.util.spec_from_file_location('node_wrapper', ROOT / 'infrastructure/proxmox-proof/run-node-isolation.py')
+n = importlib.util.module_from_spec(WRAPPER_SPEC)
+WRAPPER_SPEC.loader.exec_module(n)
+
+
+def cluster_data():
+    return [dict(items=[dict(metadata=dict(uid=n.NODE_UID, name='talos-proof'),
+                            status=dict(conditions=[dict(type='Ready', status='True')]))]),
+            dict(items=[dict(metadata=dict(namespace='kube-system', name='cilium-test', uid='cilium-uid',
+                                           labels={'k8s-app': 'cilium'}),
+                             spec=dict(hostNetwork=True, nodeName='talos-proof'),
+                             status=dict(phase='Running', containerStatuses=[dict(name='cilium-agent', ready=True)]))]),
+            dict(items=[])]
+
+
+class NodeIntegrationTests(unittest.TestCase):
+    def test_actual_node_predicate_narrows_endpoint_without_inventing_sport(self):
+        args = collector_args(); args.mode = 'node'; args.address = '10.77.1.100'
+        self.assertNotIn('--sport', c.rule(args))
+        self.assertNotIn('-j', c.rule(args))
+        self.assertEqual(c.reject_index(args), 3)
+        spec = c.rule(args)[1:]
+        spec = [args.address + '/32' if x == args.address else x for x in spec]
+        text = policy().replace('[0:0] -A TALOS_PROOF_120 -d 10.0.0.0/8',
+                               '[1:60] -A TALOS_PROOF_120 ' + ' '.join(spec) + '\n'
+                               '[0:0] -A TALOS_PROOF_120 -d 10.0.0.0/8')
+        self.assertEqual(c.remove_counter(text, args)[1], 1)
+
+    def test_idle_cluster_and_cilium_identity(self):
+        data = cluster_data()
+        with patch.object(n, 'run', side_effect=[Mock(stdout=json.dumps(x)) for x in data]):
+            self.assertEqual(n.validate_cluster(Path('/not-read')), ('cilium-test', 'cilium-uid'))
+        for mutation in ('wrong-node', 'not-hostnetwork', 'app-pod', 'replicas', 'cronjob'):
+            data = cluster_data()
+            if mutation == 'wrong-node': data[0]['items'][0]['metadata']['uid'] = 'wrong'
+            if mutation == 'not-hostnetwork': data[1]['items'][0]['spec']['hostNetwork'] = False
+            if mutation == 'app-pod': data[1]['items'].append(dict(metadata=dict(namespace='proof-nextcloud'), status=dict(phase='Pending')))
+            if mutation == 'replicas': data[2]['items'].append(dict(kind='Deployment', metadata=dict(namespace='proof-media'), spec=dict(replicas=1)))
+            if mutation == 'cronjob': data[2]['items'].append(dict(kind='CronJob', metadata=dict(namespace='proof-media'), spec={}))
+            with self.subTest(mutation=mutation), \
+                 patch.object(n, 'run', side_effect=[Mock(stdout=json.dumps(x)) for x in data]), \
+                 self.assertRaises(RuntimeError):
+                n.validate_cluster(Path('/not-read'))
+
+    def test_wrapper_exactly_one_attempt_and_safe_output(self):
+        import contextlib
+        import io
+        stream = io.StringIO()
+        with patch.object(n, 'validate_cluster', return_value=('cilium-test', 'uid')), \
+             patch.object(n, 'ssh', side_effect=[Mock(stdout=''),
+                          Mock(stdout='ActiveState=inactive\nResult=success\nExecMainStatus=0\n'),
+                          Mock(stdout='a' * 64 + ' private-path')]), \
+             patch.object(n, 'phase', side_effect=['armed', 'armed', 'complete']), \
+             patch.object(n, 'marker') as marker, \
+             patch.object(n, 'run', return_value=Mock(returncode=2)) as run, \
+             patch.object(n.time, 'sleep'), contextlib.redirect_stdout(stream):
+            n.execute(Path('/not-read'))
+            run.assert_called_once()
+            self.assertEqual([call.args[1] for call in marker.call_args_list], ['producer', 'claim', 'done'])
+            self.assertEqual(marker.call_args_list[1].args[1:], ('claim', 'one'))
+            self.assertEqual(marker.call_args_list[2].args[1:], ('done', 'denied'))
+        self.assertNotIn('private-path', stream.getvalue())
+        self.assertNotIn('SYNTHETIC', stream.getvalue())
+        self.assertEqual(n.PERL.count('IO::Socket::INET->new'), 1)
+        self.assertNotIn('while', n.PERL)
+
+    def test_wrapper_never_launches_when_apps_active(self):
+        with patch.object(n, 'validate_cluster', side_effect=RuntimeError('busy')), \
+             patch.object(n, 'ssh') as ssh:
+            with self.assertRaises(RuntimeError): n.execute(Path('/not-read'))
+            ssh.assert_not_called()
+
+    def test_unit_budgets_cleanup_and_no_supervisor_lock(self):
+        import inspect
+        command = n.launch_command('a' * 32, 25001)
+        self.assertIn('--property=MemoryMax=32M', command)
+        self.assertIn('--property=RuntimeMaxSec=40', command)
+        self.assertIn('--property=TimeoutStopSec=10', command)
+        self.assertTrue(any('ExecStopPost=' in x and '--cleanup' in x and '--mode node' in x for x in command))
+        self.assertNotIn('/isolation.lock', inspect.getsource(c.collect))
+        self.assertIn('controlled-host-isolation.lock', inspect.getsource(c.collect))
+        self.assertIn('ulimit -v 12288', ' '.join(n.node_command(Path('/not-read'), 'pod', 25001, 'token')))
+
+    def test_host_waits_for_claim_and_done_and_fails_closed_on_mac_loss(self):
+        args = collector_args()
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory)
+            (work / 'claim').write_text('one'); (work / 'done').write_text('denied')
+            (work / 'producer').write_text(json.dumps(dict(node_uid=n.NODE_UID, all_proof_app_pods_zero=True, host_network=True)))
+            with patch.object(c.select, 'select', return_value=([], [], [])), \
+                 patch.object(c, 'host_checks', return_value={'safe': True}):
+                result, _ = c.await_node(args, object(), work, Mock(), {}, {}, {})
+                self.assertEqual(result['node_connect_calls'], 1)
+                self.assertEqual(result['slirp_source_port'], 'unknown')
+            with patch.object(c.time, 'monotonic', side_effect=[0, 0, 21]):
+                with self.assertRaises(RuntimeError): c.await_node(args, object(), work, Mock(), {}, {}, {})
+            with patch.object(c.select, 'select', return_value=([object()], [], [])):
+                with self.assertRaises(RuntimeError): c.await_node(args, object(), work, Mock(), {}, {}, {})
+
+    def test_unit_rejects_wrong_deadlines_or_stoppost_predicate(self):
+        args = collector_args(); args.mode = 'node'; args.address = '10.77.1.100'
+        args.control_before = 20001; args.control_after = 20002
+        import shlex
+        stop = ['/usr/bin/python3', '-B', str(ROOT / 'infrastructure/proxmox-proof/collect-isolation.py'),
+                '--cleanup', '--approve', c.APPROVAL, '--mode', 'node', '--address', args.address,
+                '--protocol', 'TCP', '--port', str(args.port), '--source-port', str(args.source_port),
+                '--control-before', '20001', '--control-after', '20002', '--run-id', args.run_id]
+        props = ('Transient=yes\nActiveState=active\nMemoryMax=33554432\nRuntimeMaxUSec=40s\n'
+                 'TimeoutStopUSec=10s\nCPUQuotaPerSecUSec=100ms\nTasksMax=8\nLimitNOFILE=32\n'
+                 'KillMode=control-group\nExecStopPost={ argv[]=' + shlex.join(stop) + ' ; }')
+        c.validate_unit(props, args)
+        for wrong in (props.replace('40s', '50s'), props.replace('33554432', '67108864'),
+                      props.replace('--port 18081', '--port 180810'),
+                      props.replace('--mode node', '--mode child')):
+            with self.assertRaises(RuntimeError): c.validate_unit(wrong, args)
+
+    def test_node_controls_use_one_inprocess_socket_and_known_source(self):
+        args = collector_args()
+        client, connection, listener = MagicMock(), MagicMock(), Mock()
+        client.__enter__.return_value = client
+        connection.__enter__.return_value = connection
+        client.recv.return_value = connection.recv.return_value = args.run_id.encode()
+        listener.accept.return_value = (connection, (args.address, args.source_port))
+        with patch.object(c.socket, 'socket', return_value=client) as socket, \
+             patch.object(c.select, 'select', side_effect=[([listener], [], []), ([], [], [])]), \
+             patch.object(c.subprocess, 'Popen', side_effect=AssertionError('no Python worker')):
+            result = c.local_control(args, listener)
+            self.assertEqual(result['acceptances'], 1)
+            socket.assert_called_once()
+            client.bind.assert_called_once_with((args.address, args.source_port))
+        client.connect.side_effect = OSError('occupied or unreachable')
+        with patch.object(c.socket, 'socket', return_value=client) as socket:
+            with self.assertRaises(OSError): c.local_control(args, listener)
+            socket.assert_called_once()  # never fallback/retry
+
+    def test_persistent_endpoint_reservation_refuses_reuse(self):
+        args = collector_args(); args.control_before = 20001; args.control_after = 20002
+        with tempfile.TemporaryDirectory() as directory:
+            c.reserve_endpoint(args, Path(directory))
+            with self.assertRaises(FileExistsError): c.reserve_endpoint(args, Path(directory))
 
 
 if __name__ == '__main__':
