@@ -1,0 +1,41 @@
+{
+  "group": "couchdb",
+  "checks": [
+    "TLS Gateway route selected: couchdb.proof.invalid",
+    "CouchDB unauthenticated database access denied with HTTP401",
+    "CouchDB authenticated document create/read",
+    "TLS Gateway route selected: couchdb.proof.invalid",
+    "CouchDB document survives pod replacement",
+    "clean restore uses distinct fresh PVC UID and PV: couchdb",
+    "TLS Gateway route selected: couchdb.proof.invalid",
+    "fresh CouchDB PVC has no source proof database before restore",
+    "CouchDB logical bulk document restore has no errors",
+    "CouchDB restored application document exact canonical checksum",
+    "TLS Gateway route selected: couchdb.proof.invalid",
+    "CouchDB restored clean-PVC document survives second pod replacement",
+    "TLS Gateway route selected: couchdb.proof.invalid"
+  ],
+  "limitations": [
+    "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate."
+  ],
+  "backup_sha256": "277793be71c5818fb01c8d82032a674f60f5602fc995d0aa2e21458c43daf7c8",
+  "restore_volumes": [
+    {
+      "app": "couchdb",
+      "source_pvc": "couchdb-data",
+      "source_uid": "2ec59c23-2b17-4b50-8f02-d84acbd6cd56",
+      "restored_pvc": "couchdb-restore-0c3a2281818f",
+      "restored_uid": "1635d436-9593-455c-b084-d545b7060e51",
+      "restored_pv": "pvc-1635d436-9593-455c-b084-d545b7060e51"
+    }
+  ],
+  "status": "functional-checks-passed-with-limitations",
+  "verified_endpoint": "https://127.0.0.1:64120",
+  "verified_node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+  "gateway_origin": "https://couchdb.proof.invalid",
+  "gateway_forward": "127.0.0.1:18443 -> proof node:30310",
+  "tls": "CA verified; no insecure flag",
+  "finished_utc": "2026-11-11T13:17:55.511477+00:00",
+  "cleanup": "scale0 and wait for all namespace pods deletion succeeded",
+  "initial_attempt": "First post-restart GET hit transient Gateway503; bounded idempotent retry added; complete suite rerun passed."
+}

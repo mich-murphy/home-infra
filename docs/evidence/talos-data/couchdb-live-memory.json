@@ -1,0 +1,85 @@
+{
+  "node_memory": {
+    "time": "2026-11-11T13:16:52Z",
+    "availableBytes": 973520896,
+    "usageBytes": 2191048704,
+    "workingSetBytes": 1526317056,
+    "rssBytes": 1064587264,
+    "pageFaults": 1573415,
+    "majorPageFaults": 2944,
+    "psi": {
+      "full": {
+        "total": 77424,
+        "avg10": 0,
+        "avg60": 0,
+        "avg300": 0
+      },
+      "some": {
+        "total": 98854,
+        "avg10": 0,
+        "avg60": 0,
+        "avg300": 0
+      }
+    }
+  },
+  "couchdb_pods": [
+    {
+      "pod": {
+        "name": "couchdb-5d5b7bf87-d9r59",
+        "namespace": "proof-couchdb",
+        "uid": "db41ce26-4b2e-41b5-8bb4-638184f2fb6d"
+      },
+      "memory": {
+        "time": "2026-11-11T13:17:00Z",
+        "availableBytes": 172769280,
+        "usageBytes": 107126784,
+        "workingSetBytes": 95666176,
+        "rssBytes": 73584640,
+        "pageFaults": 34137,
+        "majorPageFaults": 38,
+        "psi": {
+          "full": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      },
+      "containers": [
+        {
+          "name": "couchdb",
+          "memory": {
+            "time": "2026-11-11T13:17:02Z",
+            "availableBytes": 172040192,
+            "usageBytes": 108138496,
+            "workingSetBytes": 96395264,
+            "rssBytes": 73814016,
+            "pageFaults": 33103,
+            "majorPageFaults": 38,
+            "psi": {
+              "full": {
+                "total": 0,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              },
+              "some": {
+                "total": 0,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -40,10 +40,6 @@ spec:
         ports:
         - containerPort: 3306
         env:
-        - name: MARIADB_DATABASE
-          value: wallabag
-        - name: MARIADB_USER
-          value: wallabag
         - name: MARIADB_AUTO_UPGRADE
           value: '1'
         envFrom:
@@ -64,10 +60,10 @@ spec:
         resources:
           requests:
             cpu: 25m
-            memory: 192Mi
+            memory: 128Mi
           limits:
             cpu: 1000m
-            memory: 384Mi
+            memory: 256Mi
         startupProbe:
           exec: &id002
             command:
@@ -90,6 +86,15 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /var/lib/mysql
+        args:
+        - --innodb-buffer-pool-size=64M
+        - --innodb-log-buffer-size=8M
+        - --max-connections=12
+        - --performance-schema=OFF
+        - --key-buffer-size=8M
+        - --aria-pagecache-buffer-size=16M
+        - --table-open-cache=128
+        - --thread-cache-size=4
       volumes:
       - name: data
         persistentVolumeClaim:

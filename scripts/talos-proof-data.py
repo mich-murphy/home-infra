@@ -17,7 +17,7 @@ LEASE_GROUP = None
 MUTATIONS = {'apply','scale','exec','rollout','delete','create','patch','label','annotate','run','replace','cp','edit','set'}
 GROUPS = ('nextcloud', 'immich', 'miniflux', 'wallabag', 'couchdb', 'pocket-id')
 # Includes fixture, excludes suspended cron. Conservative memory limits, MiB.
-BUDGET = dict(nextcloud=1728, immich=1600, miniflux=448, wallabag=896, couchdb=256, **{'pocket-id':192})
+BUDGET = dict(nextcloud=1728, immich=1600, miniflux=448, wallabag=576, couchdb=256, **{'pocket-id':192})
 
 
 def kube(*args, data=None):

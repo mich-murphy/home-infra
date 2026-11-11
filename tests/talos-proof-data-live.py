@@ -21,6 +21,8 @@ import urllib.parse
 import urllib.request
 import uuid
 import zlib
+import io
+import zipfile
 
 GROUP = STATE = NS = None
 CREDS = None
@@ -115,8 +117,17 @@ def http(base, path, method='GET', body=None, auth=None, headers=None, raw=False
     global CURRENT_STAGE
     CURRENT_STAGE = method + ' ' + urllib.parse.urlsplit(base).hostname + path.split('?')[0]
     req = urllib.request.Request(base + path, data=body, headers=h, method=method)
-    with OPENER.open(req, timeout=90) as response:
-        data = response.read()
+    for attempt in range(30):
+        try:
+            with OPENER.open(req, timeout=90) as response:
+                data = response.read()
+            break
+        except urllib.error.HTTPError as error:
+            if method not in ('GET','PUT','DELETE') or error.code not in (502,503,504) or attempt==29:
+                raise
+            time.sleep(1)
+    else:
+        raise RuntimeError('Gateway did not converge within bounded retry window')
     if raw or not data:
         return data
     return json.loads(data)
@@ -139,7 +150,7 @@ def scale(app, replicas):
 
 
 @contextlib.contextmanager
-def fresh_pvc(app, dependents=()):
+def fresh_pvc(app, dependents=(), bootstrap=False):
     """Sequentially replace one data PVC with a newly provisioned claim, restoring
     the original binding in finally. No concurrent database or duplicate frontend.
     Retain both PVCs for audit; never delete source storage.
@@ -155,24 +166,41 @@ def fresh_pvc(app, dependents=()):
     k('apply','-f','-',data=json.dumps(claim).encode())
     path = '/spec/template/spec/volumes/' + str(index) + '/persistentVolumeClaim/claimName'
     switched = False
+    original_container = deployment['spec']['template']['spec']['containers'][0] if bootstrap else None
+    runtime_restored = False
+    def restore_runtime():
+        nonlocal runtime_restored
+        if bootstrap and not runtime_restored:
+            k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':'/spec/template/spec/containers/0','value':original_container}]))
+            k('rollout','status','deployment/'+app,'--timeout=600s')
+            runtime_restored = True
     try:
         for frontend in dependents:
             scale(frontend,0)
         scale(app,0)
         k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':path,'value':name}]))
         switched = True
+        if bootstrap:
+            container = json.loads(json.dumps(original_container))
+            container['command'] = ['/bin/sh','-c','sleep 1800']
+            container.pop('args',None)
+            for probe in ('startupProbe','readinessProbe','livenessProbe'):
+                container[probe] = {'exec':{'command':['/bin/sh','-c','test -d '+container['volumeMounts'][0]['mountPath']]},'periodSeconds':2,'timeoutSeconds':2,'failureThreshold':30}
+            k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':'/spec/template/spec/containers/0','value':container}]))
         scale(app,1)
         new_claim = json.loads(k('get','pvc',name,'-o','json'))
         check('clean restore uses distinct fresh PVC UID and PV: ' + app,
               new_claim['metadata']['uid'] != old_claim['metadata']['uid'] and
               new_claim['spec'].get('volumeName') and new_claim['spec'].get('volumeName') != old_claim['spec'].get('volumeName'))
         RESULT.setdefault('restore_volumes',[]).append({'app':app,'source_pvc':old,'source_uid':old_claim['metadata']['uid'],'restored_pvc':name,'restored_uid':new_claim['metadata']['uid'],'restored_pv':new_claim['spec']['volumeName']})
-        yield
+        yield restore_runtime
     finally:
         if switched:
             for frontend in dependents:
                 scale(frontend,0)
             scale(app,0)
+            if bootstrap:
+                k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':'/spec/template/spec/containers/0','value':original_container}]))
             k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':path,'value':old}]))
             scale(app,1)
         for frontend in dependents:
@@ -279,11 +307,11 @@ def wallabag():
     check('Wallabag entry survives MariaDB pod replacement', any(e.get('title') == marker for e in exported))
     scale('wallabag',0)
     try:
-        dump = execute('mariadb',['sh','-ec','exec mariadb-dump --single-transaction --routines --triggers --events -uroot -p"$MYSQL_ROOT_PASSWORD" wallabag'])
+        dump = execute('mariadb',['sh','-ec','exec mariadb-dump --single-transaction --routines --triggers --events -uroot -p"$MYSQL_ROOT_PASSWORD" --databases wallabag'])
         save_private('wallabag-mariadb.sql',dump)
         RESULT['backup_sha256'] = hashlib.sha256(dump).hexdigest()
         with fresh_pvc('mariadb',('wallabag',)):
-            execute('mariadb',['sh','-ec','exec mariadb -uroot -p"$MYSQL_ROOT_PASSWORD" wallabag'],dump)
+            execute('mariadb',['sh','-ec','exec mariadb -uroot -p"$MYSQL_ROOT_PASSWORD"'],dump)
             scale('wallabag',1)
             execute('wallabag',['sh','-ec','cd /var/www/wallabag; php bin/console wallabag:export wallabag /tmp/proof-export.json --no-interaction'])
             restored = json.loads(execute('wallabag',['php','-r','echo file_get_contents("/tmp/proof-export.json");']))
@@ -298,6 +326,12 @@ def couchdb():
     db = 'proof_' + uuid.uuid4().hex
     marker = uuid.uuid4().hex
     with forwarded('couchdb', 5984) as base:
+        try:
+            http(base, '/_all_dbs', raw=True)
+        except urllib.error.HTTPError as error:
+            check('CouchDB unauthenticated database access denied with HTTP401',error.code==401)
+        else:
+            check('CouchDB rejects unauthenticated database access',False)
         http(base, '/' + db, 'PUT', auth=auth)
         http(base, '/' + db + '/document', 'PUT', {'marker':marker}, auth)
         check('CouchDB authenticated document create/read', http(base, '/' + db + '/document', auth=auth)['marker'] == marker)
@@ -388,6 +422,21 @@ def pocket_id():
     restart('pocket-id')
     after = pocket_browser()
     check('Pocket-ID user and registered passkey survive pod replacement',initial['user_id']==after['user_id'])
+    archive = execute('pocket-id',['/app/pocket-id','export','--path','-'])
+    with zipfile.ZipFile(io.BytesIO(archive)) as exported:
+        check('Pocket-ID logical export contains database.json','database.json' in exported.namelist())
+        database_hash = hashlib.sha256(exported.read('database.json')).hexdigest()
+    save_private('pocket-id-logical-export.zip',archive)
+    RESULT['backup_sha256'] = hashlib.sha256(archive).hexdigest()
+    RESULT['database_export_sha256'] = database_hash
+    with fresh_pvc('pocket-id', bootstrap=True) as start_runtime:
+        # Sleeping bootstrap mounts a genuinely empty PVC without starting the
+        # server/Francis host. Never use force-lock against a running instance.
+        execute('pocket-id',['/app/pocket-id','import','--path','-','--yes'],archive)
+        start_runtime()
+        restored = pocket_browser()
+        check('Pocket-ID clean-PVC logical restore preserves user/passkey and signed OIDC flow',restored['user_id']==initial['user_id'])
+
     RESULT['limitations'].append('CDP virtual authenticator proves WebAuthn protocol/cryptography, not human physical-device UX, device recovery or hardware attestation.')
 
 

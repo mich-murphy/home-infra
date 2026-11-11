@@ -1,0 +1,16 @@
+{
+  "source_discovery": "Read-only docker exec wallabag: php -v; grep pm settings from /etc/php*/php-fpm.conf",
+  "current_source_php": "8.2.35",
+  "config_path": "/etc/php82/php-fpm.conf",
+  "source_pm": "dynamic",
+  "source_max_children": 5,
+  "proof_pm": "ondemand",
+  "proof_max_children": 1,
+  "proof_php_memory_limit": "128M",
+  "proof_opcache": "32M",
+  "proof_mariadb_buffer_pool": "64M",
+  "proof_mariadb_max_connections": 12,
+  "group_memory_limit_mib": 576,
+  "guard_reserve_mib": 192,
+  "status": "bounded experiment profile, NOT LIVE TESTED; limits were paired with explicit concurrency/cache reductions, no OOM result hidden"
+}

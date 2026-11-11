@@ -44,6 +44,12 @@ spec:
           value: '1'
         - name: MACHINE_LEARNING_MODEL_TTL
           value: '60'
+        - name: MACHINE_LEARNING_MODEL_REVISION
+          value: a857c8de2c07bbcfa6646adfcf31b798845afa1e
+        - name: HF_HUB_OFFLINE
+          value: '1'
+        - name: MACHINE_LEARNING_CACHE_FOLDER
+          value: /cache
         envFrom:
         - secretRef:
             name: proof-credentials

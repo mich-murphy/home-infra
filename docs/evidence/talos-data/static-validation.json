@@ -1,6 +1,6 @@
 {
   "timestamp_utc": "2026-11-11T12:34:36.895126+00:00",
-  "render_sha256": "2edeb975029ea74079ce96522483b0a929f46dfa1451d9b25ff61f116f4c07db",
+  "render_sha256": "8d1e3e7034fa6de3460ea4e7df59a7f881a4c2ec47bc98efae7d06efa47e693c",
   "offline_unit_tests": 26,
   "offline_unit_test_result": "passed",
   "parent_safety_validator": "passed",
@@ -8,9 +8,9 @@
   "node_identity_required": "single node named+hostname talos-proof; coordinator-recorded node_uid",
   "mutation_checks": "every apply/scale/exec/patch/rollout; endpoint, TLS, context, group, expiry, node UID",
   "private_state_checks": "lstat rejects symlink file/directory/ancestor before resolve/open",
-  "live_deployment": "not attempted; platform worker retains exclusive lease",
-  "live_functional_tests": "NOT RUN",
-  "gateway_tests": "NOT RUN",
+  "live_deployment": "CouchDB tested then scaled0; other groups pending",
+  "live_functional_tests": "CouchDB pass with distinct clean-PVC recovery; others NOT RUN",
+  "gateway_tests": "CouchDB trustedTLS integrated realGateway passed",
   "resource_capacity": "2560MiB node; large groups may fail conservative guard",
   "acceptance": "pending parent integration"
 }

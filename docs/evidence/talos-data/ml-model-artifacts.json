@@ -1,0 +1,74 @@
+{
+  "repo": "immich-app/ViT-B-32__openai",
+  "model": "ViT-B-32__openai",
+  "revision": "a857c8de2c07bbcfa6646adfcf31b798845afa1e",
+  "cache_prefix": "clip/ViT-B-32__openai/a857c8de2c07bbcfa6646adfcf31b798845afa1e",
+  "image_release": "Immich v3.3.6",
+  "selection": "Default-compatible 512-dimensional OpenCLIP; CPU ONNX only, no face/OCR/GPU claim.",
+  "source_metadata_url": "https://huggingface.co/api/models/immich-app/ViT-B-32__openai/tree/a857c8de2c07bbcfa6646adfcf31b798845afa1e?recursive=true",
+  "files": [
+    {
+      "path": "config.json",
+      "url": "https://huggingface.co/immich-app/ViT-B-32__openai/resolve/a857c8de2c07bbcfa6646adfcf31b798845afa1e/config.json",
+      "bytes": 196,
+      "sha256": "59a182a6dce0adeb303f3d72d73758d68ba29516d928dd92740465f498290409",
+      "upstream_lfs_sha256": null
+    },
+    {
+      "path": "textual/model.onnx",
+      "url": "https://huggingface.co/immich-app/ViT-B-32__openai/resolve/a857c8de2c07bbcfa6646adfcf31b798845afa1e/textual/model.onnx",
+      "bytes": 254193396,
+      "sha256": "b80cf0af751533a6712d92247f0ddc0c95208748bc59a1a27f33e67be6864e3b",
+      "upstream_lfs_sha256": "b80cf0af751533a6712d92247f0ddc0c95208748bc59a1a27f33e67be6864e3b"
+    },
+    {
+      "path": "textual/merges.txt",
+      "url": "https://huggingface.co/immich-app/ViT-B-32__openai/resolve/a857c8de2c07bbcfa6646adfcf31b798845afa1e/textual/merges.txt",
+      "bytes": 524619,
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "upstream_lfs_sha256": null
+    },
+    {
+      "path": "textual/special_tokens_map.json",
+      "url": "https://huggingface.co/immich-app/ViT-B-32__openai/resolve/a857c8de2c07bbcfa6646adfcf31b798845afa1e/textual/special_tokens_map.json",
+      "bytes": 588,
+      "sha256": "2cdb3b8331a60c92fc1e55a13e9fd61fd2293c5a51275fdcccd62b780052530e",
+      "upstream_lfs_sha256": null
+    },
+    {
+      "path": "textual/tokenizer.json",
+      "url": "https://huggingface.co/immich-app/ViT-B-32__openai/resolve/a857c8de2c07bbcfa6646adfcf31b798845afa1e/textual/tokenizer.json",
+      "bytes": 3642073,
+      "sha256": "6d9109cc838977f3ca94a379eec36aecc7c807e1785cd729660ca2fc0171fb35",
+      "upstream_lfs_sha256": null
+    },
+    {
+      "path": "textual/tokenizer_config.json",
+      "url": "https://huggingface.co/immich-app/ViT-B-32__openai/resolve/a857c8de2c07bbcfa6646adfcf31b798845afa1e/textual/tokenizer_config.json",
+      "bytes": 736,
+      "sha256": "39bae5313c2da6467866dee758e754d69f0e302a875027b142531cb9c51c7c28",
+      "upstream_lfs_sha256": null
+    },
+    {
+      "path": "textual/vocab.json",
+      "url": "https://huggingface.co/immich-app/ViT-B-32__openai/resolve/a857c8de2c07bbcfa6646adfcf31b798845afa1e/textual/vocab.json",
+      "bytes": 862328,
+      "sha256": "5047b556ce86ccaf6aa22b3ffccfc52d391ea4accdab9c2f2407da5b742d4363",
+      "upstream_lfs_sha256": null
+    },
+    {
+      "path": "visual/model.onnx",
+      "url": "https://huggingface.co/immich-app/ViT-B-32__openai/resolve/a857c8de2c07bbcfa6646adfcf31b798845afa1e/visual/model.onnx",
+      "bytes": 351613724,
+      "sha256": "33a3df41ceef21acdf371af00f6dd0456ec1f9eba24d03a7720f9c3734e40859",
+      "upstream_lfs_sha256": "33a3df41ceef21acdf371af00f6dd0456ec1f9eba24d03a7720f9c3734e40859"
+    },
+    {
+      "path": "visual/preprocess_cfg.json",
+      "url": "https://huggingface.co/immich-app/ViT-B-32__openai/resolve/a857c8de2c07bbcfa6646adfcf31b798845afa1e/visual/preprocess_cfg.json",
+      "bytes": 197,
+      "sha256": "c4fd008cd177c58a8fe107b099bac98913eaa6be6114dd59a4b45145c3c7673f",
+      "upstream_lfs_sha256": null
+    }
+  ]
+}

@@ -2,9 +2,10 @@
 
 ## Acceptance status
 
-**Implementation and offline checks only; no live deployment or functional proof yet.**
-The parent has not granted a resource lease/kubeconfig. Do not interpret manifest
-probes, rendered objects, or the executable functional test plans as passed tests.
+**CouchDB live functional and distinct clean-PVC recovery proof PASSED.**
+The exclusive CouchDB lease was used and released after scale0/pod deletion.
+Other application live suites remain pending subsequent parent leases. Do not
+interpret manifest probes or executable plans for those applications as passed tests.
 This delivery needs parent integration acceptance. The source Docker host was not
 changed or copied. All persistent data is newly generated synthetic proof data.
 
@@ -131,7 +132,7 @@ available memory >= summed group limits +192Mi reserve:
 | Nextcloud + PG + Redis + Collabora |1728|
 | Immich + ML + PG + Valkey |1600|
 | Miniflux + PG + fixture |448|
-| Wallabag + MariaDB + Redis + fixture |896|
+| Wallabag + MariaDB + Redis + fixture |576|
 | CouchDB |256|
 | Pocket-ID |192|
 
@@ -167,7 +168,7 @@ error bodies are never printed. Parent may copy reviewed result JSON into eviden
 | Collabora | real Gateway WOPI discovery action XML | startup/capability/resource fit; full interactive editor integration; no richdocuments Internet install attempted |
 | Miniflux | category/feed CRUD; fetch synthetic RSS fixture via allowed network flow; entry read-state update; PG replacement; full PG dump/independent restore | all live pending; external feed fetching intentionally forbidden |
 | Wallabag | rotate image default password; CLI v2 synthetic entry import with content update disabled; JSON export exact title/content; MariaDB replacement/export | all live pending; OAuth/browser login, article scraping, MariaDB backup restore |
-| CouchDB | authenticated database/document create/read exact marker; pod replacement/read; database deletion | all live pending; replication, multi-node recovery, logical backup restore |
+| CouchDB | **LIVE PASS:** trusted TLS Gateway auth denial401; authenticated document CRUD; pod replacement; logical JSON restore into distinct clean PVC; exact canonical SHA256; second replacement/read; source reattached and all pods deleted | replication, multi-node recovery, VM/disk loss |
 | Immich | synthetic PNG generated in memory; fresh admin signup/login; asset upload/original download byte equality; server replacement/download; full vector PG dump/restore; ML ping | all live pending; ML inference/model download, thumbnails/job completeness, GPU/video, external OIDC |
 | Pocket-ID | isolated OIDC discovery issuer/endpoints; public signing JWKS; pod replacement/discovery | all live pending; interactive admin/passkey enrollment, user persistence, authorization-code/token flow, human browser ceremony |
 
@@ -220,3 +221,35 @@ tokens or browser traces are printed/committed. This is not a physical passkey U
 claim. **The real browser flow remains untested pending lease**, although Chrome
 launch/CDP availability has been verified locally. Set
 `TALOS_PROOF_PLAYWRIGHT_MODULE` to the private installed playwright-core directory.
+
+## Live CouchDB result
+
+`docs/evidence/talos-data/couchdb-live-result.json` records the actual trusted TLS
+Gateway functional run on node UID4845bfd5-3bdb-453d-8503-83b43edb7a1e through
+18443→30310. Source claim UID2ec59c23-2b17-4b50-8f02-d84acbd6cd56 and restored
+claim UID1635d436-9593-455c-b084-d545b7060e51 have distinct PVs. Restored content
+canonical SHA256 matched the backup exactly. Fresh instance had no source database
+before import. Auth denial401, authenticated read/write, original and restored pod
+replacement persistence all passed. Image identities/restart counters and node/pod
+memory are in adjacent evidence JSON. The first immediate post-rollout request
+observed transient Gateway503; bounded idempotent retries were added and the full
+suite rerun passed. No retry masks authentication errors or non-idempotent writes.
+The source claim was rebound and **all CouchDB pods were deleted** at release.
+
+Wallabag's offline prepared bounded profile is576MiB total, with explicit MariaDB
+64MiB buffer pool/max12 connections/smaller engine caches, and PHP128MiB memory,
+32MiB opcache and **one** on-demand PHP-FPM worker. Read-only source discovery
+verified PHP8.2 and the exact config location/default five workers. This is a
+resource-bounded synthetic workload experiment, not yet a successful runtime
+capacity claim. The installer is allowed to create its own absent database; an
+empty pre-created database would incorrectly skip schema installation.
+
+Mac-side public ML artifacts are prepared and hashed: ViT-B-32__openai, commit
+`a857c8de2c07bbcfa6646adfcf31b798845afa1e`, nine files610,837,857bytes. Canonical
+URLs and SHA256 (verified against upstream LFS where available) are in
+`ml-model-artifacts.json`. `scripts/talos-proof-data-models.py preload` requires
+an actual Immich lease and copies only these files into the fresh proof cache.
+Model revision and HF_HUB_OFFLINE are explicit; no cluster Internet widening is
+needed. **No ML preload or inference has yet run.** Pocket-ID's built-in logical
+export/import ZIP procedure is implemented for a separate clean PVC, with server
+stopped during import; virtual WebAuthn/OIDC still awaits its live lease.
