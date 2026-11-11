@@ -91,7 +91,7 @@ class Provider(unittest.TestCase):
         for jobs in [[{'queue':'media_fetching'},{'queue':'media_collection_indexing'}],[{'queue':'remote_metadata'}]]:
             with self.assertRaises(RuntimeError):p.stage_executing({'executing':jobs},'media_fetching')
     def test_lightweight_rpc_requires_real_stdout_and_single_beam_identity(self):
-        transport={'client':'bundled-erl_call','path':'/app/erts-15.2.4/bin/erl_call','sha256':'a'*64,'beam_before':1,'beam_after':1}
+        transport={'client':'bundled-erl_call','path':p.ERL_CALL_PATH,'sha256':p.ERL_CALL_SHA,'beam_before':1,'beam_after':1}
         with tempfile.TemporaryDirectory() as tmp:
             state=Path(tmp).resolve()
             def output(value=transport):return ('PROOF_JSON:{"observed":true}\nPROOF_TRANSPORT:'+json.dumps(value)+'\n').encode()
@@ -99,10 +99,10 @@ class Provider(unittest.TestCase):
                 self.assertEqual(p.rpc(state,'result = %{observed: true}'),{'observed':True})
                 self.assertEqual(remote.call_args.args[:2],('pinchflat',p.ERL_CALL))
                 self.assertIn("'Elixir.Code':eval_string(list_to_binary([",remote.call_args.args[2])
-            for body in [b'PROOF_JSON:{}\n',b'PROOF_TRANSPORT:{}\n',output(dict(transport,beam_before=2)),output(dict(transport,beam_before=True)),output(dict(transport,path='/tmp/replacement')),output()+output()]:
+            for body in [b'PROOF_JSON:{}\n',b'PROOF_TRANSPORT:{}\n',output(dict(transport,beam_before=2)),output(dict(transport,beam_before=True)),output(dict(transport,path='/tmp/replacement')),output(dict(transport,sha256='a'*64)),output()+output()]:
                 with patch.object(p,'remote',return_value=body),self.assertRaises((RuntimeError,KeyError)):
                     p.rpc(state,'result = %{}')
-            self.assertEqual(len(list(state.glob('pinchflat-rpc-private-*'))),7)
+            self.assertEqual(len(list(state.glob('pinchflat-rpc-private-*'))),8)
         subprocess.run(['bash','-n'],input=p.ERL_CALL.encode(),check=True)
 
     def test_lightweight_transport_failure_never_falls_back_to_known_oom_beam_rpc(self):
@@ -115,6 +115,22 @@ class Provider(unittest.TestCase):
         self.assertIn('/proc/1/environ',p.ERL_CALL)
         self.assertIn('test "$node" = pinchflat',p.ERL_CALL)
         self.assertIn('test "$magic" = 7f454c46',p.ERL_CALL)
+
+    def test_public_image_hashes_are_checked_before_execution(self):
+        self.assertIn(p.ERL_CALL_PATH,p.ERL_CALL)
+        self.assertLess(p.ERL_CALL.index('test "$identity" ='),p.ERL_CALL.index('| "$call"'))
+        self.assertIn(p.ERL_CALL_SHA,p.ERL_CALL)
+        with tempfile.TemporaryDirectory() as tmp,patch.object(p,'rpc',return_value='/usr/local/bin/yt-dlp'):
+            for sha in (p.YTDLP_SHA,'a'*64):
+                raw=(sha+'  /usr/local/bin/yt-dlp\n2025.06.04\n').encode()
+                with patch.object(p,'remote',return_value=raw) as remote:
+                    if sha==p.YTDLP_SHA:
+                        self.assertEqual(p.stock(Path(tmp).resolve())['sha256'],sha)
+                    else:
+                        with self.assertRaises(RuntimeError):p.stock(Path(tmp).resolve())
+                    command=remote.call_args.args[1]
+                    self.assertEqual(remote.call_args.args[2],p.YTDLP_SHA)
+                    self.assertLess(command.index('test "${identity%% *}"'),command.index('--version'))
 
     def test_readonly_sql_and_no_replacement_downloader(self):
         self.assertTrue(all(query.startswith('SELECT ') for query in p.SQL.values()))

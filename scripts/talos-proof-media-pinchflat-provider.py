@@ -25,6 +25,10 @@ FEED = 'http://127.0.0.1:7913/feed.xml'
 HTML = 'http://127.0.0.1:7913/video/proof-001'
 INPUT = 'Proof Browser Fixture (2000).mp4'
 INPUT_SHA = '9f754faabc2f1d7a460a8b3ff0ef3f9124c9cab7407af3e66a649c720ae348cb'
+# Verified final linux/amd64 image bytes; never repair by binary replacement.
+ERL_CALL_PATH = '/app/erts-15.2.2/bin/erl_call'
+ERL_CALL_SHA = '73c690ffdc8151a4e01f825ca7c4eb5912245aa17808890438004ce90b658669'
+YTDLP_SHA = '11aae6b9d391bce3633d62929f0526e1efd431e9892db09b0c4573b31ba76038'
 QUEUES = ('default','fast_indexing','media_collection_indexing','media_fetching','remote_metadata','local_data')
 
 
@@ -97,10 +101,11 @@ count_beams() {
 }
 count_beams; before="$count"; test "$before" -eq 1
 identity="$(sha256sum "$call")"; identity="${identity%% *}"
+test "$call" = '@EXPECTED_ERL_PATH@' && test "$identity" = '@EXPECTED_ERL_SHA@'
 printf '%s' "$1" | "$call" -sname "$node" -c "$cookie" -R -timeout 10 -e -fetch_stdout -no_result_term
 count_beams; test "$count" -eq 1
 printf '\nPROOF_TRANSPORT:{"client":"bundled-erl_call","path":"%s","sha256":"%s","beam_before":%s,"beam_after":%s}\n' "$call" "$identity" "$before" "$count"
-'''
+'''.replace('@EXPECTED_ERL_PATH@', ERL_CALL_PATH).replace('@EXPECTED_ERL_SHA@', ERL_CALL_SHA)
 
 
 def rpc(state, expression):
@@ -116,8 +121,7 @@ def rpc(state, expression):
     transport = transports[0]
     expect(transport['client']=='bundled-erl_call' and type(transport['beam_before']) is int
            and type(transport['beam_after']) is int and transport['beam_before']==transport['beam_after']==1
-           and re.fullmatch(r'/app/erts-[0-9.]+/bin/erl_call',transport['path'])
-           and re.fullmatch('[a-f0-9]{64}',transport['sha256']), 'native lightweight transport identity/process count differs')
+           and transport['path']==ERL_CALL_PATH and transport['sha256']==ERL_CALL_SHA, 'native lightweight transport identity/process count differs')
     lines = [x.removeprefix('PROOF_JSON:') for x in output if x.startswith('PROOF_JSON:')]
     expect(len(lines)==1, 'native lightweight RPC did not yield one structured result')
     return json.loads(lines[0])
@@ -160,8 +164,8 @@ def queues(state, resume=None):
 def stock(state):
     configured = rpc(state, 'result = Application.fetch_env!(:pinchflat,:yt_dlp_executable)')
     expect(configured=='/usr/local/bin/yt-dlp', 'native downloader path differs from reviewed bundled binary')
-    lines = remote('pinchflat','test "$(command -v yt-dlp)" = /usr/local/bin/yt-dlp; sha256sum /usr/local/bin/yt-dlp; /usr/local/bin/yt-dlp --version').decode().splitlines()
-    expect(len(lines)==2 and re.fullmatch('[a-f0-9]{64}',lines[0].split()[0]) and re.fullmatch(r'[A-Za-z0-9.+_-]{1,100}',lines[1]), 'bundled binary identity unreadable')
+    lines = remote('pinchflat','test "$(command -v yt-dlp)" = /usr/local/bin/yt-dlp; test ! -L /usr/local/bin/yt-dlp; identity="$(sha256sum /usr/local/bin/yt-dlp)"; test "${identity%% *}" = "$1"; printf "%s\\n" "$identity"; /usr/local/bin/yt-dlp --version',YTDLP_SHA).decode().splitlines()
+    expect(len(lines)==2 and lines[0].split()[0]==YTDLP_SHA and re.fullmatch(r'[A-Za-z0-9.+_-]{1,100}',lines[1]), 'bundled binary identity unreadable')
     result = {'path':configured,'sha256':lines[0].split()[0],'version':lines[1]}
     save(state,'stock-downloader',result)
     return result
