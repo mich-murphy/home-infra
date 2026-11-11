@@ -13,6 +13,7 @@ import datetime
 from pathlib import Path
 import re
 import urllib.request
+import uuid
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -106,6 +107,61 @@ def cleanup(ops):
                  '--ignore-not-found=true', '--wait=true', stdout=subprocess.DEVNULL)
 
 
+def bootstrap_command(ops, out, phase, *args, **kwargs):
+    """Only generated Flux bootstrap commands; never change generic ops error handling.
+
+    Stderr may contain sensitive API responses: retain it exclusively in private state.
+    Only the fixed phase/category, numeric exit code and stderr hash are publishable.
+    """
+    if phase not in ('crd-apply', 'crd-established', 'objects-apply'):
+        raise ValueError('unknown Flux bootstrap phase')
+    ops.gate()
+    config = ops.private_file(os.environ['KUBECONFIG'])
+    receipt = json.loads(ops.private_file(os.environ['TALOS_PROOF_OPERATIONS_LEASE']).read_text())
+    command = ['kubectl', '--kubeconfig', str(config), '--context', receipt['context'],
+               '--server', ops.ENDPOINT, '--request-timeout=30s', *args]
+    try:
+        result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                                timeout=240, **kwargs)
+        if result.returncode == 0:
+            return
+        stderr, code, category = result.stderr, result.returncode, 'kubectl-exit'
+    except subprocess.TimeoutExpired as exc:
+        stderr, code, category = exc.stderr or b'', None, 'subprocess-timeout'
+    # Never include command args, object/config dumps or raw error text in the summary.
+    if isinstance(stderr, str):
+        stderr = stderr.encode()
+    metadata = {'phase': phase, 'exit_code': code,
+                'stderr_sha256': hashlib.sha256(stderr).hexdigest(), 'category': category}
+    stem = 'flux-failure-' + uuid.uuid4().hex
+    for suffix, content in [('.stderr', stderr), ('.json', (json.dumps(metadata, indent=2) + '\n').encode())]:
+        destination = ops.no_symlinks(out / (stem + suffix))
+        # out comes only from ops.private_dir(); validate it before opening any file.
+        if (not destination.parent.is_relative_to(ops.STATE)
+                or destination.parent.stat().st_mode & 0o777 != 0o700
+                or destination.parent.stat().st_uid != os.getuid()):
+            raise RuntimeError('private diagnostic directory required')
+        fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, 'wb') as stream:
+            stream.write(content)
+        ops.private_file(destination)
+    raise RuntimeError('Flux bootstrap failed at ' + phase + '; private diagnostics retained')
+
+
+def bootstrap(ops, out, docs):
+    """Establish every selected CRD before discovery/application of custom resources."""
+    crds = [o for o in docs if o['kind'] == 'CustomResourceDefinition']
+    remaining = [o for o in docs if o['kind'] != 'CustomResourceDefinition']
+    if crds:
+        bootstrap_command(ops, out, 'crd-apply', 'apply', '--server-side', '-f', '-',
+                          input=yaml.safe_dump_all(crds).encode())
+        bootstrap_command(ops, out, 'crd-established', 'wait', '--for=condition=Established',
+                          '--timeout=120s', *['crd/' + o['metadata']['name'] for o in crds])
+    if remaining:
+        bootstrap_command(ops, out, 'objects-apply', 'apply', '--server-side', '-f', '-',
+                          input=yaml.safe_dump_all(remaining).encode())
+
+
 def live(args):
     ops = operations()
     ops.gate()
@@ -164,7 +220,7 @@ def live(args):
                  stdout=subprocess.DEVNULL)
         value(version)
     try:
-        ops.kube('apply', '--server-side', '-f', '-', input=yaml.safe_dump_all(docs).encode(), stdout=subprocess.DEVNULL)
+        bootstrap(ops, out, docs)
         for controller in ('source-controller', 'kustomize-controller'):
             ops.kube('-n', NS, 'rollout', 'status', 'deployment/' + controller, '--timeout=180s', stdout=subprocess.DEVNULL)
         for resource in ('gitrepository', 'kustomization'):

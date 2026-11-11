@@ -17,6 +17,16 @@ Private follow-up runner imported the same repository scripts, with no manifest 
 
 Monitoring/loopback delivery, distinct-PVC recovery and private etcd snapshot were **not repeated**. Snapshot still predates Flux and is capture-only, never a restore test or post-Flux sentinel backup. No new VM/control-plane reset/host restart/source access. Parent owns host/source postflight and acceptance brief/gates. Current offline suite remains **15 passing tests**.
 
+## Offline-only reproducibility / local retention follow-up
+
+Inspection confirmed the accepted live runner submitted CRDs and custom resources together with no Established barrier. New code splits selected CRD apply → bounded Established wait → remaining generated objects; mock tests enforce the ordering and prohibit custom-resource apply after CRD apply/wait failure. **This closes an identified ordering gap, not a conclusive diagnosis of the first historical failure**: no original stderr exists. `flux-initial-apply-failure.json`, the earlier refusal, and all live receipts remain unchanged. The new bootstrap sequence is **live UNTESTED**; no live CRD deletion/reapply or cluster command was used.
+
+Future generated Flux bootstrap failures retain raw stderr in private0600 exclusive-create files and a matching0600 receipt. Only fixed phase/category, exit code and stderr SHA256 are eligible for publication after review; raw stderr/config/command values remain private. Logging is scoped to Flux bootstrap apply/wait and does not change the generic operations helper. Exit and timeout paths are unit-tested with sensitive-looking sentinel errors and no stdout/stderr leakage.
+
+`offline-bootstrap-retention.json` records a **local temporary** persistence/retention check: independently reload/hash an actual saved14:13:35UTC observation copy, retain it byte-identical, dry-run then explicitly prune a separate synthetic40-day-old timestamp fixture, and leave an unmarked synthetic archive unchanged. Original observations/recovery/snapshots were untouched. New monitor runs opt into bounded operator-run local retention with hashes/ownership/permissions checks; historical unmarked directories are not retroactively enrolled. This is not a new live monitor/alert run,40days of real elapsed retention, scheduled collector or production history/paging SLO.
+
+Current offline validation: **19 tests pass** plus syntax checks. Historical live reconcile/drift/path rollback/RBAC/runtime/cleanup evidence still describes the earlier successful runner; it does not certify the new sequencing, diagnostic failure path or monitor-history marker path live. Parent acceptance gates/brief remain outside this change.
+
 ## Historical independent operations window — partial acceptance at that time
 
 Everything below describes the earlier completed run only; its Flux refusal and untested status at that time are preserved, not the final follow-up status.

@@ -218,6 +218,87 @@ class Operations(unittest.TestCase):
         self.assertNotIn('crd', partial.kube.call_args.args)
 
 
+    def load_flux(self):
+        spec = importlib.util.spec_from_file_location('flux_bootstrap_test', ROOT / 'scripts/talos-proof-operations-flux.py')
+        flux = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(flux)
+        return flux
+
+    def test_flux_bootstrap_established_before_custom_resources(self):
+        flux = self.load_flux()
+        crds = [{'kind': 'CustomResourceDefinition', 'metadata': {'name': n}}
+                for n in ('gitrepositories.source.toolkit.fluxcd.io', 'kustomizations.kustomize.toolkit.fluxcd.io')]
+        resources = [{'kind': 'Namespace', 'metadata': {'name': flux.NS}},
+                     {'kind': 'GitRepository'}, {'kind': 'Kustomization'}]
+        established = False
+        calls = []
+        def command(guard, out, phase, *args, **kw):
+            nonlocal established
+            calls.append((phase, args))
+            if phase == 'crd-apply':
+                self.assertEqual(list(yaml.safe_load_all(kw['input'])), crds)
+            elif phase == 'crd-established':
+                self.assertIn('--for=condition=Established', args)
+                self.assertIn('--timeout=120s', args)
+                self.assertEqual(set(args[3:]), {'crd/' + c['metadata']['name'] for c in crds})
+                established = True
+            else:
+                self.assertTrue(established, 'custom resources applied before CRDs established')
+                self.assertEqual(list(yaml.safe_load_all(kw['input'])), resources)
+        with patch.object(flux, 'bootstrap_command', side_effect=command):
+            flux.bootstrap(ops, Path('/unused'), [resources[0], crds[0], resources[1], crds[1], resources[2]])
+        self.assertEqual([phase for phase, _ in calls], ['crd-apply', 'crd-established', 'objects-apply'])
+        for failed in ('crd-apply', 'crd-established'):
+            calls.clear()
+            def fail(guard, out, phase, *args, **kw):
+                calls.append(phase)
+                if phase == failed: raise RuntimeError('mock failure')
+            with patch.object(flux, 'bootstrap_command', side_effect=fail), self.assertRaises(RuntimeError):
+                flux.bootstrap(ops, Path('/unused'), crds + resources)
+            self.assertNotIn('objects-apply', calls)
+
+    def test_flux_bootstrap_private_diagnostics_no_error_leak(self):
+        import subprocess
+        import contextlib
+        import io
+        flux = self.load_flux()
+        secret_error = b'private-token=sentinel config-data=sentinel Forbidden'
+        for phase in ('crd-apply', 'crd-established', 'objects-apply'):
+            for timeout in (False, True):
+                with self.subTest(phase=phase, timeout=timeout), tempfile.TemporaryDirectory(dir=Path(tempfile.gettempdir()).resolve()) as d:
+                    state = Path(d)
+                    config, receipt, _, _ = self.identity_fixture(d)
+                    out = state / 'output'; out.mkdir(mode=0o700)
+                    result = subprocess.CompletedProcess([], 1, stderr=secret_error)
+                    stream = io.StringIO()
+                    with patch.object(ops, 'STATE', state), patch.object(ops, 'gate') as gate, \
+                            patch.dict(os.environ, {'KUBECONFIG': str(config), 'TALOS_PROOF_OPERATIONS_LEASE': str(receipt)}), \
+                            patch.object(flux.subprocess, 'run', return_value=result,
+                                side_effect=subprocess.TimeoutExpired('kubectl', 240, stderr=secret_error) if timeout else None) as run, \
+                            contextlib.redirect_stdout(stream), contextlib.redirect_stderr(stream):
+                        with self.assertRaisesRegex(RuntimeError, 'private diagnostics retained') as failure:
+                            flux.bootstrap_command(ops, out, phase, 'apply', '-f', '-', input=b'fixture')
+                        gate.assert_called_once()
+                        command = run.call_args.args[0]
+                        self.assertIn(ops.ENDPOINT, command)
+                        self.assertEqual(run.call_args.kwargs['timeout'], 240)
+                    self.assertNotIn('sentinel', stream.getvalue() + str(failure.exception))
+                    stderr_file, = out.glob('*.stderr')
+                    receipt_file, = out.glob('*.json')
+                    self.assertEqual(stderr_file.read_bytes(), secret_error)
+                    for p in (stderr_file, receipt_file): self.assertEqual(p.stat().st_mode & 0o777, 0o600)
+                    metadata = json.loads(receipt_file.read_text())
+                    self.assertEqual(set(metadata), {'phase', 'exit_code', 'stderr_sha256', 'category'})
+                    self.assertEqual(metadata['stderr_sha256'], hashlib.sha256(secret_error).hexdigest())
+                    self.assertEqual(metadata['exit_code'], None if timeout else 1)
+                    self.assertEqual(metadata['category'], 'subprocess-timeout' if timeout else 'kubectl-exit')
+                    self.assertNotIn('sentinel', receipt_file.read_text())
+        with patch.object(ops, 'gate', side_effect=RuntimeError('lease denied')), \
+                patch.object(flux.subprocess, 'run') as run:
+            with self.assertRaisesRegex(RuntimeError, 'lease denied'):
+                flux.bootstrap_command(ops, Path('/unused'), 'crd-apply', 'apply')
+            run.assert_not_called()
+
     def test_flux_low_headroom_refuses_before_apply(self):
         spec = importlib.util.spec_from_file_location('flux_admission_test', ROOT / 'scripts/talos-proof-operations-flux.py')
         flux = importlib.util.module_from_spec(spec); spec.loader.exec_module(flux)
@@ -252,6 +333,53 @@ class Operations(unittest.TestCase):
             events = ops.alerts(sample, 512 * 1024**2, True)
             ops.deliver(events, out)
             self.assertEqual(json.loads(out.read_text())['received'], events)
+
+    def history_fixture(self, state, name, age_days):
+        parent = state / 'operations'; parent.mkdir(mode=0o700, exist_ok=True)
+        out = parent / name; out.mkdir(mode=0o700)
+        stamp = ops.datetime.datetime.fromtimestamp(time.time() - age_days * 86400, ops.datetime.timezone.utc)
+        for filename, value in [('measurements.json', {'time': stamp.isoformat(), 'memory': {'availableBytes': 123}}),
+                                ('alert-receipts.json', {'transport': 'HTTP loopback only', 'received': []})]:
+            path = out / filename; path.write_text(json.dumps(value)); path.chmod(0o600)
+        ops.mark_monitor_history(out)
+        return out
+
+    def test_local_monitor_retention_dry_run_hash_reload_and_apply(self):
+        with tempfile.TemporaryDirectory(dir=Path(tempfile.gettempdir()).resolve()) as d, patch.object(ops, 'STATE', Path(d)):
+            state = Path(d)
+            old = self.history_fixture(state, 'synthetic-old', 40)
+            fresh = self.history_fixture(state, 'synthetic-fresh', 1)
+            archive = state / 'operations/recovery-snapshot-unmarked'; archive.mkdir(mode=0o700)
+            protected = archive / 'etcd.snapshot'; protected.write_bytes(b'never read or prune'); protected.chmod(0o600)
+            before = hashlib.sha256((fresh / 'measurements.json').read_bytes()).hexdigest()
+            with patch.object(ops, 'gate', side_effect=AssertionError('no cluster lease/API needed')):
+                dry = ops.monitor_history()
+                self.assertEqual((dry['validated'], dry['eligible'], dry['pruned']), (2, 1, 0))
+                self.assertIn(before, dry['observation_sha256'])
+                self.assertTrue(old.exists())
+                applied = ops.monitor_history(apply=True)
+            self.assertEqual((applied['pruned'], applied['retained']), (1, 1))
+            self.assertFalse(old.exists()); self.assertTrue(fresh.exists())
+            self.assertEqual(protected.read_bytes(), b'never read or prune')
+            for path in fresh.iterdir(): self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            with self.assertRaises(RuntimeError): ops.monitor_history(retain_days=0, apply=True)
+
+    def test_monitor_retention_rejects_foreign_symlink_hash_and_permissions_before_prune(self):
+        for mutant in ('foreign', 'symlink', 'hash', 'permissions', 'marker'):
+            with self.subTest(mutant=mutant), tempfile.TemporaryDirectory(dir=Path(tempfile.gettempdir()).resolve()) as d, \
+                    patch.object(ops, 'STATE', Path(d)):
+                old = self.history_fixture(Path(d), 'a-old', 40)
+                bad = self.history_fixture(Path(d), 'z-bad', 40)
+                if mutant == 'foreign': (bad / 'fixture.tar').write_bytes(b'archive must block deletion')
+                if mutant == 'symlink':
+                    (bad / 'measurements.json').unlink()
+                    (bad / 'measurements.json').symlink_to(old / 'measurements.json')
+                if mutant == 'hash': (bad / 'measurements.json').write_text('{}')
+                if mutant == 'permissions': (bad / 'measurements.json').chmod(0o644)
+                if mutant == 'marker': (bad / ops.MONITOR_MARKER).write_text('{"kind":"foreign"}')
+                with self.assertRaises(RuntimeError): ops.monitor_history(apply=True)
+                self.assertTrue(old.exists(), 'must validate all candidates before any deletion')
+                self.assertTrue(bad.exists())
 
     def test_missing_memory_not_silently_green(self):
         with self.assertRaises(RuntimeError):

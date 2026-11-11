@@ -223,6 +223,80 @@ def monitor(node, out, args):
     (out / 'measurements.json').write_text(json.dumps(sample, indent=2) + '\n')
     events = alerts(sample, args.minimum_available_mib * 1024**2, args.test_alert)
     deliver(events, out / 'alert-receipts.json')
+    mark_monitor_history(out)
+
+
+MONITOR_FILES = ('measurements.json', 'alert-receipts.json')
+MONITOR_MARKER = 'monitor-history.json'
+
+
+def mark_monitor_history(out):
+    """New monitor runs opt in; never retroactively enroll recovery/snapshot directories."""
+    if {p.name for p in out.iterdir()} != set(MONITOR_FILES):
+        raise RuntimeError('monitor history directory must contain only monitor observations')
+    hashes = {name: hashlib.sha256(private_file(out / name).read_bytes()).hexdigest()
+              for name in MONITOR_FILES}
+    fd = os.open(no_symlinks(out / MONITOR_MARKER), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, 'w') as stream:
+        json.dump({'kind': 'monitor-history-v1', 'sha256': hashes}, stream)
+        stream.write('\n')
+
+
+def monitor_history(retain_days=30, apply=False, now=None):
+    """Local-only, explicit bounded retention; no lease/API or archive traversal."""
+    if not isinstance(retain_days, int) or retain_days < 1:
+        raise RuntimeError('retention must be at least one whole day')
+    now = time.time() if now is None else now
+    parent = no_symlinks(STATE / 'operations')
+    if (not parent.is_dir() or parent.stat().st_mode & 0o777 != 0o700
+            or parent.stat().st_uid != os.getuid()):
+        raise RuntimeError('private operations history directory required')
+    checked = []
+    # Validate the entire plan before deleting anything. Unmarked archives remain untouched.
+    for candidate in sorted(parent.iterdir()):
+        no_symlinks(candidate)
+        if not candidate.is_dir():
+            continue
+        marker_path = no_symlinks(candidate / MONITOR_MARKER)
+        if not marker_path.exists():
+            continue
+        if {p.name for p in candidate.iterdir()} != {*MONITOR_FILES, MONITOR_MARKER}:
+            raise RuntimeError('foreign file in marked monitor history; refusing retention')
+        marker = json.loads(private_file(candidate / MONITOR_MARKER).read_text())
+        if (set(marker) != {'kind', 'sha256'} or marker['kind'] != 'monitor-history-v1'
+                or set(marker['sha256']) != set(MONITOR_FILES)):
+            raise RuntimeError('invalid monitor history marker')
+        saved = {}
+        for name in MONITOR_FILES:
+            raw = private_file(candidate / name).read_bytes()
+            if hashlib.sha256(raw).hexdigest() != marker['sha256'][name]:
+                raise RuntimeError('monitor history hash mismatch')
+            saved[name] = json.loads(raw)
+        observation = saved['measurements.json']
+        stamp = datetime.datetime.fromisoformat(observation['time'])
+        if stamp.tzinfo is None or stamp.timestamp() > now:
+            raise RuntimeError('invalid monitor observation time')
+        if not isinstance(observation.get('memory'), dict) or not isinstance(saved['alert-receipts.json'], dict):
+            raise RuntimeError('invalid saved monitor observation')
+        checked.append((candidate, stamp.timestamp() < now - retain_days * 86400, marker))
+    for candidate, old, marker in checked:
+        if apply and old:
+            # Recheck ownership/content immediately before pruning this exact marked directory.
+            if {p.name for p in candidate.iterdir()} != {*MONITOR_FILES, MONITOR_MARKER}:
+                raise RuntimeError('monitor history changed before prune')
+            if json.loads(private_file(candidate / MONITOR_MARKER).read_text()) != marker:
+                raise RuntimeError('monitor history marker changed before prune')
+            for name in MONITOR_FILES:
+                if hashlib.sha256(private_file(candidate / name).read_bytes()).hexdigest() != marker['sha256'][name]:
+                    raise RuntimeError('monitor history changed before prune')
+            for name in (*MONITOR_FILES, MONITOR_MARKER):
+                private_file(candidate / name).unlink()
+            candidate.rmdir()
+    return {'mode': 'apply' if apply else 'dry-run', 'retain_days': retain_days,
+            'validated': len(checked), 'retained': sum(not old for _, old, _ in checked),
+            'eligible': sum(old for _, old, _ in checked),
+            'pruned': sum(old for _, old, _ in checked) if apply else 0,
+            'observation_sha256': [marker['sha256']['measurements.json'] for _, _, marker in checked]}
 
 
 def recovery(out):
@@ -316,10 +390,17 @@ def snapshot(out, args=None):
 def main():
     os.umask(0o077)
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('action', choices=['monitor', 'recovery', 'snapshot'])
+    p.add_argument('action', choices=['monitor', 'monitor-history', 'recovery', 'snapshot'])
     p.add_argument('--test-alert', action='store_true')
     p.add_argument('--minimum-available-mib', type=int, default=512)
+    p.add_argument('--retain-days', type=int, default=30, help='monitor-history only, minimum 1')
+    p.add_argument('--apply', action='store_true', help='explicitly prune eligible marked monitor history')
     args = p.parse_args()
+    if args.action == 'monitor-history':
+        print(json.dumps(monitor_history(args.retain_days, args.apply), indent=2))
+        return
+    if args.apply or args.retain_days != 30:
+        p.error('--apply/--retain-days require monitor-history')
     node = gate()
     out = private_dir()
     if args.action == 'monitor':
