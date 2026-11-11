@@ -14,6 +14,8 @@ import yaml
 def check(documents):
     errors = []
     workloads = 0
+    workload_namespaces = set()
+    denied_namespaces = set()
 
     def require(condition, name, message):
         if not condition:
@@ -44,10 +46,15 @@ def check(documents):
             for host in spec.get("hostnames", []):
                 require(host.endswith(".test") or host.endswith(".invalid"), name, "use reserved test hostnames, not production DNS")
         if kind == "NetworkPolicy":
+            if (spec.get("podSelector") == {} and set(spec.get("policyTypes", [])) == {"Ingress", "Egress"}
+                    and not spec.get("ingress") and not spec.get("egress")):
+                denied_namespaces.add(meta.get("namespace"))
             for rule in spec.get("egress", []):
                 require(bool(rule.get("to")), name, "unrestricted egress forbidden")
                 for peer in rule.get("to", []):
                     require(bool(peer), name, "empty egress peer permits all traffic")
+                    if "namespaceSelector" in peer:
+                        require(bool(peer["namespaceSelector"]), name, "empty namespace selector permits cross-tenant egress")
                     block = peer.get("ipBlock")
                     if block:
                         try:
@@ -68,6 +75,7 @@ def check(documents):
         if template is None:
             continue
         workloads += 1
+        workload_namespaces.add(meta.get("namespace"))
         require(template.get("automountServiceAccountToken") is False, name, "disable unnecessary API credentials")
         for flag in ("hostNetwork", "hostPID", "hostIPC"):
             require(not template.get(flag), name, f"{flag} forbidden")
@@ -90,6 +98,8 @@ def check(documents):
                 require(bool(container.get("readinessProbe")), cname, "readiness probe required")
                 require(bool(container.get("livenessProbe")), cname, "liveness probe required")
     require(workloads > 0, "render", "no application workloads found")
+    for namespace in sorted(workload_namespaces - denied_namespaces):
+        require(False, str(namespace), "missing namespace-wide ingress+egress default-deny policy")
     return errors
 
 

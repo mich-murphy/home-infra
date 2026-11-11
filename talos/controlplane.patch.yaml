@@ -19,7 +19,8 @@ nodeIP:
   validSubnets:
     - 172.31.250.0/24
 taints:
-  node-role.kubernetes.io/control-plane: null
+  node-role.kubernetes.io/control-plane:
+    $patch: delete
 ---
 apiVersion: v1alpha1
 kind: ResolverConfig
@@ -41,3 +42,8 @@ provisioning:
   maxSize: 64GiB
 filesystem:
   type: xfs
+---
+apiVersion: v1alpha1
+kind: HostnameConfig
+hostname: talos-proof
+auto: off

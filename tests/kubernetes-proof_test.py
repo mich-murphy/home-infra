@@ -28,8 +28,18 @@ class ProofSafetyTests(unittest.TestCase):
             }}},
         }
 
+    def check(self, *documents):
+        deny = {
+            "kind": "NetworkPolicy", "metadata": {"name": "deny", "namespace": "proof-fixture"},
+            "spec": {"podSelector": {}, "policyTypes": ["Ingress", "Egress"]},
+        }
+        return proof.check([deny, *documents])
+
     def test_safe_fixture(self):
-        self.assertEqual([], proof.check([self.document]))
+        self.assertEqual([], self.check(self.document))
+
+    def test_missing_default_deny_is_rejected(self):
+        self.assertIn("default-deny", "\n".join(proof.check([self.document])))
 
     def test_unsafe_workload_mutations(self):
         changes = [
@@ -46,7 +56,7 @@ class ProofSafetyTests(unittest.TestCase):
             with self.subTest(expected=expected):
                 doc = copy.deepcopy(self.document)
                 mutate(doc)
-                self.assertIn(expected, "\n".join(proof.check([doc])))
+                self.assertIn(expected, "\n".join(self.check(doc)))
 
     def test_dangerous_resources(self):
         cases = [
@@ -61,7 +71,7 @@ class ProofSafetyTests(unittest.TestCase):
         for resource, expected in cases:
             with self.subTest(expected=expected):
                 resource["metadata"] = {"name": "unsafe", "namespace": "proof-fixture"}
-                self.assertIn(expected, "\n".join(proof.check([self.document, resource])))
+                self.assertIn(expected, "\n".join(self.check(self.document, resource)))
 
     def test_empty_input_is_not_success(self):
         self.assertTrue(proof.check([]))

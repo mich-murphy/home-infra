@@ -1,167 +1,158 @@
-# Talos proof platform — live Talos, Kubernetes API blocked
+# Talos proof platform
 
-## Current checkpoint
+## Verified checkpoint — 2026-11-11
 
-VM120 is RUNNING: 2560MiB fixed,2vCPU,32GiBOS+64GiBdata. Authenticated
-Talos1.14.5/RBAC and etcd/kubelet/cri are healthy. UserVolume `u-proof` is
-ready on `/dev/sdb1`, XFS mounted `/var/mnt/proof`. Kubernetes bootstrap completed,
-but **kube-apiserver:v1.36.6 exits139 (segfault), empty application logs**.
-Scheduler/controller errors are downstream APIEOF. No node registers yet; no CNI,
-apps, Gateway, complete isolation test or Taloshealth success can be claimed.
-No existing guest, host tuning, production DNS/router/NFS/GPU was changed.
+VM120 is a new, isolated proof guest. Authenticated Talos1.14.5, etcd, kubelet and
+container runtime are running. Kubernetes **1.36.5** `/readyz` passed; the single
+node `talos-proof` became **Ready** after Cilium installation. Its recorded node UID
+is `4845bfd5-3bdb-453d-8503-83b43edb7a1e`, InternalIP `172.31.250.10`.
+The dedicated64-GiB `/dev/sdb1` XFS volume is mounted at `/var/mnt/proof`.
+These facts are not proof of application or production readiness.
 
-Host initial swap24KiB is recorded baseline. VM creation was initially blocked by
-strict zero-swap guard; parent explicitly approved baseline-relative monitoring.
-Two early stops were guard false positives from decaying PSIavg10 after brief boot
-bursts; ONLY VM120 stopped. Corrected guard uses actual PSI total deltas: full>=1%
-or some>=5% sustained30seconds, ongoing swapIO3samples, swapdelta>64MiB or immediate
-MemAvailable<1536MiB. It runs privately on Proxmox. Latest stabilized samples:
-host~3.4–3.6GiB available, swap24KiB unchanged, PSI actualdelta0%, no swapIO.
-Guest1816MiB available/2384MiB total at APIsegfault, no dmesgOOM: RAM bump not justified.
+Parent read-only measurements after CNI/local-path startup: guest total2384MiB,
+used1343MiB, available813MiB; Proxmox available2476MiB, QEMU RSS2506MiB,
+unchanged24KiB swap, sampled actual memory PSI0%. Initial allocation is2560MiB.
+A possible3072MiB proof-only increase requires fresh admission and retained host
+margin; no other guest/host cache tuning is authorized.
 
-## Pinned compatibility
+**Outstanding safety gate:** independent review found lifecycle guard failure
+could leave the VM unmonitored. A supervised fail-closed replacement is being
+implemented under `infrastructure/proxmox-proof/`. Application leases remain
+blocked until this and platform target-identity gates are verified. Refer to the
+[delivery record](talos-proof-delivery.md), not an old checkpoint's status.
 
-- Talos/talosctl **v1.14.5**, GitHub latest stable release verified during discovery.
-- Kubernetes **v1.36.6**, upstream `stable-1.36.txt`; Talos1.14 supports1.33–1.37.
-- Cilium **v1.20.4** recommended to the networking owner: official tested Kubernetes
-  matrix1.33–1.36. Talos default1.37.1 deliberately NOT used.
-- Cilium/storage installation is another worker's scope. No CNI is installed here.
-- Modern config deletes `KubeFlannelCNIConfig`, disables `KubeProxyConfig`, clears the
-  control-plane scheduling taint, selects only proof nodeIP, uses public DNS, and
-  disables discovery. KubePrism default7445 supports Cilium localhost:7445.
+## Versions and experiments
 
-Sources fetched after web search (Google search itself returned an interstitial):
-- https://github.com/siderolabs/talos/releases/tag/v1.14.5
-- https://docs.siderolabs.com/talos/v1.14/platform-specific-installations/virtualized-platforms/proxmox.md
-- https://docs.siderolabs.com/talos/v1.14/getting-started/support-matrix.md
-- https://docs.siderolabs.com/kubernetes-guides/cni/deploying-cilium.md
-- https://docs.cilium.io/en/stable/network/kubernetes/compatibility/
-- https://dl.k8s.io/release/stable-1.36.txt
+- Talos/talosctl **1.14.5**; Kubernetes **1.36.5**; Cilium **1.20.4** and Gateway API
+  **1.6.1**. Talos defaults to1.37, outside the selected Cilium tested matrix; an
+  explicit Kubernetes pin is required.
+- Installer:
+  `factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.14.5`.
+  The initially attempted obsolete `ghcr.io/siderolabs/installer` tag returned404.
+- Initial Kubernetes1.36.6 apiserver repeatedly exited139 with empty logs. Guest
+  memory was ample and there was no OOM evidence. Changing VM CPU from host to
+  `x86-64-v2-AES` alone did not fix it. Using1.36.5 plus an explicit proof-kubelet
+  restart produced a working API; all components were then aligned to1.36.5.
+  Both image binaries could run `--version`. This is a useful A/B result, **not a
+  proven upstream1.36.6 defect**; static-pod reconciliation was also involved.
+- Generated hostname defaults initially registered `talos-ate-q71`. Explicit
+  `HostnameConfig hostname: talos-proof, auto: off` corrected the identity. After
+  verifying both UIDs and absence of app volumes, parent removed only the obsolete
+  proof-node registration. Stale mirror Pods were not evidence of duplicate live
+  control-plane processes.
+- Talos1.14 taint removal requires `$patch: delete`, **not null**. The source patch
+  now removes the control-plane NoSchedule taint declaratively; live application
+  of this patch succeeded without a reboot and local-path then scheduled.
 
-## Reproducible private tools and offline validation
+Sources:
+- <https://github.com/siderolabs/talos/releases/tag/v1.14.5>
+- <https://docs.siderolabs.com/talos/v1.14/platform-specific-installations/virtualized-platforms/proxmox>
+- <https://docs.siderolabs.com/talos/v1.14/getting-started/support-matrix>
+- <https://docs.siderolabs.com/talos/v1.14/deploy-and-manage-workloads/workloads-on-controlplane>
+- <https://docs.siderolabs.com/kubernetes-guides/cni/deploying-cilium>
+- <https://docs.cilium.io/en/v1.20/network/kubernetes/compatibility/>
 
-From repository root:
+## Dedicated resources and isolation
 
-```sh
-infrastructure/proxmox-proof/bootstrap-tools.sh  # darwin-arm64 or linux-amd64
-infrastructure/proxmox-proof/validate.sh
-```
+VM120, SMBIOS UUID `555e8603-58e6-4fb6-a190-378a3f11c257`:2vCPU, fixed2560MiB,
+32-GiB OS and64-GiB data disks on local-zfs, q35/OVMF, VirtIO SCSI, no GPU or bridged
+NIC. VM101/102 resources are unchanged; VM111 remains stopped. There are no
+production VLAN/DNS/NFS/router modifications. VM120 is not managed by production
+Terraform or the historical Kubernetes cutover switch.
 
-Both use `STATE`, default `$HOME/.local/state/home-infra/talos-proof`. Tool installer
-checks the downloaded binary against official release SHA256 manifest before install.
-Directories0700, generated identity/config/secrets0600; never commit generated config.
-Downloaded binary0700. Do not use Nix talosctl1.13 against1.14 config.
-`validate.sh` can run in CI, generates a fresh private identity if absent, and invokes:
+QEMU slirp uses172.31.250.0/24, private DHCP node `.10`, gateway `.2`, IPv6 disabled.
+No host bridge, LAN IP, DHCP reservation or global forwarding setting is needed.
+The QEMU-cgroup OUTPUT filter blocks new private/CGNAT/loopback/link-local/reserved
+connections, permits required public HTTP(S), DNS and time traffic, and permits
+established replies to loopback host forwards. Filter refresh installs a temporary
+scope DROP before replacing rules and rebinds the recreated cgroup. Serialized
+refresh, lifecycle failure tests and attributed counters remain acceptance gates.
 
-```sh
-"$STATE/bin/talosctl" validate --config "$STATE/config/controlplane.yaml" --mode metal --strict
-```
+This is **proof-only networking, not native production network parity**. `onboot=0`
+and QEMU `-S` keep cold starts administratively paused until the guarded wrapper
+resumes them. Direct `qm resume 120` bypasses that administrative boundary; do not
+claim protection against an administrator deliberately bypassing the wrapper.
+Host reboot is not tested because rebooting Proxmox would disrupt production.
+A proof-VM cold restart and guard-failure injection can be tested independently.
 
-Offline strict validation succeeded. It does NOT prove bootability or isolation.
-`generate.sh` refuses to overwrite existing identity. Static patch changes require
-regeneration in a fresh private STATE rather than overwriting an active cluster identity.
+Early `network-test.txt` demonstrates public HTTPS200 and failures contacting
+private targets. Its `ISOLATION-PASS` line is an **unaccepted historical assertion**:
+timeouts lack per-test counter attribution, IPv6 `::1` is guest-local, and the
+slirp DNS proxy was not covered. Cumulative reject counters support filtering but
+do not complete those gates. Stronger controlled/correlated experiments are required.
 
-## Proposed resources / additive networking (UNVERIFIED)
+## Private tools, configuration and API access
 
-VMID120 was absent cluster-wide. Dedicated VM:2vCPU host type, **2560MiB** fixed/no
-balloon (reduced from approved3072 due falling host headroom),32GiB OS +64GiB dedicated
-data local-zfs. q35/OVMF, no Secure Boot keys, VirtIO SCSI PCI (not Single), no GPU,
-no guest agent. Below recommended4GiB control-plane RAM, above2GiB minimum. Resource
-limits constrain subsequent applications; do not promise full35-container concurrency.
-
-QEMU slirp user-mode network172.31.250.0/24; private DHCP node172.31.250.10,
-gateway172.31.250.2; IPv6 disabled. It has no host bridge, LAN address or host route,
-so no DHCP boundary/LAN address is consumed. Host `ip_forward` remains0. This is
-**proof overlay only, not production networking parity**. No unverified native bridge
-example is supplied as production-ready.
-
-Proposed host forwards bind loopback only:
-- Proxmox127.0.0.1:50120 -> guest50000 Talos
-- Proxmox127.0.0.1:64120 -> guest6443 Kubernetes
-
-`isolation.sh` scopes OUTPUT to `/sys/fs/cgroup/qemu.slice/120.scope`; allows established
-replies, public HTTP(S), DNS and NTP only; rejects RFC1918, CGNAT, loopback, link-local,
-multicast/reserved targets and all new IPv6. Refresh puts a cgroup DROP before rebuilding,
-then removes it after the completed chain is linked. It rebinds the jump for each new
-scope identity. Failures leave a DROP or paused VM, not a deliberately open chain.
-This design still needs experimental validation, especially slirp's host gateway/DNS
-proxying, socket cgroup attribution and hostfwd reply conntrack.
-
-## Creation and startup
-
-`create.sh` runs ONLY on Proxmox, requires explicit `APPROVE_TALOS_PROOF=120`, absence
-of VM120 config, at least4450MiB MemAvailable and records existing swap baseline. Revalidate VMID
-cluster-wide, no port collision, ISO checksum and resource budget before invocation.
-It is intentionally not an old Terraform apply.
-
-QEMU args include `-S` (CPUs paused). `onboot=0` prevents host reboot auto-start.
-Copy `start.sh` and `isolation.sh` alongside `create.sh` in
-`/root/.local/state/home-infra/talos-proof/`, then run `start.sh`. It starts paused,
-installs isolation, then resumes. **Never directly resume VM120 before isolation.**
-A direct `qm start120` remains paused because of `-S`; direct `qm resume120` bypasses
-this administrative safety boundary. No hook is installed. Full host reboot requires
-manual wrapper startup; guest reboot retains the same scope/rules. Both paths need live
-verification; persistence is design, not yet demonstrated.
-
-## Expected access / bootstrap after approval and network tests
-
-Tunnel is active (SSH control socket `$STATE/ssh-control`). Exact tunnel (foreground or supervised separately):
+Default private state: `$HOME/.local/state/home-infra/talos-proof`.
+Tools are checksum-verified; generated configuration/keys remain outside Git,
+directories0700 and files0600. Use the matching Talos client, not an older Nix one.
 
 ```sh
-ssh -N -o ExitOnForwardFailure=yes -L 127.0.0.1:50120:127.0.0.1:50120 \
-  -L 127.0.0.1:64120:127.0.0.1:64120 root@proxmox
+export STATE="$HOME/.local/state/home-infra/talos-proof"
+export TALOSCONFIG="$STATE/config/talosconfig"
+export KUBECONFIG="$STATE/config/kubeconfig"
+"$STATE/bin/talosctl" version
+kubectl --request-timeout=15s get --raw /readyz
+kubectl get nodes -o wide
 ```
 
-Private tool: `/Users/mm/.local/state/home-infra/talos-proof/bin/talosctl`.
-Private machine config: `/Users/mm/.local/state/home-infra/talos-proof/config/controlplane.yaml`.
-Private Talos identity: `/Users/mm/.local/state/home-infra/talos-proof/config/talosconfig`.
-Private kubeconfig (exists, API currently unhealthy): `$STATE/config/kubeconfig`, endpoint
-`https://127.0.0.1:64120`; cluster internal endpoint172.31.250.10:6443.
+Talos endpoint `127.0.0.1:50120`, node `172.31.250.10`; Kubernetes server
+`https://127.0.0.1:64120`. An explicit dedicated kubeconfig plus recorded node UID
+must be checked before mutations; context-name agreement alone is insufficient.
+Never dump the full credential-bearing kubeconfig or machine configuration.
 
-After transport tests, apply config via insecure maintenance endpoint127.0.0.1:50120,
-then configure authenticated Talos endpoint127.0.0.1:50120 and node127.0.0.1 (direct
-endpoint; not routed guest IP). Bootstrap etcd once, retrieve kubeconfig explicitly
-outside default ~/.kube, and rewrite only that file's API server to tunnel endpoint.
-Follow exact talosctl `--help` port syntax rather than assuming node forwarding semantics.
-Install Cilium promptly after API available; pre-CNI NotReady is expected, not health.
+The existing SSH control socket is `$STATE/ssh-control`. Check it before creating
+another tunnel. Equivalent foreground management/Gateway forwards are:
 
-## Required live acceptance still outstanding
+```sh
+ssh -N -o ExitOnForwardFailure=yes \
+  -L 127.0.0.1:50120:127.0.0.1:50120 \
+  -L 127.0.0.1:64120:127.0.0.1:64120 \
+  -L 127.0.0.1:18080:127.0.0.1:18080 \
+  -L 127.0.0.1:18443:127.0.0.1:18443 root@proxmox
+```
 
-1. Snapshot existing VM config hashes/status and read-only production reachability.
-2. Verify paused QEMU start, cgroup matching counters, public DNS/HTTPS/NTP, hostfwd replies.
-3. From guest AND pod, reject gateway proxy172.31.250.2 to host SSH/8006/loopback,
-   RFC1918 production destinations, CGNAT/Tailscale, IPv6 and slirp DNS bypass.
-4. Verify existing guest traffic unaffected, and guest reboot/full VM restart fail-closed.
-5. Monitor MemAvailable >=1536MiB, swap delta0 and memory PSI; stop ONLY proof VM on breach.
-6. Talos authenticated version/disks/services, `talosctl health`, API `/readyz?verbose`,
-   node Ready after Cilium, no kube-proxy/flannel, and resource evidence.
-7. Hand exact working kubeconfig/tunnel to parent/network worker. Not done yet.
+Cilium assigned Gateway NodePorts **30659/30310**. Parent remapped proof-only QEMU
+HTTP18080→30659 and HTTPS18443→30310 through QMP, then persisted only VM120's args,
+without reboot. Management forwards were unchanged. A recreated Gateway can choose
+other NodePorts: discover and update the mapping, never assume these numbers.
+Public proof CA is `$STATE/config/proof-gateway-ca.crt`; private keys are not evidence.
 
-## Updated operational details / cleanup
+## Fresh creation and validation
 
-Factory installer is mandatory: `factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.14.5`.
-The initially tried ghcr.io installer tag404 was corrected before installation.
-QEMU VGA is now `std` for troubleshooting (serial-only obscured installation errors).
-Gateway loopback18080->30080 and18443->30443 are configured; platform owner must
-coordinate actual dynamic service NodePorts. No Gateway traffic is proven.
+`create.sh` requires explicit approval, unused VM120 and sufficient measured host
+headroom. Verify cluster-wide VMID uniqueness, port availability, ISO checksum and
+only dedicated disks before creating. Use the guarded lifecycle wrapper; do not
+run a production Terraform apply or modify any existing guest.
 
-Authenticated Talos node is172.31.250.10, not a localhost-with-port node target:
-`talosctl --talosconfig "$STATE/config/talosconfig" --nodes172.31.250.10 version`
-(with a space after `--nodes`). Endpoint127.0.0.1:50120 is stored in talosconfig.
-`start.sh` starts the guard automatically; Python flock prevents duplicate guards.
-Copy all four `start.sh`, `isolation.sh`, `resource-guard.py`, `create.sh` to the same
-private Proxmox state directory. `-S` plus onboot0 fail closed on host restart.
-No existing guest uses this cgroup or these firewall chains.
+For static validation, generate into a **fresh** temporary private STATE; never
+regenerate an active cluster identity merely to validate changes:
 
-Cleanup after explicit approval:
-1. Verify `qm config120` identifies `name:talos-proof` (use spaces in actual commands).
-2. `qm stop 120` ONLY; stop private guard by its recorded PID after checking command.
-3. Remove OUTPUT jumps targeting `TALOS_PROOF_120` from iptables/ip6tables by numeric
-   line number descending (scope no longer exists, so cgroup path matching cannot
-   safely be used to delete a stale binding). Flush/delete ONLY `TALOS_PROOF_120` chains.
-4. `qm destroy120 --purge1 --destroy-unreferenced-disks1` (proper CLI spaces) ONLY after
-   confirming dedicated VM identity and accepting destruction of proof data.
-5. `ssh -S "$STATE/ssh-control" -O exit root@proxmox`; optionally delete ONLY proof ISO
-   `/var/lib/vz/template/iso/talos-proof-v1.14.5-amd64.iso` and private proof state.
-Never remove shared storage, old VMs, host bridges, production firewall rules or secrets
-belonging to another environment. No automatic destructive cleanup is provided.
+```sh
+export STATE
+STATE=$(mktemp -d)
+trap 'rm -rf "$STATE"' EXIT
+bash infrastructure/proxmox-proof/bootstrap-tools.sh
+bash talos/generate.sh
+bash infrastructure/proxmox-proof/validate.sh
+```
+
+`talos/bootstrap.sh` is a first-bootstrap-only helper and refuses an existing
+kubeconfig. Apply machine configuration to the new VM's maintenance endpoint,
+wait for authenticated API, bootstrap etcd once, retrieve private kubeconfig and
+use the tunnel URL. Static validation does not prove bootability; evidence above
+records failures it could not detect.
+
+## Remaining acceptance and teardown boundary
+
+Before accepting platform proof: verify scoped host counter deltas/DNS/IPv6,
+Cilium policy drop verdicts, actual NodePort trusted TLS, storage device identity,
+clean restart with a new cgroup, supervised guard failure behavior, Talos health,
+off-node etcd snapshot **and tested recovery**, and source no-touch comparison.
+See [architecture](talos-proof-architecture.md) and [operations](talos-proof-operations.md).
+
+No automatic destructive teardown is provided. Stop only the verified proof VM
+through its lifecycle tooling. Deleting it requires rechecking VM120 UUID/disks and
+accepting loss of proof data. Remove only its scoped firewall jumps/chains, private
+unit/state/tunnel and dedicated ISO when explicitly retiring the proof. Never
+flush a shared firewall table, remove shared storage, or touch source guests.

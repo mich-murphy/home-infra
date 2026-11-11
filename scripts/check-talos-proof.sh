@@ -6,6 +6,10 @@ for tool in kubectl python3 kubeconform shellcheck; do
   command -v "$tool" >/dev/null || { echo "Missing tool: $tool" >&2; exit 1; }
 done
 python3 tests/kubernetes-proof_test.py
+python3 kubernetes/bootstrap/test_safety.py
+for suite in tests/talos-proof-*_test.py; do
+  python3 "$suite"
+done
 render=$(mktemp -d)
 trap 'rm -rf "$render"' EXIT
 python3 tests/kubernetes-proof-schemas.py "$render/schemas"
@@ -18,9 +22,11 @@ for group in media data; do
     -schema-location default -schema-location "$schema" "$render/$group.yaml"
 done
 kubectl kustomize kubernetes/apps > "$render/all-apps.yaml"
-kubectl kustomize kubernetes/platform > "$render/platform.yaml"
-kubeconform -strict -summary -kubernetes-version 1.36.0 \
-  -schema-location default -schema-location "$schema" "$render/platform.yaml"
+for root in kubernetes/platform kubernetes/platform/validation kubernetes/operations/recovery; do
+  kubectl kustomize "$root" > "$render/infra.yaml"
+  kubeconform -strict -summary -kubernetes-version 1.36.0 \
+    -schema-location default -schema-location "$schema" "$render/infra.yaml"
+done
 # Shell scripts may be named *.sh or extensionless executable; explicitly
 # owned shell paths are collected without looking in private generated state.
 while IFS= read -r script; do
