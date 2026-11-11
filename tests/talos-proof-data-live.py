@@ -23,6 +23,8 @@ import uuid
 import zlib
 import io
 import math
+import re
+import xml.etree.ElementTree as ET
 import zipfile
 
 GROUP = STATE = NS = None
@@ -286,7 +288,89 @@ def postgres_restore(app_user):
     RESULT['backup_sha256'] = hashlib.sha256(dump).hexdigest()
 
 
+def wopi_browser():
+    module = os.environ.get('TALOS_PROOF_PLAYWRIGHT_MODULE')
+    if not module:
+        raise RuntimeError('private pinned playwright-core module required')
+    with forwarded('collabora',9980) as base:
+        discovery = ET.fromstring(http(base,'/hosting/discovery',raw=True))
+    actions = [a for a in discovery.iter('action') if a.get('name')=='edit' and a.get('ext')=='txt']
+    check('real CODE discovery offers editable txt action',bool(actions))
+    action = actions[0].attrib['urlsrc']
+    # WOPI discovery uses optional <key=value&> substitution templates. Only
+    # remove optional templates; never invent an editor URL or change its origin.
+    action = re.sub(r'<[^<>]*>', '', action)
+    check('discovered CODE editor retains exact public HTTPS origin',urllib.parse.urlsplit(action).scheme=='https' and urllib.parse.urlsplit(action).netloc=='collabora.proof.invalid')
+    pem = subprocess.run(['openssl','x509','-in',CA,'-pubkey','-noout'],capture_output=True,check=True).stdout
+    der = subprocess.run(['openssl','pkey','-pubin','-outform','DER'],input=pem,capture_output=True,check=True).stdout
+    marker = 'WOPI-SAVED-' + uuid.uuid4().hex
+    payload = {'state':str(STATEPATH),'module':module,'spki':base64.b64encode(hashlib.sha256(der).digest()).decode(),
+        'port':int(os.environ.get('TALOS_PROOF_GATEWAY_PORT','18443')),'action':action,
+        'source':'http://wopi-fixture.proof-nextcloud.svc.cluster.local:8082/wopi/files/proof',
+        'token':CREDS['NEXTCLOUD_ADMIN_PASSWORD'],'marker':marker}
+    proc = subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-wopi.mjs'))],
+        input=json.dumps(payload).encode(),capture_output=True,timeout=240)
+    browser = json.loads(proc.stdout)
+    RESULT['wopi_browser'] = browser
+    check('real CODE browser editor accepted input/save dispatch',proc.returncode==0)
+    deadline = time.monotonic()+90
+    while True:
+        evidence = json.loads(execute('wopi-fixture',['python','-c',
+            "import os,urllib.request,json,hashlib; from pathlib import Path; "
+            "p=Path('/data/proof.txt').read_bytes(); "
+            "r=json.load(urllib.request.urlopen('http://127.0.0.1:8082/proof/evidence?access_token='+os.environ['NEXTCLOUD_ADMIN_PASSWORD'])); "
+            "r['marker_present']="+repr(marker)+".encode() in p; print(json.dumps(r))"]))
+        if evidence['marker_present'] and 'PutFile' in evidence['events']:
+            break
+        if time.monotonic()>=deadline:
+            check('real WOPI callback must save browser-entered marker',False)
+        time.sleep(1)
+    check('real CODE CheckFileInfo/GetFile/LOCK/PutFile callbacks save browser marker',
+        all(event in evidence['events'] for event in ('CheckFileInfo','GetFile','LOCK','PutFile')))
+    RESULT['wopi_saved_document'] = evidence
+    RESULT['limitations'].append('Faithful single-file WOPI fixture + real CODE/browser edit/save ONLY, not Nextcloud/richdocuments integration, account authorization, multieditor, ODF formatting or production capacity.')
+
+
+def nextcloud_ocs(base,path,auth,method='GET',fields=None):
+    payload = urllib.parse.urlencode(fields).encode() if fields is not None else None
+    response = http(base,'/ocs/v2.php/'+path+('\u0026' if '?' in path else '?')+'format=json',method,payload,auth,
+        {'OCS-APIRequest':'true','Content-Type':'application/x-www-form-urlencoded'})['ocs']
+    check('Nextcloud OCS '+method+' request accepted',response['meta']['statuscode'] in (100,200))
+    return response['data']
+
+
+def nextcloud_share(base,path,data,auth,users=None):
+    if users is None:
+        users = ['reader'+uuid.uuid4().hex[:12], 'outsider'+uuid.uuid4().hex[:12]]
+        for user in users:
+            password = hashlib.sha256((CREDS['NEXTCLOUD_ADMIN_PASSWORD']+user).encode()).hexdigest()
+            nextcloud_ocs(base,'cloud/users',auth,'POST',{'userid':user,'password':password})
+        nextcloud_ocs(base,'apps/files_sharing/api/v1/shares',auth,'POST',
+            {'path':'/'+path.rsplit('/',1)[1],'shareType':0,'shareWith':users[0],'permissions':1})
+    for index,user in enumerate(users):
+        password=hashlib.sha256((CREDS['NEXTCLOUD_ADMIN_PASSWORD']+user).encode()).hexdigest()
+        identity=nextcloud_ocs(base,'cloud/user',user+':'+password)
+        check('distinct proof account authenticates independently',identity['id']==user)
+        target='/remote.php/dav/files/'+user+'/'+path.rsplit('/',1)[1]
+        if index==0:
+            check('second proof user reads shared file exact bytes',http(base,target,auth=user+':'+password,raw=True)==data)
+        else:
+            for denied in (target,path):
+                try: http(base,denied,auth=user+':'+password,raw=True)
+                except urllib.error.HTTPError as error: check('authenticated third user denied private/shared file',error.code in (403,404))
+                else: check('third-user ACL must deny access',False)
+    return users
+
+
+def nextcloud_maintenance(enabled):
+    execute('nextcloud',['su','-s','/bin/sh','www-data','-c',
+        'php /var/www/html/occ maintenance:mode --'+('on' if enabled else 'off')])
+
+
 def nextcloud():
+    if STAGE == 'wopi':
+        wopi_browser()
+        return
     if STAGE == 'collabora':
         with forwarded('collabora', 9980) as base:
             discovery = http(base, '/hosting/discovery', raw=True)
@@ -313,25 +397,39 @@ def nextcloud():
     with forwarded('nextcloud', 80) as base:
         http(base, path, 'PUT', data, auth=auth, raw=True)
         check('authenticated WebDAV PUT/GET exact bytes', http(base, path, auth=auth, raw=True) == data)
+        users = nextcloud_share(base,path,data,auth)
     restart('nextcloud')
     with forwarded('nextcloud', 80) as base:
         check('WebDAV content survives Nextcloud pod replacement', http(base, path, auth=auth, raw=True) == data)
-    # Keep Nextcloud files/config/data PVC; independently restore the entire database.
-    scale('nextcloud',0)
+    # Coordinated synthetic recovery point: maintenance stops HTTP mutations,
+    # cron is suspended, then full HTML/config/apps/files archive + logical DB dump.
+    nextcloud_maintenance(True)
     try:
         dump = postgres_dump('nextcloud')
+        archive = execute('nextcloud',['tar','-czpf','-','-C','/var/www/html','.'])
+        save_private('nextcloud-html-files.tar.gz',archive)
+        RESULT['html_files_backup_sha256']=hashlib.sha256(archive).hexdigest()
+        scale('nextcloud',0)
         with fresh_pvc('postgres', ('nextcloud',)):
             clean_postgres_restore('nextcloud',dump)
-            scale('nextcloud',1)
-            with forwarded('nextcloud',80) as base:
-                check('existing-user authenticated WebDAV bytes survive clean PostgreSQL PVC restore',http(base,path,auth=auth,raw=True)==data)
+            with fresh_pvc('nextcloud',bootstrap=True) as start_runtime:
+                empty=execute('nextcloud',['sh','-ec','test ! -e /var/www/html/config/config.php && test ! -e /var/www/html/data/.ocdata && echo clean'])
+                check('clean independent HTML/files PVC has no source config/data',empty.strip()==b'clean')
+                execute('nextcloud',['tar','-xzpf','-','-C','/var/www/html'],archive)
+                start_runtime()
+                nextcloud_maintenance(False)
+                with forwarded('nextcloud',80) as base:
+                    check('coordinated clean DB AND clean HTML/config/files PVCs restore exact WebDAV bytes',http(base,path,auth=auth,raw=True)==data)
+                    nextcloud_share(base,path,data,auth,users)
     finally:
         scale('nextcloud',1)
+        nextcloud_maintenance(False)
     restart('postgres')
     with forwarded('nextcloud',80) as base:
         check('source database reattached with same authenticated WebDAV bytes',http(base,path,auth=auth,raw=True)==data)
         http(base,path,'DELETE',auth=auth,raw=True)
-    RESULT['limitations'].append('Database-only clean-PVC restore retains Nextcloud files/config PVC. File-volume disaster recovery and WOPI integration remain unproved. Cron requires its separate explicitly leased stage.')
+        for user in users: nextcloud_ocs(base,'cloud/users/'+user,auth,'DELETE')
+    RESULT['limitations'].append('Prepared coordinated synthetic DB+HTML/files clean-PVC restore, not historical production data or VM/disk-loss recovery. Version restore, trash recovery/rename, Redis contention and Nextcloud WOPI remain unimplemented acceptance gates. Cron requires its separate explicitly leased stage.')
     if STAGE == 'full':
         RESULT['limitations'].append('Full controller availability does not itself prove interactive Collabora editing.')
 
@@ -528,6 +626,45 @@ def immich_ml():
     RESULT['limitations'].append('Standalone real image/text CPU inference ONLY; no Immich indexing/search integration, ranking quality, face/OCR/GPU or production capacity claim.')
 
 
+def immich_search(asset,headers):
+    deadline = time.monotonic()+240
+    uuid.UUID(asset)  # reject any non-UUID API value before read-only SQL
+    while True:
+        count = execute('postgres',['psql','-U','immich','-d','immich','-Atc',
+            "SELECT count(*) FROM smart_search WHERE \"assetId\"='"+asset+"'"]).decode().strip()
+        if count == '1': break
+        if time.monotonic() >= deadline: check('Immich own worker must persist uploaded-asset CLIP embedding',False)
+        time.sleep(2)
+    check('Immich own worker persisted uploaded-asset embedding; no harness SQL writes')
+    memory_snapshot('ml','after app image indexing')
+    time.sleep(15)  # release visual model before real query textual model
+    with forwarded('immich',2283) as base:
+        deadline = time.monotonic() + 240
+        while True:
+            found = http(base,'/api/search/smart','POST',{'query':'a red and green image'},headers=headers)
+            if any(item['id']==asset for item in found.get('assets',{}).get('items',[])):
+                check('Immich real smart text search returns uploaded asset after CLIP inference')
+                break
+            if time.monotonic() >= deadline:
+                check('Immich CLIP indexing/text search did not complete within bounded window',False)
+            time.sleep(2)
+
+
+def bounded_immich_config(config, integrated):
+    config = json.loads(json.dumps(config))
+    for settings in config['job'].values(): settings['concurrency'] = 1
+    ml = config['machineLearning']
+    ml['enabled'] = integrated
+    ml['urls'] = ['http://ml:3003']
+    ml['clip'].update(enabled=integrated,modelName='ViT-B-32__openai')
+    for key in ('facialRecognition','ocr','duplicateDetection'): ml[key]['enabled'] = False
+    ml['availabilityChecks']['enabled'] = False
+    config['newVersionCheck']['enabled'] = False
+    config['map']['enabled'] = False
+    config['reverseGeocoding']['enabled'] = False
+    return config
+
+
 def immich():
     if STAGE == 'ml':
         immich_ml()
@@ -543,6 +680,15 @@ def immich():
             http(base, '/api/auth/admin-sign-up', 'POST', {'email':'proof@example.invalid','password':password,'name':'Synthetic Proof'})
             login = http(base, '/api/auth/login', 'POST', {'email':'proof@example.invalid', 'password':password})
         headers = {'Authorization':'Bearer ' + login['accessToken']}
+        config = http(base,'/api/admin/config',headers=headers)
+        config = bounded_immich_config(config, STAGE == 'full')
+        applied = http(base,'/api/admin/config','PUT',config,headers=headers)
+        check('Immich supported admin API applies single-job concurrency and CLIP-only proof profile',
+            applied['machineLearning']['enabled'] == (STAGE=='full') and
+            all(v['concurrency']==1 for v in applied['job'].values()))
+        if STAGE == 'full':
+            subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/'scripts/talos-proof-data-models.py'),
+                'preload','--state',str(STATEPATH),'--stage','full'],check=True,timeout=660)
         boundary = 'proof' + uuid.uuid4().hex
         body = bytearray()
         for key, value in {'deviceAssetId':uuid.uuid4().hex, 'deviceId':'proof', 'fileCreatedAt':'2026-01-01T00:00:00.000Z', 'fileModifiedAt':'2026-01-01T00:00:00.000Z', 'isFavorite':'false'}.items():
@@ -566,6 +712,7 @@ def immich():
                 if error.code not in (400,404,500) or time.monotonic() >= deadline:
                     raise
                 time.sleep(2)
+    if STAGE == 'full': immich_search(asset,headers)
     scale('immich',0)
     try:
         dump = postgres_dump('immich')
@@ -574,21 +721,12 @@ def immich():
             scale('immich',1)
             with forwarded('immich',2283) as base:
                 check('Immich authenticated original survives clean vector PostgreSQL PVC restore',http(base,'/api/assets/'+asset+'/original',headers=headers,raw=True)==payload)
+            if STAGE == 'full':
+                immich_search(asset,headers)
+                check('Immich own restored asset embedding and text search survive distinct clean vector-PG PVC restore')
     finally:
         scale('immich',1)
-    if STAGE == 'full':
-        # This is intentionally a separate real integration gate, not satisfied by ML component vectors.
-        with forwarded('immich',2283) as base:
-            deadline = time.monotonic() + 240
-            while True:
-                found = http(base,'/api/search/smart','POST',{'query':'a red and green image'},headers=headers)
-                if any(item['id']==asset for item in found.get('assets',{}).get('items',[])):
-                    check('Immich real smart text search returns uploaded asset after CLIP inference')
-                    break
-                if time.monotonic() >= deadline:
-                    check('Immich CLIP indexing/text search did not complete within bounded window',False)
-                time.sleep(2)
-    else:
+    if STAGE != 'full':
         RESULT['limitations'].append('App-only stage: ML indexing and integrated smart text search NOT proved. Retains original /data PVC during database recovery; no file-volume disaster recovery claim.')
 
 

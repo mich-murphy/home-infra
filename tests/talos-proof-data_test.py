@@ -105,7 +105,7 @@ class DataContract(unittest.TestCase):
             if args[1] == 'nodes':
                 return '{"items":[{"status":{"allocatable":{"memory":"2400000Ki"}}}]}'
             raise RuntimeError('metrics unavailable')
-        with patch.object(life, 'kube', side_effect=kube), patch.object(life, 'lease', return_value={'measured_at':0,'available_mib':2000}), self.assertRaises(RuntimeError):
+        with patch.object(life, 'kube', side_effect=kube), patch.object(life, 'lease', return_value={'measured_at':0,'kubelet_available_mib':2000,'talos_available_mib':2000}), self.assertRaises(RuntimeError):
             life.guard('couchdb')
 
     def test_guard_rejects_over_budget(self):
@@ -115,7 +115,7 @@ class DataContract(unittest.TestCase):
             if args[1] == 'nodes':
                 return '{"items":[{"status":{"allocatable":{"memory":"2400000Ki"}}}]}'
             raise RuntimeError('metrics unavailable')
-        with patch.object(life, 'kube', side_effect=kube), patch.object(life, 'lease', return_value={'measured_at':time.time(),'available_mib':400}), self.assertRaises(RuntimeError):
+        with patch.object(life, 'kube', side_effect=kube), patch.object(life, 'lease', return_value={'measured_at':time.time(),'kubelet_available_mib':400,'talos_available_mib':400}), self.assertRaises(RuntimeError):
             life.guard('couchdb')
 
     def target_fake(self, server='https://127.0.0.1:64120', name='talos-proof', uid='node-123', insecure=False):
@@ -294,15 +294,41 @@ class DataContract(unittest.TestCase):
 
     def test_stage_memory_admission_preserves_reserve(self):
         def kube(*args,**kwargs):
-            if any(x in args for x in ('deployments','pods','jobs','cronjobs')): return '{"items":[]}'
+            if any(x in args for x in ('deployments','deployments,statefulsets','pods','jobs','cronjobs')): return '{"items":[]}'
             if 'nodes' in args: return '{"items":[{"status":{"allocatable":{"memory":"2890752Ki"}}}]}'
             raise RuntimeError('metrics unavailable')
         with patch.object(life,'LEASE_STAGE','web'),patch.object(life,'kube',side_effect=kube):
             for available,ok in ((1279,False),(1280,True),(1420,True)):
-                with patch.object(life,'lease',return_value={'measured_at':time.time(),'available_mib':available}):
+                with patch.object(life,'lease',return_value={'measured_at':time.time(),'kubelet_available_mib':available,'talos_available_mib':available}):
                     if ok: life.guard('nextcloud')
                     else:
                         with self.assertRaises(RuntimeError): life.guard('nextcloud')
+
+    def test_pessimistic_eviction_admission_and_invalid_signals(self):
+        def kube(*args,**kwargs):
+            if 'nodes' in args: return '{"items":[{"status":{"allocatable":{"memory":"2890752Ki"}}}]}'
+            return '{"items":[]}'
+        with patch.object(life,'LEASE_STAGE','wopi'),patch.object(life,'kube',side_effect=kube):
+            for kubelet,talos in ((642,1403),(688,1403),(1403,642),(True,1403),(float('nan'),1403),(None,1403)):
+                with patch.object(life,'lease',return_value={'measured_at':time.time(),'kubelet_available_mib':kubelet,'talos_available_mib':talos}),self.assertRaises(RuntimeError):
+                    life.guard('nextcloud')
+            with patch.object(life,'lease',return_value={'measured_at':time.time(),'kubelet_available_mib':896,'talos_available_mib':1403}):
+                life.guard('nextcloud')
+
+    def test_immich_bounded_profile_uses_supported_v3_fields(self):
+        spec=importlib.util.spec_from_file_location('live_config',ROOT/'tests/talos-proof-data-live.py')
+        live=importlib.util.module_from_spec(spec);spec.loader.exec_module(live)
+        original={'job':{'smartSearch':{'concurrency':2},'thumbnailGeneration':{'concurrency':3}},
+            'machineLearning':{'enabled':True,'clip':{'enabled':True,'modelName':'wrong'},'urls':['wrong'],
+                'facialRecognition':{'enabled':True},'ocr':{'enabled':True},'duplicateDetection':{'enabled':True},'availabilityChecks':{'enabled':True}},
+            'newVersionCheck':{'enabled':True},'map':{'enabled':True},'reverseGeocoding':{'enabled':True},'preserve':'sentinel'}
+        for integrated in (True,False):
+            config=live.bounded_immich_config(original,integrated)
+            self.assertEqual(config['machineLearning']['clip'],{'enabled':integrated,'modelName':'ViT-B-32__openai'})
+            self.assertEqual(config['job']['smartSearch']['concurrency'],1)
+            self.assertFalse(config['machineLearning']['ocr']['enabled'])
+            self.assertEqual(config['preserve'],'sentinel')
+        self.assertEqual(original['job']['smartSearch']['concurrency'],2)
 
     def test_embedding_validation_rejects_fake_health_and_nan(self):
         spec=importlib.util.spec_from_file_location('live_embedding',ROOT/'tests/talos-proof-data-live.py')

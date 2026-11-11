@@ -3,6 +3,7 @@
 import argparse
 import base64
 import json
+import math
 import os
 from pathlib import Path
 import secrets
@@ -18,7 +19,7 @@ LEASE_STAGE = None
 MUTATIONS = {'apply','scale','exec','rollout','delete','create','patch','label','annotate','run','replace','cp','edit','set'}
 GROUPS = ('nextcloud', 'immich', 'miniflux', 'wallabag', 'couchdb', 'pocket-id')
 # Includes fixture, excludes suspended cron. Conservative memory limits, MiB.
-BUDGET = dict(nextcloud=1728, immich=2240, miniflux=448, wallabag=576, couchdb=256, **{'pocket-id':192})
+BUDGET = dict(nextcloud=1792, immich=2240, miniflux=448, wallabag=576, couchdb=256, **{'pocket-id':192})
 
 # Explicit coordinator-approved component stages; no implicit heavy-group activation.
 STAGES = {
@@ -26,6 +27,7 @@ STAGES = {
         'web': ('nextcloud', 'postgres', 'redis'),
         'cron': ('postgres', 'redis'),
         'collabora': ('collabora',),
+        'wopi': ('collabora', 'wopi-fixture'),
         'full': ('nextcloud', 'postgres', 'redis', 'collabora'),
     },
     'immich': {
@@ -35,7 +37,7 @@ STAGES = {
     },
 }
 LIMITS = {'nextcloud':640, 'postgres-nextcloud':384, 'redis':64, 'collabora':640,
-          'immich':768, 'ml':1024, 'postgres-immich':384, 'valkey':64}
+          'immich':768, 'ml':1024, 'postgres-immich':384, 'valkey':64, 'wopi-fixture':64}
 
 
 def selection(group, stage=None):
@@ -188,6 +190,11 @@ def lease(group):
 
 def participants(group):
     names, _ = selection(group)
+    controllers = json.loads(kube('get','deployments,statefulsets','-A','-o','json'))['items']
+    if any(c['metadata']['namespace'].startswith('proof-') and
+           c['metadata']['namespace'] not in ('proof-'+group,'proof-validation','proof-gateway') and
+           c['spec'].get('replicas',1) for c in controllers):
+        raise RuntimeError('another proof group has an active controller, including without pods')
     if names:
         deployments = json.loads(kube('-n', 'proof-' + group, 'get', 'deployments', '-o', 'json'))['items']
         if any(d['metadata']['name'] not in names and d['spec'].get('replicas', 0) for d in deployments):
@@ -218,23 +225,17 @@ def guard(group):
     alloc = nodes[0]['status']['allocatable']['memory']
     if not alloc.endswith('Ki'):
         raise RuntimeError('unsupported node memory units')
-    try:
-        metric = json.loads(kube('get', '--raw', '/apis/metrics.k8s.io/v1beta1/nodes'))['items'][0]['usage']['memory']
-    except RuntimeError:
-        # This minimal platform intentionally has no metrics-server. Parent can supply
-        # a fresh Talos guest available-memory observation, not host/Proxmox free RAM.
-        import time
-        receipt = lease(group)
-        age = time.time() - receipt.get('measured_at', 0)
-        if not 0 <= age <= 120:
-            raise RuntimeError('fresh guest available-memory measurement required in lease')
-        available = receipt.get('available_mib', 0)
-        if not isinstance(available, (int, float)) or available > int(alloc[:-2]) / 1024:
-            raise RuntimeError('invalid lease memory observation')
-    else:
-        if not metric.endswith('Ki'):
-            raise RuntimeError('unsupported metrics memory units')
-        available = (int(alloc[:-2]) - int(metric[:-2])) / 1024
+    # Kubelet eviction availability and Talos MemAvailable differ under active file
+    # cache. Require both independently measured signals; never infer from RSS.
+    import time
+    receipt = lease(group)
+    age = time.time() - receipt.get('measured_at', 0)
+    values = [receipt.get('kubelet_available_mib'), receipt.get('talos_available_mib')]
+    if not 0 <= age <= 120:
+        raise RuntimeError('fresh kubelet AND Talos available-memory measurements required')
+    if any(type(v) not in (int,float) or not math.isfinite(v) or not 0 < v <= int(alloc[:-2])/1024 for v in values):
+        raise RuntimeError('valid kubelet AND Talos available-memory measurements required')
+    available = min(values)
     if available < budget + 192:
         raise RuntimeError('insufficient memory headroom for group limits plus 192MiB reserve')
 

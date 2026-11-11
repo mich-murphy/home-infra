@@ -9,9 +9,17 @@ resources:
 - nextcloud.yaml
 - collabora.yaml
 - cronjob.yaml
+- wopi-fixture.yaml
 - httproute.yaml
 - gateway-policy.yaml
 labels:
 - pairs:
     app.kubernetes.io/part-of: talos-proof
   includeSelectors: false
+
+configMapGenerator:
+- name: wopi-fixture-source
+  files:
+  - wopi.py=fixture/wopi.py
+generatorOptions:
+  disableNameSuffixHash: true

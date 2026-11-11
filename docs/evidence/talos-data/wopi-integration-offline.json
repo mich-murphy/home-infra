@@ -1,0 +1,28 @@
+{
+  "status": "offline-only-not-live-tested",
+  "utc": "2026-11-11T14:50:15.349826+00:00",
+  "base_commit": "65650feb500423021bcb3aa25b6494fc4356fe00",
+  "render_sha256": "62d80eb4eecff76bddb36db8bd26456659968c96dc0d67e203a96b2bd25ae9c2",
+  "tests": {
+    "data_contract": 39,
+    "local_wopi_protocol": 8,
+    "render_safety": "passed",
+    "python_compile": "passed",
+    "browser_js_syntax": "passed"
+  },
+  "live_api_calls": 0,
+  "data_authority": "revoked; media owns exclusive lease",
+  "admission": "min(kubelet_available_mib,talos_available_mib), measured within120s, plus unchanged192MiB reserve",
+  "current_wopi_stage_required_mib": 896,
+  "reported_kubelet_available_mib": [
+    642,
+    688
+  ],
+  "live_acceptance": false,
+  "remaining_gates": [
+    "Actual CODE fixture browser edit/save not run; not Nextcloud Office.",
+    "Nextcloud version/rename/trash/file-record/Redis contention and pinned richdocuments preload missing.",
+    "Immich album/share ACL, metadata/video and paired data-volume recovery missing; integrated own-worker vector/search code not run.",
+    "All heavy stages currently blocked by conservative admission."
+  ]
+}

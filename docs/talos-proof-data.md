@@ -481,3 +481,158 @@ reserve boundary and finite/nonzero embedding validation. Rendered app safety an
 CronJob response mismatch after adding schedule checks; the fixture was corrected
 and all tests rerun. This was offline test failure, not a hidden runtime failure.
 No Nextcloud, cron, Collabora or Immich live result is claimed.
+
+
+## Offline WOPI/integration checkpoint — supersedes optimistic admission above
+
+**No data lease is held. All earlier data receipts are revoked. No live API calls,
+app mutations, source Docker calls, secret regeneration or host/cache changes were
+performed in this checkpoint.** Media has the exclusive live window. The previous
+Talos-only approximately1420MiB estimate is NOT safe admission: parent measured
+kubelet eviction availability642–688MiB while Talos reported approximately1403MiB.
+`guard` now requires fresh numeric `kubelet_available_mib` AND
+`talos_available_mib` in the private receipt and takes their **minimum**. Missing,
+stale, NaN/bool or invalid signals fail closed; no RSS/working-set subtraction or
+optimistic legacy `available_mib` fallback is accepted. Reserve stays192MiB.
+Ordinary workload reclaim may alter future observations; no cache drop, pressure
+trick or limit reduction is authorized. **Every heavy stage is currently blocked.**
+
+### CODE editing/save fixture, not Nextcloud Office acceptance
+
+New explicit `nextcloud/wopi` stage selects exactly `deployment/collabora` and
+`deployment/wopi-fixture`:704MiB limits +192 reserve =896MiB. Its receipt must
+name that stage and the sorted controller list. It is currently blocked at642–688.
+The64MiB fixture reuses the immutable CPU ML image solely for Python stdlib,
+nonroot/read-only root, token automount disabled, emptyDir capped2MiB. It does
+not load ML or copy any Nextcloud/production data. All defaults remain replicas0.
+All-declarations Nextcloud budget is now1792MiB (includes the otherwise-off fixture);
+`nextcloud/full` still selects only the original1728MiB services, not the fixture.
+
+The fixture implements single-file CheckFileInfo/GetFile/PutFile, LOCK,
+REFRESH_LOCK, UNLOCK, GET_LOCK, old-lock relock,30-minute expiry,409 held-lock
+responses, token enforcement and1MiB upload bound. It never logs token-bearing
+requests. It exposes no public Gateway route. Exact directional pod policies only
+allow Collabora→fixture TCP8082; DNS remains scoped. CODE aliasgroup2 names only
+`http://wopi-fixture.proof-nextcloud.svc.cluster.local:8082`. Existing public
+Nextcloud allowlist stays unchanged. CODE's existing `ssl.termination` option is
+set true because the real public route terminates TLS at the proof Gateway;
+internal listener TLS remains disabled by the existing architecture, **not**
+certificate verification disabled on any HTTPS connection.
+
+`tests/talos-proof-data-wopi.mjs` uses pinned Mac-local Chrome/playwright, the exact
+independently CA-verified leaf SPKI, actual public CODE HTTPS origin and WSS.
+HTTP and WebSocket routing aborts every other browser origin. Discovery must offer
+a txt edit action with the correct public HTTPS origin; the test will not invent
+an editor URL or silently rewrite HTTP discovery to HTTPS. The browser posts the
+fresh proof token through the real editor form, waits for rendered document canvas,
+types a unique marker and invokes save. Python independently requires real
+CheckFileInfo/GetFile/LOCK/PutFile callbacks **and marker-containing saved bytes**,
+recording checksum/events only. Browser input dispatch alone is not a PASS.
+Canvas/keybinding compatibility, CODE startup, callback protocol and save are
+**prepared, NOT LIVE TESTED**. No screenshots/DOM/tokens/raw URLs are emitted.
+
+This is a faithful bounded text-document WOPI-host experiment, not full WOPI
+conformance or Nextcloud richdocuments. It does not satisfy the inventory's ODT
+via Nextcloud, close/reopen, wrong-host live denial or restart Office gates. Its
+plain internal HTTP callback is intentionally isolated by exact pod policies;
+public browser TLS remains verified. No global/platform/Gateway policy was edited.
+
+### Supported Nextcloud35 Office options (research, not installation)
+
+Public richdocuments **v12.0.2** `appinfo/info.xml` declares Nextcloud min35/max35
+and PHP≥8.3. At that exact release, `lib/AppConfig.php` defines and consumes:
+
+- `wopi_url`: Nextcloud's internal CODE URL;
+- `public_wopi_url`: browser-facing CODE URL;
+- `wopi_callback_url`: CODE's callback base to Nextcloud.
+
+Source: `https://raw.githubusercontent.com/nextcloud/richdocuments/v12.0.2/lib/AppConfig.php`,
+SHA256 `9820dab896d01a7352792e5a6f13fbea2a6eeb4b03bbf1c86e13281290b51ce3`.
+Compatibility metadata: same release `appinfo/info.xml`. Supporting sources inspected:
+`lib/Service/DiscoveryService.php` SHA256
+`39725d7ff2733bfc52ed8f4ba7501d2ab2c5ba83b02c88a6338db172472aa317`,
+and `lib/Service/CapabilitiesService.php` SHA256
+`aef99d5d7ff423a39eb20167c0552dc67611151942b43ad53f4c06efa8f8829a`.
+Several attempted guessed source paths returned404; the SDK web page returned an
+anti-bot page, not API documentation. Neither is treated as supporting evidence.
+
+A supported future topology can use `wopi_url=http://collabora:9980`,
+`public_wopi_url=https://collabora.proof.invalid`, and
+`wopi_callback_url=http://nextcloud` (already a proof trusted domain), with an
+explicit exact CODE callback allowlist and matching pod ports. This avoids public
+DNS/Gateway hairpin for service-to-service traffic while preserving real public
+browser URLs. It must still be tested with a pinned, hashed complete app release
+artifact and proof-only leased preload if not bundled. **That artifact/preload and
+Nextcloud Office browser integration are not implemented by this checkpoint.**
+Do not set `disable_certificate_verification`; no Gateway client policy is needed
+for this proposed internal topology. If native Gateway callbacks are later chosen,
+parent still owns inspection/authorization of exact platform policy.
+
+### Inventory acceptance correction and expanded recovery scaffolding
+
+The per-service table in `talos-proof-inventory.md` is the acceptance authority,
+not the older basic-WebDAV table. Nextcloud's prepared web suite now creates two
+additional synthetic proof users using OCS, grants one a read share, verifies its
+exact DAV bytes, independently authenticates the third user and requires403/404
+on both owner and incoming-file paths. Users/shares are checked again after the
+coordinated restore; source users are removed after source fixture cleanup.
+Passwords are private deterministic derivations of the existing fresh proof secret,
+not production accounts or regenerated persistent administrator credentials.
+
+Recovery is no longer presented as full app recovery from PG-only restoration:
+the prepared suite enables maintenance (cron remains suspended), takes a logical
+PG dump and complete HTML/config/apps/files archive at that quiescent synthetic
+point, restores PG into one distinct clean PVC and the entire HTML/files tree into
+a **second** distinct clean PVC, starts the restored runtime, exits maintenance,
+then checks original bytes and second-/third-user share ACLs. Finally it reattaches
+both retained source claims and exits source maintenance. Archives remain0600
+outside git and contain fresh proof credentials; never publish them. These paths
+are offline-prepared only; failure cleanup/consistency and actual resource demand
+still need live validation. No production-data or VM/disk disaster recovery claim.
+
+**Nextcloud still missing:** version restore and version/share continuity together,
+rename/trash recovery, explicit file-record↔file identity checks, Redis lock
+contention/reconnect, and actual Nextcloud Office ODT edit/reopen/restart. Basic DAV
+or even the proposed paired restore must not mark the inventory row complete.
+
+### Immich own-worker integration, not injected embeddings
+
+Exact v3.3.6 OpenAPI and `SmartInfoService`/search schema were inspected. Prepared
+suite now uses supported `/api/admin/config` GET/PUT with the complete returned
+AdminConfigDto preserved, sets every job concurrency1, disables face/OCR/duplicate
+work, map/reverse-geocoding/version checks and ML availability polling, and selects
+only ViT-B-32__openai CLIP for the full stage. App-only stage disables ML explicitly
+rather than emitting failed background inference requests. No unsupported env flag
+or cluster Internet allowance is introduced.
+
+The full stage preloads all pinned model artifacts, uploads the asset, requires
+thumbnail bytes, waits for **Immich's own worker** to persist the asset UUID's
+`smart_search` row, expires the visual model with the declared TTL, then invokes
+real `/api/search/smart` and requires the uploaded asset. The harness makes only a
+read-only SQL count; it never writes/injects embeddings or supplies a fake ML
+response. It repeats association/search checks after clean vector-PG restore,
+while retaining the original `/data` PVC (explicitly narrower than whole-app file
+recovery). Source references at v3.3.6: `open-api/immich-openapi-specs.json`,
+`server/src/services/smart-info.service.ts`, `server/src/services/search.service.ts`,
+`server/src/schema/tables/smart-search.table.ts` and
+`server/src/repositories/search.repository.ts`.
+
+No legitimate sequential **component-only** arrangement has yet been shown to run
+Immich's own indexing and search pipeline while server/DB/ML never overlap. The
+full2240+192MiB allocation is blocked; app1216+192 and ML1024+192 are also blocked
+against current eviction availability. No claim that separate CLIP vectors + upload
+constitute integrated search. **Immich still missing:** album/share ACLs and a
+second/third user, timeline/EXIF fixtures, video/playback, clean `/data`+DB recovery,
+queue-once/reconnect assertions, cold/warm/cache-persistence measurements and any
+actual live vector/search result. No human/cloud account is required for the
+synthetic local cases; missing code and capacity, not account permission, block them.
+
+### Offline verification only
+
+39 data contract tests and8 local WOPI protocol tests pass; rendered app safety,
+Python compilation and browser JS syntax checks pass. The local protocol tests
+exercise both token denial and wrong-lock writes, expiry/relock/size bounds and
+real saved bytes; they do NOT launch CODE. Two intermediate offline fixture-mock
+failures after adding stricter admission were corrected, not runtime failures.
+No new live functional/recovery/editing/inference PASS is recorded. Existing
+CouchDB/Miniflux/Pocket-ID/Wallabag runtime failure history and evidence are intact.
