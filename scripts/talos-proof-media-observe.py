@@ -32,13 +32,16 @@ def summarize(pod):
     return result
 
 
-def capture(service, state):
+def capture(service, state, group=None):
     safety.private_dir(state)
     ns = 'proof-' + service
-    safety.lease(service)
-    safety.exclusivity(service)
+    group = group or service
+    if group != service and service not in safety.DEPENDENCY_BATCHES.get(group, ()):
+        raise ValueError('observation member does not match dependency group')
+    safety.lease(group)
+    safety.exclusivity(group)
     def kube(*args):
-        return safety.kube(service, '-n', ns, *args)
+        return safety.kube(group, '-n', ns, *args)
     pods = json.loads(kube('get', 'pods', '-o', 'json'))['items']
     output = {'service': service, 'observed_utc': datetime.now(timezone.utc).isoformat(), 'pods': [],
               'limitations': ['cgroup counters cover only current container lifetime; prior termination status retained separately',
@@ -73,10 +76,11 @@ def valid_line(line):
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('service', choices=safety.SERVICES)
+    p.add_argument('--group', choices=safety.DEPENDENCY_BATCHES)
     p.add_argument('--state', type=Path, required=True)
     args = p.parse_args()
     try:
-        capture(args.service, args.state)
+        capture(args.service, args.state, args.group)
     except Exception as exc:
         print(json.dumps({'result': 'OBSERVATION_FAILED', 'error_type': type(exc).__name__}), file=sys.stderr)
         sys.exit(1)

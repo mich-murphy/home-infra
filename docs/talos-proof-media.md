@@ -226,3 +226,15 @@ for the exact **unexecuted** command, zero tiny-clip history threshold, same-cli
 checks, failure retention and remaining native UI/Jellyfin/ACL/recovery gaps.
 All old receipts remain revoked; wait for parent authorization. No cluster/host
 mutation, private-state access, credential rotation or live acceptance occurred.
+
+## Released native-browser live checkpoint
+
+See [live browser/player chronology](evidence/talos-media/live-browser-player.md):
+qBit native login/actual-session hostile-form denial PASS, with six prior harness
+failures preserved; Plex adapter port/header fixes passed startup but personal
+library HTTP400 blocks scan/player/Tautulli. Jellyfin not started. All app/helper
+pods deleted and all three receipts archived/revoked; OFFLINE ONLY again.
+Future recovery now generates UUID-exclusive archives/append-only manifests;
+restore accepts explicit `--manifest`, never replaces old recovery receipts.
+No new recovery or archive capture ran in this window; original qBit/SAB files
+are unchanged. Parent owns acceptance.

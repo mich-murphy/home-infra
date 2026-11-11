@@ -46,6 +46,8 @@ class BrowserPreparation(unittest.TestCase):
         const c={name:'SID',value:'test-only-valid',domain:'qbittorrent.proof.invalid',path:'/',secure:true};
         const sid=authenticatedSID([c],'https://qbittorrent.proof.invalid');
         if(!sameSID('other=x; SID='+sid,sid)) process.exit(1);
+        const actual=authenticatedSID([{...c,name:'QBT_SID_8080',secure:false}],'https://qbittorrent.proof.invalid','QBT_SID_8080');
+        if(!sameSID('QBT_SID_8080='+actual,actual,'QBT_SID_8080') || sameSID('SID='+actual,actual,'QBT_SID_8080')) process.exit(4);
         for(const header of ['', 'SID=', 'SID=wrong', 'SID='+sid+'; SID='+sid]) {
           if(sameSID(header,sid)) process.exit(2);
         }

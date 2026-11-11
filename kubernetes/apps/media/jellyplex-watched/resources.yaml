@@ -72,7 +72,7 @@ spec:
           app.kubernetes.io/name: plex
     ports:
     - protocol: TCP
-      port: 32401
+      port: 33240
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -158,7 +158,7 @@ spec:
             - name: DEBUG_LEVEL
               value: ERROR
             - name: PLEX_BASEURL
-              value: http://plex.proof-plex.svc:32401
+              value: http://plex.proof-plex.svc:33240
             - name: JELLYFIN_BASEURL
               value: http://jellyfin.proof-jellyfin.svc:8096
             - name: LOG_FILE

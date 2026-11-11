@@ -65,7 +65,7 @@ class Handler(BaseHTTPRequestHandler):
             params = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
             params = [(k, v) for k, v in params if k.lower() != 'x-plex-token']
             target = parsed.path + ('?' + urllib.parse.urlencode(params) if params else '')
-            headers = {k: v for k, v in self.headers.items() if k.lower() not in HOP_HEADERS | {'host', 'authorization', 'x-plex-token'}}
+            headers = {k: v for k, v in self.headers.items() if k.lower() not in HOP_HEADERS | {'host', 'authorization', 'x-plex-token', 'forwarded', 'x-forwarded-for', 'x-real-ip'}}
             try:
                 length = int(self.headers.get('Content-Length', '0'))
             except ValueError:
@@ -132,7 +132,7 @@ def main():
     parser.add_argument('--key-file', required=True, type=Path)
     parser.add_argument('--password-file', required=True, type=Path)
     args = parser.parse_args()
-    server = ThreadingHTTPServer(('0.0.0.0', 32401), Handler)
+    server = ThreadingHTTPServer(('0.0.0.0', 33240), Handler)
     server.access_key = args.key_file.read_text().strip()
     server.password = args.password_file.read_text().strip()
     server.serve_forever()

@@ -13,6 +13,7 @@ from pathlib import PurePosixPath, Path
 import secrets
 import sys
 import tarfile
+import uuid
 
 safety = importlib.import_module('talos-proof-media-safety')
 MAX_ARCHIVE = 128 * 1024 * 1024
@@ -33,10 +34,15 @@ def safe_archive(payload):
                     raise RuntimeError('unsafe proof archive link')
 
 
+def archive_name(service, volume):
+    return service + '-' + volume + '-snapshot-' + uuid.uuid4().hex + '.tar'
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('action', choices=['snapshot', 'restore'])
     p.add_argument('service', choices=FRONTENDS)
+    p.add_argument('--manifest', type=Path, help='explicit immutable snapshot manifest for restore; legacy default remains readable')
     p.add_argument('--state', required=True, type=Path)
     args = p.parse_args()
     state = safety.private_dir(args.state)
@@ -51,9 +57,12 @@ def main():
     volumes = [(i, v) for i, v in enumerate(podspec['volumes']) if 'persistentVolumeClaim' in v]
     if not volumes:
         raise RuntimeError('stateful proof service has no PVCs')
-    manifest_path = state / (args.service + '-snapshot.json')
-    if args.action == 'snapshot' and safety.no_symlinks(manifest_path).exists():
-        raise RuntimeError('snapshot already exists; refuse to overwrite recovery evidence')
+    if args.action == 'snapshot' and args.manifest:
+        raise RuntimeError('snapshot manifest name is generated exclusively, not caller-selected')
+    manifest_path = ((state / (args.service + '-snapshot-' + uuid.uuid4().hex + '.json')) if args.action == 'snapshot'
+                     else args.manifest or state / (args.service + '-snapshot.json'))
+    if manifest_path.parent.resolve() != state:
+        raise RuntimeError('restore manifest must be in the private state directory')
     if args.action == 'restore':
         snapshot = json.loads(safety.read_private(manifest_path))
         if snapshot['service'] != args.service or snapshot['image'] != image:
@@ -65,6 +74,11 @@ def main():
             safe_archive(payload)
             if hashlib.sha256(payload).hexdigest() != item['sha256']:
                 raise RuntimeError('snapshot checksum mismatch')
+    if args.action == 'restore':
+        # Exclusive consumed marker preserves failed attempts too; never silently
+        # rerun extraction from the same receipt or truncate its source manifest.
+        safety.write_private(manifest_path.with_suffix('.restore-started.json'),
+                             json.dumps({'source_manifest': manifest_path.name, 'status': 'STARTED'}))
     # Capture current and historical failures before stopping destroys container counters.
     importlib.import_module('talos-proof-media-observe').capture(group, state)
     # Stop before tar capture: includes SQLite WAL/SHM and app config consistently.
@@ -79,7 +93,7 @@ def main():
         if args.action == 'snapshot':
             entry = {'volume': volume['name'], 'index': index, 'source_claim': old_claim,
                      'source_uid': original['metadata']['uid'], 'storage': original['spec']['resources']['requests']['storage'],
-                     'archive': args.service + '-' + volume['name'] + '-snapshot.tar'}
+                     'archive': archive_name(args.service, volume['name'])}
         else:
             entry = next(x for x in snapshot['volumes'] if x['volume'] == volume['name'])
             if old_claim != entry['source_claim'] or original['metadata']['uid'] != entry['source_uid']:
@@ -92,6 +106,8 @@ def main():
             kube('create', '-f', '-', data=json.dumps(fresh).encode())
             entry['destination_claim'] = fresh_name
         entries.append(entry)
+    safety.write_private(state / (args.service + '-recovery-attempt-' + uuid.uuid4().hex + '.json'),
+                         json.dumps({'action': args.action, 'manifest': manifest_path.name, 'volumes': entries}))
     helper_name = 'proof-volume-recovery-' + secrets.token_hex(3)
     claims = [(e['volume'], e.get('destination_claim', e['source_claim'])) for e in entries]
     helper = {'apiVersion': 'batch/v1', 'kind': 'Job', 'metadata': {'name': helper_name, 'namespace': ns,
@@ -127,6 +143,7 @@ def main():
     finally:
         kube('-n', ns, 'delete', 'job', helper_name, '--wait=true', '--timeout=60s')
         kube('-n', ns, 'wait', '--for=delete', 'pod', '-l', 'job-name=' + helper_name, '--timeout=180s')
+    result_path = manifest_path
     if args.action == 'snapshot':
         snapshot = {'service': args.service, 'image': image, 'volumes': entries, 'restored': False}
         safety.write_private(manifest_path, json.dumps(snapshot))
@@ -135,9 +152,10 @@ def main():
                     'value': e['destination_claim']} for e in entries]
         kube('-n', ns, 'patch', 'deployment', args.service, '--type=json', '-p', json.dumps(patches))
         snapshot.update(volumes=entries, restored=True)
-        safety.write_private(manifest_path, json.dumps(snapshot), replace=True)
+        result_path = state / (args.service + '-restored-' + uuid.uuid4().hex + '.json')
+        safety.write_private(result_path, json.dumps(dict(snapshot, source_manifest=manifest_path.name)))
     print(json.dumps({'service': args.service, 'action': args.action, 'result': 'VOLUME_OPERATION_ONLY',
-                      'fresh_destination_pvcs': args.action == 'restore', 'volumes': len(entries),
+                      'manifest': result_path.name, 'source_manifest': manifest_path.name, 'fresh_destination_pvcs': args.action == 'restore', 'volumes': len(entries),
                       'next_gate': 'start without reapplying bases, then read-before-write functional verification'}))
 
 

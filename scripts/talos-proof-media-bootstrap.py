@@ -51,7 +51,7 @@ def main():
                             'download_dir = /data/usenet/incomplete\ncomplete_dir = /data/usenet/complete\n')
         elif name == 'kometa':
             data['seed'] = ('libraries:\n  Proof:\n    collection_files:\n      - file: /proof-fixtures/collections.yml\n'
-                            'plex:\n  url: http://plex.proof-plex.svc:32401\n'
+                            'plex:\n  url: http://plex.proof-plex.svc:33240\n'
                             f'  token: {credentials["plex"]["api_key"]}\n'
                             f'tmdb:\n  apikey: {key}\n')
         elif name == 'recyclarr':

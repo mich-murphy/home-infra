@@ -45,7 +45,22 @@ try {
     return route.continue();
   });
   await context.routeWebSocket('**/*',ws=>ws.close()); // qBit WebUI needs no WSS
+  async function wireHeaders(page) {
+    const cdp=await context.newCDPSession(page), requests=new Map(), extra=new Map();
+    cdp.on('Network.requestWillBeSent',e=>requests.set(e.requestId,{url:e.request.url,method:e.request.method}));
+    cdp.on('Network.requestWillBeSentExtraInfo',e=>extra.set(e.requestId,e.headers));
+    await cdp.send('Network.enable');
+    return async response=>{
+      for(let i=0;i<30;i++) {
+        for(const [id,request] of requests) if(request.url===response.url() && request.method===response.request().method() && extra.has(id))
+          return Object.fromEntries(Object.entries(extra.get(id)).map(([k,v])=>[k.toLowerCase(),v]));
+        await new Promise(resolve=>setTimeout(resolve,100));
+      }
+      throw new Error('actual wire headers unavailable');
+    };
+  }
   const page=await context.newPage();page.setDefaultTimeout(15000);
+  const actualHeaders=await wireHeaders(page);
   if(input.service!=='qbittorrent') {
     stage='actual server MP4 browser decode';
     await page.goto(origin+'/__proof_decoder');
@@ -68,11 +83,13 @@ try {
   const login=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/v2/auth/login' && r.request().method()==='POST');
   await page.locator('#loginButton').click();
   const response=await login;
-  const sent=await response.request().allHeaders();
+  const sent=await actualHeaders(response);
+  result.login_transport={sec_fetch_site:sent['sec-fetch-site'] || 'absent',origin_expected:sent.origin===origin};
   requireCheck(response.status()===204,'native form login HTTP204');
   requireCheck(sent['sec-fetch-site']==='same-origin','native login Sec-Fetch-Site same-origin');
   requireCheck(!sent.origin || sent.origin===origin,'native Origin retained without transport port');
-  await page.waitForLoadState('domcontentloaded');
+  await page.waitForFunction(()=>!document.querySelector('#loginButton'));
+  await page.waitForLoadState('networkidle');
   async function preferences() {
     return page.evaluate(async()=>{const r=await fetch('/api/v2/app/preferences');return {status:r.status,body:await r.json()};});
   }
@@ -80,10 +97,14 @@ try {
   const before=await preferences();
   requireCheck(before.status===200,'browser session preferences HTTP200');
   const {authenticatedSID,sameSID}=await import('./talos-proof-media-cookie.mjs');
-  const validSID=authenticatedSID(await context.cookies(origin),origin);
+  const cookies=await context.cookies();
+  const cookieName='QBT_SID_8080'; // observed exact5.3 native session cookie, not legacy SID
+  result.sid_cookie_metadata=cookies.filter(c=>c.name===cookieName).map(c=>({exact_host:c.domain.replace(/^\./,'')===new URL(origin).hostname,path_root:c.path==='/',secure:c.secure,nonempty:c.value.length>0}));
+  const validSID=authenticatedSID(cookies,origin,cookieName);
   lease();
   stage='hostile origin CSRF';
   const attacker=await context.newPage();
+  const attackHeaders=await wireHeaders(attacker);
   await attacker.goto(hostile+'/__proof_attack');
   const denied=attacker.waitForResponse(r=>new URL(r.url()).pathname==='/api/v2/app/setPreferences' && r.request().method()==='POST');
   await attacker.evaluate(({target,value})=>{
@@ -92,10 +113,10 @@ try {
     field.value=JSON.stringify({max_active_downloads:value});form.appendChild(field);document.body.appendChild(form);form.submit();
   },{target:origin+'/api/v2/app/setPreferences',value:Number(before.body.max_active_downloads)===7?8:7});
   const rejection=await denied;
-  const hostileHeaders=await rejection.request().allHeaders();
+  const hostileHeaders=await attackHeaders(rejection);
   requireCheck(hostileHeaders.origin===hostile,'real browser hostile Origin retained');
   // Without the authenticated cookie a401 proves only auth, not CSRF. Fail closed.
-  requireCheck(sameSID(hostileHeaders.cookie,validSID),'hostile request carried real authenticated SID');
+  requireCheck(sameSID(hostileHeaders.cookie,validSID,cookieName),'hostile request carried real authenticated SID');
   requireCheck(rejection.status()===401 || rejection.status()===403,'hostile authenticated mutation denied');
   const after=await preferences();
   requireCheck(after.status===200 && after.body.max_active_downloads===before.body.max_active_downloads,'preference unchanged after hostile mutation');
@@ -103,6 +124,7 @@ try {
   result.chrome_version=browser.version();result.status='PASS';
 } catch(error) {
   result.failed_stage=stage;result.failure_type=error.constructor.name;
+  fs.writeFileSync(path.join(input.state,`browser-private-failure-${Date.now()}.log`),String(error.stack || error),{mode:0o600,flag:'wx'});
   // Deliberately do not emit error.message: Playwright errors can embed secrets.
 } finally {if(browser) await browser.close();}
 console.log(JSON.stringify(result));

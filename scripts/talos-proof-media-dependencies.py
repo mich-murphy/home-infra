@@ -182,8 +182,10 @@ def main():
     def kube(*command, **kwargs):
         return s.kube(args.group, *command, **kwargs)
     if args.action == 'stop':
+        existing = {(x['metadata']['namespace'], x['metadata']['name']) for x in
+                    json.loads(s.kubectl_read('get', 'deployments', '-A', '-o', 'json'))['items']}
         for name in members:
-            if name not in HELPERS:
+            if name not in HELPERS and ('proof-' + name, name) in existing:
                 kube('-n', 'proof-' + name, 'scale', 'deployment', name, '--replicas=0')
         for name in members:
             kube('-n', 'proof-' + name, 'wait', '--for=delete', 'pod', '--all', '--timeout=180s')
@@ -217,8 +219,8 @@ def main():
                 marker = json.loads(s.read_private(state / 'plex-functional.json'))
                 seed = ('[General]\napi_enabled = 1\napi_key = ' + credentials['tautulli']['api_key'] +
                     '\nfirst_run_complete = 1\nsystem_analytics = 0\nlaunch_browser = 0\n' +
-                    '[PMS]\npms_ip = plex.proof-plex.svc\npms_port = 32401\npms_ssl = 0\npms_url_manual = 1\n' +
-                    'pms_url = http://plex.proof-plex.svc:32401\npms_identifier = ' + marker['machine_id'] +
+                    '[PMS]\npms_ip = plex.proof-plex.svc\npms_port = 33240\npms_ssl = 0\npms_url_manual = 1\n' +
+                    'pms_url = http://plex.proof-plex.svc:33240\npms_identifier = ' + marker['machine_id'] +
                     '\npms_token = ' + credentials['plex']['api_key'] + '\n' +
                     '[Monitoring]\nlogging_ignore_interval = 0\n[Advanced]\npms_timeout = 3\ncheck_github = 0\nmonitor_pms_updates = 0\n')
                 secret['data']['seed'] = base64.b64encode(seed.encode()).decode()

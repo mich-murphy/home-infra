@@ -250,7 +250,7 @@ def plex(api, credential, fixture, state, phase):
         library = next((x for x in sections.findall('Directory') if x.get('title') == 'Proof'), None)
         if library is None:
             query = urllib.parse.urlencode({'name': 'Proof', 'type': 'movie', 'agent': 'com.plexapp.agents.none',
-                     'scanner': 'Plex Movie Scanner', 'language': 'en-US', 'location': '/data/media'})
+                     'scanner': 'Plex Movie Scanner', 'language': 'en', 'location': '/data/media'})
             plex_xml(api, '/library/sections?' + query, 'POST')
             library = next((x for x in plex_xml(api, '/library/sections').findall('Directory') if x.get('title') == 'Proof'), None)
         expect(library is not None, 'Plex personal-media library creation failed')
