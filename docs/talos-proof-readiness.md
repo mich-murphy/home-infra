@@ -46,7 +46,7 @@ this fresh-state test is **not** an upgrade/migration rehearsal of the source da
 
 | Source container | Proof replacement | Actual evidence / remaining gate |
 |---|---|---|
-| `pinchflat` | Isolated frontend + config/download PVCs | **Partial:** trusted-TLS profile CRUD, replacement and different-fresh-PVC read-before-write recovery passed. Optional native RSS→HTML→MP4 provider workflow is prepared (full576MiB, stock downloader version/hash required); real extractor/download/recovery remain unproved. |
+| `pinchflat` | Isolated frontend + config/download PVCs | **Partial:** trusted-TLS profile CRUD, replacement and different-fresh-PVC read-before-write recovery passed. Optional native RSS profile attempted756385cc but initial RPC control failed twice; second exit137, main restart2/lastOOMKilled137. Additional BEAM is candidate overhead, not proved cause. No downloader identity/Source/index/download pass; no limit increase. Existing CRUD recovery is not provider recovery. |
 | `audiobookshelf` | Isolated library/config/metadata PVCs | **Bounded pass:** generated audiobook scan, exact stream/range bytes, progress/bookmark CRUD, restart and three fresh-PVC recovery checks. No production library/podcast/provider migration. |
 | `qbittorrent` | Fresh private settings/data + BEP3 fixture | **Bounded pass7ac9f65c:** repaired route, actual5.3 auth204/preferences, real torrent transfer—1 handshake/2 pieces/32,044bytes—and completed on-disk SHA; fixture-off restart and different2PVC functional recovery. Initial401/API-response mismatch and progress1-without-file failure retained. Follow-upd65fce12 native browser login204/prefs200 and hostile same-site form with exact authenticated cookie denied/state unchanged passed. Six harness failures retained. Cookie lacked Secure behind TLS termination—separate security gap, not production auth parity. |
 | `qbitwebui` | Fresh user/instance state and proof qbit dependency | **Pending:** executable exact-version workflow, no live connection/auth/queue-state proof yet. |
@@ -55,9 +55,9 @@ this fresh-state test is **not** an upgrade/migration rehearsal of the source da
 | `sonarr` | Same bounded media-pipeline approach | **Pending:** episode workflow and real imported-file identity/persistence. |
 | `lidarr` | Same bounded media-pipeline approach | **Pending:** music workflow and real imported-file identity/persistence. |
 | `prowlarr` | Isolated indexer manager + local provider fixtures | **Pending:** actual test/query/result integration, not only empty configuration. |
-| `jellyfin` | Fresh local server, no GPU/devices | **Pending:** generated media playback/seek/resume/subtitle and ACL/recovery; no GPU claim. |
-| `plex` | Fresh unclaimed server + authenticated local-only adapter | **Blocked d65fce12:** adapter port collision/restart5 and forwarded-client-header incompatibility repaired; native library creation400 remains. No scan/decoded playback/timeline/history/recovery pass. Adapter key is **not** a cloud token/claim; native cloud/client parity unproved. |
-| `tautulli` | Fresh monitor state against proof Plex | **Pending:** real playback/history/statistics integration and recovery. |
+| `jellyfin` | Fresh local server, no GPU/devices | **Security failure756385cc:** independent anonymous client received exact120214B video/SHA, not a health page. Real library/outsider created, but setup marker withheld; do not reset retained state. No decoded lifecycle/resume/outsider ACL/recovery pass. Native LAN/proxy/auth classification needs source-backed diagnosis, not bypass. |
+| `plex` | Fresh unclaimed server + authenticated local-only adapter | **Partial756385cc:** native agent discovery explicitly supplied xn; real scan/exactbytes/range/watched CRUD passed. Browser media401 with actual Origin/Referer blocks decoding; neither header stripped. Prior collision/restart5/400 retained. No decoded playback/history/recovery pass. Adapter key is **not** a native/cloud token; account/client parity unproved. |
+| `tautulli` | Fresh monitor state against proof Plex | **Pending:** native API/empty-history preparation reached756385cc, but Plex browser failed before frames. No actual matching playback/history/statistics or recovery pass. |
 | `seerr` | Fresh request manager + isolated media/provider dependencies | **Pending:** actual authenticated request lifecycle/dependency behavior. |
 | `recyclarr` | Suspended bounded Job + local provider fixtures | **Pending:** nonempty planned custom-format changes and unchanged app state required; empty preview is not a pass. |
 | `kometa` | Suspended bounded Job + no-forwarding TMDb contract fixture | **Pending:** meaningful nonempty collection behavior; mock-provider wiring/runtime not yet accepted. No genuine TMDb account claim. |
@@ -66,7 +66,8 @@ this fresh-state test is **not** an upgrade/migration rehearsal of the source da
 Evidence: [media runbook](talos-proof-media.md),
 [first live batch including failures](evidence/talos-media/first-live-batch.md),
 [actual transfer/recovery chronology](evidence/talos-media/live-download-transfers.md),
-[native browser pass and player failures](evidence/talos-media/live-browser-player.md), and
+[native browser pass and earlier player failures](evidence/talos-media/live-browser-player.md),
+[later native security/resource failures and API milestone](evidence/talos-media/native-workflows-20261111.md), and
 [synthetic download protocol contract](evidence/talos-media/download-protocol-fixtures.md).
 The first batch records a stale-Talos observation fallback, temporary helper overlap
 and transient post-restore failures; those are not erased by later successes.

@@ -21,8 +21,9 @@
   bookmark/preferences recovery passed. Pocket-ID retained-passkey/protocol negatives
   passed across replacement/freshPVC; Wallabag actual image/native Redis import passed
   (fresh-process reconnect; imagePVC retained). Parent independently checked earlier
-  archive hashes and distinct live PVC/PV/XFS paths; newest captures still need parent
-  identity review. Restart/resource caveats remain.
+  archive hashes and distinct live PVC/PV/XFS paths, including the newest Pocket-ID
+  and Wallabag captures. This is not another functional replay; restart/resource
+  caveats remain.
 - **Operations:** observations/loopback alerts and off-node file restore passed;
   private etcd snapshot captured, **not restored**. After a genuine fresh capacity
   improvement, Flux reconciliation/drift repair/path rollback/negative RBAC passed.
@@ -31,8 +32,10 @@
   recovery passed. qBit/BEP3 and SAB/NNTP now have actual32,044-byte local transfers,
   exact output hashes, fixture-off restart and distinct-PVC functional recovery.
   Native qBit browser login/authenticated hostile-form denial also passed, but its
-  cookie lacked Secure behind TLS termination. Plex library creation failed;
-  player/import/helper/provider criteria remain separate gates.
+  cookie lacked Secure behind TLS termination. Later Plex scan/bytes/range/watched
+  CRUD passed, but native Origin/Referer401 blocks browser playback. Jellyfin leaked
+  exact video bytes to an anonymous client; Pinchflat RPC hit OOM before provider
+  proof. These are preserved blockers, not player/provider acceptance.
 - **Heavy data:** CODE established real WOPI read/lock and token/lock negatives,
   but eight attempts (sevenTXT, one nativeODT) did not reach typing/save/reopen;
   actualODT loaded with edit permission but a session warning blocked automation.
