@@ -186,12 +186,13 @@ kubectl kustomize kubernetes/apps/data | python3 tests/kubernetes-proof.py
 python3 tests/talos-proof-data_test.py
 ```
 
-The24 offline tests cover parent safety validation, exact boundaries, current
+The26 offline tests cover parent safety validation, exact boundaries, current
 Compose image membership, Immich/PG18 paths, default-deny presence, group-budget
 accounting, no committed Secret manifests, fresh/private credential behavior,
 repository-state refusal, no implicit kubeconfig, expired leases, exact endpoint/TLS/node UID enforcement, symlink/ancestor
 refusal, mutation reauthorization, frontend-only reserved ingress ports, and stale
-or insufficient memory rejection. These are not live assertions. Static result and
+or insufficient memory rejection. Clean-PVC failure cleanup restores the source
+claim, and restore refuses a nonempty target PostgreSQL cluster. These are not live assertions. Static result and
 render hash are recorded under `docs/evidence/talos-data/`.
 
 ## Work in progress after safety review

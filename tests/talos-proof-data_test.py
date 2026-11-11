@@ -180,6 +180,41 @@ class DataContract(unittest.TestCase):
             self.assertIn(name, permitted)
             self.assertEqual(d['spec']['ingress'], [{'fromEntities':['ingress'], 'toPorts':[{'ports':[{'port':str(permitted[name]),'protocol':'TCP'}]}]}])
 
+    def test_clean_pvc_failure_restores_source_binding(self):
+        live_spec = importlib.util.spec_from_file_location('live',ROOT / 'tests/talos-proof-data-live.py')
+        live = importlib.util.module_from_spec(live_spec)
+        live_spec.loader.exec_module(live)
+        live.NS = 'proof-miniflux'
+        live.RESULT = {'checks':[]}
+        calls = []
+        def k(*args, **kwargs):
+            calls.append(args)
+            if args[:2] == ('get','deployment'):
+                return json.dumps({'spec':{'template':{'spec':{'volumes':[{'name':'data','persistentVolumeClaim':{'claimName':'postgres-data'}}]}}}}).encode()
+            if args[:2] == ('get','pvc'):
+                source = args[2]=='postgres-data'
+                return json.dumps({'metadata':{'uid':'source-uid' if source else 'fresh-uid'},'spec':{'accessModes':['ReadWriteOnce'],'storageClassName':'proof-local','resources':{'requests':{'storage':'4Gi'}},'volumeName':'source-pv' if source else 'fresh-pv'}}).encode()
+            return b''
+        with patch.object(live,'k',side_effect=k), patch.object(live,'scale') as scale:
+            with self.assertRaisesRegex(RuntimeError,'synthetic failure'):
+                with live.fresh_pvc('postgres',('miniflux',)):
+                    raise RuntimeError('synthetic failure')
+            patches = [json.loads(c[-1]) for c in calls if c[0]=='patch']
+            self.assertEqual(patches[-1][0]['value'],'postgres-data')
+            self.assertTrue(patches[0][0]['value'].startswith('postgres-restore-'))
+            self.assertEqual(scale.call_args_list[-2].args,('postgres',1))
+            self.assertEqual(scale.call_args_list[-1].args,('miniflux',1))
+            self.assertEqual(live.RESULT['restore_volumes'][0]['restored_uid'],'fresh-uid')
+
+    def test_clean_restore_rejects_nonempty_pg_cluster(self):
+        live_spec = importlib.util.spec_from_file_location('live_restore',ROOT / 'tests/talos-proof-data-live.py')
+        live = importlib.util.module_from_spec(live_spec)
+        live_spec.loader.exec_module(live)
+        live.RESULT = {'checks':[]}
+        with patch.object(live,'execute',return_value=b'42\n') as execute, self.assertRaises(RuntimeError):
+            live.clean_postgres_restore('miniflux',b'dump')
+        self.assertEqual(execute.call_count,1)
+
 
 if __name__ == '__main__':
     unittest.main()
