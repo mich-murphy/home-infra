@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reconciliation-fixture
+  namespace: proof-operations-gitops
+data:
+  revision: "1"
