@@ -18,8 +18,11 @@
   OAuth/article extraction/CRUD/recovery. Wallabag's exact synthetic fixture needs
   a documented narrow SSRF adapter; this is not production configuration parity.
   Expanded CouchDB tenant/view/replication/security recovery and Miniflux
-  bookmark/preferences recovery passed. Parent independently checked private
-  archive hashes and distinct live PVC/PV/XFS paths; restart/resource caveats remain.
+  bookmark/preferences recovery passed. Pocket-ID retained-passkey/protocol negatives
+  passed across replacement/freshPVC; Wallabag actual image/native Redis import passed
+  (fresh-process reconnect; imagePVC retained). Parent independently checked earlier
+  archive hashes and distinct live PVC/PV/XFS paths; newest captures still need parent
+  identity review. Restart/resource caveats remain.
 - **Operations:** observations/loopback alerts and off-node file restore passed;
   private etcd snapshot captured, **not restored**. After a genuine fresh capacity
   improvement, Flux reconciliation/drift repair/path rollback/negative RBAC passed.
@@ -27,9 +30,13 @@
 - **Media:** Pinchflat profile recovery and Audiobookshelf fixture streaming/state
   recovery passed. qBit/BEP3 and SAB/NNTP now have actual32,044-byte local transfers,
   exact output hashes, fixture-off restart and distinct-PVC functional recovery.
-  External providers, browser/player/import/helper criteria remain separate gates.
+  Native qBit browser login/authenticated hostile-form denial also passed, but its
+  cookie lacked Secure behind TLS termination. Plex library creation failed;
+  player/import/helper/provider criteria remain separate gates.
 - **Heavy data:** CODE established real WOPI read/lock and token/lock negatives,
-  but typing/save/reopen failed; no Office editing acceptance. Actual ML inference
+  but eight attempts (sevenTXT, one nativeODT) did not reach typing/save/reopen;
+  actualODT loaded with edit permission but a session warning blocked automation.
+  No Office editing acceptance. Actual ML inference
   and full Nextcloud/Immich integration remain unproved.
 
 See the [all36-service readiness matrix](talos-proof-readiness.md), service-specific

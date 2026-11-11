@@ -22,7 +22,7 @@ render=$(mktemp -d)
 trap 'rm -rf "$render"' EXIT
 python3 tests/kubernetes-proof-schemas.py "$render/schemas"
 schema="$render/schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
-for group in media data media/integration media/protocol-qbittorrent media/protocol-sabnzbd; do
+for group in media data media/integration media/protocol-qbittorrent media/protocol-sabnzbd media/pinchflat-rss; do
   printf 'Validating application profile: %s\n' "$group"
   kubectl kustomize "kubernetes/apps/$group" > "$render/apps.yaml"
   python3 tests/kubernetes-proof.py < "$render/apps.yaml"
