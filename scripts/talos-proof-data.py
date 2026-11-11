@@ -21,6 +21,7 @@ EXPECTED_HOSTNAME = 'talos-proof'
 LEASE_GROUP = None
 LEASE_STAGE = None
 STATE_DIR = None
+CANONICAL_DATA_STATE = Path.home()/".local/state/talos-data-proof"
 MUTATIONS = {'apply','scale','exec','rollout','delete','create','patch','label','annotate','run','replace','cp','edit','set'}
 GROUPS = ('nextcloud', 'immich', 'miniflux', 'wallabag', 'couchdb', 'pocket-id')
 # Includes fixture, excludes suspended cron. Conservative memory limits, MiB.
@@ -316,16 +317,35 @@ def guard(group):
         raise RuntimeError('insufficient memory headroom for group limits plus 192MiB reserve')
 
 
-def pending_native_cron(state):
-    """Append-only cron journals block activation, never deactivate/forensic cleanup."""
-    pending, clean = set(), set()
+def shared_data_state(state):
+    if no_symlinks(state).resolve() != CANONICAL_DATA_STATE.resolve():
+        raise RuntimeError('canonical shared data journal directory required')
+    return private(state)
+
+
+def native_cron_events(state):
+    events = []
     for path in state.glob('*.json'):
-        try: uuid.UUID(path.stem)
+        try:
+            ident = uuid.UUID(path.stem)
+            if str(ident) != path.stem: continue
         except ValueError: continue
+        if path.is_symlink() or stat.S_IMODE(path.stat().st_mode) != 0o600:
+            raise RuntimeError('unsafe UUID journal')
         value = json.loads(path.read_text())
-        if value.get('event') == 'pending': pending.add(value['run_id'])
-        elif value.get('event') == 'clean': clean.add(value['run_id'])
-    return pending - clean
+        if not isinstance(value, dict): raise RuntimeError('invalid UUID journal')
+        if isinstance(value.get('event'), str): events.append(value)
+    return events
+
+
+def pending_native_cron(state):
+    """Run UUID reuse is forbidden; count imbalance also fails closed for old journals."""
+    counts = {}
+    for value in native_cron_events(state):
+        if value.get('event') in ('pending', 'clean'):
+            run = value['run_id']
+            counts.setdefault(run, [0, 0])[value['event'] == 'clean'] += 1
+    return {run for run, (pending, clean) in counts.items() if pending > clean or pending > 1}
 
 
 def main():
@@ -341,7 +361,7 @@ def main():
         # path is not the native retention proof and must not earn acceptance.
         raise RuntimeError('Native cron integration BLOCKED; see docs/talos-proof-nextcloud-cron-plan.md')
     os.umask(0o077)
-    state = private(a.state)
+    state = shared_data_state(a.state)
     STATE_DIR = state
     if a.group == 'nextcloud' and a.action in ('apply', 'activate', 'run', 'test') and pending_native_cron(state):
         raise RuntimeError('pending native cron cleanup blocks unsafe activation')

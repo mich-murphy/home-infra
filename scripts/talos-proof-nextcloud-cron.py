@@ -43,7 +43,7 @@ def barrier(pods):
 
 def job(phase, run_id):
     """Bounded inert Job document; never applied by this compiler."""
-    if phase not in PHASES or str(uuid.UUID(run_id)) != run_id:
+    if phase not in (*PHASES, 'cleanup') or str(uuid.UUID(run_id)) != run_id:
         raise ValueError('exact phase and canonical UUID required')
     command = ['sh', '-ec', 'umask 077; php /proof/native.php "$PROOF_PHASE" "$PROOF_RUN"']
     container = dict(name='cli', image=IMAGE, command=command,

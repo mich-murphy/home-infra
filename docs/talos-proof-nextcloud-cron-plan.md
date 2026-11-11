@@ -44,8 +44,10 @@ context/endpoint/node UID/expiry fields and these exact bindings:
 - sorted selected_controllers: cronjob/nextcloud-cron, deployment/postgres,
   deployment/redis;
 - object_uids mapping exact kind/name to original UID: application PVC, Secret,
-  both backend Deployments, suspended CronJob, **every backend PVC and every
-  associated PV**, including nextcloud-data's PV;
+  live Nextcloud Deployment, both backend Deployments, suspended CronJob,
+  **every desired backend PVC and every associated PV**;
+- html_claim bound to the current `/var/www/html` mapping in **both** the live
+  Deployment and CronJob; no implicit `nextcloud-data` fallback after restore;
 - backend_images mapping postgres and redis to exact parent-reviewed image
   references; these are compared to Deployments and actual pod specifications.
 
@@ -62,7 +64,13 @@ changes or expiry block, including recovery; only a new parent grant can recover
    journals; unresolved pending runs block activation. Export parent-known UUID
    and exact candidate/control names to fsynced off-pod intent **before mutation**.
    All new supervisor artifacts are UUID/O_EXCL0600, parent directory0700.
-2. Validate retained Kubernetes identities and PV claim attachments. Require all
+2. Before any scale/fixture/install mutation, validate retained Kubernetes
+   identities, every desired PVC/PV UID, Bound/proof-local and exact claimRef
+   namespace/name/UID. Validate the entire CronJob pod security/resource/init/
+   execution template against the reviewed manifest (only enumerated API
+   defaults allowed), not only at the cron phase. Backend templates and actual
+   Pods must match their full approved ceilings, including CPU, memory,
+   overhead, pod-level resources and init shape. Require all
    other proof app/helper controllers zero and every proof schedule suspended.
    All proof Job pods block, even completed/failed/terminating/unlabelled; other
    proof pods, including validation/gateway helpers, block. No parallel helper.
@@ -74,7 +82,8 @@ changes or expiry block, including recovery; only a new parent grant can recover
    Each phase repeats identities/helper barriers and fresh dual memory checks.
    Jobs have backoffLimit0, deadline180seconds, UID/GID33, no SA token, no init/
    sidecar, RuntimeDefault and dropALL. Cron phase derives from the actual
-   suspended CronJob template and validates its security/resource envelope.
+   suspended CronJob template; the full envelope was already validated before
+   backend activation and is revalidated at each admission.
 5. Preflight compares reviewed packaged core and all Docker config hashes;
    recursively inventories retained types/symlinks/UID33 ownership and allowed
    root entries; connects to PG with read-only transactions and authenticated
@@ -106,9 +115,15 @@ changes or expiry block, including recovery; only a new parent grant can recover
    'OC\Authentication\Token\TokenCleanupJob'` from the charged PHP payload.
    PHP reads native cgroup current/peak/events/stat for the same pod, including
    its child CLI. Missing measurements/OOM block; no extra Python container.
-10. Capture private pod JSON/state/lastState/current/previous logs before delete;
-    capture gaps preserve the Job and block another phase. Delete and confirm
-    pod absence before the next. Fresh final process requires physical candidate
+10. Capture all raw pod JSON/state/lastState/current and applicable previous
+    logs **before** parsing JSON, interpreting BLOCKED, or validating OOM. A
+    current-log failure still attempts previous logs and captures raw private
+    error output. A gap fails acceptance. If fresh pod-state API capture works,
+    retire the own helper even when a waiting/failed container has no logs. An
+    unreachable API leaves pending/unconfirmed cleanup; never bypass guards.
+    Ordinary payload/JSON/OOM failures do not skip deletion. Delete only the exact run/phase Job with its observed-create or
+    parent-bound UID as an API DeleteOptions precondition. Verify both Job and
+    pod absence before the next phase or returning a handled failure. Fresh final process requires physical candidate
     absence, exact unchanged live control, same job ID with native advanced
     scheduling metadata and lastcron corroboration. Lastcron or exit0 alone is
     insufficient. Only after observations, invalidate exact owned fixtures and
@@ -126,11 +141,20 @@ No physical cleanup/restore is guaranteed if Node/API/guard is unreachable.
 Preserve the VM stopped; do not start around the guard. The supervisor never
 starts a VM. Parent/operator must keep/return the VM stopped when guarded stop
 cannot be confirmed. A new exact parent recovery receipt is necessary after
-expiry. `stop` does not inspect pending activation policy. `cleanup` serially
-uses only names/UID/type/remember from the immutable intent and native journal;
-it cannot earn cron acceptance. If a failed/retained helper exists, first obtain
-parent direction to preserve/export forensics and remove that exact helper;
-cleanup deliberately refuses to run alongside it. If fixture mutation never
+expiry. `stop` does not inspect pending activation policy and accepts either
+valid run or cleanup receipt scope; it scales backends to zero, captures/retires
+only its UID-bound helper, then waits for namespace pod absence.
+
+`cleanup` requires a **new** `action: cleanup` receipt with `phases: [cleanup]`,
+the original pending run_id/intent, exact retained UIDs/images/HTML alias,
+budget832 and at least780seconds remaining. It never changes an old receipt or
+expiry. It prevalidates identities/stopped controllers, captures and deletes
+only the own prior UID-bound Job, performs fresh dual832 admission, starts
+**only** PG/Redis, runs one192MiB cleanup CLI, captures/deletes it, and stops
+all backends. No preflight/install/fixture/main cron rerun. The original payload
+ConfigMap and native fixture journal must exist; no reconstruction or adoption.
+It uses only names/UID/type/remember from the immutable intent and native journal
+and cannot earn cron acceptance. If fixture mutation never
 started, missing journal blocks rather than guessing success. A crash after
 insert but before ID export is recoverable by the pre-exported exact UUID name.
 
@@ -142,8 +166,8 @@ No full Nextcloud/HTTP/WebDAV/Redis reconnect/capacity/durability claim follows.
 ## Offline validation
 
 `python3 tests/talos-proof-nextcloud-cron_test.py` (8),
-`python3 tests/talos-proof-nextcloud-cron-supervisor_test.py` (8), and
-`python3 tests/talos-proof-data_test.py` (42) passed: **58 mocked/offline tests**.
+`python3 tests/talos-proof-nextcloud-cron-supervisor_test.py` (23), and
+`python3 tests/talos-proof-data_test.py` (42) passed: **73 mocked/offline tests**.
 `nix shell nixpkgs#php --command php -l scripts/talos-proof-nextcloud-cron.php`
 passed with workstation PHP8.5.12. This is syntax only, not pinned-image runtime
 compatibility. No unit command may reach Kubernetes/Talos/VM/image/runtime.
@@ -152,3 +176,70 @@ Remaining grant-bound measurements: actual source/config parity, UID33 inventory
 and copy permission, retained DB/PVC state, actual native Redis config/access,
 CLI bootstrap writes/extensions, due-job state, migration duration, real native
 side effects and192MiB fit. Every unavailable measurement fails closed.
+
+
+## Canonical shared journal and replay boundary
+
+Both the legacy data CLI and supervisor require the one existing canonical
+`$HOME/.local/state/talos-data-proof` directory (0700, outside Git, no symlinks).
+No alternate `--state` or receipt `state_dir` can hide pending cleanup. Only
+canonical UUID.json journals are parsed; credentials and prefixed forensic JSON
+are not journals. Malformed/private-mode-invalid UUID journals fail closed.
+Pending and clean event counts are shared across both entry points; duplicate
+pending for a reused run remains blocked rather than being masked by an older
+clean event. Full `run` refuses **any** prior journal event for that run UUID
+before mutation, including after clean. Stop remains available. Initialization
+must not migrate/overwrite existing private state to evade these rules.
+
+## Separate initialization proposal — NOT authorized or executed
+
+Parent read-only discovery reported **zero PVC objects** in proof-nextcloud,
+not merely Pending PVCs. PG, Redis and/or CronJob may also be absent. Prior
+native WOPI attempts applied only CODE/fixture; those observations do not prove
+backend or storage initialization. The full UID-bound runner intentionally
+cannot bootstrap this state and must not be widened to do so.
+
+A future parent-reviewed, separately stopped-object-creation scope should use
+an offline declaration derived from these reviewed sources, with an explicit
+missing-object allowlist and no blanket kustomize/apply of the app directory:
+
+| Missing object only | Declarative source / invariant |
+| --- | --- |
+| PVC for the **current mapped HTML alias** | nextcloud.yaml PVC spec; proof-local/RWO/retained size, parent-reviewed alias, no guessed UID |
+| PVC postgres-data; Deployment postgres; Service postgres | postgres.yaml; replicas **0**, unchanged pinned image/resources/security and service selector |
+| PVC redis-data; Deployment redis; Service redis | redis.yaml; replicas **0**, unchanged pinned image/resources/security and service selector |
+| CronJob nextcloud-cron | cronjob.yaml; suspend **true**, one192MiB CLI, HTML claim must match existing Nextcloud Deployment |
+
+Before creation: read-only inventory namespace, current Nextcloud HTML mapping,
+all candidate names/UIDs/specs and proof-local StorageClass/provisioner behavior.
+Validate all present objects against reviewed declarations; any mismatch stops
+for parent review. Emit only absent allowlisted documents, create-only, never
+replace/adopt a present object or invent a UID. Record intent before creation,
+private returned object UIDs afterward. Do not touch Secrets, CODE/WOPI/fixture,
+existing Nextcloud Deployment, credentials, archives, PVC contents, or partial
+installs. If any prerequisite (including Nextcloud mapping/Secret) is missing,
+stop for a new explicit scope rather than creating it implicitly. Preserve all
+existing object UIDs. No `maintenance:install`, bootstrap, Apache, native cron,
+fixture or backend scale belongs to object creation.
+
+PVC binding is a **second separately reviewed scope**, not a hidden application
+start. Inspect StorageClass binding mode before creating PVCs (Immediate mode
+could itself trigger provisioning and must be budgeted/granted first). With
+WaitForFirstConsumer, a bounded non-application binding helper could mount only
+the three new claims, request/limit64MiB, no app entrypoint or data writes; its
+exact image/command/security/deadline and storage access require review. Each
+storage-provisioner helper must have an enforced32MiB limit. Three concurrent
+provisioners32 each + one binding helper64 + reserve192 = **352MiB**, **not
+granted**. No assumption that the current provisioner already enforces32MiB;
+inspect and separately approve any configuration change. Capture all binding
+helpers/provisioners and logs, delete only owned UID-bound helpers, verify
+absence, and retain PVCs/PVs. If safe binding cannot fit or be verified, stop.
+
+Only after confirmed Bound/proof-local PVCs and exact PV claimRef identities,
+all app/backend replicas0, suspended CronJob, and zero helper pods may the parent
+issue a **NEW full832 UID receipt** using observed (never guessed) Deployment,
+CronJob, Secret, current HTML PVC and all backend PVC/PV UIDs. No initialization
+permission follows from this plan or the old fullrun receipt. Parent review of
+14199547 remains **not yet live-ready**. Static67ad's 353 methods/443 resources
+are not runtime admission; prepared67 correction remains unrun and all eight
+WOPI failures remain retained. No WOPI/UI changes are part of this correction.
