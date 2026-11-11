@@ -312,7 +312,7 @@ class DataContract(unittest.TestCase):
             for kubelet,talos in ((642,1403),(688,1403),(1403,642),(True,1403),(float('nan'),1403),(None,1403)):
                 with patch.object(life,'lease',return_value={'measured_at':time.time(),'kubelet_available_mib':kubelet,'talos_available_mib':talos}),self.assertRaises(RuntimeError):
                     life.guard('nextcloud')
-            with patch.object(life,'lease',return_value={'measured_at':time.time(),'kubelet_available_mib':896,'talos_available_mib':1403}):
+            with patch.object(life,'lease',return_value={'measured_at':time.time(),'kubelet_available_mib':1024,'talos_available_mib':1403}):
                 life.guard('nextcloud')
 
     def test_immich_bounded_profile_uses_supported_v3_fields(self):

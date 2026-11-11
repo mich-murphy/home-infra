@@ -701,3 +701,99 @@ Immich album/share/metadata/video and coordinated `/data` recovery code is **not
 finished** in this checkpoint. Existing own-worker/full-stage vector search code
 remains capacity-blocked and unrun. No source-only feature-complete assertion is
 made. User/tenant tests use synthetic local accounts, not production/cloud accounts.
+
+
+## Renewed WOPI-only768MiB window: two attempts consumed, released
+
+Parent explicitly approved **CODE768MiB only** after the recorded640MiB limit
+saturation, retaining fixture64MiB and192MiB reserve. The declarative limits and
+stage accounting now match: WOPI832+192=1024MiB; standalone CODE768+192=960MiB;
+full original Nextcloud services1856+192=2048MiB. All-declarations Nextcloud budget
+is1920MiB including the otherwise-off64MiB fixture. Earlier budgets/evidence above
+are historical, not permission to use the old ceiling or optimistic memory signal.
+No other limit/capability, reserve, platform/global policy, host/VM or source Docker
+setting was changed.
+
+The parent issued a **new** retry receipt (`data-nextcloud-wopi-retry.json`) with
+new lease_id, max_attempts2 and exact approved_controller_limits_mib; the old released
+receipt was explicitly revoked and never reused for activation. The new bounded
+runner `scripts/talos-proof-data-wopi-run.py` requires these fields and exact768/64,
+consumes a private unique per-lease attempt marker before mutation, refuses repeats
+or a third attempt, refreshes only measured memory fields and requires fresh
+min(kubelet,Talos)>=1024 before activation. It applies only selected component
+resources and the scoped existing policies/route, not Nextcloud/DB/Redis/cron.
+Both attempts are now consumed. **Live window released; no more activation.**
+
+### Fixture hardening and checks
+
+The earlier synchronous HTTP fixture was a plausible stall hazard, not a proven
+root cause. It is now HTTP/1.1 with at most8 concurrent request handlers,5s socket
+read timeout,32 requests per persistent connection, bounded1MiB body parsing,
+correct `Expect: 100-continue` handshake, explicit rejection of unsupported transfer
+encoding, body draining before reuse and RLock-protected state/atomic updates.
+A stalled body is read outside the state lock. Sanitized callback event/status/
+response-byte counts and file SHA/size are persisted to `/data/evidence.json` after
+each response—never token/lock values or raw file bytes. Twelve offline protocol
+regressions cover persistence,100-continue, a stalled client not blocking others,
+lock conflicts, wrong tokens, expiry/relock, bounds and durable sanitized evidence.
+This is still a narrow single-text-file fixture, not general WOPI conformance.
+
+### Actual768MiB results: partial protocol proof, NOT edit/save
+
+Both attempts started only CODE+fixture after fresh conservative admission, and
+both ended with selected replicas0, pod deletion complete and **global labelled pod
+count0**. See `wopi-768-live-attempt-{1,2}.json` and `wopi-768-live-summary.json`.
+No Nextcloud/PG/Redis/ML was activated and neither receipt was extended.
+
+- Attempt1 reached a genuinely loaded document but runtime permission was readonly;
+  editor-only screenshot exposed the version-tour overlay and Viewing selector.
+  Diagnostic Python exec could not read callback state, and fixture kernel data
+  became unavailable. Extra Python in a64MiB Python fixture is a resource hazard,
+  but no exact termination/OOM evidence was captured; **cause remains unproved**.
+- Attempt2 switched diagnostics to a lean `cat` of persisted callback JSON and
+  Mac-side API port-forward HTTP, avoiding a second guest Python interpreter.
+  Captured real CODE callbacks: CheckFileInfo200, GetFile200/30bytes and LOCK200.
+  The known `welcome-close` control was found and the version tour was dismissed.
+  The real Viewing menu opened; the subsequent selector requested `Editing`, but
+  the actual observed menu text is **`Editing Mode`**. That click timed out before
+  input/Save. The cropped editor-only image `wopi-768-attempt2-editor.png` contains
+  only the synthetic document/UI, no URL/token/credentials. The selector was fixed
+  **offline after both attempts**, not retried live.
+- Actual negative tests through the API tunnel returned bad-token401 and wrong-lock
+  PutFile409. Independently reviewed persisted SHA and30-byte size were unchanged;
+  no accepted PutFile event exists. No test-client successful PutFile was used to
+  manufacture browser editing acceptance.
+- **No marker edit, accepted PutFile save, saved-document close/reopen or explicit
+  wrong-host live denial passed.** The corresponding code is not evidence. Full
+  Nextcloud Office remains distinct and unproved.
+
+The browser now records actual map document-loaded/edit permission, bounded
+structural input/save-control IDs, dismisses only the observed known tour, selects
+Editing Mode via real UI, checks editor clipboard focus and clicks the actual Save
+button. An OS browser Save shortcut is no longer the save mechanism. Real saved
+bytes/marker and PutFile callbacks remain mandatory. The prior corrected synthetic
+parent HTML only hosts the iframe in the local browser; all CODE rendering, WSS and
+WOPI reads/locks remain real. This is not the Nextcloud Office client route.
+
+### Resource qualification
+
+Both CODE containers peaked804855808bytes =767.5703125MiB under768MiB, leaving only
+450560bytes (~0.43MiB) at the observed peak. Latest memory.events max0/oom0/oom_kill0
+is retained, not treated as headroom. **Read-only document loading already nearly
+exhausted the approved limit; editing and production capacity are unproved.**
+Attempt2 fixture peaked53903360bytes (~51.4MiB), max/oom/oom_kill0. Kernel
+memory.current/peak/events/stat, pod/container/image IDs and restart counts are in
+both attempt records. Attempt1 fixture kernel gap is explicit. Prior640MiB failure
+history/max10 and every768MiB failure are preserved unchanged. No cache-drop,
+pressure trick, SYS_ADMIN/privileged container, sysctl or guard bypass was used.
+
+Diagnostic capture now cannot skip guarded cleanup: exceptions are isolated and
+callback JSON, negative outcomes and kernel samples are saved progressively before
+an unconditional nested-finally scale0/delete wait. Both live cleanup records are
+actual observations, not promises. Parent may revoke the released retry receipt;
+no further app mutation is authorized by this checkpoint.
+
+Offline verification:39 data contract tests,12 local WOPI protocol tests, rendered
+app safety, Python compilation, browser syntax and diff checks pass. The new HTTP
+and UI code is not complete Nextcloud/Immich functional acceptance. Deferred Office,
+ML, database/files restore, tenant and media criteria remain as previously recorded.

@@ -66,7 +66,7 @@ spec:
             memory: 384Mi
           limits:
             cpu: 1000m
-            memory: 640Mi
+            memory: 768Mi
         startupProbe:
           httpGet: &id002
             path: /hosting/discovery

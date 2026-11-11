@@ -19,7 +19,7 @@ LEASE_STAGE = None
 MUTATIONS = {'apply','scale','exec','rollout','delete','create','patch','label','annotate','run','replace','cp','edit','set'}
 GROUPS = ('nextcloud', 'immich', 'miniflux', 'wallabag', 'couchdb', 'pocket-id')
 # Includes fixture, excludes suspended cron. Conservative memory limits, MiB.
-BUDGET = dict(nextcloud=1792, immich=2240, miniflux=448, wallabag=576, couchdb=256, **{'pocket-id':192})
+BUDGET = dict(nextcloud=1920, immich=2240, miniflux=448, wallabag=576, couchdb=256, **{'pocket-id':192})
 
 # Explicit coordinator-approved component stages; no implicit heavy-group activation.
 STAGES = {
@@ -36,7 +36,7 @@ STAGES = {
         'full': ('immich', 'ml', 'postgres', 'valkey'),
     },
 }
-LIMITS = {'nextcloud':640, 'postgres-nextcloud':384, 'redis':64, 'collabora':640,
+LIMITS = {'nextcloud':640, 'postgres-nextcloud':384, 'redis':64, 'collabora':768,
           'immich':768, 'ml':1024, 'postgres-immich':384, 'valkey':64, 'wopi-fixture':64}
 
 

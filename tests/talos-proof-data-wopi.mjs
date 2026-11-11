@@ -44,6 +44,7 @@ try {
     ws.connectToServer();
   });
   const page = await context.newPage();
+  page.setDefaultTimeout(15000);
   let frame;
   if (input.mode==='office') {
     stage='real Nextcloud proof-user login';
@@ -77,27 +78,100 @@ try {
   },{action:input.action,token:input.token,source:input.source});
   frame = page.frameLocator('iframe[name=editor]');
   }
-  stage = 'real editor rendered canvas';
-  await frame.locator('#document-container canvas').first().waitFor({state:'visible',timeout:120000});
+  if(input.expectHostDenial) {
+    stage='explicit wrong-host denial';
+    const denial=frame.getByText(/unauthori[sz]ed WOPI host|WOPI host.*not allowed|not.*allowed.*WOPI host/i).first();
+    await denial.waitFor({state:'visible',timeout:45000});
+    result.status='explicit-wrong-host-denial';
+    result.checks.push('CODE explicitly reports non-allowlisted WOPI host denial');
+  } else {
+  stage = 'actual document loaded/editable';
+  await frame.locator('#document-container canvas').first().waitFor({state:'visible',timeout:90000});
+  // Record only bounded structural state, never tokens, URLs or document text.
+  async function state() {
+    return frame.locator('body').evaluate(() => {
+      const map=window.app?.map;
+      return {docLoaded:map?._docLoaded, permission:map?._permission ?? window.app?.file?.permission,
+        hasDocLayer:!!map?._docLayer,
+        inputs:[...document.querySelectorAll('[contenteditable=true],textarea')].map(e=>({id:e.id,tag:e.tagName,cls:e.className})).slice(0,12),
+        dialogs:[...document.querySelectorAll('[role=dialog]')].map(e=>({id:e.id,visible:!!e.getClientRects().length})),
+        saveControls:[...document.querySelectorAll('button,[role=button]')].filter(e=>/save/i.test(e.getAttribute('aria-label')||e.title||e.id)).map(e=>({id:e.id,label:e.getAttribute('aria-label'),title:e.title})).slice(0,12)};
+    });
+  }
+  result.editor_state=await state();
+  // The previous cropped screenshot showed the version-tour overlay and the
+  // real Viewing selector. Dismiss only the known tour, then choose Editing UI.
+  for(const candidate of page.frames()) {
+    const tour=candidate.getByText(/Explore The New/i).first();
+    if(!/welcome/i.test(candidate.url()) && !await tour.isVisible().catch(()=>false)) continue;
+    result.welcome_frame_seen=true;
+    const controls=candidate.locator('[id*="close" i], [class*="close" i], [aria-label*="close" i], [title*="close" i]');
+    result.welcome_controls=await controls.evaluateAll(elements=>elements.slice(0,12).map(e=>({id:e.id,cls:e.className,tag:e.tagName})));
+    let dismissed=false;
+    for(let index=0;index<await controls.count();index++) {
+      const close=controls.nth(index);
+      if(await close.isVisible()) {await close.click();dismissed=true;break;}
+    }
+    if(!dismissed && await tour.isVisible()) {
+      // Version-tour body is a dedicated known iframe. Previous editor-only
+      // capture showed its X at top-right. Never apply this to the document body.
+      if(/welcome/i.test(candidate.url())) {
+        const box=await candidate.locator('body').boundingBox();
+        if(box) await candidate.locator('body').click({position:{x:box.width-28,y:32}});
+      }
+    }
+  }
+  // Some CODE builds render the tour inside an iframe-dialog wrapper whose
+  // close control is in the editor document rather than the nested tour frame.
+  const tourWrap=frame.locator('[id*="welcome" i], [class*="welcome" i], .iframe-dialog-wrap').first();
+  if(await tourWrap.isVisible().catch(()=>false)) {
+    const close=frame.locator('.iframe-dialog-close, [id*="welcome" i] [class*="close" i], [class*="welcome" i] [class*="close" i]').first();
+    if(await close.isVisible()) await close.click();
+  }
+  const viewing=frame.getByText('Viewing',{exact:true}).first();
+  if(await viewing.isVisible()) {
+    stage='observed real Editing Mode menu item';
+    await viewing.click();
+    const editing=frame.getByText('Editing Mode',{exact:true}).first();
+    await editing.click();
+    result.checks.push('Explicit real Viewing → Editing mode selection');
+  }
+  const deadline=Date.now()+45000;
+  while(true) {
+    const current=await state();result.editor_state=current;
+    if(current.hasDocLayer && current.docLoaded===true && current.permission==='edit') break;
+    if(Date.now()>deadline) throw new Error('actual document not loaded/editable');
+    await page.waitForTimeout(250);
+  }
   lease();
-  stage = 'real browser keyboard edit/save';
   if (input.edit !== false) {
-  await frame.locator('#document-container canvas').first().click({position:{x:180,y:180},force:true});
-  await page.keyboard.press('Control+End');
-  await page.keyboard.type(input.marker,{delay:40});
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+s' : 'Control+s');
-  // Allow real save/callback; the parent independently requires PutFile and bytes.
-  await page.waitForTimeout(3000);
+    stage='real editor input focus';
+    const inputBox=frame.locator('#clipboard-area, #copy-paste-container[contenteditable=true], .clipboard[contenteditable=true], textarea.clipboard').first();
+    await inputBox.focus();
+    const focused=await inputBox.evaluate(e=>document.activeElement===e);
+    if(!focused) throw new Error('editor clipboard input did not acquire focus');
+    result.checks.push('Actual loaded editable document and focused editor clipboard input');
+    await page.keyboard.press('Control+End');
+    await page.keyboard.type(input.marker,{delay:35});
+    stage='actual editor Save control';
+    const save=frame.getByRole('button',{name:/^Save(?:\s*\(|$)/i}).first();
+    await save.click();
+    result.checks.push('Actual editor Save button clicked; independent PutFile assertion required');
+    await page.waitForTimeout(3000);
   }
   if (!websocketCount) throw new Error('no real editor websocket');
   result.status='browser-input-dispatched-not-functional-verdict';
   result.checks.push('Pinned public HTTPS CODE iframe rendered; real WSS connected; keyboard edit/save dispatched');
+  }
   result.chrome_version=browser.version();
 } catch (error) {
-  if (browser && input.mode!=='office') { const pages=browser.contexts()[0]?.pages(); if(pages?.[0]) { await pages[0].screenshot({path:path.join(input.state,'wopi-failure.png')}).catch(()=>{}); if(fs.existsSync(path.join(input.state,'wopi-failure.png'))) fs.chmodSync(path.join(input.state,'wopi-failure.png'),0o600); } }
+  if (browser && input.mode!=='office') {
+    const page=browser.contexts()[0]?.pages()[0];
+    if(page) {const target=path.join(input.state,'wopi-failure.png');await page.locator('iframe').first().screenshot({path:target,timeout:3000}).catch(()=>{});if(fs.existsSync(target)) fs.chmodSync(target,0o600);}
+  }
   result.failed_stage=stage;result.failure_type=error.constructor.name;
   const message=String(error.message).split('\n')[0];
-  result.failure_detail=message.replaceAll(input.token || '\u0000','<token>').replace(/https?:[^\s]+/g,'<url>').slice(0,180);
+  result.failure_detail=message.replaceAll(input.token || '\u0000','<token>').replaceAll(input.password || '\u0000','<password>').replace(/https?:[^\s]+/g,'<url>').slice(0,180);
 } finally {
   if (browser) await browser.close();
 }

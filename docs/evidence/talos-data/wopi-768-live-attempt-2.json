@@ -1,0 +1,393 @@
+{
+  "status": "failed",
+  "attempt": 2,
+  "started": 1794412423.8292742,
+  "scope": "CODE768 + WOPI fixture64 ONLY",
+  "observations": {
+    "fixture": {
+      "events": [
+        "CheckFileInfo",
+        "GetFile",
+        "LOCK"
+      ],
+      "requests": [
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "CheckFileInfo",
+          "status": 200,
+          "bytes": 389
+        },
+        {
+          "event": "GetFile",
+          "status": 200,
+          "bytes": 30
+        },
+        {
+          "event": "LOCK",
+          "status": 200,
+          "bytes": 0
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        }
+      ],
+      "sha256": "07b6539d655df5eced6524878985efb363df3bbb2d579141abca82177d58624d",
+      "bytes": 30,
+      "marker_present": false
+    },
+    "negative": {
+      "bad-token": 401,
+      "wrong-lock": 409
+    },
+    "fixture_after_negatives": {
+      "events": [
+        "CheckFileInfo",
+        "GetFile",
+        "LOCK",
+        "lock-conflict"
+      ],
+      "requests": [
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "CheckFileInfo",
+          "status": 200,
+          "bytes": 389
+        },
+        {
+          "event": "GetFile",
+          "status": 200,
+          "bytes": 30
+        },
+        {
+          "event": "LOCK",
+          "status": 200,
+          "bytes": 0
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "Get",
+          "status": 401,
+          "bytes": 0
+        },
+        {
+          "event": "PutFile",
+          "status": 409,
+          "bytes": 0
+        }
+      ],
+      "sha256": "07b6539d655df5eced6524878985efb363df3bbb2d579141abca82177d58624d",
+      "bytes": 30,
+      "marker_present": false
+    },
+    "collabora": {
+      "pod_uid": "0833fd9b-8ca6-4258-8f83-ba1ee91a4738",
+      "pod_phase": "Running",
+      "pod_reason": null,
+      "containers": [
+        {
+          "name": "collabora",
+          "imageID": "docker.io/collabora/code@sha256:95f29f1c0a1778999125f53f058d968fe0afb37c95e32ebfb9f3444140faebd2",
+          "restartCount": 0,
+          "ready": true
+        }
+      ],
+      "time": 1794412455.714368,
+      "cgroup": {
+        "memory.current": "571891712\n",
+        "memory.peak": "804855808\n",
+        "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+        "memory.stat": "anon 285302784\nfile 263557120\nkernel 22773760\nkernel_stack 196608\npagetables 3190784\nsec_pagetables 0\npercpu 688\nsock 0\nvmalloc 36864\nshmem 4096\nzswap 0\nzswapped 0\nfile_mapped 67792896\nfile_dirty 475136\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 91860992\nactive_anon 193445888\ninactive_file 256462848\nactive_file 7090176\nunevictable 0\nslab_reclaimable 18436960\nslab_unreclaimable 860120\nslab 19297080\nworkingset_refault_anon 0\nworkingset_refault_file 203457\nworkingset_activate_anon 0\nworkingset_activate_file 122143\nworkingset_restore_anon 0\nworkingset_restore_file 995\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 428587\npgsteal 363192\npswpin 0\npswpout 0\npgscan_kswapd 276828\npgscan_direct 151759\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 239208\npgsteal_direct 123984\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 92590\npgmajfault 1387\npgrefill 20360\npgactivate 46868\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\n"
+      }
+    },
+    "wopi-fixture": {
+      "pod_uid": "0f3b021c-9a0b-44cb-973d-4f295ebf1851",
+      "pod_phase": "Running",
+      "pod_reason": null,
+      "containers": [
+        {
+          "name": "wopi-fixture",
+          "imageID": "ghcr.io/immich-app/immich-machine-learning@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2",
+          "restartCount": 0,
+          "ready": true
+        }
+      ],
+      "time": 1794412456.555419,
+      "cgroup": {
+        "memory.current": "42835968\n",
+        "memory.peak": "53903360\n",
+        "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+        "memory.stat": "anon 37687296\nfile 4395008\nkernel 524288\nkernel_stack 32768\npagetables 180224\nsec_pagetables 0\npercpu 208\nsock 0\nvmalloc 36864\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 1806336\nfile_dirty 4096\nfile_writeback 0\nswapcached 0\nanon_thp 29360128\nfile_thp 0\nshmem_thp 0\ninactive_anon 36945920\nactive_anon 741376\ninactive_file 1904640\nactive_file 2490368\nunevictable 0\nslab_reclaimable 153152\nslab_unreclaimable 119640\nslab 272792\nworkingset_refault_anon 0\nworkingset_refault_file 658\nworkingset_activate_anon 0\nworkingset_activate_file 134\nworkingset_restore_anon 0\nworkingset_restore_file 1\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 4273\npgsteal 4182\npswpin 0\npswpout 0\npgscan_kswapd 4273\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 4182\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 8635\npgmajfault 70\npgrefill 408\npgactivate 45\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 21\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\n"
+      }
+    }
+  },
+  "cleanup": {
+    "selected_replicas": 0,
+    "pod_deletion_confirmed": true,
+    "global_labelled_pod_count": 0
+  },
+  "suite_exit": 1,
+  "suite": {
+    "group": "nextcloud",
+    "stage": "wopi",
+    "checks": [
+      "TLS Gateway route selected: collabora.proof.invalid",
+      "real CODE discovery offers editable txt action",
+      "discovered CODE editor retains exact public HTTPS origin"
+    ],
+    "limitations": [
+      "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate."
+    ],
+    "wopi_browser": {
+      "status": "failed",
+      "checks": [],
+      "editor_state": {
+        "docLoaded": true,
+        "permission": "readonly",
+        "hasDocLayer": true,
+        "inputs": [
+          {
+            "id": "copy-paste-container",
+            "tag": "DIV",
+            "cls": ""
+          }
+        ],
+        "dialogs": [],
+        "saveControls": [
+          {
+            "id": "save-button",
+            "label": "Save",
+            "title": ""
+          },
+          {
+            "id": "overflow-button-save-toptoolbar-button",
+            "label": null,
+            "title": ""
+          }
+        ]
+      },
+      "welcome_frame_seen": true,
+      "welcome_controls": [
+        {
+          "id": "welcome-close",
+          "cls": "",
+          "tag": "DIV"
+        }
+      ],
+      "failed_stage": "actual document loaded/editable",
+      "failure_type": "TimeoutError",
+      "failure_detail": "locator.click: Timeout 15000ms exceeded."
+    },
+    "status": "failed",
+    "failure_type": "RuntimeError",
+    "failed_stage": "GET collabora.proof.invalid/hosting/discovery",
+    "memory_observation_gaps": [
+      {
+        "app": "collabora",
+        "reason": "suite final observation",
+        "error": "RuntimeError"
+      }
+    ],
+    "memory_observations": [
+      {
+        "app": "wopi-fixture",
+        "reason": "suite final observation",
+        "time": 1794412454.5606558,
+        "cgroup": {
+          "memory.current": {
+            "bytes": 47521792
+          },
+          "memory.peak": {
+            "bytes": 53903360
+          },
+          "memory.events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "memory.stat": {
+            "anon": 42209280,
+            "file": 4145152,
+            "kernel": 1146880,
+            "kernel_stack": 49152,
+            "pagetables": 614400,
+            "sec_pagetables": 0,
+            "percpu": 480,
+            "sock": 0,
+            "vmalloc": 73728,
+            "shmem": 0,
+            "zswap": 0,
+            "zswapped": 0,
+            "file_mapped": 3448832,
+            "file_dirty": 4096,
+            "file_writeback": 0,
+            "swapcached": 0,
+            "anon_thp": 33554432,
+            "file_thp": 0,
+            "shmem_thp": 0,
+            "inactive_anon": 36945920,
+            "active_anon": 5251072,
+            "inactive_file": 1888256,
+            "active_file": 2256896,
+            "unevictable": 0,
+            "slab_reclaimable": 174800,
+            "slab_unreclaimable": 221768,
+            "slab": 396568,
+            "workingset_refault_anon": 0,
+            "workingset_refault_file": 658,
+            "workingset_activate_anon": 0,
+            "workingset_activate_file": 134,
+            "workingset_restore_anon": 0,
+            "workingset_restore_file": 1,
+            "workingset_nodereclaim": 0,
+            "pgdemote_kswapd": 0,
+            "pgdemote_direct": 0,
+            "pgdemote_khugepaged": 0,
+            "pgdemote_proactive": 0,
+            "pgscan": 4273,
+            "pgsteal": 4182,
+            "pswpin": 0,
+            "pswpout": 0,
+            "pgscan_kswapd": 4273,
+            "pgscan_direct": 0,
+            "pgscan_khugepaged": 0,
+            "pgscan_proactive": 0,
+            "pgsteal_kswapd": 4182,
+            "pgsteal_direct": 0,
+            "pgsteal_khugepaged": 0,
+            "pgsteal_proactive": 0,
+            "pgfault": 5534,
+            "pgmajfault": 68,
+            "pgrefill": 408,
+            "pgactivate": 45,
+            "pgdeactivate": 0,
+            "pglazyfree": 0,
+            "pglazyfreed": 0,
+            "swpin_zero": 0,
+            "swpout_zero": 0,
+            "zswpin": 0,
+            "zswpout": 0,
+            "zswpwb": 0,
+            "thp_fault_alloc": 19,
+            "thp_collapse_alloc": 0,
+            "thp_swpout": 0,
+            "thp_swpout_fallback": 0
+          }
+        },
+        "pods": [
+          {
+            "uid": "0f3b021c-9a0b-44cb-973d-4f295ebf1851",
+            "containers": [
+              {
+                "name": "wopi-fixture",
+                "image": "sha256:52479c9b30bd5870f5e61ac383075b9e22a0eadff80ecc690f7de7c9d952b1c7",
+                "imageID": "ghcr.io/immich-app/immich-machine-learning@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2",
+                "containerID": "containerd://d7b0263d384cff27ff717e3d826f5afda688ae2e95537de20c612464e8c2ed77",
+                "restartCount": 0,
+                "ready": true,
+                "started": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "finished": 1794412488.074323
+}

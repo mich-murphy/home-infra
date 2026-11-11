@@ -315,11 +315,12 @@ def wopi_browser():
     check('real CODE browser editor accepted input/save dispatch',proc.returncode==0)
     deadline = time.monotonic()+90
     while True:
-        evidence = json.loads(execute('wopi-fixture',['python','-c',
-            "import os,urllib.request,json,hashlib; from pathlib import Path; "
-            "p=Path('/data/proof.txt').read_bytes(); "
-            "r=json.load(urllib.request.urlopen('http://127.0.0.1:8082/proof/evidence?access_token='+os.environ['NEXTCLOUD_ADMIN_PASSWORD'])); "
-            "r['marker_present']="+repr(marker)+".encode() in p; print(json.dumps(r))"]))
+        evidence = json.loads(execute('wopi-fixture',['cat','/data/evidence.json']))
+        if 'PutFile' in evidence['events']:
+            with forwarded('wopi-fixture',8082) as source:
+                saved=http(source,'/wopi/files/proof/contents?access_token='+CREDS['NEXTCLOUD_ADMIN_PASSWORD'],raw=True)
+            evidence['marker_present']=marker.encode() in saved
+        RESULT['wopi_last_callback_evidence']=evidence
         if evidence['marker_present'] and 'PutFile' in evidence['events']:
             break
         if time.monotonic()>=deadline:
@@ -328,6 +329,16 @@ def wopi_browser():
     check('real CODE CheckFileInfo/GetFile/LOCK/PutFile callbacks save browser marker',
         all(event in evidence['events'] for event in ('CheckFileInfo','GetFile','LOCK','PutFile')))
     RESULT['wopi_saved_document'] = evidence
+    payload['edit']=False
+    reopened=subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-wopi.mjs'))],input=json.dumps(payload).encode(),capture_output=True,timeout=180)
+    RESULT['wopi_reopen_browser']=json.loads(reopened.stdout)
+    check('real CODE document close/reopen reaches loaded editable state',reopened.returncode==0)
+    payload['source']='http://denied-wopi.proof.invalid:8082/wopi/files/proof'
+    payload['expectHostDenial']=True
+    denied=subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-wopi.mjs'))],input=json.dumps(payload).encode(),capture_output=True,timeout=75)
+    RESULT['wopi_host_denial_browser']=json.loads(denied.stdout)
+    check('real CODE rejects exact non-allowlisted WOPI host before document load',denied.returncode==0)
+
     RESULT['limitations'].append('Faithful single-file WOPI fixture + real CODE/browser edit/save ONLY, not Nextcloud/richdocuments integration, account authorization, multieditor, ODF formatting or production capacity.')
 
 
