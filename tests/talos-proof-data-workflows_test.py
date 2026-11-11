@@ -193,6 +193,26 @@ class Workflows(unittest.TestCase):
         self.assertNotIn('unrun',wording[0].lower())
         self.assertNotIn('prepared',wording[0].lower())
 
+    def test_pocket_browser_network_boundaries_precede_navigation(self):
+        source=Path(__file__).with_name('talos-proof-data-browser.mjs').read_text()
+        first_navigation=source.index('await page.goto(')
+        for boundary in ("context.route('**/*'", "context.routeWebSocket('**/*', ws => ws.close())", "serviceWorkers:'block'"):
+            self.assertLess(source.index(boundary),first_navigation)
+        self.assertIn('u.origin === issuer',source)
+        self.assertNotIn("'--ignore-certificate-errors'",source)
+        self.assertLess(source.index('!credentialFile && input.requireExistingPasskey'),source.index("await api('/api/signup/setup'"))
+        self.assertNotIn('fs.constants.O_TRUNC',source)
+        self.assertIn('fs.constants.O_EXCL',source)
+
+    def test_pocket_spki_comes_from_ca_verified_actual_leaf(self):
+        import inspect
+        source=inspect.getsource(live.pocket_browser)
+        self.assertIn("ssl.create_default_context(cafile=CA)",source)
+        self.assertIn('getpeercert(binary_form=True)',source)
+        self.assertIn("'-inform','DER'",source)
+        self.assertNotIn("'-in',CA",source)
+        self.assertIn("TALOS_PROOF_REQUIRE_EXISTING_PASSKEY",source)
+
     def test_private_archive_is_exclusive_and_mode0600(self):
         with tempfile.TemporaryDirectory() as directory:
             with patch.object(live, 'STATEPATH', Path(directory)), patch.object(live, 'LIFE') as life:

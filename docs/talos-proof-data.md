@@ -1188,3 +1188,98 @@ and [microservices bootstrap](https://github.com/immich-app/immich/blob/v3.3.6/s
 Offline validation:42 data contracts,14 workflow tests,13 strict audience cases,
 18 negative-response classifier cases,12 WOPI protocol tests, syntax/compilation
 and diff checks. None is new live Pocket-ID/Wallabag/Immich evidence.
+
+## Pocket-ID protocol-negative live checkpoint (2026-11-11 18:54–18:57 UTC)
+
+**Bounded functional pass on the first suite attempt.** Parent granted only
+Pocket-ID, after independently observing all previous app/helper pods absent.
+No Wallabag, ML, Immich, Nextcloud, Office or media controller was activated. The
+new WebSocket boundary and actual-leaf SPKI extraction were installed/tested
+before activation; no global TLS bypass or application Internet allowance was used.
+
+[Immutable live result](evidence/talos-data/pocket-id-negatives-live-result.json)
+records three complete browser runs: existing source state, pod replacement and
+logical import into distinct fresh PVC. **Every run** passed actual positive
+browser authorization/code redemption200, signed ID-token checks and userinfo,
+then:
+
+- Replayed that successfully redeemed code with correct original parameters:
+  **400 `invalid_grant`, no access/ID/refresh token**.
+- Obtained a different genuine browser-authorized code and supplied a valid-format
+  wrong S256 verifier: **400 `invalid_grant`, no tokens**.
+- Submitted an unregistered redirect: issuer `/interaction/error` response200,
+  redirect-specific error assertion passed, no code and **zero forbidden callback
+  requests**. The200 is the issuer error-page status, not a successful grant.
+- Existing unknown-client credential denial still passed.
+
+### Existing passkey—not silent replacement
+
+Before activation, the original0600 `pocket-virtual-authenticator.json` existed
+with one registered credential. The run explicitly required existing-credential
+mode; a missing history would fail before signup/registration. All three browser
+runs report **`registered_new_credential: false`**, the same existing user ID and
+credential-ID fingerprint, independently matched to the pre-run baseline. Each
+login started with cleared cookies and used `navigator.credentials.get` with the
+saved virtual key. No `navigator.credentials.create` fallback was used.
+
+This verifies the retained proof passkey/user in the current post-cold-start state
+(parent reports the intervening VM cold start), after app replacement and after
+clean-PVC import. It is **not** an independent VM cold-boot procedure or physical
+passkey/device-recovery test. The browser description's “fresh CDP authenticator”
+means a fresh browser emulator instance **loaded with that old credential**, not a
+newly registered key. Original authenticator bytes are unchanged; advancing
+virtual-authenticator counters are in new exclusive0600 history files.
+
+Source PVC UID `090ae00b-e1ca-4e40-9f2a-2007d9869620` differs from restored
+`a17b20a3-9b0d-4c11-953a-0bc5c89f4ec1`. The new logical export is UUID-named,
+SHA-verified and private; the original245497-byte export remains unchanged. All
+three flows use application2.19.2; this is not source2.19.1 upgrade acceptance.
+
+### TLS, browser boundary and deletion forensics
+
+Python performed a fresh hostname/CA-verified handshake to the actual Pocket-ID
+Gateway leaf and derived **that leaf's** public-key SPKI for Chrome. Verified leaf
+SHA256 is in the result. This no longer assumes the CA certificate itself is the
+served leaf. HTTP routes permit only the exact issuer origin; all WebSockets are
+blocked and service workers disabled **before first navigation**. Pocket-ID needs
+no WebSocket, so this records the installed deny rule, not a useful WSS session.
+
+[Forensic capture index](evidence/talos-data/pocket-id-negatives-forensics.json)
+contains only hashes/phases for11 immutable0600 private state manifests, including
+suite transitions and final lifecycle cleanup. Six live Pod-state snapshots were
+captured before deletion/replacement; regular/init state and lastState were
+retained without raw termination messages. All observed restart counters were0,
+so previous-container-log capture was not applicable. No raw private logs, keys or
+termination messages were published, no observer interpreter was injected into a
+fixture, and no historical exit cause is inferred.
+
+Maximum observed Pocket-ID cgroup peak was108515328bytes =103.48828125MiB under
+192MiB; observed max/oom/oom_kill were0. Four cgroup-sampled Pod UIDs had
+restartCount0. At the largest-peak sample, current anon was15.95703125MiB and file
+82.2578125MiB; these samples are not a decomposition of the earlier peak. Inclusive
+peaks include in-container exec diagnostics and import/export work where present.
+This is not a production load, capacity/headroom or no-OOM-risk claim.
+
+### Release, preservation and next decision
+
+[Release/preservation record](evidence/talos-data/pocket-id-negatives-release.json)
+independently records all proof app/helper pods absent, all proof controller
+replicas0, receipt archived0600 then removed, and eight old files hash-unchanged:
+the four original application archives plus original authenticator, credentials,
+legacy Pocket-ID browser result and legacy suite result. No immutable historical
+JSON or archive was rewritten. Synthetic newly-created OIDC clients were deleted
+by each successful browser flow. Source PVC was rebound before cleanup.
+
+Fresh admission minimum was1163MiB (kubelet1196/Talos1163). After deletion, the
+exact fresh sample at Unix1794423428.4132 was **kubelet1195MiB / Talos1099MiB /
+minimum1099MiB**. WOPI's unchanged768+64+192=1024MiB requirement is numerically
+below that observation; Wallabag's576+192=768MiB is also below it. Neither is
+activated or authorized, and this now-historical sample is **not** a fresh guard
+receipt for either. Parent must choose/grant any next window and obtain new dual
+measurements. ML1216/web1280/Immich-app1408 minima were still unmet by this sample.
+The host guard/baseline was untouched; no host or source mutation occurred.
+
+Post-run validation:42 data contracts,16 workflow/boundary tests,13 audience cases,
+18 negative-response cases,12 WOPI protocol tests, syntax/compilation and diff
+checks. Wallabag image/queue and every heavy/Office workflow remain unrun as
+previously recorded. No live Pocket-ID receipt remains.

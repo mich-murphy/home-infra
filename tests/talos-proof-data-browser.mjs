@@ -52,13 +52,15 @@ try {
     ]
   });
   result.chrome_version = browser.version();
-  const context = await browser.newContext({ignoreHTTPSErrors:false});
+  const context = await browser.newContext({ignoreHTTPSErrors:false,serviceWorkers:'block'});
   await context.route('**/*', async route => {
     const u = new URL(route.request().url());
-    if (u.protocol === 'https:' && u.hostname === 'pocket-id.proof.invalid') return route.continue();
+    if (u.origin === issuer) return route.continue();
     if (u.protocol === 'data:') return route.continue();
     return route.abort('blockedbyclient');
   });
+  await context.routeWebSocket('**/*', ws => ws.close());
+  result.network_boundary = {http:'exact issuer origin only',websocket:'all blocked',service_workers:'blocked'};
   const page = await context.newPage();
   const cdp = await context.newCDPSession(page);
   await cdp.send('WebAuthn.enable');
@@ -76,11 +78,16 @@ try {
   const credentialFiles = fs.readdirSync(input.state).filter(name => /^pocket-virtual-authenticator(?:-[0-9a-f-]+)?\.json$/.test(name)).map(name => path.join(input.state,name));
   for (const file of credentialFiles) if(fs.lstatSync(file).isSymbolicLink() || (fs.statSync(file).mode & 0o777)!==0o600) throw new Error('unsafe private authenticator history');
   const credentialFile = credentialFiles.sort((a,b)=>fs.statSync(b).mtimeMs-fs.statSync(a).mtimeMs)[0];
+  result.registered_new_credential = false;
+  if (!credentialFile && input.requireExistingPasskey) throw new Error('existing passkey required');
   if (credentialFile) {
     if (fs.lstatSync(credentialFile).isSymbolicLink() || (fs.statSync(credentialFile).mode & 0o777) !== 0o600) throw new Error('unsafe private authenticator file');
     const stored = JSON.parse(fs.readFileSync(credentialFile,'utf8'));
+    result.authenticator_source_sha256 = crypto.createHash('sha256').update(fs.readFileSync(credentialFile)).digest('hex');
+    result.credential_ids_sha256 = crypto.createHash('sha256').update(JSON.stringify(stored.credentials.map(c=>c.credentialId).sort())).digest('hex');
     for (const credential of stored.credentials) await cdp.send('WebAuthn.addCredential', {authenticatorId,credential});
   } else {
+    result.registered_new_credential = true;
     stage = 'fresh initial administrator signup';
     await api('/api/signup/setup', 'POST', {username:'proof',firstName:'Synthetic',lastName:'Proof',email:'proof@example.invalid'});
     stage = 'fresh WebAuthn registration';

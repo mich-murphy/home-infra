@@ -1181,10 +1181,18 @@ def pocket_browser():
     if not module:
         raise RuntimeError('private pinned playwright-core module path required for virtual WebAuthn/OIDC proof')
     LIFE.lease(GROUP)
-    public_pem = subprocess.run(['openssl','x509','-in',CA,'-pubkey','-noout'],capture_output=True,check=True).stdout
+    connection = ProofTLSConnection('pocket-id.proof.invalid', context=ssl.create_default_context(cafile=CA), timeout=15)
+    try:
+        connection.connect()  # Hostname and CA-verified actual leaf, not an assumed CA key.
+        certificate = connection.sock.getpeercert(binary_form=True)
+    finally:
+        connection.close()
+    public_pem = subprocess.run(['openssl','x509','-inform','DER','-pubkey','-noout'],input=certificate,capture_output=True,check=True).stdout
     public_der = subprocess.run(['openssl','pkey','-pubin','-outform','DER'],input=public_pem,capture_output=True,check=True).stdout
     pin = base64.b64encode(hashlib.sha256(public_der).digest()).decode()
-    payload = {'state':str(STATEPATH),'module':module,'spki':pin,'port':int(os.environ.get('TALOS_PROOF_GATEWAY_PORT','18443'))}
+    RESULT['verified_leaf_sha256'] = hashlib.sha256(certificate).hexdigest()
+    payload = {'state':str(STATEPATH),'module':module,'spki':pin,'port':int(os.environ.get('TALOS_PROOF_GATEWAY_PORT','18443')),
+               'requireExistingPasskey':os.environ.get('TALOS_PROOF_REQUIRE_EXISTING_PASSKEY')=='1'}
     proc = subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-browser.mjs'))],input=json.dumps(payload).encode(),capture_output=True,timeout=300)
     result = json.loads(proc.stdout)
     RESULT.setdefault('browser_runs',[]).append(result)
@@ -1202,12 +1210,13 @@ def pocket_id():
     initial = pocket_browser()
     restart('pocket-id')
     after = pocket_browser()
-    check('Pocket-ID user and registered passkey survive pod replacement',initial['user_id']==after['user_id'])
+    check('Pocket-ID user and registered passkey survive pod replacement',initial['user_id']==after['user_id'] and initial.get('credential_ids_sha256')==after.get('credential_ids_sha256') and not after['registered_new_credential'])
     archive = execute('pocket-id',['/app/pocket-id','export','--path','-'])
     with zipfile.ZipFile(io.BytesIO(archive)) as exported:
         check('Pocket-ID logical export contains database.json','database.json' in exported.namelist())
         database_hash = hashlib.sha256(exported.read('database.json')).hexdigest()
-    save_private_new('pocket-id-logical-export-' + uuid.uuid4().hex + '.zip',archive)
+    archive_path=save_private_new('pocket-id-logical-export-' + uuid.uuid4().hex + '.zip',archive)
+    RESULT['backup_file']=archive_path.name
     RESULT['backup_sha256'] = hashlib.sha256(archive).hexdigest()
     RESULT['database_export_sha256'] = database_hash
     with fresh_pvc('pocket-id', bootstrap=True) as start_runtime:
@@ -1216,7 +1225,7 @@ def pocket_id():
         execute('pocket-id',['/app/pocket-id','import','--path','-','--yes'],archive)
         start_runtime()
         restored = pocket_browser()
-        check('Pocket-ID clean-PVC logical restore preserves user/passkey and signed OIDC flow',restored['user_id']==initial['user_id'])
+        check('Pocket-ID clean-PVC logical restore preserves user/passkey and signed OIDC flow',restored['user_id']==initial['user_id'] and restored.get('credential_ids_sha256')==initial.get('credential_ids_sha256') and not restored['registered_new_credential'])
 
     RESULT['limitations'].append('CDP virtual authenticator proves WebAuthn protocol/cryptography, not human physical-device UX, device recovery or hardware attestation.')
 
