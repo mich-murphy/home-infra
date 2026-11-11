@@ -1,0 +1,1 @@
+NOT RUN: API unavailable; kube-apiserver:v1.36.6 exits139, empty logs. No isolation success claim.

@@ -1,0 +1,55 @@
+Client:
+	Tag:         v1.14.5
+	SHA:         dad8d3ed
+	Built:       
+	Go version:  go1.26.10
+	OS/Arch:     darwin/arm64
+Server:
+	NODE:        172.31.250.10
+	Tag:         v1.14.5
+	SHA:         dad8d3ed
+	Built:       
+	Go version:  go1.26.10
+	OS/Arch:     linux/amd64
+	Enabled:     RBAC
+NODE            SERVICE      STATE     HEALTH   LAST CHANGE   LAST EVENT
+172.31.250.10   apid         Running   OK       3m17s ago     Health check successful
+172.31.250.10   auditd       Running   OK       3m18s ago     Health check successful
+172.31.250.10   containerd   Running   OK       3m18s ago     Health check successful
+172.31.250.10   cri          Running   OK       3m16s ago     Health check successful
+172.31.250.10   dashboard    Running   ?        3m18s ago     Process Process(["/sbin/dashboard"]) started with PID 211
+172.31.250.10   etcd         Running   OK       3m11s ago     Health check successful
+172.31.250.10   kubelet      Running   OK       3m14s ago     Health check successful
+172.31.250.10   machined     Running   OK       3m18s ago     Health check successful
+172.31.250.10   sandboxd     Running   OK       3m18s ago     Health check successful
+172.31.250.10   syslogd      Running   OK       3m17s ago     Health check successful
+172.31.250.10   trustd       Running   OK       3m16s ago     Health check successful
+172.31.250.10   udevd        Running   OK       3m18s ago     Health check successful
+NODE            NAMESPACE   TYPE          ID                                  VERSION   SOURCE      TARGET                              FILESYSTEM   VOLUME
+172.31.250.10   runtime     MountStatus   /opt                                3                     /opt                                none         /opt
+172.31.250.10   runtime     MountStatus   /var/lib                            8                     /var/lib                            none         /var/lib
+172.31.250.10   runtime     MountStatus   /var/lib/cni                        2                     /var/lib/cni                        none         /var/lib/cni
+172.31.250.10   runtime     MountStatus   /var/lib/kubelet/seccomp            3                     /var/lib/kubelet/seccomp            none         /var/lib/kubelet/seccomp
+172.31.250.10   runtime     MountStatus   /var/lib/kubelet/seccomp/profiles   2                     /var/lib/kubelet/seccomp/profiles   none         /var/lib/kubelet/seccomp/profiles
+172.31.250.10   runtime     MountStatus   /var/log/audit                      3                     /var/log/audit                      none         /var/log/audit
+172.31.250.10   runtime     MountStatus   /var/log/audit/kube                 2                     /var/log/audit/kube                 none         /var/log/audit/kube
+172.31.250.10   runtime     MountStatus   /var/log/containers                 2                     /var/log/containers                 none         /var/log/containers
+172.31.250.10   runtime     MountStatus   /var/log/pods                       2                     /var/log/pods                       none         /var/log/pods
+172.31.250.10   runtime     MountStatus   /var/mnt                            4                     /var/mnt                            none         /var/mnt
+172.31.250.10   runtime     MountStatus   /var/run                            3                     /var/run                            none         /var/run
+172.31.250.10   runtime     MountStatus   /var/run/lock                       2                     /var/run/lock                       none         /var/run/lock
+172.31.250.10   runtime     MountStatus   CRI                                 2                     /var/lib/containerd                 none         CRI
+172.31.250.10   runtime     MountStatus   EPHEMERAL                           5         /dev/sda4   /var                                xfs          EPHEMERAL
+172.31.250.10   runtime     MountStatus   ETCD                                2                     /var/lib/etcd                       none         ETCD
+172.31.250.10   runtime     MountStatus   KUBELET                             4                     /var/lib/kubelet                    none         KUBELET
+172.31.250.10   runtime     MountStatus   LOG                                 6                     /var/log                            none         LOG
+172.31.250.10   runtime     MountStatus   u-proof                             2         /dev/sdb1   /var/mnt/proof                      xfs          u-proof
+NODE            TOTAL   USED   FREE   SHARED   BUFFERS   CACHE   AVAILABLE
+172.31.250.10   2384    345    1530   108      3         504     1806
+NODE            NAMESPACE   ID                                                                                          IMAGE                                             PID   STATUS
+172.31.250.10   k8s.io      kube-system/kube-apiserver-talos-ate-q71                                                    registry.k8s.io/pause:3.10.2                      267   SANDBOX_READY
+172.31.250.10   k8s.io      └─ kube-system/kube-apiserver-talos-ate-q71:kube-apiserver:7b7a61c611c4                     registry.k8s.io/kube-apiserver:v1.36.6            0     CONTAINER_EXITED
+172.31.250.10   k8s.io      kube-system/kube-controller-manager-talos-ate-q71                                           registry.k8s.io/pause:3.10.2                      273   SANDBOX_READY
+172.31.250.10   k8s.io      └─ kube-system/kube-controller-manager-talos-ate-q71:kube-controller-manager:3515a582f4d1   registry.k8s.io/kube-controller-manager:v1.36.6   0     CONTAINER_EXITED
+172.31.250.10   k8s.io      kube-system/kube-scheduler-talos-ate-q71                                                    registry.k8s.io/pause:3.10.2                      238   SANDBOX_READY
+172.31.250.10   k8s.io      └─ kube-system/kube-scheduler-talos-ate-q71:kube-scheduler:0c6ba6015b86                     registry.k8s.io/kube-scheduler:v1.36.6            0     CONTAINER_EXITED

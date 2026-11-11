@@ -29,3 +29,15 @@ nameservers:
 hostDNS:
   enabled: true
   forwardKubeDNSToHost: false
+---
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: proof
+volumeType: partition
+provisioning:
+  diskSelector:
+    match: disk.dev_path == '/dev/sdb'
+  minSize: 60GiB
+  maxSize: 64GiB
+filesystem:
+  type: xfs

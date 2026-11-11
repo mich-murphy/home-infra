@@ -1,0 +1,27 @@
+2026-11-11T23:29:01+11:00
+status: running
+               total        used        free      shared  buff/cache   available
+Mem:           31834       28355        2596          18        1600        3479
+Swap:           3820           0        3820
+some avg10=0.00 avg60=0.00 avg300=0.00 total=12358294
+full avg10=0.00 avg60=0.00 avg300=0.00 total=12340487
+{"time": 1794400042.1751626, "available_mib": 3611, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400047.1755757, "available_mib": 3613, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400052.1759577, "available_mib": 3615, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400057.1763399, "available_mib": 3610, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400062.1767232, "available_mib": 3613, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400067.1770637, "available_mib": 3616, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400072.1774833, "available_mib": 3622, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400077.1778452, "available_mib": 3526, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400082.1782231, "available_mib": 3572, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400087.1786103, "available_mib": 3599, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400092.1790543, "available_mib": 3615, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400097.1795192, "available_mib": 3620, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400102.1799157, "available_mib": 3624, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400107.1802719, "available_mib": 3601, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400112.1806366, "available_mib": 3602, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400117.1809778, "available_mib": 3601, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400122.18143, "available_mib": 3600, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400127.1818051, "available_mib": 3600, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400132.182202, "available_mib": 3601, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}
+{"time": 1794400137.1825588, "available_mib": 3596, "swap_used_kib": 24, "swap_io_pages": 9, "psi_delta_percent": {"some": 0.0, "full": 0.0}}

@@ -1,4 +1,1 @@
-/Users/mm/.local/state/home-infra/talos-proof/offline-final/config/controlplane.yaml is valid for metal mode
-
-Shell syntax: PASS
-Live Talos/API/network isolation: NOT RUN (resource guard blocked creation)
+/Users/mm/.local/state/home-infra/talos-proof/config/controlplane.yaml is valid for metal mode

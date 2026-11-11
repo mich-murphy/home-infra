@@ -1,18 +1,23 @@
-# Talos proof platform — provisioning blocked, NOT live
+# Talos proof platform — live Talos, Kubernetes API blocked
 
-## Status and safety decision
+## Current checkpoint
 
-No VM120 exists, no Talos node was booted, and no kubeconfig/API/health evidence exists.
-The create guard rejected host capacity first, then rejected swap usage. **Do not treat
-these artifacts as demonstrated live isolation or migration readiness.** No existing VM,
-bridge, host sysctl, router, DNS, NFS, Docker service or GPU was changed. An official
-checksum-verified ISO and private helper scripts were copied to Proxmox; no VM created.
+VM120 is RUNNING: 2560MiB fixed,2vCPU,32GiBOS+64GiBdata. Authenticated
+Talos1.14.5/RBAC and etcd/kubelet/cri are healthy. UserVolume `u-proof` is
+ready on `/dev/sdb1`, XFS mounted `/var/mnt/proof`. Kubernetes bootstrap completed,
+but **kube-apiserver:v1.36.6 exits139 (segfault), empty application logs**.
+Scheduler/controller errors are downstream APIEOF. No node registers yet; no CNI,
+apps, Gateway, complete isolation test or Taloshealth success can be claimed.
+No existing guest, host tuning, production DNS/router/NFS/GPU was changed.
 
-Initial available memory was4961MiB, then declined to~4516MiB independently of proof
-allocation. Swap grew from0 to24KiB before proof creation. Even though tiny, relaxing
-the explicit zero-swap guard would not satisfy the agreed resource requirement.
-Investigate read-only and obtain renewed parent approval before proceeding. Do not
-change ARC/host tuning, existing VM resources or running production services.
+Host initial swap24KiB is recorded baseline. VM creation was initially blocked by
+strict zero-swap guard; parent explicitly approved baseline-relative monitoring.
+Two early stops were guard false positives from decaying PSIavg10 after brief boot
+bursts; ONLY VM120 stopped. Corrected guard uses actual PSI total deltas: full>=1%
+or some>=5% sustained30seconds, ongoing swapIO3samples, swapdelta>64MiB or immediate
+MemAvailable<1536MiB. It runs privately on Proxmox. Latest stabilized samples:
+host~3.4–3.6GiB available, swap24KiB unchanged, PSI actualdelta0%, no swapIO.
+Guest1816MiB available/2384MiB total at APIsegfault, no dmesgOOM: RAM bump not justified.
 
 ## Pinned compatibility
 
@@ -82,10 +87,10 @@ scope identity. Failures leave a DROP or paused VM, not a deliberately open chai
 This design still needs experimental validation, especially slirp's host gateway/DNS
 proxying, socket cgroup attribution and hostfwd reply conntrack.
 
-## Creation and startup (NOT executed successfully)
+## Creation and startup
 
 `create.sh` runs ONLY on Proxmox, requires explicit `APPROVE_TALOS_PROOF=120`, absence
-of VM120 config, at least4450MiB MemAvailable and exactly0 swap used. Revalidate VMID
+of VM120 config, at least4450MiB MemAvailable and records existing swap baseline. Revalidate VMID
 cluster-wide, no port collision, ISO checksum and resource budget before invocation.
 It is intentionally not an old Terraform apply.
 
@@ -100,7 +105,7 @@ verification; persistence is design, not yet demonstrated.
 
 ## Expected access / bootstrap after approval and network tests
 
-No tunnel currently exists. Proposed exact tunnel (foreground or supervised separately):
+Tunnel is active (SSH control socket `$STATE/ssh-control`). Exact tunnel (foreground or supervised separately):
 
 ```sh
 ssh -N -o ExitOnForwardFailure=yes -L 127.0.0.1:50120:127.0.0.1:50120 \
@@ -110,7 +115,7 @@ ssh -N -o ExitOnForwardFailure=yes -L 127.0.0.1:50120:127.0.0.1:50120 \
 Private tool: `/Users/mm/.local/state/home-infra/talos-proof/bin/talosctl`.
 Private machine config: `/Users/mm/.local/state/home-infra/talos-proof/config/controlplane.yaml`.
 Private Talos identity: `/Users/mm/.local/state/home-infra/talos-proof/config/talosconfig`.
-Expected kubeconfig (does NOT exist): `$STATE/config/kubeconfig`, endpoint
+Private kubeconfig (exists, API currently unhealthy): `$STATE/config/kubeconfig`, endpoint
 `https://127.0.0.1:64120`; cluster internal endpoint172.31.250.10:6443.
 
 After transport tests, apply config via insecure maintenance endpoint127.0.0.1:50120,
@@ -131,3 +136,32 @@ Install Cilium promptly after API available; pre-CNI NotReady is expected, not h
 6. Talos authenticated version/disks/services, `talosctl health`, API `/readyz?verbose`,
    node Ready after Cilium, no kube-proxy/flannel, and resource evidence.
 7. Hand exact working kubeconfig/tunnel to parent/network worker. Not done yet.
+
+## Updated operational details / cleanup
+
+Factory installer is mandatory: `factory.talos.dev/metal-installer/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba:v1.14.5`.
+The initially tried ghcr.io installer tag404 was corrected before installation.
+QEMU VGA is now `std` for troubleshooting (serial-only obscured installation errors).
+Gateway loopback18080->30080 and18443->30443 are configured; platform owner must
+coordinate actual dynamic service NodePorts. No Gateway traffic is proven.
+
+Authenticated Talos node is172.31.250.10, not a localhost-with-port node target:
+`talosctl --talosconfig "$STATE/config/talosconfig" --nodes172.31.250.10 version`
+(with a space after `--nodes`). Endpoint127.0.0.1:50120 is stored in talosconfig.
+`start.sh` starts the guard automatically; Python flock prevents duplicate guards.
+Copy all four `start.sh`, `isolation.sh`, `resource-guard.py`, `create.sh` to the same
+private Proxmox state directory. `-S` plus onboot0 fail closed on host restart.
+No existing guest uses this cgroup or these firewall chains.
+
+Cleanup after explicit approval:
+1. Verify `qm config120` identifies `name:talos-proof` (use spaces in actual commands).
+2. `qm stop 120` ONLY; stop private guard by its recorded PID after checking command.
+3. Remove OUTPUT jumps targeting `TALOS_PROOF_120` from iptables/ip6tables by numeric
+   line number descending (scope no longer exists, so cgroup path matching cannot
+   safely be used to delete a stale binding). Flush/delete ONLY `TALOS_PROOF_120` chains.
+4. `qm destroy120 --purge1 --destroy-unreferenced-disks1` (proper CLI spaces) ONLY after
+   confirming dedicated VM identity and accepting destruction of proof data.
+5. `ssh -S "$STATE/ssh-control" -O exit root@proxmox`; optionally delete ONLY proof ISO
+   `/var/lib/vz/template/iso/talos-proof-v1.14.5-amd64.iso` and private proof state.
+Never remove shared storage, old VMs, host bridges, production firewall rules or secrets
+belonging to another environment. No automatic destructive cleanup is provided.
