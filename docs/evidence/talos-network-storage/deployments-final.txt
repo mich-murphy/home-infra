@@ -1,0 +1,7 @@
+NAMESPACE            NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+kube-system          cilium-operator          1/1     1            1           11m
+kube-system          coredns                  2/2     2            2           31m
+local-path-storage   local-path-provisioner   1/1     1            1           11m
+proof-network-test   denied-client            0/0     0            0           5m40s
+proof-network-test   fixture                  0/0     0            0           5m40s
+proof-validation     client                   0/0     0            0           5m40s

@@ -1,0 +1,6 @@
+PASS HTTP actual NodePort forward localhost:18080 status=200 body=synthetic-proof-20261111T124930Z
+PASS trusted HTTPS actual NodePort forward localhost:18443 status=200 body=synthetic-proof-20261111T124930Z
+PASS unmatched hostname no route localhost:18080 status=404
+PASS unmatched hostname no route localhost:18443 status=404
+PASS untrusted CA rejected curl exit60
+PASS outside listener SNI rejected (TLS handshake/hostname failure) curl exit35

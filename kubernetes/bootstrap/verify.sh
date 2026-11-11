@@ -3,7 +3,8 @@ set -euo pipefail
 : "${KUBECONFIG:?}" "${PROOF_CONTEXT:?}" "${PROOF_API_SERVER:?}"
 [[ "${PROOF_TESTS_AUTHORIZED:-}" == yes ]] || { echo 'Explicit authorization required' >&2; exit 1; }
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-K=(kubectl --context "$PROOF_CONTEXT")
+python3 "$ROOT/kubernetes/bootstrap/proof_guard.py"
+K=(python3 "$ROOT/kubernetes/bootstrap/proof_guard.py" --context "$PROOF_CONTEXT")
 [[ $("${K[@]}" config view --minify -o jsonpath='{.clusters[0].cluster.server}') == "$PROOF_API_SERVER" ]]
 "${K[@]}" apply -k "$ROOT/kubernetes/platform/validation"
 cleanup() {
@@ -20,9 +21,12 @@ nonce="synthetic-proof-$(date -u +%Y%m%dT%H%M%SZ)"
 "${K[@]}" -n proof-network-test exec deploy/fixture -- sh -c 'printf "%s\n" "$1" > /data/www/index.html; sync' sh "$nonce"
 fetch() { "${K[@]}" -n proof-validation exec deploy/client -- wget -q -T 5 -O - http://fixture.proof-network-test.svc.cluster.local:8080/; }
 [[ $(fetch) == "$nonce" ]]; echo 'PASS DNS + explicitly allowed cross-namespace HTTP + volume write/read'
+before=$("${K[@]}" -n proof-network-test get pods -l app=fixture -o jsonpath='{.items[0].metadata.uid}')
 "${K[@]}" -n proof-network-test rollout restart deploy/fixture
 "${K[@]}" -n proof-network-test rollout status deploy/fixture --timeout=180s
-[[ $(fetch) == "$nonce" ]]; echo 'PASS fresh pod reads same PVC nonce (not replicated durability)'
+after=$("${K[@]}" -n proof-network-test get pods -l app=fixture -o json | python3 -c 'import json,sys; print(next(p["metadata"]["uid"] for p in json.load(sys.stdin)["items"] if not p["metadata"].get("deletionTimestamp")))')
+[[ "$before" != "$after" ]]
+[[ $(fetch) == "$nonce" ]]; echo "PASS fresh pod oldUID=$before newUID=$after reads same PVC nonce=$nonce (not replicated durability)"
 for url in http://fixture.proof-network-test.svc.cluster.local:8080/ http://192.168.254.254:8080/ http://198.51.100.1:8080/; do
  if "${K[@]}" -n proof-network-test exec deploy/denied-client -- wget -q -T 3 -O - "$url"; then echo "FAIL unexpected allowed $url" >&2; exit 1; fi
  echo "PASS request denied/timed out: $url (correlate Cilium policy evidence; timeout alone is not packet-drop proof)"

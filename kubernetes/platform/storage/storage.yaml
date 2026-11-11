@@ -189,15 +189,12 @@ metadata:
   namespace: local-path-storage
 data:
   config.json: '{"nodePathMap":[{"node":"DEFAULT_PATH_FOR_NON_LISTED_NODES","paths":["/var/mnt/proof"]}]}'
-  setup: '#!/bin/sh
-
-    set -eu
-
-    case "$VOL_DIR" in /var/mnt/proof/*) ;; *) exit 1;; esac
-
-    mkdir -m 0777 -p "$VOL_DIR"
-
-    '
+  setup: "#!/bin/sh\nset -eu\n# Fail closed if hostPath fell back to the OS filesystem\
+    \ or a subdirectory bind.\nawk '\n  $4 == \"/\" && $5 == \"/var/mnt/proof\" {\n\
+    \    for (i=7; i<=NF; i++) if ($i == \"-\" && $(i+1) == \"xfs\" && $(i+2) == \"\
+    /dev/sdb1\") ok=1\n  }\n  END {exit !ok}\n' /proc/self/mountinfo || { echo \"\
+    Dedicated proof XFS /dev/sdb1 mount missing\" >&2; exit 1; }\ncase \"$VOL_DIR\"\
+    \ in /var/mnt/proof/*) ;; *) exit 1;; esac\nmkdir -m 0777 -p \"$VOL_DIR\"\n"
   teardown: '#!/bin/sh
 
     # Retain-only proof storage: refuse automated destructive cleanup.

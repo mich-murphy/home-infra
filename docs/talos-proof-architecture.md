@@ -28,7 +28,9 @@ blind adoption of a newer incompatible Kubernetes/CNI combination.
 
 The disk must be positively identified and mounted before bootstrap; a directory on
 Talos system disk is **not** equivalent. Installer requires human confirmation of
-mount evidence, it cannot inspect Talos disks via Kubernetes alone. Proof workloads
+mount evidence, it cannot inspect Talos disks via Kubernetes alone. The helper independently checks
+its actual mountinfo for the XFS `/dev/sdb1` filesystem root before creating a volume;
+missing mount/OS-disk fallback fails closed. Proof workloads
 must use fresh PVCs/synthetic fixtures only. No NFS, TrueNAS or production host mounts.
 Pod restart persistence means reattaching the same local disk path on the same node;
 it proves neither recovery after disk/VM loss nor replicated durability. Backup,
@@ -83,8 +85,10 @@ capacity result, not grounds to silently resize existing VMs.
 
 See `kubernetes/bootstrap/README.md` for guarded install, TLS generation, synthetic
 fixtures, staged storage/network verification and Gateway tunnel verification.
-Offline Helm and Kustomize renders have passed; live verification is pending explicit
-parent authorization and provisioned kubeconfig. Negative timeouts against synthetic
+Offline Helm and Kustomize renders passed. Authorized live checkpoint on Kubernetes
+**1.36.5** now passed storage/policy/Gateway checks; see
+`docs/evidence/talos-network-storage/live-summary.md` for actual observations,
+failures corrected and bounded conclusions. Negative timeouts against synthetic
 private/documentation addresses are not sufficient policy-drop evidence alone:
 correlate Cilium drop verdicts. Pair denied cross-app access with positive validation
 access to the same running backend. Record resource/mount evidence and all command

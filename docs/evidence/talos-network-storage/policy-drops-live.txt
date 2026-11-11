@@ -1,0 +1,32 @@
+Producer positive: client-5886cff4cd-nxnvt 10.244.1.90
+Producer negative: denied-client-768b84f89b-spx9j 10.244.1.147
+Known-live backend: fixture-c8cfb546b-qchwr 10.244.1.237
+PASS positive exact backend: synthetic-proof-20261111T124646Z
+REQUEST producer=10.244.1.147 destination=10.244.1.237:8080 exit=1
+wget: download timed out
+command terminated with exit code 1
+OBSERVED xx drop (Policy denied) flow 0x8308bdc1 to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->44948: 10.244.1.147:45444 -> 10.244.1.237:8080 tcp SYN
+OBSERVED xx drop (Policy denied) flow 0x52820bd6 to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->44948: 10.244.1.147:45444 -> 10.244.1.237:8080 tcp SYN
+OBSERVED xx drop (Policy denied) flow 0x27cf7f55 to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->44948: 10.244.1.147:45444 -> 10.244.1.237:8080 tcp SYN
+PASS exact correlated BPF policy drop
+REQUEST producer=10.244.1.147 destination=192.168.254.254:8080 exit=1
+wget: download timed out
+command terminated with exit code 1
+OBSERVED xx drop (Policy denied by denylist) flow 0x8d12cf9b to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->world: 10.244.1.147:45762 -> 192.168.254.254:8080 tcp SYN
+OBSERVED xx drop (Policy denied by denylist) flow 0xc4b6b8ca to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->world: 10.244.1.147:45762 -> 192.168.254.254:8080 tcp SYN
+OBSERVED xx drop (Policy denied by denylist) flow 0x6d29a84f to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->world: 10.244.1.147:45762 -> 192.168.254.254:8080 tcp SYN
+PASS exact correlated BPF policy drop
+REQUEST producer=10.244.1.147 destination=198.51.100.1:8080 exit=1
+wget: download timed out
+command terminated with exit code 1
+OBSERVED xx drop (Policy denied by denylist) flow 0xc17064e6 to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->world: 10.244.1.147:51472 -> 198.51.100.1:8080 tcp SYN
+OBSERVED xx drop (Policy denied by denylist) flow 0x90f162e to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->world: 10.244.1.147:51472 -> 198.51.100.1:8080 tcp SYN
+OBSERVED xx drop (Policy denied by denylist) flow 0x7ddff5c1 to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->world: 10.244.1.147:51472 -> 198.51.100.1:8080 tcp SYN
+PASS exact correlated BPF policy drop
+REQUEST producer=10.244.1.147 destination=172.31.250.10:6443 exit=1
+wget: download timed out
+command terminated with exit code 1
+OBSERVED xx drop (Policy denied by denylist) flow 0x98bd8d3d to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->host: 10.244.1.147:55036 -> 172.31.250.10:6443 tcp SYN
+OBSERVED xx drop (Policy denied by denylist) flow 0xeaf63cd6 to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->host: 10.244.1.147:55036 -> 172.31.250.10:6443 tcp SYN
+OBSERVED xx drop (Policy denied by denylist) flow 0x13a52584 to endpoint 0, ifindex 31, file bpf_lxc.c:1654, , identity 4729->host: 10.244.1.147:55036 -> 172.31.250.10:6443 tcp SYN
+PASS exact correlated BPF policy drop

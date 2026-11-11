@@ -1,0 +1,81 @@
+1500 1493 8:17 /pvc-12e57f52-b69a-4fb7-8f58-3452832a6cad_proof-network-test_fixture /data rw,relatime - xfs /dev/sdb1 rw,seclabel,inode64,logbufs=8,logbsize=32k,noquota
+synthetic-proof-20261111T124646Z
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{},"name":"fixture","namespace":"proof-network-test"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"64Mi"}},"storageClassName":"proof-local"}}
+    pv.kubernetes.io/bind-completed: "yes"
+    pv.kubernetes.io/bound-by-controller: "yes"
+    volume.beta.kubernetes.io/storage-provisioner: rancher.io/local-path
+    volume.kubernetes.io/selected-node: talos-proof
+    volume.kubernetes.io/storage-provisioner: rancher.io/local-path
+  creationTimestamp: "2026-11-11T12:46:36Z"
+  finalizers:
+  - kubernetes.io/pvc-protection
+  name: fixture
+  namespace: proof-network-test
+  resourceVersion: "2118"
+  uid: 12e57f52-b69a-4fb7-8f58-3452832a6cad
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 64Mi
+  storageClassName: proof-local
+  volumeMode: Filesystem
+  volumeName: pvc-12e57f52-b69a-4fb7-8f58-3452832a6cad
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 64Mi
+  phase: Bound
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    annotations:
+      local.path.provisioner/selected-node: talos-proof
+      pv.kubernetes.io/provisioned-by: rancher.io/local-path
+    creationTimestamp: "2026-11-11T12:46:44Z"
+    finalizers:
+    - kubernetes.io/pv-protection
+    name: pvc-12e57f52-b69a-4fb7-8f58-3452832a6cad
+    resourceVersion: "2116"
+    uid: fc8b9de0-ada9-4340-9d25-cd568b86704d
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 64Mi
+    claimRef:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: fixture
+      namespace: proof-network-test
+      resourceVersion: "2046"
+      uid: 12e57f52-b69a-4fb7-8f58-3452832a6cad
+    hostPath:
+      path: /var/mnt/proof/pvc-12e57f52-b69a-4fb7-8f58-3452832a6cad_proof-network-test_fixture
+      type: DirectoryOrCreate
+    nodeAffinity:
+      required:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - talos-proof
+    persistentVolumeReclaimPolicy: Retain
+    storageClassName: proof-local
+    volumeMode: Filesystem
+  status:
+    lastPhaseTransitionTime: "2026-11-11T12:46:44Z"
+    phase: Bound
+kind: List
+metadata:
+  resourceVersion: ""
