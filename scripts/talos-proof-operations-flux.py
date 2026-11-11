@@ -9,6 +9,7 @@ import importlib.util
 import os
 import subprocess
 import sys
+import datetime
 from pathlib import Path
 import re
 import urllib.request
@@ -116,6 +117,13 @@ def live(args):
     node = ops.gate()
     summary = ops.obj('get', '--raw', '/api/v1/nodes/talos-proof/proxy/stats/summary')
     available = summary['node'].get('memory', {}).get('availableBytes', 0)
+    (out / 'flux-admission.json').write_text(json.dumps({
+        'time': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        'available_bytes': available, 'required_bytes': (384 + 512) * 1024**2,
+        'controller_ceiling_mib': 384, 'reserve_mib': 512,
+        'admitted': available >= (384 + 512) * 1024**2,
+        'memory_source': 'kubelet node stats summary',
+        'commit': args.revision}, indent=2) + '\n')
     if available < (384 + 512) * 1024**2:
         raise RuntimeError('Flux needs 384Mi controller ceilings plus 512Mi measured reserve')
     active = ops.obj('get', 'pods', '-A', '-l', 'app.kubernetes.io/part-of=talos-proof', '-o', 'json')['items']
@@ -124,11 +132,32 @@ def live(args):
         raise RuntimeError('another app batch is active')
     docs = manifest(args)
     transitions = []
+    samples = []
+    started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    def sample(stage):
+        node = ops.gate()
+        summary = ops.obj('get', '--raw', '/api/v1/nodes/talos-proof/proxy/stats/summary')
+        pods = ops.obj('get', 'pods', '-A', '-o', 'json')
+        measured = ops.summarize(node, summary, pods)
+        measured['stage'] = stage
+        measured['controllers'] = [
+            {'name': p['metadata']['name'], 'containers': [
+                {k: c.get(k) for k in ('name', 'image', 'imageID', 'restartCount')}
+                for c in p.get('status', {}).get('containerStatuses', [])]}
+            for p in pods['items'] if p['metadata']['namespace'] == NS]
+        samples.append(measured)
+        (out / 'flux-measurements.json').write_text(json.dumps(samples, indent=2) + '\n')
+        if (measured['memory'].get('availableBytes', 0) < 512 * 1024**2
+                or measured['conditions'].get('MemoryPressure') == 'True'
+                or any(c['restartCount'] for p in measured['controllers'] for c in p['containers'])):
+            raise RuntimeError('Flux pressure, insufficient reserve or controller restart; stop')
+    sample('baseline')
     def value(expected):
         ops.kube('-n', FIXTURE, 'wait', '--for=jsonpath={.data.revision}=' + str(expected),
                  'configmap/reconciliation-fixture', '--timeout=120s', stdout=subprocess.DEVNULL)
         cm = ops.obj('-n', FIXTURE, 'get', 'configmap', 'reconciliation-fixture', '-o', 'json')
         transitions.append({'expected': str(expected), 'observed': cm['data']['revision']})
+        sample('fixture-' + str(expected))
     def path(version):
         ops.kube('-n', NS, 'patch', 'kustomization', 'proof-fixture', '--type=merge', '-p',
                  json.dumps({'spec': {'path': './kubernetes/operations/gitops/fixture-v' + str(version)}}),
@@ -143,6 +172,10 @@ def live(args):
         value(1)
         ops.kube('-n', FIXTURE, 'patch', 'configmap', 'reconciliation-fixture', '--type=merge',
                  '-p', '{"data":{"revision":"drift"}}', stdout=subprocess.DEVNULL)
+        drift = ops.obj('-n', FIXTURE, 'get', 'configmap', 'reconciliation-fixture', '-o', 'json')
+        transitions.append({'expected': 'drift', 'observed': drift['data']['revision']})
+        if drift['data']['revision'] != 'drift':
+            raise RuntimeError('injected drift was not observed')
         value(1)
         path(2)
         path(1)
@@ -162,7 +195,8 @@ def live(args):
             negatives[verb + ' ' + resource] = 'no'
         git = ops.obj('-n', NS, 'get', 'gitrepository', 'proof-fixture', '-o', 'json')
         ks = ops.obj('-n', NS, 'get', 'kustomization', 'proof-fixture', '-o', 'json')
-        (out / 'flux.json').write_text(json.dumps({'commit': args.revision, 'transitions': transitions,
+        (out / 'flux.json').write_text(json.dumps({'started': started, 'ended': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'commit': args.revision, 'transitions': transitions,
             'source_revision': git.get('status', {}).get('artifact', {}).get('revision'),
             'applied_revision': ks.get('status', {}).get('lastAppliedRevision'),
             'negative_rbac': negatives, 'rollback': 'fixture path v2 to v1, same immutable commit'}, indent=2) + '\n')

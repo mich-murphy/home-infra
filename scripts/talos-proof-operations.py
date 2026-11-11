@@ -245,6 +245,11 @@ def recovery(out):
             if (pv['spec'].get('persistentVolumeReclaimPolicy') != 'Retain'
                     or pv['spec'].get('claimRef', {}).get('uid') != claim['uid']):
                 raise RuntimeError('recovery volumes must be bound to exact claims and retained')
+        pod_status = obj('-n', NS, 'get', 'pods', '-o', 'json')
+        images = [{'pod': p['metadata']['name'], 'containers': [
+            {k: c.get(k) for k in ('name', 'image', 'imageID', 'restartCount')}
+            for c in p.get('status', {}).get('containerStatuses', [])]}
+            for p in pod_status['items']]
         for pod in ('source', 'restored'):
             kube('-n', NS, 'exec', pod, '--', 'sh', '-ec', 'test -z "$(ls -A /data)"', stdout=subprocess.DEVNULL)
         payload = b'talos-proof isolated off-node recovery fixture v1\n'
@@ -265,6 +270,8 @@ def recovery(out):
         (out / 'recovery.json').write_text(json.dumps({'claims': ids, 'fixture_sha256': digest,
             'archive_sha256': hashlib.sha256(archive.read_bytes()).hexdigest(),
             'off_node': True, 'source_pod_deleted_before_restore': True,
+            'source_empty_before_write': True, 'destination_empty_before_restore': True,
+            'runtime_images': images,
             'retained_pvs': True, 'restored_checksum_matches': True,
             'application_consistency': 'static synthetic file only'}, indent=2) + '\n')
     finally:

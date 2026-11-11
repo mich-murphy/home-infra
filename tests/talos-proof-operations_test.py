@@ -121,6 +121,9 @@ class Operations(unittest.TestCase):
         calls = []
         def obj(*args):
             if args[:2] == ('get', 'namespaces'): return {'items': []}
+            if 'pods' in args: return {'items': [{'metadata': {'name': 'source'},
+                'status': {'containerStatuses': [{'name': 'fixture', 'image': 'pinned-image',
+                    'imageID': 'digest-fixture', 'restartCount': 0}]}}]}
             if 'pvc' in args: return {'items': claims}
             if 'pv' in args:
                 name = args[2].removesuffix('-pv')
@@ -156,6 +159,9 @@ class Operations(unittest.TestCase):
                 ops.recovery(out)
             metadata = json.loads((out / 'recovery.json').read_text())
             self.assertTrue(metadata['retained_pvs']); self.assertTrue(metadata['restored_checksum_matches'])
+            self.assertTrue(metadata['source_empty_before_write'])
+            self.assertTrue(metadata['destination_empty_before_restore'])
+            self.assertEqual(metadata['runtime_images'][0]['containers'][0]['imageID'], 'digest-fixture')
             deletion = next(i for i,c in enumerate(calls) if 'delete' in c)
             extraction = next(i for i,c in enumerate(calls) if '-xkf' in c)
             self.assertLess(deletion, extraction)
@@ -211,6 +217,23 @@ class Operations(unittest.TestCase):
         self.assertNotIn('namespace', partial.kube.call_args.args)
         self.assertNotIn('crd', partial.kube.call_args.args)
 
+
+    def test_flux_low_headroom_refuses_before_apply(self):
+        spec = importlib.util.spec_from_file_location('flux_admission_test', ROOT / 'scripts/talos-proof-operations-flux.py')
+        flux = importlib.util.module_from_spec(spec); spec.loader.exec_module(flux)
+        from unittest.mock import Mock
+        for available in (0, 710 * 1024**2, 896 * 1024**2 - 1):
+            with tempfile.TemporaryDirectory() as d:
+                guarded = Mock()
+                guarded.private_dir.return_value = Path(d)
+                guarded.obj.return_value = {'node': {'memory': {'availableBytes': available}}}
+                with patch.object(flux, 'operations', return_value=guarded):
+                    with self.assertRaisesRegex(RuntimeError, '384Mi'):
+                        flux.live(argparse.Namespace(action='run', revision='a' * 40))
+                guarded.kube.assert_not_called()
+                evidence = json.loads((Path(d) / 'flux-admission.json').read_text())
+                self.assertFalse(evidence['admitted'])
+                self.assertEqual(evidence['available_bytes'], available)
 
     def test_actual_measurements_and_allowlist(self):
         node = {'metadata': {'name': 'proof'}, 'status': {'capacity': {'memory': '2560Mi'}, 'allocatable': {'memory': '2200Mi'}}}

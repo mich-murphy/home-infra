@@ -2,15 +2,15 @@
 
 ## Status and design
 
-**Offline safety-hardening complete; live gates NOT executed. No live resource lease granted.** This is not production readiness, HA, production-data recovery, or a deployed monitoring service. VM120 starts at **2560 MiB**, not inventory's superseded 3-GiB planning value. Parent must grant an exclusive resource lease for each run; no concurrent app batches. Production source/host configuration and services are untouched.
+**Partial live acceptance, 2026-11-11: monitoring/HTTP alert delivery, off-node clean-PVC file recovery and private etcd snapshot capture passed. Flux refused admission before installation; drift/path rollback/RBAC remain UNTESTED. Both operations leases released; zero active operations workloads.** This is not production readiness, HA, production-data recovery, or a deployed monitoring service. Coordinator performed a separately approved supervised cold start at **3072 MiB** before this lease; the earlier 2560-MiB profile and refused bump are historical evidence, not altered here. Parent must grant an exclusive resource lease for each run; no concurrent app batches. Production source/host configuration and services are untouched.
 
 | Existing capability | Minimal replacement | Current evidence / limits |
 |---|---|---|
-| Portainer declarative stacks | Flux 2.10.0 source + kustomize controllers only, immutable Git commit, harmless ConfigMap fixtures | Render-only; controller admission conditional on real baseline + >=20–25% memory headroom. No Helm/image/notification controller or app-root reconciliation |
-| Beszel observations | External API reader: kubelet summary node/pod/container memory, node filesystem, PVC stats when reported, node capacity/allocatable, pod restart counters | Script + offline tests; no resident metrics workload. Bounded point samples, not historical peaks, dashboard, SLOs or enterprise stack |
+| Portainer declarative stacks | Flux 2.10.0 source + kustomize controllers only, immutable Git commit, harmless ConfigMap fixtures | Live admission blocked: kubelet available642.2MiB <896MiB; no controllers installed. No Helm/image/notification controller or app-root reconciliation |
+| Beszel observations | External API reader: kubelet summary node/pod/container memory, node filesystem, PVC stats when reported, node capacity/allocatable, pod restart counters | Live kubelet summary observations passed; no resident metrics workload. Bounded point samples, not historical peaks, dashboard, SLOs or enterprise stack |
 | Beszel alerts | Real low-headroom and observed-restart rules; explicitly synthetic delivery-test event to an HTTP loopback-only sink on operator workstation | Receipt confirms HTTP delivery, not external paging. No SMTP/webhook/cloud credentials, no production integrations |
-| Off-node recovery | Static file on dedicated source PVC → tar on workstation → different empty PVC; checksum checked after source pod deletion | Offline only. Not a live database backup, platform fixture restart test, or application restore |
-| Talos control-plane recovery | Private off-node `talosctl etcd snapshot` plus checksum metadata | Snapshot capture staged; destructive etcd recovery NOT authorized or tested |
+| Off-node recovery | Static file on dedicated source PVC → tar on workstation → different empty PVC; checksum checked after source pod deletion | Live off-node archive and distinct empty-PVC checksum restore passed. Not a live database backup, platform fixture restart test, or application restore |
+| Talos control-plane recovery | Private off-node `talosctl etcd snapshot` plus checksum metadata | Private off-node capture passed (12,443,680 bytes); destructive etcd recovery NOT authorized or tested |
 
 Whole inventory: media worker owns kometa, lidarr, radarr, tautulli, sabnzbd, sonarr, seerr, jellyfin, jellyplex-watched, plex, qbittorrent, prowlarr, audiobookshelf, recyclarr, pinchflat, qbitwebui (16). Data worker owns nextcloud-cron, nextcloud, miniflux, immich, immich-ml, nextcloud-office, nextcloud-redis, wallabag-redis, nextcloud-postgres, miniflux-db, couchdb, wallabag, wallabag-mariadb, pocket-id, immich-redis, immich-postgres (16). Infrastructure: traefik → platform Gateway/TLS; portainer → fixture-scoped Flux; beszel → this observation/alert proof; docker-socket-proxy → **omit**, Kubernetes API/RBAC replaces discovery, never mount Docker socket. These map all **36 live containers**. Ownership is capability mapping, not a passing status; detailed functional acceptance remains in inventory and respective worker reports. Generic file restore here does not satisfy each application's logical restore gate.
 
@@ -43,7 +43,7 @@ Keep private state 0700, files 0600. Never print Talos config, kubeconfig, snaps
 # Parent supplies private mode0600 configs and a short-lived JSON resource receipt.
 export KUBECONFIG="$HOME/.local/state/home-infra/talos-proof/config/kubeconfig"
 export TALOSCONFIG="$HOME/.local/state/home-infra/talos-proof/config/talosconfig"
-export TALOS_PROOF_OPERATIONS_LEASE="$HOME/.local/state/home-infra/talos-proof/operations-lease.json"
+export TALOS_PROOF_OPERATIONS_LEASE="$HOME/.local/state/home-infra/talos-proof/leases/operations.json"
 python3 scripts/talos-proof-operations.py monitor --test-alert
 # Repeat before/during/after approved work, not continuously in background.
 python3 scripts/talos-proof-operations.py monitor --minimum-available-mib 640
@@ -56,7 +56,7 @@ The receipt is coordinator-issued, **not** the former `vm120` environment marker
 `{group, context, endpoint, node_uid, expires, available_mib, measured_at}`; group must be
 `operations` for collector/recovery/snapshot or `operations-flux` for Flux. Times are UTC Unix
 seconds; expiry must be future and the guest available-memory measurement at most120s old
-(not host available RAM). Parent must refresh measurements/receipt during a long operation.
+(not host available RAM). The coordinator may explicitly delegate refreshing **only** available_mib/measured_at from verified actual Talos memory before commands; group/expiry/identity remain coordinator-owned. This live lease delegated those two fields to the operations worker. Talos MemAvailable and kubelet availableBytes are different measurements; the Flux gate still uses kubelet stats and cannot substitute the larger Talos value.
 All private directories under the proof state root are owner-only0700, regular files0600;
 symlinks in the original path or any ancestor are rejected **before** resolve/open.
 
@@ -77,7 +77,7 @@ Snapshot has **no caller-selected target or PATH binary**: only
 on; no insecure flags. The version check is not a substitute for parent verification of the
 installed official binary provenance. Snapshot output never overwrites a prior artifact.
 
-Collector exports actual kubelet timestamps/workingSetBytes/availableBytes rather than substituting requests/limits. Node capacity includes storage/ephemeral-storage where API reports it. Filesystem and volume stats are actual reported values, not claims that unreported local-volume metrics exist. `ContainerRestartObserved` is an absolute nonzero counter, **not** a new-restart rate. Short-lived jobs or sampling gaps may be missed. No metrics/alerts persist inside the node: JSON history and HTTP receipts persist off-node only; deletion/retention is operator-managed. Injected `ProofDeliveryTest` is marked synthetic and cannot prove resource-exhaustion detection. Low-memory rule is offline-tested with representative measured-shaped data; live low-memory triggering must not intentionally OOM the 2.5-GiB node.
+Collector exports actual kubelet timestamps/workingSetBytes/availableBytes rather than substituting requests/limits. Node capacity includes storage/ephemeral-storage where API reports it. Filesystem and volume stats are actual reported values, not claims that unreported local-volume metrics exist. `ContainerRestartObserved` is an absolute nonzero counter, **not** a new-restart rate. Short-lived jobs or sampling gaps may be missed. No metrics/alerts persist inside the node: JSON history and HTTP receipts persist off-node only; deletion/retention is operator-managed. Injected `ProofDeliveryTest` is marked synthetic and cannot prove resource-exhaustion detection. Low-memory rule is offline-tested with representative measured-shaped data; live low-memory triggering must not intentionally OOM the node.
 
 Recovery refuses nonempty source or destination directories and distinct-PV check is mandatory. It does not erase existing data on rerun. An existing recovery namespace is rejected before apply; reruns require separately approved disposal. Both PVC UIDs and PV names must differ, each PV must bind its exact claim UID and use Retain. Dedicated PVCs/PVs remain retained; source pod is deleted before restore, and both pods are removed in guarded finally cleanup on success/failure to release memory. No PVC/PV or data deletion is automated. Source writes use shell noclobber, archives exclusive-create and tar extraction keep-old-files; destination emptiness is rechecked immediately before extraction. `fixture.tar` and `etcd.snapshot` are **off the VM**, on the workstation, never on production NFS. The snapshot includes cluster secrets: never copy it to Git or `/tmp`, publish only reviewed size/checksum metadata. Snapshot checksum shows transport integrity, not successful etcd recovery. Talos machine secrets/config and the correct Talos/Kubernetes versions are separately necessary for disaster recovery. Future authorized etcd restore must use a separate disposable control plane and validate API objects; never run bootstrap `--recover-from` on this proof/source as an incidental test.
 
@@ -111,6 +111,17 @@ substitute for the independent host resource guard.
 Record UTC start/end, source `.status.artifact.revision`, Kustomization `.status.lastAppliedRevision`, ConfigMap values before/after each transition, controller imageIDs/restarts and monitor samples. Rollback above is an actual desired-state path rollback between two checked-in ConfigMap revisions, **not** a claim of Git history revert/app rollback. Both are pinned to the same Git commit, with zero app writes. A full Git commit-revert release workflow remains a separate production gap. Never save full Deployment/Secret API dumps as public evidence.
 
 Guarded run cleanup suspends fixture Kustomization and deletes only source/kustomize Deployments in `proof-operations-system`; do not delete cluster CRDs as app-batch cleanup. Retain small fixture/CRDs or explicitly uninstall owned resources later. Observe memory recovery and return lease to parent. Controller replicas/default resource limits are experimental bounded ceilings, not evidence that startup or large production repositories fit.
+
+## Live result, 2026-11-11 14:13–14:17 UTC
+
+[Sanitized receipts and execution notes](evidence/talos-operations/README.md).
+
+- Initial collector read real node/pod/container/filesystem stats, delivered existing absolute restart-count observations and a clearly synthetic `ProofDeliveryTest` to the workstation HTTP loopback sink. A later actual below896MiB measurement delivered `NodeMemoryHeadroomLow`; this is a headroom alert, **not an OOM test**. No restart-counter increase was observed between the two point samples.
+- Recovery created two fresh PVCs/PVs, checked both directories empty, wrote only a synthetic file, saved an exclusive-create tar off-node, deleted the source pod, rechecked destination emptiness, extracted without overwrite, and matched content SHA256. Both pods deleted; both claims remain Bound with Retain PVs. This does not establish app-aware backup or restore.
+- Flux refused twice before apply. First available node sample was710MiB; the persisted second refusal measured642.2MiB, below896MiB (384MiB controller ceilings +512MiB reserve). Talos reported1421MiB MemAvailable at the earlier observation; those are not interchangeable metrics. No controller startup, runtime imageIDs/restarts, reconciliation, drift repair, path change/rollback, negative RBAC or Flux sentinel claim is made. No policy/RBAC/flag changes were exercised live.
+- Private etcd snapshot capture passed after the Flux refusal, without a Flux sentinel; metadata only is published. No etcd engine restore, bootstrap recovery, control-plane reset or VM121 was attempted.
+- Talos client/server1.14.5, Kubernetes1.36.5, containerd2.3.7, kernel6.18.58-talos. Recovery used the pinned BusyBox1.37.0 declaration; its actual runtime imageID/restart count was not captured before deletion, so no retrospective runtime identity claim is made. Future recovery runs now capture these fields.
+- Final guarded audit: node same enrolled UID, no active proof app pods, no operations Deployments. Leases released by archiving unchanged receipts and removing the active receipt paths. No host change, VM restart, source operation or retained-data deletion was performed. Host/source postflight remains coordinator-owned.
 
 ## Production gaps / truthful acceptance
 
