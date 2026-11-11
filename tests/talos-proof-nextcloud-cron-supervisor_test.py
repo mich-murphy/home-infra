@@ -139,6 +139,28 @@ class SupervisorTests(unittest.TestCase):
         bad=copy.deepcopy(approved);bad['containers'][0]['resources']['limits']['cpu']='2000m'
         with self.assertRaisesRegex(RuntimeError,'envelope'):self.s.envelope(bad,approved)
 
+    def test_exact_canonical_cpu_and_memory_equivalence_but_changed_limits_reject(self):
+        import copy
+        for name in ('postgres','redis','nextcloud-cron'):
+            d=self.s.approved(name)['spec']
+            approved=(d['jobTemplate']['spec']['template'] if name=='nextcloud-cron' else d['template'])['spec']
+            actual=copy.deepcopy(approved)
+            r=actual['containers'][0]['resources']
+            for section in ('requests','limits'):
+                r[section]['cpu']=str(m.quantity(r[section]['cpu'])) if section=='limits' and name!='nextcloud-cron' else r[section]['cpu']
+                r[section]['memory']=str(int(m.quantity(r[section]['memory'])))
+            # 1000m becomes 1 in actual API; 500m becomes 0.5 in CronJob.
+            if name=='nextcloud-cron':r['limits']['cpu']='0.5'
+            self.s.envelope(actual,approved)
+            self.s.envelope(actual,approved,actual_pod=True)
+            for key,value in [('cpu','2'),('memory','999Mi')]:
+                bad=copy.deepcopy(actual);bad['containers'][0]['resources']['limits'][key]=value
+                with self.assertRaisesRegex(RuntimeError,'envelope'):self.s.envelope(bad,approved)
+            bad=copy.deepcopy(actual);bad['containers'][0]['resources']['limits']['unknown']='1'
+            with self.assertRaisesRegex(RuntimeError,'envelope'):self.s.envelope(bad,approved)
+            bad=copy.deepcopy(actual);bad['unknownAPIDefault']=True
+            with self.assertRaisesRegex(RuntimeError,'envelope'):self.s.envelope(bad,approved)
+
     def test_cron_security_fails_before_fixture_mutation(self):
         approved=self.s.approved('nextcloud-cron')['spec']['jobTemplate']['spec']['template']['spec']
         import copy

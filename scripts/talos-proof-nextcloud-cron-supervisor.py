@@ -12,6 +12,8 @@ import hashlib
 import importlib.util
 import json
 import math
+import re
+from fractions import Fraction
 import os
 from pathlib import Path
 import stat
@@ -28,6 +30,26 @@ def load(name, filename):
 life = load('cron_life', 'talos-proof-data.py')
 cron = load('cron_payload', 'talos-proof-nextcloud-cron.py')
 NS = 'proof-nextcloud'
+
+def quantity(value):
+    """Exact rational Kubernetes quantity; no floats, rounding or ignored keys."""
+    match=re.fullmatch(r'([+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+))([eE][+-]?[0-9]+|[numkKMGTPE]|[KMGTPE]i)?',str(value))
+    if not match: raise RuntimeError('unsupported exact resource quantity')
+    number,suffix=match.groups(); suffix=suffix or ''
+    scale={'':1,'n':Fraction(1,10**9),'u':Fraction(1,10**6),'m':Fraction(1,1000),'k':1000,'K':1000}
+    scale.update({u:1000**i for i,u in enumerate('MGTPE',2)})
+    scale.update({u+'i':1024**i for i,u in enumerate('KMGTPE',1)})
+    multiplier=Fraction(10)**int(suffix[1:]) if suffix.startswith(('e','E')) and len(suffix)>1 and suffix[1] in '+-0123456789' else scale[suffix]
+    return Fraction(number)*multiplier
+
+
+def resources(value):
+    result=copy.deepcopy(value)
+    for section in ('requests','limits'):
+        for key,v in result.get(section,{}).items():
+            if key in ('cpu','memory'): result[section][key]=quantity(v)
+    return result
+
 
 class Supervisor:
     def __init__(self, state, run):
@@ -105,6 +127,7 @@ class Supervisor:
         # Compare the complete reviewed template, allowing only documented API defaults.
         def normalized(pod):
             pod=copy.deepcopy(pod)
+            if pod.get('securityContext')=={}:pod.pop('securityContext')
             defaults=dict(dnsPolicy='ClusterFirst',schedulerName='default-scheduler',
                 restartPolicy='Always',terminationGracePeriodSeconds=30,enableServiceLinks=True,
                 serviceAccount='default',serviceAccountName='default',priority=0,
@@ -115,7 +138,11 @@ class Supervisor:
                     dict(key='node.kubernetes.io/unreachable',operator='Exists',effect='NoExecute',tolerationSeconds=300)]
             for key,value in defaults.items():
                 if pod.get(key)==value: pod.pop(key)
+            if 'resources' in pod: pod['resources']=resources(pod['resources'])
+            if 'overhead' in pod:
+                pod['overhead']={k:quantity(v) if k in ('cpu','memory') else v for k,v in pod['overhead'].items()}
             for c in pod.get('containers',[]):
+                if 'resources' in c: c['resources']=resources(c['resources'])
                 for key,value in dict(terminationMessagePath='/dev/termination-log',terminationMessagePolicy='File',imagePullPolicy='IfNotPresent').items():
                     if c.get(key)==value: c.pop(key)
                 for port in c.get('ports',[]):
@@ -213,6 +240,9 @@ class Supervisor:
                 elif not (ns==NS and m['name'] in ('postgres','redis')) and c['spec'].get('replicas',1):
                     raise RuntimeError('active unselected controller/helper')
         # Independent observations, never receipt-reported passing booleans.
+        self.memory_admission()
+
+    def memory_admission(self):
         summary=self.obj('get','--raw','/api/v1/nodes/talos-proof/proxy/stats/summary')
         observed=datetime.datetime.fromisoformat(summary['node']['memory']['time'].replace('Z','+00:00')).timestamp()
         if not 0<=time.time()-observed<=30: raise RuntimeError('stale kubelet memory')
@@ -323,7 +353,7 @@ class Supervisor:
                 or original.get('automountServiceAccountToken') is not False
                 or original.get('securityContext')!=expected['securityContext']
                 or original['containers'][0].get('securityContext')!=expected['containers'][0]['securityContext']
-                or original['containers'][0].get('resources')!=expected['containers'][0]['resources']):
+                or resources(original['containers'][0].get('resources',{}))!=resources(expected['containers'][0]['resources'])):
                 raise RuntimeError('CronJob-derived security/resource envelope mismatch')
             # Derive from suspended native template, adding only reviewed CLI instrumentation.
             original['containers'][0].update(command=expected['containers'][0]['command'],

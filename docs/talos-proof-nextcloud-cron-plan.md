@@ -191,55 +191,134 @@ clean event. Full `run` refuses **any** prior journal event for that run UUID
 before mutation, including after clean. Stop remains available. Initialization
 must not migrate/overwrite existing private state to evade these rules.
 
-## Separate initialization proposal — NOT authorized or executed
+## Separate stopped-object / read-only binding initializer — OFFLINE, no grant
 
-Parent read-only discovery reported **zero PVC objects** in proof-nextcloud,
-not merely Pending PVCs. PG, Redis and/or CronJob may also be absent. Prior
-native WOPI attempts applied only CODE/fixture; those observations do not prove
-backend or storage initialization. The full UID-bound runner intentionally
-cannot bootstrap this state and must not be widened to do so.
+Parent read-only discovery reported **zero PVC objects** in proof-nextcloud.
+Prior eight native WOPI failures applied only CODE/fixture, not application/PG/
+Redis storage. The UID-bound full runner still cannot initialize this state.
 
-A future parent-reviewed, separately stopped-object-creation scope should use
-an offline declaration derived from these reviewed sources, with an explicit
-missing-object allowlist and no blanket kustomize/apply of the app directory:
+`scripts/talos-proof-nextcloud-initialize.py initialize --state <canonical-state>
+--run-id <new-parent-known-v4-UUID>` is a **separate receipt scope**, not a cron
+phase. No runtime call was made in implementing or testing it. Do not run it
+without a NEW exact parent initialization grant. It never applies kustomize,
+patches/replaces/adopts objects, generates credentials, starts web/PG/Redis,
+installs Nextcloud, changes storage/host/lifecycle policy, or issues a full-run
+receipt. Existing CODE/WOPI/Secrets/archives and PVCs remain untouched.
 
-| Missing object only | Declarative source / invariant |
-| --- | --- |
-| PVC for the **current mapped HTML alias** | nextcloud.yaml PVC spec; proof-local/RWO/retained size, parent-reviewed alias, no guessed UID |
-| PVC postgres-data; Deployment postgres; Service postgres | postgres.yaml; replicas **0**, unchanged pinned image/resources/security and service selector |
-| PVC redis-data; Deployment redis; Service redis | redis.yaml; replicas **0**, unchanged pinned image/resources/security and service selector |
-| CronJob nextcloud-cron | cronjob.yaml; suspend **true**, one192MiB CLI, HTML claim must match existing Nextcloud Deployment |
+### Exact initialization receipt
 
-Before creation: read-only inventory namespace, current Nextcloud HTML mapping,
-all candidate names/UIDs/specs and proof-local StorageClass/provisioner behavior.
-Validate all present objects against reviewed declarations; any mismatch stops
-for parent review. Emit only absent allowlisted documents, create-only, never
-replace/adopt a present object or invent a UID. Record intent before creation,
-private returned object UIDs afterward. Do not touch Secrets, CODE/WOPI/fixture,
-existing Nextcloud Deployment, credentials, archives, PVC contents, or partial
-installs. If any prerequisite (including Nextcloud mapping/Secret) is missing,
-stop for a new explicit scope rather than creating it implicitly. Preserve all
-existing object UIDs. No `maintenance:install`, bootstrap, Apache, native cron,
-fixture or backend scale belongs to object creation.
+Private0600 `TALOS_PROOF_DATA_LEASE` retains the ordinary data lease's context,
+exact loopback endpoint, node_uid and expires fields, with:
 
-PVC binding is a **second separately reviewed scope**, not a hidden application
-start. Inspect StorageClass binding mode before creating PVCs (Immediate mode
-could itself trigger provisioning and must be budgeted/granted first). With
-WaitForFirstConsumer, a bounded non-application binding helper could mount only
-the three new claims, request/limit64MiB, no app entrypoint or data writes; its
-exact image/command/security/deadline and storage access require review. Each
-storage-provisioner helper must have an enforced32MiB limit. Three concurrent
-provisioners32 each + one binding helper64 + reserve192 = **352MiB**, **not
-granted**. No assumption that the current provisioner already enforces32MiB;
-inspect and separately approve any configuration change. Capture all binding
-helpers/provisioners and logs, delete only owned UID-bound helpers, verify
-absence, and retain PVCs/PVs. If safe binding cannot fit or be verified, stop.
+- `action: initialize`, `group: nextcloud`, `stage: cron`, `namespace:
+  proof-nextcloud`, exact `namespace_uid`, canonical parent-known v4 `run_id`,
+  canonical existing shared `state_dir`;
+- `phases: [stopped-objects, readonly-binding]`, `budget_mib: 832`,
+  `cleanup_authorized: true`, `storage_device: /dev/sdb1`, and parent-measured
+  `storage_device_id` (canonical block-device major:minor, no inferred value);
+- the same sorted selected_controllers list as the cron receipt;
+- explicit `html_claim` (no guessed alias); sorted unique
+  `allowed_missing_resources` in lowercase kind/name notation, restricted to
+  declarations from nextcloud.yaml, postgres.yaml, redis.yaml, cronjob.yaml;
+- `existing_uids`: **every** declaration not in the missing allowlist plus the
+  already-existing `secret/proof-credentials`. No UID is guessed/enrolled.
 
-Only after confirmed Bound/proof-local PVCs and exact PV claimRef identities,
-all app/backend replicas0, suspended CronJob, and zero helper pods may the parent
-issue a **NEW full832 UID receipt** using observed (never guessed) Deployment,
-CronJob, Secret, current HTML PVC and all backend PVC/PV UIDs. No initialization
-permission follows from this plan or the old fullrun receipt. Parent review of
-14199547 remains **not yet live-ready**. Static67ad's 353 methods/443 resources
-are not runtime admission; prepared67 correction remains unrun and all eight
-WOPI failures remain retained. No WOPI/UI changes are part of this correction.
+The namespace and Secret must already exist. At least900seconds of authorization
+must remain at start. Receipt bytes cannot change/refresh during an invocation.
+Unknown missing resources, missing credential keys, mismatched existing specs,
+images, UIDs, security, metadata or unknown API defaults block before creation.
+An existing stopped web declaration is validated with its current HTML alias;
+when explicitly absent, the receipt may permit creating its reviewed replicas0
+declaration. Only explicitly absent PVCs, replicas0 Deployments, suspended
+CronJob, Services and necessary ConfigMap are create-only candidates. Secrets
+are never candidates. The current narrow binding path requires **all three
+claims newly missing**, not a mixture of new/retained/partially Bound claims.
+Such mixed state requires parent review, not adoption or a clean-slate retry.
+
+### Admission, creation and binding
+
+Before creation: validate existing objects, namespace/node identities, storage
+configuration and every proof controller/schedule. Reject **every** proof pod,
+including completed/failed/terminating/unlabelled pods. Reject storage helpers;
+only the reviewed provisioner controller pod, bound through ReplicaSet and
+Deployment UIDs with explicitly checked API defaults/SA projection, is exempt.
+A fresh independent kubelet availableBytes observation (at most30seconds old)
+and explicit-endpoint Talos MemAvailable must **both meet832MiB**. Repeat barriers
+and dual memory admission before each create and the one binding Job.
+
+Actual bounded binding envelope is **one64MiB busybox helper + at most three
+32MiB automatic local-path helpers + reserve192 = 352MiB**. Requiring **832MiB**
+for this path is an intentional conservative overestimate, **not arithmetic
+error or gate lowering**. Validate live proof-local as
+`rancher.io/local-path / Retain / WaitForFirstConsumer`, and the existing reviewed
+local-path configuration, dedicated-XFS setup and32MiB helper limit against
+`kubernetes/platform/storage/storage.yaml`. No policy modification is attempted.
+
+Export UUID/O_EXCL0600 fsynced intent to the existing outside-Git0700 state
+before each create, then append observed returned UIDs. Create races fail; never
+apply-overwrite or recreate. Recheck every created/existing UID and stopped
+specification before binding. Newly created PVCs must still be Pending with no
+volumeName; unexpected partial binding blocks without mounting or modifying it.
+
+One UUID Job, backoffLimit0/deadline180, uses the **exact pinned busybox image
+from the reviewed storage helper**, CPU100m/memory64Mi limit, no token/init/
+sidecar/fsGroup, dropALL/RuntimeDefault/no escalation/read-only root filesystem.
+Its native shell mounts **only those three new PVCs READONLY**. It checks each
+mountinfo root against that new PVC UID's deterministic local-path directory,
+exact XFS source `/dev/sdb1` and parent-bound major:minor device identity,
+read-only mount options and actual emptiness
+(including hidden entries). Errors/unknown data block. It does not chown, write,
+install, boot a database, or execute an extra Python interpreter. UID0 here is
+only for read-only empty-directory inspection without ownership changes.
+
+Capture owned helper raw states, current/applicable previous logs and native
+cgroup current/peak/events/stat before UID-precondition deletion. Bad logs,
+nonempty directories, nonzero exit/OOM or missing measurements cannot earn a
+binding observation. Reachable capture failures still allow retiring the owned
+helper; unreachable API leaves pending/unconfirmed cleanup. Capture observed
+automatic provisioner states/logs; **automatic deletion can race observation, so
+complete provisioner lifetime logs/cgroup forensics are NOT claimed**. These gaps
+are explicitly journaled, never hidden as a PASS.
+
+After helper deletion, require Job/pod absence, Bound/proof-local and exact
+PVC/PV claimRef UID/namespace/name, Retain, expected path/capacity/RWO/node
+identity, all declarations still stopped/suspended, and **all** proof/storage
+helper absence. Retain all PVCs/PVs and every partially created object. No
+application install, cron completion or live acceptance follows.
+
+### Stop, cleanup and handoff
+
+Pending shared journals block initialization and native activation; reused UUIDs
+block even after clean. `stop` can retire only the recorded owned binding Job
+under the original unexpired initialization receipt despite a pending journal.
+`cleanup` needs a **NEW** `action: initialization-cleanup` receipt with
+`phases: [initialization-cleanup]`, the original run/intent and same exact target/
+allowlist/identity fields. It captures/deletes only the journal UID-bound helper,
+checks absence and preserves all created objects. Neither path creates, scales,
+installs, invokes native cleanup PHP, or reruns initialization/main cron. An
+unrecorded create UID or unreachable/expired target requires explicit parent
+recovery, never implicit enrollment. No automatic VM start exists.
+
+Only the parent may issue a **NEW post-binding full832 UID receipt**, using
+observed Deployment/CronJob/Secret/current HTML PVC/all backend PVC and PV UIDs,
+after reviewing stopped state, absence and provisioning forensic gaps. The
+initializer does not edit a receipt, enroll identities into the native runner,
+or refresh authorization. Full native cron remains **unrun**.
+
+### Offline validation / canonical resource correction
+
+Kubernetes canonically serializes CPU1000m as1. The full backend/actual-Pod/
+CronJob envelope oracle now compares CPU/memory quantities as exact rational
+values (also the Cron-derived phase resource check). Exact keys, reviewed
+ceilings, image/security envelopes and enumerated defaults remain mandatory;
+actual changed limits and unknown API defaults still reject. No media paths
+were edited or imported. The PHP payload is unchanged: NULL-password native
+owned token, synthetic age, unchanged global/default TTL, real due job and
+physical deletion/live-control assertions remain mandatory.
+
+Offline tests: initializer16, supervisor24, compiler8, data42 = **90 tests**.
+Every unit test forbids or mocks subprocess runtime calls. Workstation PHP lint
+is syntax-only, never pinned-image runtime evidence. No generated manifests or
+results are stored in Git. Parent review of14199547/b4acdca9 and this checkpoint
+is not live acceptance; static67ad's353 methods/443 resources and the prepared
+67 correction remain unrun. All eight WOPI failures remain retained.
