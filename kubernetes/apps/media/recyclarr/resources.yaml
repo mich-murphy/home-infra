@@ -1,4 +1,4 @@
-# Synthetic nonempty offline preview; no upstream provider fetch.
+# Fresh synthetic-fixture experiment; memory ceilings unproven until live evidence.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -164,7 +164,7 @@ spec:
                 memory: 128Mi
               limits:
                 cpu: 1000m
-                memory: 512Mi
+                memory: 192Mi
             volumeMounts:
             - name: config
               mountPath: /config

@@ -17,7 +17,7 @@ ENDPOINT = 'https://127.0.0.1:64120'
 HOSTNAME = 'talos-proof'
 SERVICES = tuple(('radarr sonarr lidarr prowlarr qbittorrent qbitwebui sabnzbd plex '
                   'tautulli seerr kometa jellyfin jellyplex-watched audiobookshelf pinchflat recyclarr').split())
-BUDGET = {name: (768 if name in ('plex', 'jellyfin', 'kometa', 'seerr') else 512) for name in SERVICES}
+BUDGET = {'plex': 384, 'jellyfin': 512, 'tautulli': 256, 'seerr': 384, 'audiobookshelf': 256, 'pinchflat': 256, 'qbittorrent': 256, 'qbitwebui': 256, 'sabnzbd': 256, 'radarr': 384, 'sonarr': 384, 'lidarr': 384, 'prowlarr': 256, 'kometa': 384, 'recyclarr': 192, 'jellyplex-watched': 192}
 PIPELINE_LIMITS = {'radarr':384, 'sonarr':384, 'lidarr':384, 'prowlarr':256, 'qbittorrent':192, 'qbitwebui':192, 'sabnzbd':192, 'recyclarr':192}
 PIPELINE_PAIRS = ('qbittorrent+qbitwebui', 'qbittorrent+radarr', 'qbittorrent+sonarr', 'qbittorrent+lidarr', 'sabnzbd+radarr', 'radarr+recyclarr')
 PIPELINE_MEMBERS = None
@@ -28,6 +28,7 @@ def select_pipeline(pair):
         raise RuntimeError('pipeline requires one explicitly supported bounded pair')
     PIPELINE_MEMBERS = frozenset(pair.split('+'))
 
+BUDGET['plex'] += 64
 MUTATIONS = {'apply', 'scale', 'exec', 'rollout', 'delete', 'create', 'patch', 'label', 'annotate',
              'run', 'replace', 'cp', 'edit', 'set', 'attach', 'port-forward'}
 
@@ -174,7 +175,7 @@ def exclusivity(group):
             raise RuntimeError('another proof group is activated, including controllers without pods')
 
 
-def guard(group, extra_mib=0):
+def guard(group, extra_mib=0, budget_mib=None):
     receipt, node = lease(group)
     exclusivity(group)
     alloc = node['status']['allocatable']['memory']
@@ -185,6 +186,16 @@ def guard(group, extra_mib=0):
     if not number(available) or not 0 <= age <= 120 or not 0 < available <= int(alloc[:-2]) / 1024:
         raise RuntimeError('fresh valid guest available-memory receipt required')
     budget = sum(PIPELINE_LIMITS[n] for n in PIPELINE_MEMBERS) if group == 'media-pipeline' else BUDGET[group]
+    if budget_mib is not None:
+        if budget_mib != 128 or group == 'media-pipeline':
+            raise RuntimeError('only stopped isolated-service recovery helper may override app admission budget')
+        controllers = json.loads(kubectl_read('get', 'deployments,statefulsets', '-A', '-o', 'json'))['items']
+        if any(x['metadata']['namespace'] == 'proof-' + group and x['spec'].get('replicas', 1) for x in controllers):
+            raise RuntimeError('recovery helper admission requires all service controllers stopped')
+        pods = json.loads(kubectl_read('get', 'pods', '-A', '-o', 'json'))['items']
+        if any(x['metadata']['namespace'] == 'proof-' + group and x.get('status', {}).get('phase') not in ('Succeeded', 'Failed') for x in pods):
+            raise RuntimeError('recovery helper admission requires all service pods stopped')
+        budget = budget_mib
     if available < budget + extra_mib + 192:
         raise RuntimeError('insufficient measured guest headroom for bounded service plus reserve')
     return receipt

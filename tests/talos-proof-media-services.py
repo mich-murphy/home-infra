@@ -15,6 +15,7 @@ import sys
 import time
 import urllib.error
 import urllib.parse
+import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 safety = importlib.import_module('talos-proof-media-safety')
@@ -195,3 +196,61 @@ def qbitwebui(api, credential, fixture, state, phase):
     if phase == 'exercise':
         record(state, 'qbitwebui', marker)
     return ['fresh preseeded login/session', 'anonymous access rejected', 'instance CRUD' if phase == 'exercise' else 'existing instance persistence before writes', 'stored encrypted proof credentials connect to real qBittorrent', 'live proof empty queue stats']
+
+
+def plex_xml(api, path, method='GET'):
+    return ET.fromstring(api.call(path, method, raw=True))
+
+
+def plex(api, credential, fixture, state, phase):
+    expect(fixture is not None and fixture.suffix == '.mp4', 'Plex requires locally generated synthetic MP4')
+    reject_anonymous(api, '/library/sections')
+    # This key authenticates ONLY the proof-local adapter, not any Plex cloud account.
+    api.headers.update({'X-Plex-Token': credential['api_key'], 'X-Plex-Client-Identifier': 'talos-proof-player',
+                        'X-Plex-Product': 'TalosProof', 'X-Plex-Version': '1', 'X-Plex-Device': 'Proof'})
+    identity = plex_xml(api, '/identity')
+    expect(identity.get('claimed') in ('0', None), 'proof Plex must remain unclaimed')
+    machine = identity.get('machineIdentifier')
+    expect(bool(machine), 'fresh Plex machine identity absent')
+    sections = plex_xml(api, '/library/sections')
+    if phase == 'verify':
+        marker = existing(state, 'plex')
+        expect(machine == marker['machine_id'], 'Plex machine identity lost in restart/restore')
+        library = next((x for x in sections.findall('Directory') if x.get('key') == marker['library_id']), None)
+        expect(library is not None and library.get('title') == 'Proof', 'Plex durable library lost')
+        item = marker['item_id']
+        metadata = plex_xml(api, '/library/metadata/' + item)
+        video = metadata.find('Video')
+        expect(video is not None and int(video.get('viewCount', '0')) >= 1, 'Plex durable watched state lost')
+    else:
+        library = next((x for x in sections.findall('Directory') if x.get('title') == 'Proof'), None)
+        if library is None:
+            query = urllib.parse.urlencode({'name': 'Proof', 'type': 'movie', 'agent': 'com.plexapp.agents.none',
+                     'scanner': 'Plex Movie Scanner', 'language': 'en-US', 'location': '/data/media'})
+            plex_xml(api, '/library/sections?' + query, 'POST')
+            library = next((x for x in plex_xml(api, '/library/sections').findall('Directory') if x.get('title') == 'Proof'), None)
+        expect(library is not None, 'Plex personal-media library creation failed')
+        library_id = library.get('key')
+        api.call('/library/sections/' + library_id + '/refresh?force=1', raw=True)
+        videos = []
+        for _ in range(30):
+            videos = plex_xml(api, '/library/sections/' + library_id + '/all').findall('Video')
+            if videos:
+                break
+            time.sleep(2)
+        expect(len(videos) == 1, 'Plex expected exactly one synthetic movie')
+        item = videos[0].get('ratingKey')
+        metadata = plex_xml(api, '/library/metadata/' + item)
+        video = metadata.find('Video')
+        api.call('/:/unscrobble?' + urllib.parse.urlencode({'key': item, 'identifier': 'com.plexapp.plugins.library'}), raw=True)
+        expect(int(plex_xml(api, '/library/metadata/' + item).find('Video').get('viewCount', '0')) == 0, 'Plex unplayed write/read failed')
+        api.call('/:/scrobble?' + urllib.parse.urlencode({'key': item, 'identifier': 'com.plexapp.plugins.library'}), raw=True)
+        expect(int(plex_xml(api, '/library/metadata/' + item).find('Video').get('viewCount', '0')) >= 1, 'Plex watched write/read failed')
+        marker = {'machine_id': machine, 'library_id': library_id, 'item_id': item}
+    part = video.find('./Media/Part')
+    expect(part is not None and bool(part.get('key')), 'Plex scanned fixture has no media part')
+    marker['stream_sha256'] = audio_checksum(api, part.get('key') + '?download=1', fixture)
+    if phase == 'exercise':
+        record(state, 'plex', marker)
+    return ['fresh adapter key required; no Plex cloud claim', 'real Plex personal-media library scan',
+            'exact synthetic video SHA256 and byte-range seek', 'real watched-state write/read' if phase == 'exercise' else 'existing library/machine/watched state before writes']

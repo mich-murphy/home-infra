@@ -1,0 +1,176 @@
+{
+  "/3/configuration": {
+    "images": {
+      "base_url": "https://images.proof.invalid/",
+      "secure_base_url": "https://images.proof.invalid/",
+      "backdrop_sizes": [
+        "original"
+      ],
+      "logo_sizes": [
+        "original"
+      ],
+      "poster_sizes": [
+        "original"
+      ],
+      "profile_sizes": [
+        "original"
+      ],
+      "still_sizes": [
+        "original"
+      ]
+    },
+    "change_keys": []
+  },
+  "/3/configuration/countries": [
+    {
+      "iso_3166_1": "US",
+      "english_name": "United States of America",
+      "native_name": "United States of America"
+    }
+  ],
+  "/3/configuration/languages": [
+    {
+      "iso_639_1": "en",
+      "english_name": "English",
+      "name": "English"
+    }
+  ],
+  "/3/configuration/jobs": [],
+  "/3/configuration/primary_translations": [
+    "en-US"
+  ],
+  "/3/configuration/timezones": [
+    {
+      "iso_3166_1": "US",
+      "zones": [
+        "America/New_York"
+      ]
+    }
+  ],
+  "/3/genre/movie/list": {
+    "genres": []
+  },
+  "/3/genre/tv/list": {
+    "genres": []
+  },
+  "/3/movie/900000001": {
+    "id": 900000001,
+    "title": "Proof Fixture",
+    "original_title": "Proof Fixture",
+    "original_language": "en",
+    "overview": "Entirely synthetic two-second locally generated proof fixture.",
+    "release_date": "2000-01-01",
+    "adult": false,
+    "video": false,
+    "runtime": 1,
+    "status": "Released",
+    "vote_average": 0,
+    "vote_count": 0,
+    "popularity": 0,
+    "budget": 0,
+    "revenue": 0,
+    "homepage": "",
+    "imdb_id": null,
+    "belongs_to_collection": null,
+    "poster_path": null,
+    "backdrop_path": null,
+    "genres": [],
+    "production_companies": [],
+    "production_countries": [
+      {
+        "iso_3166_1": "US",
+        "english_name": "United States of America",
+        "native_name": "United States of America"
+      }
+    ],
+    "spoken_languages": [
+      {
+        "iso_639_1": "en",
+        "english_name": "English",
+        "name": "English"
+      }
+    ]
+  },
+  "/3/movie/900000001/credits": {
+    "id": 900000001,
+    "cast": [],
+    "crew": []
+  },
+  "/3/movie/900000001/keywords": {
+    "id": 900000001,
+    "keywords": []
+  },
+  "/3/movie/900000001/recommendations": {
+    "page": 1,
+    "results": [],
+    "total_pages": 1,
+    "total_results": 0
+  },
+  "/3/movie/900000001/similar": {
+    "page": 1,
+    "results": [],
+    "total_pages": 1,
+    "total_results": 0
+  },
+  "/3/movie/900000001/watch/providers": {
+    "id": 900000001,
+    "results": {}
+  },
+  "/3/movie/900000001/external_ids": {
+    "id": 900000001,
+    "imdb_id": null,
+    "wikidata_id": null,
+    "facebook_id": null,
+    "instagram_id": null,
+    "twitter_id": null
+  },
+  "/3/movie/900000001/release_dates": {
+    "id": 900000001,
+    "results": []
+  },
+  "/3/search/movie": {
+    "page": 1,
+    "results": [
+      {
+        "id": 900000001,
+        "title": "Proof Fixture",
+        "original_title": "Proof Fixture",
+        "original_language": "en",
+        "overview": "Entirely synthetic two-second locally generated proof fixture.",
+        "release_date": "2000-01-01",
+        "adult": false,
+        "video": false,
+        "runtime": 1,
+        "status": "Released",
+        "vote_average": 0,
+        "vote_count": 0,
+        "popularity": 0,
+        "budget": 0,
+        "revenue": 0,
+        "homepage": "",
+        "imdb_id": null,
+        "belongs_to_collection": null,
+        "poster_path": null,
+        "backdrop_path": null,
+        "genres": [],
+        "production_companies": [],
+        "production_countries": [
+          {
+            "iso_3166_1": "US",
+            "english_name": "United States of America",
+            "native_name": "United States of America"
+          }
+        ],
+        "spoken_languages": [
+          {
+            "iso_639_1": "en",
+            "english_name": "English",
+            "name": "English"
+          }
+        ]
+      }
+    ],
+    "total_pages": 1,
+    "total_results": 1
+  }
+}

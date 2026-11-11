@@ -102,13 +102,26 @@ class Safety(unittest.TestCase):
 
     def test_stale_or_insufficient_memory(self):
         for field, value in [('measured_at', 0), ('measured_at', time.time() + 300),
-                             ('available_mib', 700), ('available_mib', 999999), ('available_mib', -1)]:
+                             ('available_mib', 500), ('available_mib', 999999), ('available_mib', -1)]:
             saved = self.receipt[field]
             self.receipt[field] = value
             self.rewrite_receipt()
             with self.assertRaises(RuntimeError):
                 safety.guard('radarr')
             self.receipt[field] = saved
+
+    def test_recovery_budget_only_when_every_service_controller_and_pod_stopped(self):
+        safety.guard('radarr', budget_mib=128)
+        self.controllers = [{'metadata': {'namespace': 'proof-radarr', 'name': 'radarr'}, 'spec': {'replicas': 1}}]
+        with self.assertRaises(RuntimeError):
+            safety.guard('radarr', budget_mib=128)
+        self.controllers = []
+        self.pods = [{'metadata': {'namespace': 'proof-radarr'}, 'status': {'phase': 'Pending'}}]
+        with self.assertRaises(RuntimeError):
+            safety.guard('radarr', budget_mib=128)
+        self.pods = []
+        with self.assertRaises(RuntimeError):
+            safety.guard('radarr', budget_mib=1)
 
     def test_symlink_and_modes_rejected(self):
         link = self.state / 'link'

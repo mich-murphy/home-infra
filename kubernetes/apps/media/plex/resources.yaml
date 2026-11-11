@@ -1,4 +1,4 @@
-# Fresh isolated proof only. See docs/talos-proof-media.md.
+# Fresh synthetic-fixture experiment; memory ceilings unproven until live evidence.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -41,7 +41,7 @@ spec:
         matchLabels:
           kubernetes.io/metadata.name: proof-validation
     ports:
-    - port: 32400
+    - port: 32401
       protocol: TCP
   egress:
   - to:
@@ -79,7 +79,7 @@ spec:
           app.kubernetes.io/name: tautulli
     ports:
     - protocol: TCP
-      port: 32400
+      port: 32401
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -103,7 +103,7 @@ spec:
           app.kubernetes.io/name: kometa
     ports:
     - protocol: TCP
-      port: 32400
+      port: 32401
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -127,7 +127,7 @@ spec:
           app.kubernetes.io/name: jellyplex-watched
     ports:
     - protocol: TCP
-      port: 32400
+      port: 32401
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -173,8 +173,8 @@ spec:
   selector: *id001
   ports:
   - name: http
-    port: 32400
-    targetPort: http
+    port: 32401
+    targetPort: proof-http
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -229,7 +229,7 @@ spec:
             memory: 128Mi
           limits:
             cpu: 1000m
-            memory: 768Mi
+            memory: 384Mi
         volumeMounts:
         - name: config
           mountPath: /config
@@ -260,6 +260,58 @@ spec:
           periodSeconds: 30
           timeoutSeconds: 3
           failureThreshold: 5
+      - name: local-unclaimed-adapter
+        image: ghcr.io/linuxserver/tautulli:v2.18.2-ls251@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5
+        command:
+        - python3
+        - /proof/plex-unclaimed-proxy.py
+        - --key-file
+        - /proof-auth/key
+        - --password-file
+        - /proof-auth/password
+        env:
+        - name: PYTHONDONTWRITEBYTECODE
+          value: '1'
+        ports:
+        - name: proof-http
+          containerPort: 32401
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 200m
+            memory: 64Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: local-adapter-code
+          mountPath: /proof
+          readOnly: true
+        - name: local-adapter-auth
+          mountPath: /proof-auth
+          readOnly: true
+        startupProbe:
+          tcpSocket:
+            port: proof-http
+          periodSeconds: 5
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /proof-health
+            port: proof-http
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: proof-http
+          periodSeconds: 30
       volumes:
       - name: config
         persistentVolumeClaim:
@@ -270,6 +322,17 @@ spec:
       - name: scratch
         emptyDir:
           sizeLimit: 256Mi
+      - name: local-adapter-code
+        configMap:
+          name: local-unclaimed-adapter
+      - name: local-adapter-auth
+        secret:
+          secretName: bootstrap
+          items:
+          - key: api-key
+            path: key
+          - key: password
+            path: password
       terminationGracePeriodSeconds: 30
 ---
 apiVersion: networking.k8s.io/v1
@@ -293,4 +356,4 @@ spec:
           kubernetes.io/metadata.name: proof-gateway
     ports:
     - protocol: TCP
-      port: 32400
+      port: 32401

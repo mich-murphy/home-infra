@@ -13,7 +13,7 @@ FRONTENDS = tuple(x for x in safety.SERVICES if x not in ('kometa', 'recyclarr',
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['start', 'stop', 'verify', 'restart'])
+    parser.add_argument('action', choices=['start', 'stop', 'verify', 'restart', 'activate'])
     parser.add_argument('service', choices=FRONTENDS)
     parser.add_argument('state', type=Path)
     args = parser.parse_args()
@@ -31,11 +31,13 @@ def main():
         return
     def kube(*command, **kwargs):
         return safety.kube(args.service, *command, **kwargs)
-    if args.action in ('start', 'restart'):
+    if args.action in ('start', 'restart', 'activate'):
         safety.guard(args.service)
         if args.action == 'start':
             kube('apply', '-k', str(safety.ROOT / 'kubernetes/apps/media' / args.service))
             kube('apply', '-f', '-', data=json.dumps(secret).encode())
+            kube('-n', ns, 'scale', 'deployment', args.service, '--replicas=1', capacity=True)
+        elif args.action == 'activate':
             kube('-n', ns, 'scale', 'deployment', args.service, '--replicas=1', capacity=True)
         else:
             kube('-n', ns, 'rollout', 'restart', 'deployment/' + args.service, capacity=True)

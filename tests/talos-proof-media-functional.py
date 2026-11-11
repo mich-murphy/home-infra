@@ -120,7 +120,7 @@ def jellyfin(api, credential, fixture, state):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('service', choices=['radarr', 'sonarr', 'lidarr', 'prowlarr', 'qbittorrent', 'sabnzbd', 'jellyfin', 'audiobookshelf', 'pinchflat', 'qbitwebui'])
+    p.add_argument('service', choices=['radarr', 'sonarr', 'lidarr', 'prowlarr', 'qbittorrent', 'sabnzbd', 'jellyfin', 'audiobookshelf', 'pinchflat', 'qbitwebui', 'plex'])
     p.add_argument('--base', required=True)
     p.add_argument('--phase', choices=['exercise', 'verify'], default='exercise')
     p.add_argument('--group', choices=['media-pipeline'], help='explicit integration profile lease')
@@ -143,7 +143,7 @@ def main():
     ca = safety.private_file(args.ca)
     api = API(args.base, service=('pipeline-' if args.group else '') + args.service, ca=ca)
     try:
-        if args.service in ('audiobookshelf', 'pinchflat', 'qbitwebui'):
+        if args.service in ('audiobookshelf', 'pinchflat', 'qbitwebui', 'plex'):
             checks = getattr(services, args.service)(api, credentials, args.fixture, state, args.phase)
         elif args.phase != 'exercise':
             p.error('persistence verification phase not implemented for this service yet')
@@ -159,7 +159,8 @@ def main():
             checks = jellyfin(api, credentials, args.fixture, state)
     except Exception as exc:
         # HTTP exception text can include URL credentials/query strings; never print it.
-        print(json.dumps({'service': args.service, 'result': 'FAIL', 'error_type': type(exc).__name__}))
+        print(json.dumps({'service': args.service, 'result': 'FAIL', 'error_type': type(exc).__name__, 'http_status': getattr(exc, 'code', None),
+                          'check': str(exc) if isinstance(exc, (RuntimeError, AssertionError)) else None}))
         raise SystemExit(1)
     print(json.dumps({'service': args.service, 'result': 'PASS', 'checks': checks}))
 
@@ -167,5 +168,6 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as exc:
-        print(json.dumps({'result': 'FAIL', 'error_type': type(exc).__name__}))
+        print(json.dumps({'result': 'FAIL', 'error_type': type(exc).__name__, 'http_status': getattr(exc, 'code', None),
+                          'check': str(exc) if isinstance(exc, (RuntimeError, AssertionError)) else None}))
         raise SystemExit(1)

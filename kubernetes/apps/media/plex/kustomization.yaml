@@ -1,6 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - resources.yaml
-  - httproute.yaml
-  - gateway-policy.yaml
+- resources.yaml
+- httproute.yaml
+- gateway-policy.yaml
+namespace: proof-plex
+configMapGenerator:
+- name: local-unclaimed-adapter
+  files:
+  - plex-unclaimed-proxy.py
+generatorOptions:
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: plex

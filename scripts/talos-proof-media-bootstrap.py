@@ -50,8 +50,10 @@ def main():
                             'inet_exposure = 5\nenable_https = 0\n'
                             'download_dir = /data/usenet/incomplete\ncomplete_dir = /data/usenet/complete\n')
         elif name == 'kometa':
-            data['seed'] = ('libraries: {}\nplex:\n  url: http://plex.proof-plex.svc:32400\n'
-                            '  token: UNCONFIGURED-PROOF-ONLY\ntmdb:\n  apikey: UNCONFIGURED-PROOF-ONLY\n')
+            data['seed'] = ('libraries:\n  Proof:\n    collection_files:\n      - file: /proof-fixtures/collections.yml\n'
+                            'plex:\n  url: http://plex.proof-plex.svc:32401\n'
+                            f'  token: {credentials["plex"]["api_key"]}\n'
+                            f'tmdb:\n  apikey: {key}\n')
         elif name == 'recyclarr':
             # Local profiles only. No production config includes or upstream templates.
             data['seed'] = ('radarr:\n  proof:\n    base_url: http://radarr.proof-radarr.svc:7878\n'

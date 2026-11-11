@@ -28,6 +28,21 @@ class Contract(unittest.TestCase):
         self.assertEqual(actual, expected)
         self.assertEqual(len(actual), 16)
 
+    def test_isolated_admission_charges_every_container_memory_ceiling(self):
+        import importlib
+        sys.path.insert(0, str(ROOT / 'scripts'))
+        safety = importlib.import_module('talos-proof-media-safety')
+        for path in MEDIA.glob('*/resources.yaml'):
+            for d in yaml.safe_load_all(path.read_text()):
+                if d['kind'] == 'Deployment':
+                    pod = d['spec']['template']['spec']
+                elif d['kind'] == 'CronJob':
+                    pod = d['spec']['jobTemplate']['spec']['template']['spec']
+                else:
+                    continue
+                cost = sum(int(c['resources']['limits']['memory'].removesuffix('Mi')) for c in pod['containers'])
+                self.assertEqual(safety.BUDGET[d['metadata']['name']], cost)
+
     def test_render_safety_and_denies(self):
         rendered = subprocess.check_output(['kubectl', 'kustomize', str(MEDIA)])
         subprocess.run([sys.executable, str(ROOT / 'tests/kubernetes-proof.py')], input=rendered, check=True, stdout=subprocess.PIPE)

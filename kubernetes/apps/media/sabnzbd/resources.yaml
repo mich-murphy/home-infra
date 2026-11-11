@@ -1,4 +1,4 @@
-# Fresh isolated proof only. See docs/talos-proof-media.md.
+# Fresh synthetic-fixture experiment; memory ceilings unproven until live evidence.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -229,7 +229,7 @@ spec:
             memory: 128Mi
           limits:
             cpu: 1000m
-            memory: 512Mi
+            memory: 256Mi
         volumeMounts:
         - name: config
           mountPath: /config

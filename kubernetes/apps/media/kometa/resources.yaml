@@ -1,4 +1,4 @@
-# Fresh isolated proof only. See docs/talos-proof-media.md.
+# Suspended real helper; nonempty proof collection, mock provider wiring still required.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -72,7 +72,7 @@ spec:
           app.kubernetes.io/name: plex
     ports:
     - protocol: TCP
-      port: 32400
+      port: 32401
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -136,11 +136,14 @@ spec:
                 memory: 128Mi
               limits:
                 cpu: 1000m
-                memory: 768Mi
+                memory: 384Mi
             volumeMounts:
             - name: config
               mountPath: /config
               readOnly: false
+            - name: collection-fixture
+              mountPath: /proof-fixtures
+              readOnly: true
             args:
             - --run
             - --read-only-config
@@ -156,6 +159,9 @@ spec:
               items:
               - key: seed
                 path: seed
+          - name: collection-fixture
+            configMap:
+              name: nonempty-collection-fixture
           terminationGracePeriodSeconds: 30
           initContainers:
           - name: seed-fresh-config
@@ -191,3 +197,16 @@ spec:
               mountPath: /seed
               readOnly: true
           restartPolicy: Never
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nonempty-collection-fixture
+  namespace: proof-kometa
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: kometa
+data:
+  collections.yml: "collections:\n  Proof Synthetic Collection:\n    plex_search:\n\
+    \      all:\n        title: Proof Fixture\n    minimum_items: 1\n    sync_mode:\
+    \ sync\n    collection_mode: hide\n    build_collection: true\n"
