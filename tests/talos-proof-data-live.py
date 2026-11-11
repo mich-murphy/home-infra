@@ -310,6 +310,7 @@ def postgres_restore(app_user):
 
 
 def wopi_browser():
+    global CURRENT_STAGE
     module = os.environ.get('TALOS_PROOF_PLAYWRIGHT_MODULE')
     if not module:
         raise RuntimeError('private pinned playwright-core module required')
@@ -322,17 +323,26 @@ def wopi_browser():
     # remove optional templates; never invent an editor URL or change its origin.
     action = re.sub(r'<[^<>]*>', '', action)
     check('discovered CODE editor retains exact public HTTPS origin',urllib.parse.urlsplit(action).scheme=='https' and urllib.parse.urlsplit(action).netloc=='collabora.proof.invalid')
-    pem = subprocess.run(['openssl','x509','-in',CA,'-pubkey','-noout'],capture_output=True,check=True).stdout
+    connection=ProofTLSConnection('collabora.proof.invalid',context=ssl.create_default_context(cafile=CA),timeout=15)
+    try:
+        connection.connect()
+        certificate=connection.sock.getpeercert(binary_form=True)
+    finally:
+        connection.close()
+    pem = subprocess.run(['openssl','x509','-inform','DER','-pubkey','-noout'],input=certificate,capture_output=True,check=True).stdout
     der = subprocess.run(['openssl','pkey','-pubin','-outform','DER'],input=pem,capture_output=True,check=True).stdout
+    RESULT['verified_code_leaf_sha256']=hashlib.sha256(certificate).hexdigest()
     marker = 'WOPI-SAVED-' + uuid.uuid4().hex
     payload = {'state':str(STATEPATH),'module':module,'spki':base64.b64encode(hashlib.sha256(der).digest()).decode(),
         'port':int(os.environ.get('TALOS_PROOF_GATEWAY_PORT','18443')),'action':action,
         'source':'http://wopi-fixture.proof-nextcloud.svc.cluster.local:8082/wopi/files/proof',
-        'token':CREDS['NEXTCLOUD_ADMIN_PASSWORD'],'marker':marker}
+        'token':CREDS['NEXTCLOUD_ADMIN_PASSWORD'],'marker':marker,
+        'outputPrefix':os.environ.get('TALOS_PROOF_WOPI_OUTPUT_PREFIX','wopi-'+uuid.uuid4().hex)}
     proc = subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-wopi.mjs'))],
         input=json.dumps(payload).encode(),capture_output=True,timeout=240)
     browser = json.loads(proc.stdout)
     RESULT['wopi_browser'] = browser
+    CURRENT_STAGE = 'WOPI browser: ' + browser.get('failed_stage','input/save dispatch')
     check('real CODE browser editor accepted input/save dispatch',proc.returncode==0)
     deadline = time.monotonic()+90
     while True:
@@ -354,6 +364,9 @@ def wopi_browser():
     reopened=subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-wopi.mjs'))],input=json.dumps(payload).encode(),capture_output=True,timeout=180)
     RESULT['wopi_reopen_browser']=json.loads(reopened.stdout)
     check('real CODE document close/reopen reaches loaded editable state',reopened.returncode==0)
+    with forwarded('wopi-fixture',8082) as source:
+        reopened_bytes=http(source,'/wopi/files/proof/contents?access_token='+CREDS['NEXTCLOUD_ADMIN_PASSWORD'],raw=True)
+    check('WOPI saved marker and exact bytes survive real browser close/reopen',reopened_bytes==saved and marker.encode() in reopened_bytes)
     payload['source']='http://denied-wopi.proof.invalid:8082/wopi/files/proof'
     payload['expectHostDenial']=True
     denied=subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-wopi.mjs'))],input=json.dumps(payload).encode(),capture_output=True,timeout=75)

@@ -1,0 +1,39 @@
+{
+  "observed_at": 1794424102.2466471,
+  "proof_pods": [],
+  "active_proof_controllers": [],
+  "live_receipt_archived0600_and_removed": true,
+  "attempts_consumed": 1,
+  "immutable_old_files_verified": 21,
+  "old_file_sha256": {
+    "nextcloud-wopi-1794410431807976000-result.json": "1f14884008cd13a2c9918c709317a4de43cb0fe56ecaad219438941ebec2f451",
+    "nextcloud-wopi-1794410788206398000-result.json": "f78f66fa75254416044e9c98d2de23e62580a3ce74babb6c0a82c52792f04199",
+    "nextcloud-wopi-1794410551070637000-result.json": "7821c285007c5c18a9099aaebde056f22946a0290bd00f082af2cde00f5052ab",
+    "nextcloud-wopi-1794412107194034000-result.json": "01997403218f4291291d2a7c432f64caf22ae9b312f447f16a0539c4df3dbfaf",
+    "nextcloud-wopi-1794410596809915000-result.json": "7fc3e73e5cc2b6c489b0367626acbfa265d2362ebf3d40153736dd455c9bfba2",
+    "nextcloud-wopi-1794412454560679000-result.json": "4d753ac1a669a2dafa2cfa760c20ed672f14f9f0e7acadcd7e12e82e4fe8ed4e",
+    "wopi-retry-c49e04a220988b66-2-cli.txt": "aec1199e9549fc3b8fa4dacf469a01961b488b52fee204ea6ca2a7ff7657faa7",
+    "wopi-retry-c49e04a220988b66-1-cli.txt": "8f013ef894300d7a5b1eebc174487ec1a16d4680b56d9fc334aa5d2801ee4704",
+    "wopi-retry-768-attempt1-output.txt": "f07c5ed41ea78197be8c48153cd2b859344597b8203a225c6aa7d7a8b98175ef",
+    "wopi-retry-c49e04a220988b66-1.json": "a6c6b6827308974c7cec63182e7d1e488c73fc1b46dde42560994906001923b6",
+    "wopi-retry-c49e04a220988b66-2.json": "bac1e59b11574f709f234ad9bbdbbc5ca39ca1c7ace66b1a758813b0d8d3ee39",
+    "wopi-retry-768-attempt2-output.txt": "7515696629eff3c588ae515e7099e9d9d0df3adcedf764a93f02b8471a572a69",
+    "wopi-failure.png": "0d4f880adb5c26aebd85f8bce5f064cd9e68bcb5e1eb81ccf3183ec33587fde0",
+    "pocket-id-logical-export.zip": "963c674f9118fa0164258933d11d2089431b21f88438abae8e3d3d3e83331fbb",
+    "couchdb-documents.json": "277793be71c5818fb01c8d82032a674f60f5602fc995d0aa2e21458c43daf7c8",
+    "miniflux-postgres.dump": "82bf0913c61e66498293348a3154424afc323f2bf898829da4b0c64518ed5627",
+    "wallabag-mariadb.sql": "4caadbe4724f6dd0c859ba888c6952e1a04a364d8bbae752ec52f791f6c2f1aa",
+    "pocket-virtual-authenticator-5783e946-cdcd-4600-8266-00cd0fbf0748.json": "061d8fb11832b48d043029f32d9bb24e0cbcc687637f409d019379ff7214861c",
+    "pocket-virtual-authenticator-25a74dad-3a72-4bd7-880c-c7ce0fa7c557.json": "0c468e6ecc76a12a4ce82743d8622989fcafc2f52a68fb168f3614e806f235ec",
+    "pocket-virtual-authenticator-b84d3e44-7e92-4f23-bbe8-066fa188c6c2.json": "f3daad4afe38d1dc460bf4252296c780cdf7527fe6a3a8bafc1e6ce276438ca2",
+    "pocket-virtual-authenticator.json": "752e5f404b1414239679c477e8d58bfc19e70a512745605412ae84dde91ae69c"
+  },
+  "post_release_memory": {
+    "kubelet_available_mib": 1280,
+    "talos_available_mib": 1146,
+    "available_mib": 1146,
+    "measured_at": 1794424102.065257
+  },
+  "result_snapshot": "wopi-1794423974494729000-fb266e5b110642daa679bd9082cac013-snapshot-1794424071985974000.json",
+  "result_sha256": "5afffad6b2425290b68c81e76343e2aae4632d6251dd376af2e1702405b75a9c"
+}

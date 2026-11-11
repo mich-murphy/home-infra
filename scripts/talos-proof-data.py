@@ -116,6 +116,15 @@ def capture_forensics(namespace, phase):
                     safe = {key:value[key] for key in ('exitCode','signal','startedAt','finishedAt') if key in value}
                     if re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,63}',value.get('reason','')): safe['reason']=value['reason']
                     container[field][kind]=safe
+            if 'running' in status.get('state',{}):
+                lease(LEASE_GROUP)
+                try:
+                    logs = subprocess.run(['kubectl','-n',namespace,'logs',pod['metadata']['name'],'-c',status['name'],'--timestamps=true','--tail=2000','--limit-bytes=1048576'],capture_output=True,timeout=30)
+                    if logs.returncode==0:
+                        container['current_logs']=write('current-log-'+secrets.token_hex(12)+'.txt',logs.stdout)
+                    else: container['current_logs_gap']='APIUnavailable'
+                except subprocess.TimeoutExpired:
+                    container['current_logs_gap']='TimeoutExpired'
             if status.get('restartCount',0):
                 lease(LEASE_GROUP)
                 try:

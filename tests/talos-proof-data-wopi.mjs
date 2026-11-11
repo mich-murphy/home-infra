@@ -3,6 +3,7 @@
  * JSON stdin only. No tokens/DOM/screenshots/console/URLs are emitted or saved.
  */
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {spawnSync} from 'node:child_process';
@@ -30,7 +31,7 @@ try {
       `--ignore-certificate-errors-spki-list=${input.spki}`,'--disable-background-networking',
       '--disable-component-update','--no-proxy-server','--disable-sync','--disable-default-apps','--no-first-run']
   });
-  const context = await browser.newContext({ignoreHTTPSErrors:false});
+  const context = await browser.newContext({ignoreHTTPSErrors:false,serviceWorkers:'block'});
   await context.route('**/*',route => {
     const u = new URL(route.request().url());
     if (input.mode!=='office' && u.origin===origin && u.pathname==='/__proof_wopi_host') return route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><html><body><iframe name="editor" style="width:1200px;height:900px"></iframe></body></html>'});
@@ -39,7 +40,7 @@ try {
   let websocketCount = 0;
   await context.routeWebSocket('**/*',ws => {
     const u = new URL(ws.url());
-    if (u.protocol !== 'wss:' || u.hostname !== 'collabora.proof.invalid') return ws.close();
+    if (u.origin !== 'wss://collabora.proof.invalid') return ws.close();
     websocketCount++;
     ws.connectToServer();
   });
@@ -136,6 +137,16 @@ try {
     await editing.click();
     result.checks.push('Explicit real Viewing → Editing mode selection');
   }
+  // Observed only in the seventh plain-text attempt: selecting Editing Mode
+  // opens this exact format-loss confirmation. Do not dismiss arbitrary dialogs.
+  if(input.mode!=='office') {
+    const notice=frame.getByText('This document may contain formatting or content that cannot be saved in the current file format.',{exact:true});
+    if(await notice.waitFor({state:'visible',timeout:5000}).then(()=>true).catch(()=>false)) {
+      stage='observed plain-text format-warning Continue editing';
+      await frame.getByRole('button',{name:'Continue editing',exact:true}).click();
+      result.checks.push('Explicit observed plain-text format warning acknowledged');
+    }
+  }
   const deadline=Date.now()+45000;
   while(true) {
     const current=await state();result.editor_state=current;
@@ -167,7 +178,7 @@ try {
 } catch (error) {
   if (browser && input.mode!=='office') {
     const page=browser.contexts()[0]?.pages()[0];
-    if(page) {const target=path.join(input.state,'wopi-failure.png');await page.locator('iframe').first().screenshot({path:target,timeout:3000}).catch(()=>{});if(fs.existsSync(target)) fs.chmodSync(target,0o600);}
+    if(page) {const target=path.join(input.state,(input.outputPrefix || 'wopi')+'-failure-'+crypto.randomUUID()+'.png');await page.locator('iframe').first().screenshot({path:target,timeout:3000}).catch(()=>{});if(fs.existsSync(target)) {fs.chmodSync(target,0o600);result.private_failure_artifact_sha256=crypto.createHash('sha256').update(fs.readFileSync(target)).digest('hex');}}
   }
   result.failed_stage=stage;result.failure_type=error.constructor.name;
   const message=String(error.message).split('\n')[0];

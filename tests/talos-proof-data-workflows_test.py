@@ -132,7 +132,7 @@ class Workflows(unittest.TestCase):
         pod={'metadata':{'uid':'pod-uid','name':'proof-pod'},'status':{'phase':'Running','containerStatuses':[{'name':'app','restartCount':2,'state':{'running':{'startedAt':'now'}},'lastState':{'terminated':{'reason':'Error','exitCode':1,'signal':0,'startedAt':'before','finishedAt':'then','message':'SECRET-MESSAGE'}}}]}}
         with tempfile.TemporaryDirectory(dir='/private/tmp' if Path('/private/tmp').exists() else None) as directory:
             Path(directory).chmod(0o700)
-            with patch.object(life,'STATE_DIR',Path(directory)),patch.object(life,'LEASE_GROUP','immich'),patch.object(life,'lease'),patch.object(life.subprocess,'run',side_effect=[subprocess.CompletedProcess([],0,json.dumps({'items':[pod]}).encode()),subprocess.CompletedProcess([],0,b'SECRET-LOG')]):
+            with patch.object(life,'STATE_DIR',Path(directory)),patch.object(life,'LEASE_GROUP','immich'),patch.object(life,'lease'),patch.object(life.subprocess,'run',side_effect=[subprocess.CompletedProcess([],0,json.dumps({'items':[pod]}).encode()),subprocess.CompletedProcess([],0,b'SECRET-CURRENT'),subprocess.CompletedProcess([],0,b'SECRET-LOG')]):
                 public=life.capture_forensics('proof-immich','before deletion')
             self.assertEqual(set(public),{'phase','sha256'})
             metadata=list(Path(directory).glob('pod-forensics-*.json'))[0]
@@ -144,6 +144,9 @@ class Workflows(unittest.TestCase):
             self.assertEqual(log.read_bytes(),b'SECRET-LOG')
             self.assertEqual(stat.S_IMODE(log.stat().st_mode),0o600)
             self.assertEqual(stat.S_IMODE(metadata.stat().st_mode),0o600)
+            current=list(Path(directory).glob('current-log-*.txt'))[0]
+            self.assertEqual(current.read_bytes(),b'SECRET-CURRENT')
+            self.assertEqual(stat.S_IMODE(current.stat().st_mode),0o600)
 
     def test_wallabag_local_image_fetch_and_hash_checks(self):
         svg=b'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#ff0000"/></svg>'
@@ -212,6 +215,23 @@ class Workflows(unittest.TestCase):
         self.assertIn("'-inform','DER'",source)
         self.assertNotIn("'-in',CA",source)
         self.assertIn("TALOS_PROOF_REQUIRE_EXISTING_PASSKEY",source)
+
+    def test_wopi_single_attempt_and_append_only_output_contract(self):
+        source=(Path(__file__).resolve().parents[1]/'scripts/talos-proof-data-wopi-run.py').read_text()
+        self.assertIn('maximum not in (1,2) or args.attempt>maximum',source)
+        self.assertIn('os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW',source)
+        self.assertNotIn('O_TRUNC',source)
+        self.assertIn("actual!={'collabora':768,'wopi-fixture':64}",source)
+        self.assertIn("'memory.current','memory.peak','memory.events','memory.stat'",source)
+        self.assertIn("negative!={'bad-token':401,'wrong-lock':409}",source)
+
+    def test_wopi_format_warning_fix_is_exact_and_plain_text_only(self):
+        source=Path(__file__).with_name('talos-proof-data-wopi.mjs').read_text()
+        self.assertIn("if(input.mode!=='office')",source)
+        self.assertIn("name:'Continue editing',exact:true",source)
+        self.assertIn('This document may contain formatting or content that cannot be saved in the current file format.',source)
+        self.assertNotIn("'wopi-failure.png'",source)
+        self.assertIn('crypto.randomUUID()',source)
 
     def test_private_archive_is_exclusive_and_mode0600(self):
         with tempfile.TemporaryDirectory() as directory:

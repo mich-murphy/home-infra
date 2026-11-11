@@ -1283,3 +1283,113 @@ Post-run validation:42 data contracts,16 workflow/boundary tests,13 audience cas
 18 negative-response cases,12 WOPI protocol tests, syntax/compilation and diff
 checks. Wallabag image/queue and every heavy/Office workflow remain unrun as
 previously recorded. No live Pocket-ID receipt remains.
+
+## Seventh WOPI attempt: corrected Editing Mode, still failed (2026-11-11 19:06–19:08 UTC)
+
+**Exactly one newly granted attempt was activated and consumed, then released.**
+The preceding six failures remain immutable. Parent explicitly approved unchanged
+CODE768MiB + fixture64MiB, with192MiB reserve; this was not a higher-memory retry
+or lowered admission gate. No web/PG/Redis/ML/Immich/Wallabag/media controller was
+activated. The one-attempt receipt had exact stage/controllers and max_attempts1;
+the runner additionally checked rendered controller limits exactly768/64 before
+applying. No receipt identity/expiry/group or resource limit was changed.
+
+[Immutable single-attempt result](evidence/talos-data/wopi-corrected-editor-single-attempt.json)
+records the new UUID/timestamp output prefix and actual failure. The corrected
+**Viewing → Editing Mode** selector was reached and clicked, unlike the earlier
+mismatched selector. The document canvas and document layer loaded, but permission
+remained `readonly` for the bounded45second wait. Therefore marker keyboard input
+and Save dispatch were **not reached**. There was no accepted PutFile, saved marker,
+close/reopen verification or explicit wrong-host denial. Do not relabel this run
+as editing acceptance from canvas/menu/callback success.
+
+Actual callbacks `CheckFileInfo`, `GetFile` and `LOCK` succeeded. Independent actual
+bad-token401 and wrong-lock PutFile409 passed after the suite failed. Stored bytes
+remained30 and SHA256 remained
+`07b6539d655df5eced6524878985efb363df3bbb2d579141abca82177d58624d`;
+`marker_present` stayed false. No successful harness PutFile was injected.
+This fixture remains **plain `proof.txt`**, not ODT/full Nextcloud Office.
+
+### Concrete offline diagnosis; no second live try
+
+A new UUID-named private failure screenshot (hash in the result) shows a visible
+format-loss dialog after selecting Editing Mode:
+
+> This document may contain formatting or content that cannot be saved in the
+> current file format.
+
+Its button is **Continue editing**. This observed modal explains the bounded
+readonly wait; the evidence does not establish a backend authorization failure.
+An offline-only correction now acknowledges **only that exact warning and exact
+button**, only in the plain-text component branch, before testing real edit
+permission. It does not dismiss arbitrary dialogs or change Office-format logic.
+**That correction has not run live, and this consumed grant does not authorize
+another attempt.** The old screenshot and all prior attempt artifacts are intact.
+
+The immutable suite's generic `failed_stage` still says discovery because it was
+a stale Python stage variable while the browser ran; its nested browser failure
+correctly identifies the Editing Mode/readonly wait. Future generator code now
+propagates the sanitized browser stage rather than rewriting this historical JSON.
+
+### Correlated memory—not an anonymous-pressure or headroom claim
+
+Twelve time-correlated off-node samples (six per container) used actual observed
+Pod UID/containerID-bound cgroup paths. Each records current/peak/events/stat and
+per-file read timestamps. No extra Python interpreter or observer container was
+started in the64MiB fixture. The actual leaf certificate was CA/hostname verified
+before deriving Chrome's exact SPKI pin; browser HTTP/WSS origins stayed bounded.
+
+| CODE sample Unix time | current MiB | lifetime peak MiB | anon MiB | file MiB | inactive_file MiB |
+|---|---:|---:|---:|---:|---:|
+|1794423986.995|506.762|768.000|234.621|227.309|218.277|
+|1794423998.347|547.547|768.000|272.332|247.125|244.617|
+|1794424021.149|509.977|768.000|270.582|212.191|208.848|
+|1794424039.176|403.238|768.000|270.582|111.391|102.305|
+
+CODE's inclusive lifetime peak was **exactly805306368bytes =768MiB**, equal to its
+limit; sampled max/oom/oom_kill were0 and restart counts0. The table shows current
+anon/file samples, **not a decomposition of the earlier peak**, and does not
+prove OOM safety or editing headroom. No cache-drop, pressure trick, limit change
+or host/global-policy adjustment occurred. Fixture peak was55.578125MiB under64,
+with max/oom/oom_kill0 and restartCount0. The suite's final in-container CODE
+cgroup exec failed; the independent off-node samples preserve the measurements
+instead of replacing that explicit gap. Inclusive peaks may include ordinary
+container startup/workload and any in-container exec diagnostics.
+
+### Forensics gap preserved; future log capture improved offline
+
+[Private forensic manifest index](evidence/talos-data/wopi-corrected-editor-forensics.json)
+publishes only hashes/phases. Before destructive cleanup, private0600 API
+state/lastState manifests captured the selected Pods; restart counts were0, so
+previous logs were inapplicable. **Current server logs were not captured before
+these Pods were deleted.** They cannot now be reconstructed, and no exit cause is
+invented. An offline-only improvement now also captures bounded current logs for
+running containers through the off-node Kubernetes logs API, in exclusive0600
+private files. Existing previous-log capture remains in place. Its new current-
+log branch is tested with fake API responses, **not live-tested** by this attempt.
+No raw logs, termination messages, screenshot bytes or credentials were committed.
+
+### Append-only outputs and release
+
+The supervisor now accepts receipt-bounded single attempts as well as historical
+two-attempt receipts. An exclusive per-lease attempt marker prevents reuse;
+UUID/time-prefixed CLI logs, screenshots and progressive JSON snapshots are new
+files, not replacements. Resource/OOM and required HTTP-negative failures cannot
+be hidden by a successful UI return. Future successful suites independently
+compare saved bytes/marker after real browser reopen.
+
+[Release/preservation](evidence/talos-data/wopi-corrected-editor-release.json)
+independently confirms **all proof app/helper pods absent, all proof controllers0**,
+receipt archived0600 then removed, and21 prior artifacts hash-unchanged (including
+the original six WOPI results, old retry records, screenshot, archives and saved
+authenticator histories covered by the baseline). Cleanup completed despite suite
+failure. No live grant remains; there was no second activation or suite retry.
+
+Post-deletion fresh memory at Unix1794424102.065257 was **kubelet1280MiB /
+Talos1146MiB / minimum1146MiB**. This is not a new lease or fresh admission receipt
+for another workload. Parent owns any next decision; no automatic activation is
+performed. No source, production, GPU, other guest or host settings were changed.
+
+Offline regression checks pass:42 data contracts,18 workflow/boundary tests,
+12 WOPI protocol tests, Python compilation, browser syntax and diff checks. These
+checks do not turn the new warning-handler or current-log branch into live passes.

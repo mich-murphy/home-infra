@@ -1,0 +1,17 @@
+{
+  "scope": "Private0600 API state/lastState manifests before destructive operations. Observed restart counts0; previous logs inapplicable. Current server logs were not captured before deletion; no retrospective exit cause is asserted.",
+  "observations": [
+    {
+      "phase": "before mutation",
+      "sha256": "ba1ff86d45e9287204f4ff9b10e1009abfb7265f1edf954de10a4582bacb26de"
+    },
+    {
+      "phase": "before mutation",
+      "sha256": "634d5ba9df8dede6cbcf06c9caf1ff82f74fd4c4be183ccc66e9d86100e273f0"
+    },
+    {
+      "phase": "before mutation",
+      "sha256": "b27641debfeb7c3ccdcb038d957c8f2fecc5130fd33a149efa199c98ccde4bc3"
+    }
+  ]
+}

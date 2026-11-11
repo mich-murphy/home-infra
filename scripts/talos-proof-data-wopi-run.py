@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""At most two explicitly renewed WOPI attempts; capture failures then always stop.
-Requires parent retry receipt with lease_id/max_attempts/approved_controller_limits_mib.
+"""Receipt-bounded WOPI attempt; append-only diagnostics then unconditional cleanup.
+Single-attempt grants or historical two-attempt receipts; limits remain768+64.
 """
 import argparse
 import hashlib
@@ -11,6 +11,8 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import uuid
+import threading
 import yaml
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -23,9 +25,11 @@ def main():
     life=importlib.util.module_from_spec(spec);spec.loader.exec_module(life)
     life.LEASE_GROUP='nextcloud';life.LEASE_STAGE='wopi'
     state=life.private(args.state);life.STATE_DIR=state;receipt=life.lease('nextcloud')
-    if not receipt.get('lease_id') or receipt.get('max_attempts')!=2:
-        raise RuntimeError('explicit renewed two-attempt receipt required')
-    if receipt.get('approved_controller_limits_mib')!={'collabora':768,'wopi-fixture':64}:
+    maximum=receipt.get('max_attempts')
+    if not receipt.get('lease_id') or maximum not in (1,2) or args.attempt>maximum:
+        raise RuntimeError('explicit bounded attempt receipt required')
+    limits=receipt.get('approved_controller_limits_mib')
+    if (maximum==2 or limits is not None) and limits!={'collabora':768,'wopi-fixture':64}:
         raise RuntimeError('exact parent-approved controller limits required')
     lease_id=hashlib.sha256(str(receipt['lease_id']).encode()).hexdigest()[:16]
     target=life.no_symlinks(state/f'wopi-retry-{lease_id}-{args.attempt}.json')
@@ -35,11 +39,49 @@ def main():
     life.guard('nextcloud')
     pods=json.loads(life.kube('-n','proof-nextcloud','get','pods','-o','json'))['items']
     if pods:raise RuntimeError('attempt requires all group pods deleted first')
-    result={'status':'started','attempt':args.attempt,'started':time.time(),'scope':'CODE768 + WOPI fixture64 ONLY','observations':{},'cleanup':{}}
+    prefix='wopi-'+str(time.time_ns())+'-'+uuid.uuid4().hex
+    os.environ['TALOS_PROOF_WOPI_OUTPUT_PREFIX']=prefix
+    result={'output_prefix':prefix,'status':'started','attempt':args.attempt,'started':time.time(),'scope':'CODE768 + WOPI fixture64 ONLY','observations':{},'cleanup':{}}
+    lock=threading.RLock()
     def save():
-        fd=os.open(target,os.O_WRONLY|os.O_CREAT|os.O_TRUNC|os.O_NOFOLLOW,0o600)
-        with os.fdopen(fd,'w') as f:json.dump(result,f,indent=2)
-    save()  # consume attempt before any mutation; no repeated test loops
+        with lock:
+            snapshot=life.no_symlinks(state/(prefix+'-snapshot-'+str(time.time_ns())+'.json'))
+            fd=os.open(snapshot,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+            with os.fdopen(fd,'w') as f:json.dump(result,f,indent=2)
+    # Consume before any activation and refuse reuse of this lease/attempt.
+    fd=os.open(target,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'w') as f:json.dump({'output_prefix':prefix,'started':result['started']},f)
+    save()
+    stop=threading.Event()
+    sampler=None
+    def sample_kernel(phase):
+        try:
+            parent=Path.home()/'.local/state/home-infra/talos-proof'
+            pods=json.loads(kube('-n','proof-nextcloud','get','pods','-o','json'))['items']
+            samples=[]
+            for pod in pods:
+                statuses=pod['status'].get('containerStatuses',[])
+                if not statuses:continue
+                cid=statuses[0]['containerID'].split('://')[1]
+                base='/sys/fs/cgroup/kubepods/burstable/pod'+pod['metadata']['uid']+'/'+cid
+                sample={'phase':phase,'pod_uid':pod['metadata']['uid'],'pod_phase':pod['status'].get('phase'),
+                        'containers':[{k:c.get(k) for k in ('name','imageID','containerID','restartCount','ready')} for c in statuses],
+                        'time':time.time(),'cgroup':{},'read_times':{}}
+                for name in ('memory.current','memory.peak','memory.events','memory.stat'):
+                    life.lease('nextcloud')
+                    proc=subprocess.run([str(parent/'bin/talosctl'),'--talosconfig',str(parent/'config/talosconfig'),'-n','172.31.250.10','read',base+'/'+name],capture_output=True,text=True,timeout=10)
+                    sample['cgroup'][name]=proc.stdout if proc.returncode==0 else 'unavailable'
+                    sample['read_times'][name]=time.time()
+                events=dict(line.split() for line in sample['cgroup'].get('memory.events','').splitlines() if len(line.split())==2)
+                if any(int(events.get(name,0)) for name in ('oom','oom_kill')):
+                    with lock:result['status']='failed';result['observed_oom']=True
+                samples.append(sample)
+            with lock:result['observations'].setdefault('kernel_samples',[]).extend(samples)
+        except Exception as error:
+            with lock:result['observations'].setdefault('kernel_gaps',[]).append({'phase':phase,'error':type(error).__name__})
+        save()
+    def sampling():
+        while not stop.wait(10):sample_kernel('during bounded suite')
     def kube(*command):return life.kube('--request-timeout=15s',*command)
     try:
         docs=list(yaml.safe_load_all(subprocess.check_output(['kubectl','kustomize',str(ROOT/'kubernetes/apps/data/nextcloud')],text=True)))
@@ -52,20 +94,26 @@ def main():
                   (kind=='CiliumNetworkPolicy' and d['spec']['endpointSelector']['matchLabels']['app.kubernetes.io/name']=='collabora') or
                   (kind=='HTTPRoute' and d['spec'].get('hostnames')==['collabora.proof.invalid']))
             if keep:approved.append(d)
+        actual={d['metadata']['name']:int(d['spec']['template']['spec']['containers'][0]['resources']['limits']['memory'][:-2]) for d in approved if d['kind']=='Deployment'}
+        if actual!={'collabora':768,'wopi-fixture':64}:raise RuntimeError('unchanged exact controller limits required')
         life.kube('--request-timeout=15s','apply','-f','-',data=json.dumps({'apiVersion':'v1','kind':'List','items':approved}))
         # No credential generation/Secret update: retain existing fresh proof identity.
         subprocess.run([sys.executable,str(ROOT/'scripts/talos-proof-data-memory.py'),'--group','nextcloud','--stage','wopi'],check=True,timeout=60)
         subprocess.run([sys.executable,str(ROOT/'scripts/talos-proof-data.py'),'activate','--group','nextcloud','--stage','wopi','--state',str(state)],check=True,timeout=300)
-        with (state/f'wopi-retry-{lease_id}-{args.attempt}-cli.txt').open('w') as log:
-            proc=subprocess.run([sys.executable,str(ROOT/'scripts/talos-proof-data.py'),'test','--group','nextcloud','--stage','wopi','--state',str(state)],stdout=log,stderr=log,timeout=420)
+        sample_kernel('before suite')
+        sampler=threading.Thread(target=sampling,daemon=True);sampler.start()
+        with (state/(prefix+'-cli.txt')).open('x') as log:
+            proc=subprocess.run([sys.executable,str(ROOT/'scripts/talos-proof-data.py'),'test','--group','nextcloud','--stage','wopi','--state',str(state)],stdout=log,stderr=log,timeout=660)
         result['suite_exit']=proc.returncode
         outputs=[p for p in state.glob('nextcloud-wopi-*-result.json') if p.stat().st_mtime>=result['started']]
         if outputs:
             result['suite']=json.loads(max(outputs,key=lambda p:p.stat().st_mtime).read_text())
-        result['status']='passed-with-component-limitations' if proc.returncode==0 else 'failed'
+        result['status']='passed-with-component-limitations' if proc.returncode==0 and not result.get('observed_oom') else 'failed'
     except Exception as error:
         result['status']='failed';result['failure_type']=type(error).__name__
     finally:
+        stop.set()
+        if sampler:sampler.join(timeout=95)
         # Diagnostics never obstruct cleanup. Persist independently after each item.
         try:
             result['observations']['fixture']=json.loads(kube('-n','proof-nextcloud','exec','deployment/wopi-fixture','--','cat','/data/evidence.json'))
@@ -86,25 +134,17 @@ def main():
                     try: live.http(base,path,method,body,headers=headers,raw=True);negative[name]=200
                     except urllib.error.HTTPError as error:negative[name]=error.code
             result['observations']['negative']=negative
-            result['observations']['fixture_after_negatives']=json.loads(kube('-n','proof-nextcloud','exec','deployment/wopi-fixture','--','cat','/data/evidence.json'))
-        except Exception as error:result['observations']['negative_gap']=type(error).__name__
+            after=json.loads(kube('-n','proof-nextcloud','exec','deployment/wopi-fixture','--','cat','/data/evidence.json'))
+            result['observations']['fixture_after_negatives']=after
+            before=result['observations'].get('fixture',{})
+            result['observations']['negative_bytes_unchanged']=bool(before.get('sha256')) and before.get('sha256')==after.get('sha256') and type(before.get('bytes')) is int and before['bytes']==after.get('bytes')
+            if negative!={'bad-token':401,'wrong-lock':409} or not result['observations']['negative_bytes_unchanged']:result['status']='failed'
+        except Exception as error:
+            result['observations']['negative_gap']=type(error).__name__
+            result['status']='failed'
         save()
         try:
-            parent=Path.home()/'.local/state/home-infra/talos-proof'
-            pods=json.loads(kube('-n','proof-nextcloud','get','pods','-o','json'))['items']
-            for pod in pods:
-                statuses=pod['status'].get('containerStatuses',[])
-                if not statuses:continue
-                cid=statuses[0]['containerID'].split('://')[1]
-                base='/sys/fs/cgroup/kubepods/burstable/pod'+pod['metadata']['uid']+'/'+cid
-                sample={'pod_uid':pod['metadata']['uid'],'pod_phase':pod['status'].get('phase'),'pod_reason':pod['status'].get('reason'),'containers':[{k:c.get(k) for k in ('name','imageID','restartCount','ready')} for c in statuses],'time':time.time(),'cgroup':{}}
-                for name in ('memory.current','memory.peak','memory.events','memory.stat'):
-                    life.lease('nextcloud')
-                    proc=subprocess.run([str(parent/'bin/talosctl'),'--talosconfig',str(parent/'config/talosconfig'),'-n','172.31.250.10','read',base+'/'+name],capture_output=True,text=True,timeout=10)
-                    sample['cgroup'][name]=proc.stdout if proc.returncode==0 else 'unavailable'
-                result['observations'][pod['metadata']['labels']['app.kubernetes.io/name']]=sample
-                save()
-        except Exception as error:result['observations']['kernel_gap']=type(error).__name__
+            sample_kernel('after suite and negatives')
         finally:
             # Even diagnostic timeout/exception cannot skip this exact lease-gated stop.
             try:
