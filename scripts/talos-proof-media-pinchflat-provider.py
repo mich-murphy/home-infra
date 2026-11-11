@@ -58,14 +58,54 @@ def remote(container, command, *args):
     return kube('exec',pod(),'-c',container,'--','/bin/sh','-ec',command,'proof',*args)
 
 
+# Source-backed OTP27 C-node client, NOT another Elixir/BEAM VM. No -s (start),
+# -q (halt), -m (compile), cookie/identity fabrication, or BEAM fallback allowed.
+# Actual bundled binary/node identity and overhead remain future live gates.
+ERL_CALL = r'''set -eu
+read erts version < /app/releases/start_erl.data || test -n "${erts:-}"
+case "$erts" in ''|*[!0-9.]*) exit 41;; esac
+call="/app/erts-$erts/bin/erl_call"
+test -x "$call" && test ! -L "$call"
+magic="$(od -An -tx1 -N4 "$call" | tr -d ' \n')"; test "$magic" = 7f454c46
+# Read only the running release's exported identity, not guessed defaults.
+node="$(tr '\000' '\n' < /proc/1/environ | sed -n 's/^RELEASE_NODE=//p')"
+distribution="$(tr '\000' '\n' < /proc/1/environ | sed -n 's/^RELEASE_DISTRIBUTION=//p')"
+cookie="$(tr '\000' '\n' < /proc/1/environ | sed -n 's/^RELEASE_COOKIE=//p')"
+test "$node" = pinchflat && test "$distribution" = sname
+case "$cookie" in ''|*[!A-Z2-7=]*) exit 42;; esac
+test "${#cookie}" -ge 32 && test "${#cookie}" -le 128
+read main_comm < /proc/1/comm; test "$main_comm" = beam.smp
+count_beams() {
+  count=0
+  for comm_file in /proc/[0-9]*/comm; do
+    if read comm < "$comm_file" 2>/dev/null && test "$comm" = beam.smp; then count=$((count+1)); fi
+  done
+}
+count_beams; before="$count"; test "$before" -eq 1
+identity="$(sha256sum "$call")"; identity="${identity%% *}"
+printf '%s' "$1" | "$call" -sname "$node" -c "$cookie" -R -timeout 10 -e -fetch_stdout -no_result_term
+count_beams; test "$count" -eq 1
+printf '\nPROOF_TRANSPORT:{"client":"bundled-erl_call","path":"%s","sha256":"%s","beam_before":%s,"beam_after":%s}\n' "$call" "$identity" "$before" "$count"
+'''
+
+
 def rpc(state, expression):
-    # Native release RPC; expressions in this module are fixed SELECTs or public
-    # Oban queue-control calls. No caller-supplied SQL, Ecto inserts or DB edits.
+    # Fixed SELECTs or public Oban controls only. Evaluation is inside the native
+    # running app. -fetch_stdout carries the real JSON; exit-zero alone cannot pass.
     code = expression + '; IO.puts("PROOF_JSON:" <> Jason.encode!(result))'
-    raw = remote('pinchflat','exec /app/bin/pinchflat rpc "$1"',code)
+    erlang = "'Elixir.Code':eval_string(list_to_binary([" + ','.join(str(x) for x in code.encode()) + '])).'
+    raw = remote('pinchflat', ERL_CALL, erlang)
     s.write_private(state / ('pinchflat-rpc-private-' + uuid.uuid4().hex + '.log'), raw)
-    lines = [x.removeprefix('PROOF_JSON:') for x in raw.decode().splitlines() if x.startswith('PROOF_JSON:')]
-    expect(len(lines)==1, 'native release RPC did not yield one structured result')
+    output = raw.decode().splitlines()
+    transports = [json.loads(x.removeprefix('PROOF_TRANSPORT:')) for x in output if x.startswith('PROOF_TRANSPORT:')]
+    expect(len(transports)==1, 'missing unique native lightweight transport identity')
+    transport = transports[0]
+    expect(transport['client']=='bundled-erl_call' and type(transport['beam_before']) is int
+           and type(transport['beam_after']) is int and transport['beam_before']==transport['beam_after']==1
+           and re.fullmatch(r'/app/erts-[0-9.]+/bin/erl_call',transport['path'])
+           and re.fullmatch('[a-f0-9]{64}',transport['sha256']), 'native lightweight transport identity/process count differs')
+    lines = [x.removeprefix('PROOF_JSON:') for x in output if x.startswith('PROOF_JSON:')]
+    expect(len(lines)==1, 'native lightweight RPC did not yield one structured result')
     return json.loads(lines[0])
 
 

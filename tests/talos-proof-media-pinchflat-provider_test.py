@@ -80,6 +80,32 @@ class Provider(unittest.TestCase):
         p.stage_executing({'executing':[{'queue':'media_fetching'}]},'media_fetching')
         for jobs in [[{'queue':'media_fetching'},{'queue':'media_collection_indexing'}],[{'queue':'remote_metadata'}]]:
             with self.assertRaises(RuntimeError):p.stage_executing({'executing':jobs},'media_fetching')
+    def test_lightweight_rpc_requires_real_stdout_and_single_beam_identity(self):
+        transport={'client':'bundled-erl_call','path':'/app/erts-15.2.4/bin/erl_call','sha256':'a'*64,'beam_before':1,'beam_after':1}
+        with tempfile.TemporaryDirectory() as tmp:
+            state=Path(tmp).resolve()
+            def output(value=transport):return ('PROOF_JSON:{"observed":true}\nPROOF_TRANSPORT:'+json.dumps(value)+'\n').encode()
+            with patch.object(p,'remote',return_value=output()) as remote:
+                self.assertEqual(p.rpc(state,'result = %{observed: true}'),{'observed':True})
+                self.assertEqual(remote.call_args.args[:2],('pinchflat',p.ERL_CALL))
+                self.assertIn("'Elixir.Code':eval_string(list_to_binary([",remote.call_args.args[2])
+            for body in [b'PROOF_JSON:{}\n',b'PROOF_TRANSPORT:{}\n',output(dict(transport,beam_before=2)),output(dict(transport,beam_before=True)),output(dict(transport,path='/tmp/replacement')),output()+output()]:
+                with patch.object(p,'remote',return_value=body),self.assertRaises((RuntimeError,KeyError)):
+                    p.rpc(state,'result = %{}')
+            self.assertEqual(len(list(state.glob('pinchflat-rpc-private-*'))),7)
+        subprocess.run(['bash','-n'],input=p.ERL_CALL.encode(),check=True)
+
+    def test_lightweight_transport_failure_never_falls_back_to_known_oom_beam_rpc(self):
+        with tempfile.TemporaryDirectory() as tmp,patch.object(p,'remote',side_effect=RuntimeError('offline transport unavailable')) as remote:
+            with self.assertRaisesRegex(RuntimeError,'unavailable'):p.rpc(Path(tmp).resolve(),'result = %{}')
+            remote.assert_called_once()
+        self.assertNotIn('/app/bin/pinchflat rpc',p.ERL_CALL)
+        self.assertNotIn(' -s ',p.ERL_CALL)  # Never auto-start a node; -sname is distinct.
+        for flag in ('-fetch_stdout','-no_result_term','-timeout 10','-e '):self.assertIn(flag,p.ERL_CALL)
+        self.assertIn('/proc/1/environ',p.ERL_CALL)
+        self.assertIn('test "$node" = pinchflat',p.ERL_CALL)
+        self.assertIn('test "$magic" = 7f454c46',p.ERL_CALL)
+
     def test_readonly_sql_and_no_replacement_downloader(self):
         self.assertTrue(all(query.startswith('SELECT ') for query in p.SQL.values()))
         self.assertIn('coalesce(t.source_id,m.source_id)',p.SQL['jobs'])

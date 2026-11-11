@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Offline native v12.4 contract regressions; mocks are NOT live acceptance."""
 import importlib
+import http.cookiejar
 import json
 from pathlib import Path
 import sys
@@ -39,6 +40,67 @@ class Jellyfin(unittest.TestCase):
             return {'Id':'owner'}
         api.call.side_effect = reply
         self.assertEqual(j.login(api,{'username':'offline','password':'offline'}),'owner')
+
+    def test_anonymous_full_and_range_do_not_inherit_owner_headers_or_cookies(self):
+        from unittest.mock import MagicMock
+        # Real client construction, fake transport: no cluster or network calls.
+        parent = j.API('http://127.0.0.1:1', {'Authorization':'MediaBrowser Token="OFFLINE"','Cookie':'OFFLINE'}, allow_http=True)
+        owner_jar = next(h.cookiejar for h in parent.opener.handlers if hasattr(h,'cookiejar'))
+        owner_jar.set_cookie(http.cookiejar.Cookie(version=0,name='AUTH',value='OFFLINE',port=None,port_specified=False,
+            domain='127.0.0.1',domain_specified=False,domain_initial_dot=False,path='/',path_specified=True,
+            secure=False,expires=None,discard=True,comment=None,comment_url=None,rest={}))
+        anonymous = parent.anonymous()
+        anon_jar = next(h.cookiejar for h in anonymous.opener.handlers if hasattr(h,'cookiejar'))
+        self.assertEqual(len(owner_jar),1);self.assertEqual(len(anon_jar),0)
+        self.assertIsNot(owner_jar,anon_jar)
+        self.assertEqual(anonymous.headers,{})
+        self.assertIsNot(anonymous.opener,parent.opener)
+        requests = []
+        def denied(request, **kwargs):
+            requests.append(request)
+            raise urllib.error.HTTPError(request.full_url,401,'offline',{},None)
+        with patch.object(parent,'anonymous',return_value=anonymous), patch.object(anonymous.opener,'open',side_effect=denied):
+            j.anonymous_denial(parent,self.marker)
+        self.assertEqual(len(requests),2)
+        for request in requests:
+            self.assertFalse({'authorization','cookie','x-emby-token'} & {k.lower() for k in request.headers})
+            self.assertEqual(request.full_url,'http://127.0.0.1:1'+self.marker['media_path'])
+        self.assertEqual(requests[1].get_header('Range'),'bytes=44-107')
+        for status in (200,206):
+            leaked = MagicMock();leaked.__enter__.return_value.read.return_value=b'actual-fixture'
+            with patch.object(parent,'anonymous',return_value=anonymous), patch.object(anonymous.opener,'open',return_value=leaked), self.assertRaisesRegex(RuntimeError,'unexpectedly readable'):
+                j.anonymous_denial(parent,self.marker)
+
+    def test_retained_adoption_never_repairs_app_and_cannot_skip_anonymous_or_acl_gate(self):
+        prior={'before':{'MinResumeDurationSeconds':300,'MinResumePct':5,'MaxResumePct':90},'duration_floor_seconds':1}
+        j.s.write_private(self.state/'attempt.json',json.dumps(prior))
+        j.s.write_private(self.state/'jellyfin-outsider.json',json.dumps({'username':'proof-outsider','password':'OFFLINE'}))
+        fixture=self.state/j.BROWSER_FIXTURE;j.s.write_private(fixture,b'OFFLINE-NOT-PLAYABLE')
+        values={'/System/Info/Public':{'Version':'12.4.0','StartupWizardCompleted':True},
+            '/System/Configuration':dict(prior['before'],MinResumeDurationSeconds=1),
+            '/System/Configuration/network':{'KnownProxies':[],'LocalNetworkSubnets':[]},
+            '/Library/VirtualFolders':[{'Name':'Proof Browser','ItemId':'library','Locations':['/data/media'],
+                'LibraryOptions':{'TypeOptions':[{'Type':'Movie','MetadataFetchers':[],'ImageFetchers':[]}]}}],
+            '/Users':[{'Name':'proof-outsider','Id':'other'}]}
+        for failure in ('anonymous','acl',None):
+            api=Mock()
+            def call(path):
+                if path.startswith('/Items?'):return {'Items':[{'Id':'movie','Path':'/data/media/'+j.BROWSER_FIXTURE,'RunTimeTicks':120210000}]}
+                return values[path]
+            api.call.side_effect=call
+            with patch.object(j,'owner',return_value=(api,'owner')),patch.object(j,'anonymous_denial',side_effect=RuntimeError('anonymous leak') if failure=='anonymous' else None) as anon, \
+                 patch.object(j,'stream'),patch.object(j,'acl',side_effect=RuntimeError('ACL leak') if failure=='acl' else None) as acl:
+                if failure:
+                    with self.assertRaisesRegex(RuntimeError,'leak'):j.adopt(self.state,Path('/unused'),fixture,'attempt.json')
+                    self.assertFalse((self.state/j.PREPARED).exists())
+                    if failure=='anonymous':acl.assert_not_called()
+                else:
+                    marker=j.adopt(self.state,Path('/unused'),fixture,'attempt.json')
+                    self.assertEqual(marker['owner_id'],'owner');self.assertTrue((self.state/j.PREPARED).exists())
+                    with self.assertRaisesRegex(RuntimeError,'existing setup marker'):j.adopt(self.state,Path('/unused'),fixture,'attempt.json')
+            self.assertTrue(all(len(c.args)==1 for c in api.call.call_args_list))
+        self.assertEqual(json.loads(j.s.read_private(self.state/'attempt.json')),prior)
+        self.assertEqual(len(list(self.state.glob('jellyfin-adoption-attempt-*'))),3)
 
     def test_native_start_progress_stop_and_exact_session(self):
         api = Mock();api.last_status = 204
@@ -83,7 +145,7 @@ class Jellyfin(unittest.TestCase):
             api = Mock();api.call.side_effect = [{'MinResumeDurationSeconds':1},[{'ItemId':'library'}],
                 {'UserData':{'Played':False,'PlaybackPositionTicks':0 if lost else 82000000}},
                 {'Items':[{'Id':'movie','UserData':{'PlaybackPositionTicks':82000000}}]}]
-            with patch.object(j,'owner',return_value=(api,'owner')), patch.object(j,'stream') as stream, patch.object(j,'acl') as acl:
+            with patch.object(j,'owner',return_value=(api,'owner')), patch.object(j,'stream') as stream, patch.object(j,'acl') as acl, patch.object(j,'anonymous_denial'):
                 if lost:
                     with self.assertRaisesRegex(RuntimeError,'persisted resume'):
                         j.verify(self.state,Path('/unused'),Path('/unused'), 'done.json')

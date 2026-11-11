@@ -11,6 +11,18 @@ All three receipts archived/revoked; all app/helper pods and positive app desire
 replicas absent at release. No lifecycle/provider/recovery or full acceptance.
 The historical sections below are chronology/preparation, not a current lease.
 
+[Offline pinned auth/RPC followup](evidence/talos-media/native-auth-rpc-source-followup.md)
+finds no supported native require-auth stream switch in reviewed12.4 source;
+retained-state adoption is prepared but still fails closed on anonymous/outsider
+byte exposure. Native Token= is required with default-disabled legacy auth.
+Plex accountless browser delegation is unestablished; headless decode is only a
+narrower source-reviewed design, not browser parity. Lightweight bundled C
+`erl_call` preparation replaces known-OOM extra-BEAM RPC without fallback or
+resource increase, pending actual image/identity/overhead checks under a NEW grant.
+Parent kernel evidence additionally correlates THREE same-pod memcg OOM events,
+including the final terminated incarnation despite restartCount2. No live action
+or app-network change occurred in this followup.
+
 **Limited first live results, NOT full media acceptance.** Pinchflat profile-only and Audiobookshelf synthetic-playback workflows passed restart and distinct-fresh-PVC recovery; qBittorrent remains blocked by HTTP401. Failed attempts and procedural deviations are retained in `docs/evidence/talos-media/first-live-batch.md`. Parent must review tests and live evidence before acceptance. VM120 is now bounded at 3072 MiB configured RAM (reported guest total approximately 2823 MiB); this is not a media lease. Activate **one media Deployment at a time**, only under a coordinator-granted resource lease. Fresh-fixture experiment ceilings are 192–512 MiB per main application, plus explicitly charged sidecars, not evidence that all source services fit simultaneously. Requests are scheduling reservations, not measured steady state. Image unpacking, controllers, storage and init containers also consume resources.
 
 Current source of truth: `docker/{arrs,downloads,plex,jellyfin,jellyplex-watched,audiobookshelf,pinchflat,recyclarr}/compose.yml`. All **16 services** map to explicit Kustomize resources, with exact current Compose image digests (not running-image substitutions). Inventory notes a live-vs-Compose jellyplex-watched difference; this proof pins the requested current Compose and must not claim live-image fidelity for that service.

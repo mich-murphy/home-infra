@@ -43,9 +43,9 @@ def login(api, credentials):
     check()
     auth = api.call('/Users/AuthenticateByName', 'POST', {'Username': credentials['username'], 'Pw': credentials['password']})
     api.headers['X-Emby-Token'] = auth['AccessToken']
-    # Native12.4 prioritizes the MediaBrowser Authorization header. Preserve
-    # client/device identity AND include the issued token there; an otherwise
-    # tokenless Authorization header shadows X-Emby-Token and yields401.
+    # Pinned12.4 AuthorizationContext accepts X-Emby-Token ONLY when legacy
+    # authorization is enabled (default false). Use native Token= and preserve
+    # client/device identity; do not re-enable legacy auth to fix the client.
     api.headers['Authorization'] += ', Token="' + auth['AccessToken'] + '"'
     expect(api.call('/Users/Me')['Id'] == auth['User']['Id'], 'authenticated user identity mismatch')
     return auth['User']['Id']
@@ -96,6 +96,67 @@ def stream(api, marker, fixture):
     expect(hashlib.sha256(actual).hexdigest() == digest, 'actual server video differs from fixture')
     chunk = api.call(marker['media_path'], raw=True, headers={'Range': 'bytes=44-107'})
     expect(api.last_status == 206 and chunk == expected[44:108], 'actual byte-range mismatch')
+
+
+def anonymous_denial(api, marker):
+    """Fresh header/cookie-free client; full and range bytes must require auth."""
+    anonymous = api.anonymous()
+    expect(not anonymous.headers, 'anonymous client unexpectedly inherited credentials')
+    for headers in ({}, {'Range':'bytes=44-107'}):
+        try:
+            anonymous.call(marker['media_path'], raw=True, headers=headers)
+        except urllib.error.HTTPError as exc:
+            expect(exc.code in (401,403), 'anonymous media denial returned unexpected status')
+        else:
+            raise RuntimeError('anonymous video unexpectedly readable')
+
+
+def adopt(state, ca, fixture, attempt):
+    """Verify retained partial setup without reconfiguring users/library/network.
+
+    Logins issue sessions; ALL durable app state is read before local marker
+    adoption. The observed byte leak remains a hard gate, not an adopt exception.
+    """
+    check()
+    expect(fixture.name == BROWSER_FIXTURE, 'immutable twelve-second fixture required')
+    expect(not (state / PREPARED).exists(), 'existing setup marker must be verified, not rewritten')
+    prior = read_record(state, attempt)
+    expect(prior['duration_floor_seconds'] == 1, 'unexpected retained setup duration floor')
+    api, uid = owner(state, ca)
+    public = api.call('/System/Info/Public')
+    expect(public['Version'].split('.')[:2] == ['12','4'] and public['StartupWizardCompleted'], 'retained native setup/version differs')
+    settings = api.call('/System/Configuration')
+    expected = dict(prior['before'], MinResumeDurationSeconds=1)
+    expect(all(settings[k] == v for k,v in expected.items()), 'retained resume settings differ; adoption cannot repair them')
+    network = api.call('/System/Configuration/network')
+    libraries = api.call('/Library/VirtualFolders')
+    expect(len(libraries) == 1 and libraries[0]['Name'] == 'Proof Browser'
+           and libraries[0]['Locations'] == ['/data/media'], 'retained library topology differs')
+    options = libraries[0]['LibraryOptions']
+    movie = [x for x in options['TypeOptions'] if x['Type'] == 'Movie']
+    expect(len(movie) == 1 and movie[0]['MetadataFetchers'] == [] and movie[0]['ImageFetchers'] == [], 'retained library remote providers differ')
+    items = api.call('/Items?Recursive=true&IncludeItemTypes=Movie&Fields=Path,MediaSources,MediaStreams&EnableUserData=true')['Items']
+    expect(len(items) == 1 and Path(items[0]['Path']).name == BROWSER_FIXTURE, 'retained fixture item differs')
+    item = items[0]
+    expect(100000000 <= item['RunTimeTicks'] <= 150000000, 'retained fixture duration differs')
+    outsider_path = 'jellyfin-outsider.json'
+    credentials = read_record(state, outsider_path)  # Must already exist; never generate or rotate.
+    users = api.call('/Users')
+    outsiders = [x for x in users if x['Name'] == credentials['username']]
+    expect(len(outsiders) == 1 and outsiders[0]['Id'] != uid, 'retained outsider identity missing/ambiguous')
+    marker = {'owner_id':uid,'outsider_id':outsiders[0]['Id'],'outsider_credentials':outsider_path,
+              'library_id':libraries[0]['ItemId'],'item_id':item['Id'],'runtime_ticks':item['RunTimeTicks'],
+              'media_path':'/Videos/' + item['Id'] + '/stream.mp4?static=true',
+              'fixture_sha256':hashlib.sha256(s.read_private(fixture,binary=True)).hexdigest(),
+              'resume_settings':expected}
+    # Retain candidate and network observation privately even if denial fails.
+    s.write_private(state / ('jellyfin-adoption-attempt-' + uuid.uuid4().hex + '.json'),
+                    json.dumps({'candidate':marker,'network_observation':network,'source_attempt':attempt}))
+    anonymous_denial(api, marker)
+    stream(api, marker, fixture)
+    acl(api, ca, state, marker)
+    s.write_private(state / PREPARED, json.dumps(marker))
+    return marker
 
 
 def setup(state, ca, fixture):
@@ -155,12 +216,7 @@ def setup(state, ca, fixture):
               'media_path':'/Videos/' + item['Id'] + '/stream.mp4?static=true',
               'fixture_sha256':hashlib.sha256(s.read_private(fixture,binary=True)).hexdigest(),
               'resume_settings':{key:config[key] for key in before}}
-    try:
-        api.anonymous().call(marker['media_path'], raw=True)
-    except urllib.error.HTTPError as exc:
-        expect(exc.code in (401,403), 'anonymous media denial returned unexpected status')
-    else:
-        raise RuntimeError('anonymous video unexpectedly readable')
+    anonymous_denial(api, marker)
     stream(api, marker, fixture)
     acl(api, ca, state, marker)
     s.write_private(state / PREPARED, json.dumps(marker))
@@ -234,6 +290,7 @@ def verify(state, ca, fixture, record):
     expect(item['UserData']['Played'] is False and item['UserData']['PlaybackPositionTicks'] == marker['resume_ticks'], 'actual persisted resume position/played status lost')
     resumed = api.call('/UserItems/Resume?EnableUserData=true')['Items']
     expect(any(x['Id'] == marker['item_id'] and x['UserData']['PlaybackPositionTicks'] == marker['resume_ticks'] for x in resumed), 'resume list lacks exact persisted item/position')
+    anonymous_denial(api, marker)
     stream(api, marker, fixture)
     acl(api, ca, state, marker)
     return marker
@@ -257,15 +314,20 @@ def finish(state, ca, fixture, bridge, decoder):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('action', choices=['setup','verify'])
+    p.add_argument('action', choices=['setup','adopt','verify'])
     p.add_argument('--state', required=True, type=Path)
     p.add_argument('--ca', required=True, type=Path)
     p.add_argument('--fixture', required=True, type=Path)
     p.add_argument('--record', help='exact immutable completed browser functional JSON basename for verify')
+    p.add_argument('--attempt', help='explicit existing resume-config-attempt basename for retained-state adoption; no repairs')
     args = p.parse_args()
     state = s.private_dir(args.state)
-    if args.action == 'setup':
-        setup(state, args.ca, args.fixture)
+    if args.action in ('setup','adopt'):
+        if args.action == 'adopt':
+            expect(args.attempt is not None, 'adopt requires exact retained resume-config-attempt basename')
+            adopt(state, args.ca, args.fixture, args.attempt)
+        else:
+            setup(state, args.ca, args.fixture)
         print(json.dumps({'result':'PREPARED_ONLY','next_gate':'actual browser --jellyfin-lifecycle'}))
     else:
         expect(args.record is not None, 'verify requires explicit existing browser functional record')

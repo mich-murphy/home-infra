@@ -1,0 +1,300 @@
+{
+  "scope": "offline extraction from parent captured proof-node dmesg, NOT new cluster observation",
+  "provenance": {
+    "private_source_basename": "pinchflat-kernel-06dd62a9dbc44ec5a59b262199908bd9.log",
+    "sha256": "75e20244e98d1d189ab8a0eee13acd33d00eab1e4d5f8f4c04dae33c85d91348",
+    "source_mode": "0600",
+    "capture_command_exit": 0,
+    "capture_owner": "parent"
+  },
+  "pod_uid": "089ed926-0240-432f-a25a-1199beaa770e",
+  "events": [
+    {
+      "utc": "2026-11-11T20:13:09.270244353Z",
+      "kernel_lines": [
+        1866,
+        1992
+      ],
+      "constraint": "CONSTRAINT_MEMCG",
+      "container_id": "002075d54f9f821791489e2f63eefcf61a083f661f1f0a3d841f6644141a4cce",
+      "trigger_comm": "beam.smp",
+      "task_count": 11,
+      "beam_tasks": [
+        {
+          "pid": 44223,
+          "uid": 0,
+          "tgid": 44223,
+          "total_vm_pages": 580576,
+          "rss_pages": 53814,
+          "rss_anon_pages": 32110,
+          "rss_file_pages": 111,
+          "rss_shmem_pages": 21593,
+          "pgtables_bytes": 667648,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "beam.smp",
+          "source_line": 1968
+        },
+        {
+          "pid": 44489,
+          "uid": 0,
+          "tgid": 44489,
+          "total_vm_pages": 336948,
+          "rss_pages": 8557,
+          "rss_anon_pages": 8480,
+          "rss_file_pages": 77,
+          "rss_shmem_pages": 0,
+          "pgtables_bytes": 200704,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "beam.smp",
+          "source_line": 1978
+        }
+      ],
+      "other_relevant_tasks": [
+        {
+          "pid": 44472,
+          "uid": 0,
+          "tgid": 44472,
+          "total_vm_pages": 17413,
+          "rss_pages": 12248,
+          "rss_anon_pages": 12138,
+          "rss_file_pages": 110,
+          "rss_shmem_pages": 0,
+          "pgtables_bytes": 188416,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "yt-dlp",
+          "source_line": 1975
+        }
+      ],
+      "victims": [
+        {
+          "pid": 44223,
+          "comm": "beam.smp",
+          "source_line": 1980,
+          "memory_kib": {
+            "total-vm": 2322304,
+            "anon-rss": 128440,
+            "file-rss": 444,
+            "shmem-rss": 86372,
+            "pgtables": 652
+          },
+          "oom_score_adj": 955
+        },
+        {
+          "pid": 44489,
+          "comm": "beam.smp",
+          "source_line": 1992,
+          "memory_kib": {
+            "total-vm": 1347792,
+            "anon-rss": 33920,
+            "file-rss": 308,
+            "shmem-rss": 0,
+            "pgtables": 196
+          },
+          "oom_score_adj": 955
+        }
+      ]
+    },
+    {
+      "utc": "2026-11-11T20:16:20.620471928Z",
+      "kernel_lines": [
+        1993,
+        2126
+      ],
+      "constraint": "CONSTRAINT_MEMCG",
+      "container_id": "ceefe691926bb844b18a8365dcbf47f46b121c43c212d434859668315e01836c",
+      "trigger_comm": "yt-dlp",
+      "task_count": 15,
+      "beam_tasks": [
+        {
+          "pid": 44582,
+          "uid": 0,
+          "tgid": 44582,
+          "total_vm_pages": 579757,
+          "rss_pages": 53264,
+          "rss_anon_pages": 31591,
+          "rss_file_pages": 122,
+          "rss_shmem_pages": 21551,
+          "pgtables_bytes": 667648,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "beam.smp",
+          "source_line": 2095
+        },
+        {
+          "pid": 45076,
+          "uid": 0,
+          "tgid": 45076,
+          "total_vm_pages": 277456,
+          "rss_pages": 1390,
+          "rss_anon_pages": 1280,
+          "rss_file_pages": 110,
+          "rss_shmem_pages": 0,
+          "pgtables_bytes": 114688,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "beam.smp",
+          "source_line": 2109
+        }
+      ],
+      "other_relevant_tasks": [
+        {
+          "pid": 44788,
+          "uid": 0,
+          "tgid": 44788,
+          "total_vm_pages": 18900,
+          "rss_pages": 13642,
+          "rss_anon_pages": 13550,
+          "rss_file_pages": 92,
+          "rss_shmem_pages": 0,
+          "pgtables_bytes": 192512,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "yt-dlp",
+          "source_line": 2102
+        },
+        {
+          "pid": 44923,
+          "uid": 0,
+          "tgid": 44923,
+          "total_vm_pages": 11852,
+          "rss_pages": 6898,
+          "rss_anon_pages": 6787,
+          "rss_file_pages": 111,
+          "rss_shmem_pages": 0,
+          "pgtables_bytes": 131072,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "python3",
+          "source_line": 2106
+        }
+      ],
+      "victims": [
+        {
+          "pid": 44582,
+          "comm": "beam.smp",
+          "source_line": 2111,
+          "memory_kib": {
+            "total-vm": 2319028,
+            "anon-rss": 126364,
+            "file-rss": 488,
+            "shmem-rss": 86204,
+            "pgtables": 652
+          },
+          "oom_score_adj": 955
+        },
+        {
+          "pid": 45076,
+          "comm": "beam.smp",
+          "source_line": 2126,
+          "memory_kib": {
+            "total-vm": 1109824,
+            "anon-rss": 5120,
+            "file-rss": 440,
+            "shmem-rss": 0,
+            "pgtables": 112
+          },
+          "oom_score_adj": 955
+        }
+      ]
+    },
+    {
+      "utc": "2026-11-11T20:16:35.689083713Z",
+      "kernel_lines": [
+        2127,
+        2267
+      ],
+      "constraint": "CONSTRAINT_MEMCG",
+      "container_id": "f26d8b522e5793920b4f9d6e556892f483aa35a565498acc2242e55c672d77ad",
+      "trigger_comm": "python3",
+      "task_count": 18,
+      "beam_tasks": [
+        {
+          "pid": 46009,
+          "uid": 0,
+          "tgid": 46009,
+          "total_vm_pages": 582032,
+          "rss_pages": 55384,
+          "rss_anon_pages": 33672,
+          "rss_file_pages": 121,
+          "rss_shmem_pages": 21591,
+          "pgtables_bytes": 675840,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "beam.smp",
+          "source_line": 2229
+        }
+      ],
+      "other_relevant_tasks": [
+        {
+          "pid": 46232,
+          "uid": 0,
+          "tgid": 46232,
+          "total_vm_pages": 16901,
+          "rss_pages": 12544,
+          "rss_anon_pages": 11619,
+          "rss_file_pages": 925,
+          "rss_shmem_pages": 0,
+          "pgtables_bytes": 180224,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "yt-dlp",
+          "source_line": 2236
+        },
+        {
+          "pid": 46279,
+          "uid": 0,
+          "tgid": 46279,
+          "total_vm_pages": 9087,
+          "rss_pages": 4644,
+          "rss_anon_pages": 3827,
+          "rss_file_pages": 817,
+          "rss_shmem_pages": 0,
+          "pgtables_bytes": 106496,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "python3",
+          "source_line": 2241
+        },
+        {
+          "pid": 46280,
+          "uid": 0,
+          "tgid": 46280,
+          "total_vm_pages": 9087,
+          "rss_pages": 4621,
+          "rss_anon_pages": 3814,
+          "rss_file_pages": 807,
+          "rss_shmem_pages": 0,
+          "pgtables_bytes": 110592,
+          "swapents": 0,
+          "oom_score_adj": 955,
+          "comm": "python3",
+          "source_line": 2242
+        }
+      ],
+      "victims": [
+        {
+          "pid": 46009,
+          "comm": "beam.smp",
+          "source_line": 2248,
+          "memory_kib": {
+            "total-vm": 2328128,
+            "anon-rss": 134688,
+            "file-rss": 484,
+            "shmem-rss": 86364,
+            "pgtables": 660
+          },
+          "oom_score_adj": 955
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "comm names are not full command lines; secondary BEAM role not independently proven",
+    "task RSS is not additive cgroup charge; no downloader capacity requirement inferred",
+    "first application error remains originally generic despite later kernel correlation",
+    "no new cluster/host calls or resource changes"
+  ]
+}
