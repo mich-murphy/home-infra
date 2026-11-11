@@ -1,0 +1,326 @@
+{
+  "captured_utc": "2026-11-11T13:28:59.047091+00:00",
+  "node_memory": {
+    "time": "2026-11-11T13:28:53Z",
+    "availableBytes": 1029701632,
+    "usageBytes": 2131406848,
+    "workingSetBytes": 1470136320,
+    "rssBytes": 1050234880,
+    "pageFaults": 2907837,
+    "majorPageFaults": 8864,
+    "psi": {
+      "full": {
+        "total": 404780,
+        "avg10": 0,
+        "avg60": 0,
+        "avg300": 0
+      },
+      "some": {
+        "total": 542602,
+        "avg10": 0,
+        "avg60": 0,
+        "avg300": 0
+      }
+    }
+  },
+  "pods": [
+    {
+      "name": "fixture-56598fd6b7-9qvtj",
+      "uid": "a185d548-46d0-4b36-ac2f-b2f5438c1f38",
+      "node": "talos-proof",
+      "containers": [
+        {
+          "name": "fixture",
+          "image": "nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+          "resources": {
+            "limits": {
+              "cpu": "100m",
+              "memory": "64Mi"
+            },
+            "requests": {
+              "cpu": "10m",
+              "memory": "16Mi"
+            }
+          }
+        }
+      ],
+      "statuses": [
+        {
+          "name": "fixture",
+          "imageID": "docker.io/library/nextcloud@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+          "restarts": 0,
+          "ready": true,
+          "lastState": {}
+        }
+      ]
+    },
+    {
+      "name": "miniflux-b8c9fc6f8-5bt2d",
+      "uid": "4ef2480d-e496-4af1-a070-1b07e9a75959",
+      "node": "talos-proof",
+      "containers": [
+        {
+          "name": "miniflux",
+          "image": "miniflux/miniflux:2.3.5@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9",
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "128Mi"
+            },
+            "requests": {
+              "cpu": "25m",
+              "memory": "64Mi"
+            }
+          }
+        }
+      ],
+      "statuses": [
+        {
+          "name": "miniflux",
+          "imageID": "docker.io/miniflux/miniflux@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9",
+          "restarts": 0,
+          "ready": true,
+          "lastState": {}
+        }
+      ]
+    },
+    {
+      "name": "postgres-5869d98d9b-rxqr6",
+      "uid": "34781078-8a53-48e4-8218-dd24aa4c6942",
+      "node": "talos-proof",
+      "containers": [
+        {
+          "name": "postgres",
+          "image": "postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "256Mi"
+            },
+            "requests": {
+              "cpu": "25m",
+              "memory": "128Mi"
+            }
+          }
+        }
+      ],
+      "statuses": [
+        {
+          "name": "postgres",
+          "imageID": "docker.io/library/postgres@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+          "restarts": 0,
+          "ready": true,
+          "lastState": {}
+        }
+      ]
+    }
+  ],
+  "pod_memory": [
+    {
+      "pod": {
+        "name": "fixture-56598fd6b7-9qvtj",
+        "namespace": "proof-miniflux",
+        "uid": "a185d548-46d0-4b36-ac2f-b2f5438c1f38"
+      },
+      "memory": {
+        "time": "2026-11-11T13:28:52Z",
+        "availableBytes": 46153728,
+        "usageBytes": 47284224,
+        "workingSetBytes": 20955136,
+        "rssBytes": 9347072,
+        "pageFaults": 7985,
+        "majorPageFaults": 165,
+        "psi": {
+          "full": {
+            "total": 8241,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 8241,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      },
+      "containers": [
+        {
+          "name": "fixture",
+          "memory": {
+            "time": "2026-11-11T13:28:56Z",
+            "availableBytes": 46419968,
+            "usageBytes": 47017984,
+            "workingSetBytes": 20688896,
+            "rssBytes": 9306112,
+            "pageFaults": 6713,
+            "majorPageFaults": 165,
+            "psi": {
+              "full": {
+                "total": 10701,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              },
+              "some": {
+                "total": 10701,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "pod": {
+        "name": "miniflux-b8c9fc6f8-5bt2d",
+        "namespace": "proof-miniflux",
+        "uid": "4ef2480d-e496-4af1-a070-1b07e9a75959"
+      },
+      "memory": {
+        "time": "2026-11-11T13:28:58Z",
+        "availableBytes": 117116928,
+        "usageBytes": 37031936,
+        "workingSetBytes": 17100800,
+        "rssBytes": 13017088,
+        "pageFaults": 6180,
+        "majorPageFaults": 16,
+        "psi": {
+          "full": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      },
+      "containers": [
+        {
+          "name": "miniflux",
+          "memory": {
+            "time": "2026-11-11T13:28:57Z",
+            "availableBytes": 117391360,
+            "usageBytes": 36757504,
+            "workingSetBytes": 16826368,
+            "rssBytes": 12980224,
+            "pageFaults": 4922,
+            "majorPageFaults": 15,
+            "psi": {
+              "full": {
+                "total": 0,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              },
+              "some": {
+                "total": 0,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "pod": {
+        "name": "postgres-5869d98d9b-rxqr6",
+        "namespace": "proof-miniflux",
+        "uid": "34781078-8a53-48e4-8218-dd24aa4c6942"
+      },
+      "memory": {
+        "time": "2026-11-11T13:28:53Z",
+        "availableBytes": 222547968,
+        "usageBytes": 48902144,
+        "workingSetBytes": 45887488,
+        "rssBytes": 7520256,
+        "pageFaults": 45574,
+        "majorPageFaults": 47,
+        "psi": {
+          "full": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      },
+      "containers": [
+        {
+          "name": "postgres",
+          "memory": {
+            "time": "2026-11-11T13:28:54Z",
+            "availableBytes": 222818304,
+            "usageBytes": 48631808,
+            "workingSetBytes": 45617152,
+            "rssBytes": 7475200,
+            "pageFaults": 44343,
+            "majorPageFaults": 47,
+            "psi": {
+              "full": {
+                "total": 0,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              },
+              "some": {
+                "total": 0,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "routes": {
+    "parents": [
+      {
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-11-11T13:19:49Z",
+            "message": "Accepted HTTPRoute",
+            "observedGeneration": 1,
+            "reason": "Accepted",
+            "status": "True",
+            "type": "Accepted"
+          },
+          {
+            "lastTransitionTime": "2026-11-11T13:19:49Z",
+            "message": "Service reference is valid",
+            "observedGeneration": 1,
+            "reason": "ResolvedRefs",
+            "status": "True",
+            "type": "ResolvedRefs"
+          }
+        ],
+        "controllerName": "io.cilium/gateway-controller",
+        "parentRef": {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "proof",
+          "namespace": "proof-gateway",
+          "sectionName": "https"
+        }
+      }
+    ]
+  }
+}

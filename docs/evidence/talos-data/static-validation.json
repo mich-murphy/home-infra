@@ -1,6 +1,6 @@
 {
   "timestamp_utc": "2026-11-11T12:34:36.895126+00:00",
-  "render_sha256": "8d1e3e7034fa6de3460ea4e7df59a7f881a4c2ec47bc98efae7d06efa47e693c",
+  "render_sha256": "3f0f64bf3871fafddc95dcf7083ff10ec5eae461f2a290538ee0835b471f3b2a",
   "offline_unit_tests": 26,
   "offline_unit_test_result": "passed",
   "parent_safety_validator": "passed",
@@ -8,8 +8,8 @@
   "node_identity_required": "single node named+hostname talos-proof; coordinator-recorded node_uid",
   "mutation_checks": "every apply/scale/exec/patch/rollout; endpoint, TLS, context, group, expiry, node UID",
   "private_state_checks": "lstat rejects symlink file/directory/ancestor before resolve/open",
-  "live_deployment": "CouchDB tested then scaled0; other groups pending",
-  "live_functional_tests": "CouchDB pass with distinct clean-PVC recovery; others NOT RUN",
+  "live_deployment": "All data app pods deactivated/deleted at checkpoint",
+  "live_functional_tests": "CouchDB bounded create/read/recovery, Miniflux functional+cleanPGPVC, Pocket-ID virtualWebAuthn/OIDC+cleanPVC PASS; Wallabag startup-only PARTIAL; Nextcloud/Immich NOT RUN",
   "gateway_tests": "CouchDB trustedTLS integrated realGateway passed",
   "resource_capacity": "2560MiB node; large groups may fail conservative guard",
   "acceptance": "pending parent integration"

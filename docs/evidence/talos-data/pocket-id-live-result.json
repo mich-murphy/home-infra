@@ -1,0 +1,88 @@
+{
+  "group": "pocket-id",
+  "checks": [
+    "TLS Gateway route selected: pocket-id.proof.invalid",
+    "Pocket-ID OIDC discovery has isolated issuer",
+    "Pocket-ID advertises authorization/token/JWKS endpoints",
+    "Pocket-ID public JWKS returns signing keys",
+    "Virtual WebAuthn registration/login and cryptographically verified OIDC code flow",
+    "Virtual WebAuthn registration/login and cryptographically verified OIDC code flow",
+    "Pocket-ID user and registered passkey survive pod replacement",
+    "Pocket-ID logical export contains database.json",
+    "clean restore uses distinct fresh PVC UID and PV: pocket-id",
+    "Virtual WebAuthn registration/login and cryptographically verified OIDC code flow",
+    "Pocket-ID clean-PVC logical restore preserves user/passkey and signed OIDC flow"
+  ],
+  "limitations": [
+    "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate.",
+    "CDP virtual authenticator proves WebAuthn protocol/cryptography, not human physical-device UX, device recovery or hardware attestation."
+  ],
+  "browser_runs": [
+    {
+      "checks": [
+        "Fresh-cookie passkey authentication resolves persistent proof administrator",
+        "OIDC browser authorization-code callback has matching random state",
+        "OIDC token uses an explicitly supported signing algorithm",
+        "OIDC ID token signature validates against issuer public JWKS",
+        "OIDC ID token issuer/audience/nonce/subject/expiry validated",
+        "OIDC access token returns matching userinfo identity",
+        "OIDC token endpoint rejects unknown client credentials"
+      ],
+      "status": "passed",
+      "authenticator": "fresh CDP ctap2 virtual authenticator; no physical/user passkey claim",
+      "chrome_version": "157.0.8103.51",
+      "user_id": "993f20dc-ca5b-47b7-a36a-d176ff684b2f",
+      "token_exchange_status": 200
+    },
+    {
+      "checks": [
+        "Fresh-cookie passkey authentication resolves persistent proof administrator",
+        "OIDC browser authorization-code callback has matching random state",
+        "OIDC token uses an explicitly supported signing algorithm",
+        "OIDC ID token signature validates against issuer public JWKS",
+        "OIDC ID token issuer/audience/nonce/subject/expiry validated",
+        "OIDC access token returns matching userinfo identity",
+        "OIDC token endpoint rejects unknown client credentials"
+      ],
+      "status": "passed",
+      "authenticator": "fresh CDP ctap2 virtual authenticator; no physical/user passkey claim",
+      "chrome_version": "157.0.8103.51",
+      "user_id": "993f20dc-ca5b-47b7-a36a-d176ff684b2f",
+      "token_exchange_status": 200
+    },
+    {
+      "checks": [
+        "Fresh-cookie passkey authentication resolves persistent proof administrator",
+        "OIDC browser authorization-code callback has matching random state",
+        "OIDC token uses an explicitly supported signing algorithm",
+        "OIDC ID token signature validates against issuer public JWKS",
+        "OIDC ID token issuer/audience/nonce/subject/expiry validated",
+        "OIDC access token returns matching userinfo identity",
+        "OIDC token endpoint rejects unknown client credentials"
+      ],
+      "status": "passed",
+      "authenticator": "fresh CDP ctap2 virtual authenticator; no physical/user passkey claim",
+      "chrome_version": "157.0.8103.51",
+      "user_id": "993f20dc-ca5b-47b7-a36a-d176ff684b2f",
+      "token_exchange_status": 200
+    }
+  ],
+  "backup_sha256": "963c674f9118fa0164258933d11d2089431b21f88438abae8e3d3d3e83331fbb",
+  "database_export_sha256": "9392a30b86b5194b7c2b4d222b65507f6c9eaeb0938b4ec3e254b1a553c4dc2d",
+  "restore_volumes": [
+    {
+      "app": "pocket-id",
+      "source_pvc": "pocket-id-data",
+      "source_uid": "090ae00b-e1ca-4e40-9f2a-2007d9869620",
+      "restored_pvc": "pocket-id-restore-8994cfba088b",
+      "restored_uid": "93516455-e83f-4f71-8cba-917f992f3f97",
+      "restored_pv": "pvc-93516455-e83f-4f71-8cba-917f992f3f97"
+    }
+  ],
+  "status": "functional-checks-passed-with-limitations",
+  "endpoint": "https://127.0.0.1:64120",
+  "node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+  "gateway": "CA-verified TLS; Chrome exact leaf-SPKI pin; no broad ignoreHTTPSErrors",
+  "registration": "Fresh registration initially succeeded; existing credential reused on complete suite and restore, never a new account on restore.",
+  "cleanup": "All group pods scaled0 and waited deleted before next group; final all-proof labelled pods query found no resources."
+}

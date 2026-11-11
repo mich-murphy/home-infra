@@ -193,7 +193,7 @@ def main():
             kube('-n', ns, 'scale', 'deployment', '--all', '--replicas=1')
             kube('-n', ns, 'wait', '--for=condition=available', 'deployment', '--all', '--timeout=900s')
             if a.group == 'wallabag':
-                kube('-n', ns, 'exec', 'deployment/wallabag', '--', 'sh', '-ec', 'cd /var/www/wallabag; php bin/console fos:user:change-password wallabag "$PROOF_ADMIN_PASSWORD" --no-interaction')
+                kube('-n', ns, 'exec', 'deployment/wallabag', '--', 'sh', '-ec', 'cd /var/www/wallabag; php bin/console --env=prod fos:user:change-password wallabag "$PROOF_ADMIN_PASSWORD" --no-interaction')
             if a.action == 'run':
                 subprocess.run([sys.executable, str(ROOT / 'tests/talos-proof-data-live.py'), a.group, str(state)], check=True, timeout=1800)
         finally:

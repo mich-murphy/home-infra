@@ -1,0 +1,16 @@
+{
+  "group": "wallabag",
+  "checks": [],
+  "limitations": [
+    "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate."
+  ],
+  "status": "partial-startup-only; HTTP OAuth/CRUD/recovery NOT PASSED",
+  "failure_type": "RuntimeError",
+  "failed_stage": "exec wallabag php",
+  "initial_failures": [
+    "Default Symfony dev CLI lacks DebugBundle; fixed explicit --env=prod and password rotation passed.",
+    "Generic FOS OAuth CLI incompatible with required Client(User) constructor; owner-aware bootstrap under investigation."
+  ],
+  "cleanup": "All group pods scaled0 and waited deleted before next group; final all-proof labelled pods query found no resources.",
+  "next_fix_prepared": "Doctrine persistence3 forbids short aliases; owner-aware OAuth bootstrap changed to User::class FQN, not yet rerun live."
+}

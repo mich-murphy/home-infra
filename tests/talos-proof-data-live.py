@@ -207,6 +207,25 @@ def fresh_pvc(app, dependents=(), bootstrap=False):
             scale(frontend,1)
 
 
+def authenticated_recovery(base,path,auth=None,headers=None):
+    """Explicit positive recovery check after a known database/server replacement.
+    Never used by denial assertions or as a blanket authentication retry.
+    """
+    transients=[]
+    for attempt in range(30):
+        try:
+            value=http(base,path,auth=auth,headers=headers)
+            if transients:
+                RESULT.setdefault('recovery_transients',[]).append({'path':path,'statuses':transients,'recovered_within_seconds':attempt})
+            return value
+        except urllib.error.HTTPError as error:
+            if error.code not in (401,500,502,503,504) or attempt==29:
+                raise
+            transients.append(error.code)
+            time.sleep(1)
+    raise RuntimeError('authenticated application did not recover within bounded window')
+
+
 def postgres_dump(app_user):
     dump = execute('postgres',['pg_dump','-U',app_user,'-d',app_user,'-Fc'])
     save_private(GROUP + '-postgres.dump',dump)
@@ -263,8 +282,9 @@ def nextcloud():
 def miniflux():
     auth = 'proof:' + CREDS['ADMIN_PASSWORD']
     with forwarded('miniflux', 8080) as base:
+        http(base, '/healthcheck', raw=True)
         cat = http(base, '/v1/categories', 'POST', {'title': 'Proof-' + uuid.uuid4().hex}, auth)['id']
-        feed = http(base, '/v1/feeds', 'POST', {'feed_url':'http://fixture:8081/feed.xml', 'category_id':cat}, auth)['feed_id']
+        feed = http(base, '/v1/feeds', 'POST', {'feed_url':'http://fixture:8081/feed.xml?proof='+uuid.uuid4().hex, 'category_id':cat}, auth)['feed_id']
         entries = http(base, f'/v1/feeds/{feed}/entries', auth=auth)['entries']
         check('Miniflux fetches synthetic RSS over explicitly allowed fixture flow', any(e['title'] == 'Proof article' for e in entries))
         entry = entries[0]['id']
@@ -273,7 +293,7 @@ def miniflux():
         check('Miniflux entry update persists', http(base, f'/v1/entries/{entry}', auth=auth)['status'] == 'read')
     restart('postgres')
     with forwarded('miniflux', 8080) as base:
-        check('Miniflux feed survives PostgreSQL pod replacement', http(base, f'/v1/feeds/{feed}', auth=auth)['id'] == feed)
+        check('Miniflux feed survives PostgreSQL pod replacement', authenticated_recovery(base, f'/v1/feeds/{feed}', auth=auth)['id'] == feed)
     scale('miniflux',0)
     try:
         dump = postgres_dump('miniflux')
@@ -281,7 +301,7 @@ def miniflux():
             clean_postgres_restore('miniflux',dump)
             scale('miniflux',1)
             with forwarded('miniflux',8080) as base:
-                restored = http(base,f'/v1/entries/{entry}',auth=auth)
+                restored = authenticated_recovery(base,f'/v1/entries/{entry}',auth=auth)
                 check('Miniflux authenticated application entry/read-state/content SHA256 match after clean-PVC restore', restored['status']=='read' and hashlib.sha256(restored['content'].encode()).hexdigest()==content_hash)
     finally:
         scale('miniflux',1)
@@ -292,33 +312,74 @@ def miniflux():
 
 
 def wallabag():
-    # The image initially creates wallabag/wallabag. Rotate before functional test.
-    execute('wallabag', ['sh', '-ec', 'cd /var/www/wallabag; php bin/console fos:user:change-password wallabag "$PROOF_ADMIN_PASSWORD" --no-interaction'])
-    marker = 'proof-' + uuid.uuid4().hex
-    fixture = [{'is_archived':0, 'is_starred':0, 'title':marker, 'url':'http://fixture:8081/article.html?' + marker,
-                'content':'<p>Synthetic proof content</p>', 'tags':[], 'created_at':'2026-01-01T00:00:00+00:00'}]
-    execute('wallabag', ['sh', '-ec', 'umask 077; cat > /tmp/proof-import.json'], json.dumps(fixture).encode())
-    execute('wallabag', ['sh', '-ec', 'cd /var/www/wallabag; php bin/console wallabag:import wallabag /tmp/proof-import.json --importer=v2 --disableContentUpdate --no-interaction; php bin/console wallabag:export wallabag /tmp/proof-export.json --no-interaction'])
-    exported = json.loads(execute('wallabag', ['php', '-r', 'echo file_get_contents("/tmp/proof-export.json");']))
-    check('Wallabag imports synthetic entry and exports exact title/content', any(e.get('title') == marker and 'Synthetic proof content' in e.get('content','') for e in exported))
+    execute('wallabag', ['sh', '-ec', 'cd /var/www/wallabag; php bin/console --env=prod fos:user:change-password wallabag "$PROOF_ADMIN_PASSWORD" --no-interaction'])
+    client_path = LIFE.no_symlinks(STATEPATH/'wallabag-client.json')
+    if client_path.exists():
+        client=json.loads(client_path.read_text())
+    else:
+        # FOS's generic create-client CLI is incompatible with Wallabag's required
+        # User constructor. Use the app's own Doctrine entity/owner, never SQL
+        # schema guesses. Only this bootstrap is CLI; all functional CRUD is HTTP.
+        code=r"""chdir('/var/www/wallabag'); require 'vendor/autoload.php'; require_once 'app/AppKernel.php'; $k=new AppKernel('prod',false);$k->boot();$e=$k->getContainer()->get('doctrine')->getManager();$u=$e->getRepository(\Wallabag\UserBundle\Entity\User::class)->findOneByUsername('wallabag');$c=new \Wallabag\ApiBundle\Entity\Client($u);$c->setName('Isolated proof');$c->setRedirectUris(['https://wallabag.proof.invalid/proof-callback']);$c->setAllowedGrantTypes(['password','refresh_token']);$e->persist($c);$e->flush();echo json_encode(['id'=>$c->getPublicId(),'secret'=>$c->getSecret()]);"""
+        client=json.loads(execute('wallabag',['php','-r',code]))
+        save_private('wallabag-client.json',json.dumps(client).encode())
+    def login(base):
+        payload=urllib.parse.urlencode({'grant_type':'password','client_id':client['id'],'client_secret':client['secret'],'username':'wallabag','password':CREDS['PROOF_ADMIN_PASSWORD']})
+        token=http(base,'/oauth/v2/token','POST',payload,headers={'Content-Type':'application/x-www-form-urlencoded'})
+        return {'Authorization':'Bearer '+token['access_token']}
+    def api(base,path,method='GET',body=None,headers=None):
+        h=dict(headers or {})
+        if body is not None:
+            body=urllib.parse.urlencode(body)
+            h['Content-Type']='application/x-www-form-urlencoded'
+        return http(base,path,method,body,headers=h)
+    marker='proof-'+uuid.uuid4().hex
+    with forwarded('wallabag',80) as base:
+        http(base,'/api/info',raw=True)
+        headers=login(base)
+        created=api(base,'/api/entries.json','POST',{'url':'http://fixture:8081/article.html?proof='+marker},headers)
+        entry=created['id']
+        original=api(base,f'/api/entries/{entry}.json',headers=headers)
+        check('Wallabag OAuth password login and live fixture URL capture/extraction via trusted TLS Gateway','Synthetic proof content' in original['content'] and 'Proof article' in original['title'])
+        content_hash=hashlib.sha256(original['content'].encode()).hexdigest()
+        RESULT['article_content_sha256']=content_hash
+        changed=api(base,f'/api/entries/{entry}.json','PATCH',{'archive':1,'starred':1,'title':marker},headers)
+        check('Wallabag HTTP update/archive/star operations persist',changed['is_archived']==1 and changed['is_starred']==1 and changed['title']==marker)
+    execute('wallabag',['sh','-ec','cd /var/www/wallabag; php bin/console --env=prod wallabag:export wallabag /tmp/proof-export.json --no-interaction'])
+    exported=json.loads(execute('wallabag',['php','-r','echo file_get_contents("/tmp/proof-export.json");']))
+    check('Wallabag export contains the HTTP-captured article and exact content SHA256',any(e.get('id')==entry and hashlib.sha256(e.get('content','').encode()).hexdigest()==content_hash for e in exported))
     restart('mariadb')
-    execute('wallabag', ['sh', '-ec', 'cd /var/www/wallabag; php bin/console wallabag:export wallabag /tmp/proof-export.json --no-interaction'])
-    exported = json.loads(execute('wallabag', ['php', '-r', 'echo file_get_contents("/tmp/proof-export.json");']))
-    check('Wallabag entry survives MariaDB pod replacement', any(e.get('title') == marker for e in exported))
+    with forwarded('wallabag',80) as base:
+        restored=authenticated_recovery(base,f'/api/entries/{entry}.json',headers=headers)
+        check('Wallabag HTTP article survives MariaDB pod replacement',restored['title']==marker)
     scale('wallabag',0)
     try:
-        dump = execute('mariadb',['sh','-ec','exec mariadb-dump --single-transaction --routines --triggers --events -uroot -p"$MYSQL_ROOT_PASSWORD" --databases wallabag'])
+        dump=execute('mariadb',['sh','-ec','exec mariadb-dump --single-transaction --routines --triggers --events -uroot -p"$MYSQL_ROOT_PASSWORD" --databases wallabag'])
         save_private('wallabag-mariadb.sql',dump)
-        RESULT['backup_sha256'] = hashlib.sha256(dump).hexdigest()
+        RESULT['backup_sha256']=hashlib.sha256(dump).hexdigest()
         with fresh_pvc('mariadb',('wallabag',)):
             execute('mariadb',['sh','-ec','exec mariadb -uroot -p"$MYSQL_ROOT_PASSWORD"'],dump)
+            execute('mariadb',['sh','-ec',"mariadb -uroot -p\"$MYSQL_ROOT_PASSWORD\" -e \"CREATE USER IF NOT EXISTS 'wallabag'@'%' IDENTIFIED BY '$MARIADB_PASSWORD'; GRANT ALL PRIVILEGES ON wallabag.* TO 'wallabag'@'%';\""])
             scale('wallabag',1)
-            execute('wallabag',['sh','-ec','cd /var/www/wallabag; php bin/console wallabag:export wallabag /tmp/proof-export.json --no-interaction'])
-            restored = json.loads(execute('wallabag',['php','-r','echo file_get_contents("/tmp/proof-export.json");']))
-            check('Wallabag entry title/content survive logical MariaDB restore into clean PVC',any(e.get('title')==marker and 'Synthetic proof content' in e.get('content','') for e in restored))
+            with forwarded('wallabag',80) as base:
+                http(base,'/api/info',raw=True)
+                restored_headers=login(base)
+                restored=authenticated_recovery(base,f'/api/entries/{entry}.json',headers=restored_headers)
+                check('Wallabag existing user OAuth relogin and captured article/archive/content SHA256 survive clean MariaDB PVC restore',restored['title']==marker and restored['is_archived']==1 and hashlib.sha256(restored['content'].encode()).hexdigest()==content_hash)
+                api(base,f'/api/entries/{entry}.json','DELETE',headers=restored_headers)
+                try:
+                    api(base,f'/api/entries/{entry}.json',headers=restored_headers)
+                except urllib.error.HTTPError as error:
+                    check('Wallabag HTTP delete confirmed by404 on restored instance',error.code==404)
+                else:
+                    check('Wallabag deleted entry must not remain readable',False)
     finally:
         scale('wallabag',1)
-    RESULT['limitations'].append('Wallabag OAuth API/browser login and URL extraction remain separate acceptance gates.')
+    with forwarded('wallabag',80) as base:
+        http(base,'/api/info',raw=True)
+        source_headers=login(base)
+        api(base,f'/api/entries/{entry}.json','DELETE',headers=source_headers)
+    check('Wallabag source article cleaned up through authenticated HTTP API')
 
 
 def couchdb():

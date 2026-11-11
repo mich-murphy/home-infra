@@ -2,9 +2,9 @@
 
 ## Acceptance status
 
-**CouchDB live functional and distinct clean-PVC recovery proof PASSED.**
+**CouchDB create/read/recovery, Miniflux functional/recovery, and Pocket-ID virtual WebAuthn/OIDC/recovery live proofs PASSED.**
 The exclusive CouchDB lease was used and released after scale0/pod deletion.
-Other application live suites remain pending subsequent parent leases. Do not
+Wallabag startup/resource profile is demonstrated but its HTTP functional/restore proof remains incomplete; Nextcloud/Immich remain pending. Do not
 interpret manifest probes or executable plans for those applications as passed tests.
 This delivery needs parent integration acceptance. The source Docker host was not
 changed or copied. All persistent data is newly generated synthetic proof data.
@@ -253,3 +253,50 @@ Model revision and HF_HUB_OFFLINE are explicit; no cluster Internet widening is
 needed. **No ML preload or inference has yet run.** Pocket-ID's built-in logical
 export/import ZIP procedure is implemented for a separate clean PVC, with server
 stopped during import; virtual WebAuthn/OIDC still awaits its live lease.
+
+## Serial suite live checkpoint: Miniflux and Pocket-ID
+
+**Miniflux PASS:** real CA-verified HTTPS Gateway, synthetic RSS/article fixture
+fetch, authenticated category/feed CRUD, entry read-state update, PostgreSQL pod
+replacement persistence, full logical dump restored into a distinct new PG PVC,
+and authenticated restored entry/read-state/content SHA256 match. Source claim
+UID04d80385-d11a-481e-b666-81162c795a0a, restore claim
+UID2344508f-981b-484b-b450-52cbac4b25c6. Initial scheduler factor0 was invalid and
+caused5 CrashLoop restarts; corrected to1. A PG replacement produced one transient
+401 with valid credentials, recovering within1second. This is recorded as a
+specific positive recovery observation; negative-auth tests are not globally
+retried. Initial immediate non-idempotent POST503 prompted a preceding health GET
+convergence check rather than blindly repeating the write. See adjacent live
+result/runtime JSON for SHA256, image IDs, latest pod identities and memory.
+
+**Pocket-ID PASS:** Mac Chrome157 and a fresh local virtual CTAP2 authenticator
+performed real navigator.credentials.create registration, then fresh-cookie
+passkey login. A proof-only PKCE OIDC client produced a matching state/code,
+verified ID-token signature against JWKS, validated issuer/audience/nonce/subject/
+expiry, matching userinfo, and rejection of unknown client credentials. The same
+user993f20dc-ca5b-47b7-a36a-d176ff684b2f and **existing passkey** worked after pod
+replacement and after built-in logical ZIP export/import into a distinct new PVC
+(source090ae00b-e1ca-4e40-9f2a-2007d9869620, restore
+93516455-e83f-4f71-8cba-917f992f3f97). No new account was created on restore.
+Three complete signed OIDC browser flows passed. Initial registration/login had
+already succeeded, but callback navigation raced token exchange; waiting for the
+callback DOM fixed the race. Key material/tokens remain private0600 outside git.
+This proves virtual WebAuthn protocol/crypto, not physical authenticator UX.
+
+**Wallabag PARTIAL, not functional acceptance:** all four pods became Ready under
+576MiB aggregate limits. Actual PHP128M/opcache32M and MariaDB64MiB buffer pool/
+max12 connections were verified; per-pod working sets and cgroup memory.peak are
+recorded. The proof account password was rotated. Console commands require
+explicit --env=prod because dev dependencies are absent. Generic FOS create-client
+is incompatible with Wallabag's Client(User) constructor; an owner-aware bootstrap
+was implemented, then diagnosed as requiring an FQN under Doctrine persistence3.
+That FQN correction is prepared but **not live rerun** at this checkpoint. Actual
+OAuth token login, fixture URL extraction, HTTP read/update/archive/delete and
+clean-MariaDB restore/relogin are executable in the suite but **NOT PASSED** yet.
+CLI-only import/export is not frontend acceptance.
+
+All groups were deactivated and pod deletion confirmed before switching groups.
+At the final safe checkpoint the global talos-proof-labelled pod query found
+**no resources**. No simultaneous groups or production copy were used. The early
+CouchDB proof is bounded to document create/read, database deletion and logical
+restore/restart—not document revision update/conflict/delete, CORS or replication.

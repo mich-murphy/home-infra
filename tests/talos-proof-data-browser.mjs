@@ -123,12 +123,19 @@ try {
     return callbackPromise;
   })()]);
   assert(callbackURL.searchParams.get('state') === state && callbackURL.searchParams.has('code'), 'OIDC browser authorization-code callback has matching random state');
+  await page.waitForURL(url => url.pathname === '/proof-callback', {waitUntil:'domcontentloaded',timeout:15000});
   stage = 'OIDC code exchange and signed ID token validation';
-  const token = await page.evaluate(async data => {
+  const exchange = await page.evaluate(async data => {
     const response = await fetch('/api/oidc/token', {method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(data)});
-    if (!response.ok) throw new Error('token exchange failed');
-    return response.json();
+    const body = await response.json();
+    return {ok:response.ok,status:response.status,body};
   }, {grant_type:'authorization_code',client_id:client.id,redirect_uri:callback,code_verifier:verifier,code:callbackURL.searchParams.get('code')});
+  result.token_exchange_status = exchange.status;
+  if (!exchange.ok) {
+    result.token_exchange_error = ['invalid_client','invalid_grant','invalid_request','unsupported_grant_type','unauthorized_client'].includes(exchange.body.error) ? exchange.body.error : 'withheld';
+    throw new Error('token exchange rejected');
+  }
+  const token = exchange.body;
   const jwt = token.id_token.split('.');
   const header = JSON.parse(Buffer.from(jwt[0],'base64url'));
   const claims = JSON.parse(Buffer.from(jwt[1],'base64url'));
@@ -146,12 +153,21 @@ try {
     return response.json();
   }, token.access_token);
   assert(info.sub===user.id && info.preferred_username==='proof', 'OIDC access token returns matching userinfo identity');
+  stage = 'negative unknown OIDC client';
+  const denied = await page.evaluate(async () => {
+    const response = await fetch('/api/oidc/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'client_credentials',client_id:'nonexistent-proof-client',client_secret:'synthetic-invalid'})});
+    const body=await response.json();
+    return {status:response.status,error:body.error};
+  });
+  assert([400,401].includes(denied.status) && denied.error==='invalid_client','OIDC token endpoint rejects unknown client credentials');
   await api('/api/oidc/clients/' + encodeURIComponent(client.id),'DELETE');
   result.status = 'passed';
 } catch(error) {
   // Never emit exception messages, browser traces, token URLs or key material.
   result.failure_stage = stage;
   result.failure_type = error.constructor.name;
+  if(error.message?.includes('Execution context was destroyed')) result.safe_failure_code='navigation_context_destroyed';
+  if(error.message?.includes('Failed to fetch')) result.safe_failure_code='browser_fetch_failed';
 } finally {
   if(browser) await browser.close();
   if(leaseValidated) savePrivate('pocket-browser-result.json',result);

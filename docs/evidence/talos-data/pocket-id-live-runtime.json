@@ -1,0 +1,151 @@
+{
+  "captured_utc": "2026-11-11T13:33:22.510520+00:00",
+  "node_memory": {
+    "time": "2026-11-11T13:33:14Z",
+    "availableBytes": 958410752,
+    "usageBytes": 2139013120,
+    "workingSetBytes": 1541427200,
+    "rssBytes": 1021059072,
+    "pageFaults": 3410898,
+    "majorPageFaults": 10388,
+    "psi": {
+      "full": {
+        "total": 418250,
+        "avg10": 0,
+        "avg60": 0,
+        "avg300": 0
+      },
+      "some": {
+        "total": 558792,
+        "avg10": 0,
+        "avg60": 0,
+        "avg300": 0
+      }
+    }
+  },
+  "pods": [
+    {
+      "name": "pocket-id-c44fcd8bf-q6zd8",
+      "uid": "410ea517-1056-4101-8d7e-02da800d2823",
+      "node": "talos-proof",
+      "containers": [
+        {
+          "name": "pocket-id",
+          "image": "ghcr.io/pocket-id/pocket-id:v2.19.2@sha256:3ee23895d6a3adb5dd5de801a4fd31fc31b960e6dfbea9b5200e33cf477695eb",
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "192Mi"
+            },
+            "requests": {
+              "cpu": "25m",
+              "memory": "64Mi"
+            }
+          }
+        }
+      ],
+      "statuses": [
+        {
+          "name": "pocket-id",
+          "imageID": "ghcr.io/pocket-id/pocket-id@sha256:3ee23895d6a3adb5dd5de801a4fd31fc31b960e6dfbea9b5200e33cf477695eb",
+          "restarts": 0,
+          "ready": true,
+          "lastState": {}
+        }
+      ]
+    }
+  ],
+  "pod_memory": [
+    {
+      "pod": {
+        "name": "pocket-id-c44fcd8bf-q6zd8",
+        "namespace": "proof-pocket-id",
+        "uid": "410ea517-1056-4101-8d7e-02da800d2823"
+      },
+      "memory": {
+        "time": "2026-11-11T13:33:20Z",
+        "availableBytes": 189239296,
+        "usageBytes": 16687104,
+        "workingSetBytes": 12087296,
+        "rssBytes": 11198464,
+        "pageFaults": 7007,
+        "majorPageFaults": 0,
+        "psi": {
+          "full": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      },
+      "containers": [
+        {
+          "name": "pocket-id",
+          "memory": {
+            "time": "2026-11-11T13:33:16Z",
+            "availableBytes": 189505536,
+            "usageBytes": 16420864,
+            "workingSetBytes": 11821056,
+            "rssBytes": 11157504,
+            "pageFaults": 5651,
+            "majorPageFaults": 0,
+            "psi": {
+              "full": {
+                "total": 0,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              },
+              "some": {
+                "total": 0,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "routes": {
+    "parents": [
+      {
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-11-11T13:29:59Z",
+            "message": "Accepted HTTPRoute",
+            "observedGeneration": 1,
+            "reason": "Accepted",
+            "status": "True",
+            "type": "Accepted"
+          },
+          {
+            "lastTransitionTime": "2026-11-11T13:29:59Z",
+            "message": "Service reference is valid",
+            "observedGeneration": 1,
+            "reason": "ResolvedRefs",
+            "status": "True",
+            "type": "ResolvedRefs"
+          }
+        ],
+        "controllerName": "io.cilium/gateway-controller",
+        "parentRef": {
+          "group": "gateway.networking.k8s.io",
+          "kind": "Gateway",
+          "name": "proof",
+          "namespace": "proof-gateway",
+          "sectionName": "https"
+        }
+      }
+    ]
+  },
+  "initial_failure": "Fresh registration and login succeeded; browser token exchange raced callback navigation. Added callback DOM wait then three complete signed OIDC flows passed; no fresh account recreated."
+}
