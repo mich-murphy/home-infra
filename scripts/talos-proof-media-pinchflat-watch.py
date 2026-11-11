@@ -169,8 +169,59 @@ def checkpoint():
     return ACTIVE.checkpoint()
 
 
+def finish_window(state, watcher, timeout=210):
+    """Caller collected forensics; watcher is its exact owned Popen, not a PID lookup.
+
+    The watcher handles termination by joining sampling then stopping/deleting.
+    Do not independently scale0 while that normal shutdown is in progress.
+    Emergency timeout/known-failure cleanup still takes priority over sampling.
+    """
+    import signal
+    try:
+        if watcher.poll() is None:
+            watcher.send_signal(signal.SIGTERM)
+        result = watcher.wait(timeout=timeout)
+        if result:
+            raise RuntimeError('outer watcher failed; retained evidence requires parent review')
+    except Exception:
+        stop(state)
+        raise
+
+
+def window(state, seconds, shutdown):
+    """After caller forensics: signal -> stop/join sampling -> scale0/delete.
+
+    Never signal and independently scale concurrently. Wait for this supervisor
+    to exit and confirm Pod absence; failure/join timeout requires emergency
+    cleanup, never a new activation. Historical STOP receipts are not cleared.
+    """
+    import time
+    try:
+        # Can be started under the new grant BEFORE its single activation. This
+        # covers startup→exercise gaps; absence is allowed only in this outer
+        # window watcher, never for native control-command preflights.
+        with monitoring(state,require_running=False) as monitor:
+            deadline = time.monotonic() + seconds
+            while not shutdown.wait(min(1, max(0, deadline-time.monotonic()))):
+                if monitor.done.is_set():
+                    raise RuntimeError('Pinchflat monitor stopped early')
+                if time.monotonic() >= deadline:
+                    break
+    except Exception:
+        raise SystemExit('Pinchflat monitoring STOP; private evidence retained; parent cleanup/review required')
+    finally:
+        # Sampling has exited/joined before intentional scale0. On a known
+        # failure, run() already attempts emergency stop without waiting for us.
+        # A bounded watcher may not silently leave an unmonitored application.
+        try: stop(state)
+        except Exception:
+            raise SystemExit('Pinchflat monitoring cleanup failed; parent action required')
+
+
 if __name__ == '__main__':
     import argparse
+    import signal
+    import time
     from pathlib import Path
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--state',required=True,type=Path)
@@ -179,17 +230,9 @@ if __name__ == '__main__':
     if not 1 <= args.seconds <= 900:
         parser.error('seconds must be 1..900')
     state=s.private_dir(args.state)
-    try:
-        # Can be started under the new grant BEFORE its single activation. This
-        # covers startup→exercise gaps; absence is allowed only in this outer
-        # window watcher, never for native control-command preflights.
-        with monitoring(state,require_running=False) as monitor:
-            if monitor.done.wait(args.seconds):
-                raise RuntimeError('Pinchflat monitor stopped early')
-    except Exception:
-        raise SystemExit('Pinchflat monitoring STOP; private evidence retained; parent cleanup/review required')
-    finally:
-        # A bounded watcher may not silently leave an unmonitored application.
-        try: stop(state)
-        except Exception:
-            raise SystemExit('Pinchflat monitoring cleanup failed; parent action required')
+    shutdown = threading.Event()
+    # Intentional shutdown requests quiescence, not an asynchronous interruption
+    # of stop()/wait. Context exit stops and joins sampling BEFORE scale0 below.
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, lambda signum, frame: shutdown.set())
+    window(state, args.seconds, shutdown)

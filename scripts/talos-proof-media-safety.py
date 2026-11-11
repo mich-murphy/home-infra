@@ -12,6 +12,7 @@ from pathlib import Path
 import stat
 import subprocess
 import time
+import uuid
 
 resources = importlib.import_module('talos-proof-media-resources')
 
@@ -292,7 +293,7 @@ def guard(group, extra_mib=0, budget_mib=None, protocol_selected=False, provider
     return receipt
 
 
-def kube(group, *args, data=None, capacity=False, extra_mib=0):
+def kube(group, *args, data=None, capacity=False, extra_mib=0, capture_private=None, capture_binding=None):
     """Every operation revalidates identity; every mutation also checks cross-group exclusivity."""
     lease(group)
     if any(arg in MUTATIONS for arg in args):
@@ -304,8 +305,21 @@ def kube(group, *args, data=None, capacity=False, extra_mib=0):
                 receipt, _ = lease(group)
                 resources.pinchflat_budget(current['spec']['template'], receipt)
     kubeconfig = private_file(os.environ['KUBECONFIG'])
-    result = subprocess.run(['kubectl', '--kubeconfig', str(kubeconfig), *args], input=data,
-                            capture_output=True, timeout=960)
+    capture = private_dir(capture_private) if capture_private is not None else None
+    def retain(stdout, stderr, returncode):
+        if capture is not None:
+            prefix = 'native-command-' + uuid.uuid4().hex
+            write_private(capture / (prefix + '.stdout'), stdout or b'')
+            write_private(capture / (prefix + '.stderr'), stderr or b'')
+            write_private(capture / (prefix + '.json'), json.dumps({
+                'returncode': returncode, 'binding': capture_binding, 'stdout': prefix + '.stdout', 'stderr': prefix + '.stderr'}))
+    try:
+        result = subprocess.run(['kubectl', '--kubeconfig', str(kubeconfig), *args], input=data,
+                                capture_output=True, timeout=960)
+    except subprocess.TimeoutExpired as exc:
+        retain(exc.stdout, exc.stderr, None)
+        raise
+    retain(result.stdout, result.stderr, result.returncode)
     if result.returncode:
         failure = RuntimeError('proof kubectl operation failed (details withheld)')
         # Never emit raw output. Callers may retain it via exclusive PRIVATE files

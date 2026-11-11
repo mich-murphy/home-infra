@@ -64,6 +64,27 @@ class Safety(unittest.TestCase):
         self.assertEqual(caught.exception.private_stderr,b'PRIVATE-ERR')
         self.assertNotIn('PRIVATE',str(caught.exception))
 
+    def test_native_capture_retains_success_and_failure_stderr_exclusively(self):
+        for code in (0, 137):
+            outcome=safety.subprocess.CompletedProcess([],code,stdout=b'PRIVATE-OUT',stderr=b'PRIVATE-ERR')
+            with patch.object(safety,'lease'),patch.object(safety,'exclusivity'), \
+                 patch.object(safety,'private_file',return_value=self.state/'kubeconfig'), \
+                 patch.dict(os.environ,{'KUBECONFIG':str(self.state/'kubeconfig')}), \
+                 patch.object(safety.subprocess,'run',return_value=outcome):
+                if code:
+                    with self.assertRaises(RuntimeError):
+                        safety.kube('pinchflat','exec','pod','--','false',capture_private=self.state)
+                else:
+                    self.assertEqual(safety.kube('pinchflat','exec','pod','--','true',capture_private=self.state),b'PRIVATE-OUT')
+        records=list(self.state.glob('native-command-*.json'))
+        self.assertEqual(len(records),2)
+        for record in records:
+            value=json.loads(record.read_text())
+            for key,expected in [('stdout',b'PRIVATE-OUT'),('stderr',b'PRIVATE-ERR')]:
+                path=self.state/value[key]
+                self.assertEqual(path.read_bytes(),expected)
+                self.assertEqual(path.stat().st_mode & 0o777,0o600)
+
     def rewrite_receipt(self):
         safety.write_private(self.path, json.dumps(self.receipt), replace=True)
 

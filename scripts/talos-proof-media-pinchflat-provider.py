@@ -62,9 +62,19 @@ def pod():
 
 
 def remote(container, command, *args):
-    watch.checkpoint()
+    before = watch.checkpoint()
     try:
-        result = kube('exec',pod(),'-c',container,'--','/bin/sh','-ec',command,'proof',*args)
+        target = pod()
+        binding = None
+        if before and before.get('pods'):
+            sampled = before['pods'][0]
+            expect(sampled['name'] == target, 'native Pod changed since checkpoint')
+            current = next(c for c in sampled['containers'] if c['name']==container)
+            binding = {'pod':target,'pod_uid':sampled['uid'],'container':container,
+                       'container_id':current['container_id']}
+        result = kube('exec',target,'-c',container,'--','/bin/sh','-ec',command,'proof',*args,
+                      capture_private=watch.ACTIVE.state if watch.ACTIVE is not None else None,
+                      capture_binding=binding)
     except Exception as exc:
         try: watch.fail_control(exc)
         except Exception: pass
@@ -102,7 +112,7 @@ count_beams() {
 count_beams; before="$count"; test "$before" -eq 1
 identity="$(sha256sum "$call")"; identity="${identity%% *}"
 test "$call" = '@EXPECTED_ERL_PATH@' && test "$identity" = '@EXPECTED_ERL_SHA@'
-printf '%s' "$1" | "$call" -sname "$node" -c "$cookie" -R -timeout 10 -e -fetch_stdout -no_result_term
+"$call" -sname "$node" -c "$cookie" -R -timeout 10 -a "$1" -fetch_stdout
 count_beams; test "$count" -eq 1
 printf '\nPROOF_TRANSPORT:{"client":"bundled-erl_call","path":"%s","sha256":"%s","beam_before":%s,"beam_after":%s}\n' "$call" "$identity" "$before" "$count"
 '''.replace('@EXPECTED_ERL_PATH@', ERL_CALL_PATH).replace('@EXPECTED_ERL_SHA@', ERL_CALL_SHA)
@@ -110,10 +120,12 @@ printf '\nPROOF_TRANSPORT:{"client":"bundled-erl_call","path":"%s","sha256":"%s"
 
 def rpc(state, expression):
     # Fixed SELECTs or public Oban controls only. Evaluation is inside the native
-    # running app. -fetch_stdout carries the real JSON; exit-zero alone cannot pass.
-    code = expression + '; IO.puts("PROOF_JSON:" <> Jason.encode!(result))'
-    erlang = "'Elixir.Code':eval_string(list_to_binary([" + ','.join(str(x) for x in code.encode()) + '])).'
-    raw = remote('pinchflat', ERL_CALL, erlang)
+    # running app. Documented MFA avoids erl_eval:eval_str incremental scanning.
+    # Keep the return term (including badrpc/error), not only forwarded stdout.
+    # Exit-zero alone cannot pass; both subprocess streams are retained privately.
+    code = '(fn -> ' + expression + '; IO.puts("PROOF_JSON:" <> Jason.encode!(result)); :proof_rpc_ok end).()'
+    mfa = "Elixir.Code eval_string [[" + ','.join(str(ord(x)) for x in code) + ']]'
+    raw = remote('pinchflat', ERL_CALL, mfa)
     s.write_private(state / ('pinchflat-rpc-private-' + uuid.uuid4().hex + '.log'), raw)
     output = raw.decode().splitlines()
     transports = [json.loads(x.removeprefix('PROOF_TRANSPORT:')) for x in output if x.startswith('PROOF_TRANSPORT:')]
@@ -122,6 +134,7 @@ def rpc(state, expression):
     expect(transport['client']=='bundled-erl_call' and type(transport['beam_before']) is int
            and type(transport['beam_after']) is int and transport['beam_before']==transport['beam_after']==1
            and transport['path']==ERL_CALL_PATH and transport['sha256']==ERL_CALL_SHA, 'native lightweight transport identity/process count differs')
+    expect(output.count('{proof_rpc_ok, []}')==1, 'native MFA did not return explicit success term')
     lines = [x.removeprefix('PROOF_JSON:') for x in output if x.startswith('PROOF_JSON:')]
     expect(len(lines)==1, 'native lightweight RPC did not yield one structured result')
     return json.loads(lines[0])

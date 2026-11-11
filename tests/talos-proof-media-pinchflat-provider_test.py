@@ -94,15 +94,15 @@ class Provider(unittest.TestCase):
         transport={'client':'bundled-erl_call','path':p.ERL_CALL_PATH,'sha256':p.ERL_CALL_SHA,'beam_before':1,'beam_after':1}
         with tempfile.TemporaryDirectory() as tmp:
             state=Path(tmp).resolve()
-            def output(value=transport):return ('PROOF_JSON:{"observed":true}\nPROOF_TRANSPORT:'+json.dumps(value)+'\n').encode()
+            def output(value=transport):return ('PROOF_JSON:{"observed":true}\n{proof_rpc_ok, []}\nPROOF_TRANSPORT:'+json.dumps(value)+'\n').encode()
             with patch.object(p,'remote',return_value=output()) as remote:
                 self.assertEqual(p.rpc(state,'result = %{observed: true}'),{'observed':True})
                 self.assertEqual(remote.call_args.args[:2],('pinchflat',p.ERL_CALL))
-                self.assertIn("'Elixir.Code':eval_string(list_to_binary([",remote.call_args.args[2])
-            for body in [b'PROOF_JSON:{}\n',b'PROOF_TRANSPORT:{}\n',output(dict(transport,beam_before=2)),output(dict(transport,beam_before=True)),output(dict(transport,path='/tmp/replacement')),output(dict(transport,sha256='a'*64)),output()+output()]:
+                self.assertTrue(remote.call_args.args[2].startswith("Elixir.Code eval_string [["))
+            for body in [b'PROOF_JSON:{}\n',b'PROOF_TRANSPORT:{}\n',output().replace(b'{proof_rpc_ok, []}',b'{badrpc, failed}'),output(dict(transport,beam_before=2)),output(dict(transport,beam_before=True)),output(dict(transport,path='/tmp/replacement')),output(dict(transport,sha256='a'*64)),output()+output()]:
                 with patch.object(p,'remote',return_value=body),self.assertRaises((RuntimeError,KeyError)):
                     p.rpc(state,'result = %{}')
-            self.assertEqual(len(list(state.glob('pinchflat-rpc-private-*'))),8)
+            self.assertEqual(len(list(state.glob('pinchflat-rpc-private-*'))),9)
         subprocess.run(['bash','-n'],input=p.ERL_CALL.encode(),check=True)
 
     def test_lightweight_transport_failure_never_falls_back_to_known_oom_beam_rpc(self):
@@ -111,14 +111,16 @@ class Provider(unittest.TestCase):
             remote.assert_called_once()
         self.assertNotIn('/app/bin/pinchflat rpc',p.ERL_CALL)
         self.assertNotIn(' -s ',p.ERL_CALL)  # Never auto-start a node; -sname is distinct.
-        for flag in ('-fetch_stdout','-no_result_term','-timeout 10','-e '):self.assertIn(flag,p.ERL_CALL)
+        for flag in ('-fetch_stdout','-timeout 10','-a '):self.assertIn(flag,p.ERL_CALL)
+        self.assertNotIn('-no_result_term',p.ERL_CALL)
+        self.assertNotIn(' -e ',p.ERL_CALL)
         self.assertIn('/proc/1/environ',p.ERL_CALL)
         self.assertIn('test "$node" = pinchflat',p.ERL_CALL)
         self.assertIn('test "$magic" = 7f454c46',p.ERL_CALL)
 
     def test_public_image_hashes_are_checked_before_execution(self):
         self.assertIn(p.ERL_CALL_PATH,p.ERL_CALL)
-        self.assertLess(p.ERL_CALL.index('test "$identity" ='),p.ERL_CALL.index('| "$call"'))
+        self.assertLess(p.ERL_CALL.index('test "$identity" ='),p.ERL_CALL.index('"$call" -sname'))
         self.assertIn(p.ERL_CALL_SHA,p.ERL_CALL)
         with tempfile.TemporaryDirectory() as tmp,patch.object(p,'rpc',return_value='/usr/local/bin/yt-dlp'):
             for sha in (p.YTDLP_SHA,'a'*64):

@@ -8,7 +8,7 @@ import sys
 import tempfile
 import threading
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'scripts'))
@@ -67,7 +67,7 @@ class Watch(unittest.TestCase):
             with self.assertRaises(RuntimeError):p.remote('pinchflat','fixed-command')
             kube.assert_not_called()
         failure=RuntimeError('exec137');failure.private_stderr=b'private test error'
-        with patch.object(w,'checkpoint') as check,patch.object(p,'pod',return_value='offline'),patch.object(p,'kube',side_effect=failure) as kube:
+        with patch.object(w,'checkpoint',return_value={}) as check,patch.object(p,'pod',return_value='offline'),patch.object(p,'kube',side_effect=failure) as kube:
             with self.assertRaisesRegex(RuntimeError,'exec137') as caught:p.remote('pinchflat','fixed-command')
             self.assertIs(caught.exception,failure)
             self.assertEqual(check.call_count,2)
@@ -95,6 +95,33 @@ class Watch(unittest.TestCase):
             self.assertIsNone(w.ACTIVE)
             self.assertEqual(sample.call_count,2)
             stop.assert_called_once()
+    def test_finish_waits_for_exact_owned_watcher_and_never_parallel_scales(self):
+        watcher=Mock();watcher.poll.return_value=None;watcher.wait.return_value=0
+        with patch.object(w,'stop') as stop:
+            w.finish_window(Path('/offline-unused'),watcher)
+            watcher.send_signal.assert_called_once()
+            watcher.wait.assert_called_once_with(timeout=210)
+            stop.assert_not_called()
+        watcher.wait.side_effect=TimeoutError('bounded owned watcher failure')
+        with patch.object(w,'stop') as stop,self.assertRaises(TimeoutError):
+            w.finish_window(Path('/offline-unused'),watcher)
+        stop.assert_called_once()
+
+    def test_intentional_shutdown_joins_outer_sampling_before_scale_zero(self):
+        shutdown=threading.Event();shutdown.set()
+        monitors=[];original=w.Monitor
+        order=[]
+        def make(*args,**kwargs):
+            monitor=original(*args,**kwargs);monitors.append(monitor);return monitor
+        def stopped(state):
+            self.assertFalse(monitors[0].thread.is_alive())
+            self.assertTrue(monitors[0].done.is_set())
+            self.assertIsNone(w.ACTIVE)
+            order.append('scale0')
+        with patch.object(w,'Monitor',side_effect=make),patch.object(w,'sample',side_effect=lambda *a,**kw:order.append('sample') or {}),patch.object(w,'stop',side_effect=stopped):
+            w.window(Path('/offline-unused'),30,shutdown)
+        self.assertEqual(order,['sample','sample','scale0'])
+
     def test_stop_scales_zero_before_any_extra_observation_exec(self):
         order=[]
         with patch.object(s,'kube',side_effect=lambda *args,**kwargs:order.append('scale' if 'scale' in args else 'wait')),patch.object(w.o,'capture',side_effect=lambda *args:order.append('observation')):
