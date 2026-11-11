@@ -159,42 +159,10 @@ def jellyplex(group, kube, state, plex, jellyfin, credential):
     return {'checks': ['real source/target divergence', 'actual non-dry-run mapped watched mutation', 'second actual run stable target'], 'log_sha256': [result, second]}
 
 
-def tautulli(api, plex, credential, state, fixture):
-    marker = json.loads(s.read_private(state / 'plex-functional.json'))
-    def call(command, **params):
-        response = api.call('/api/v2', 'POST', form={'apikey': credential['api_key'], 'cmd': command, **params})['response']
-        expect(response['result'] == 'success', 'Tautulli API command failed')
-        return response['data']
-    rejected(lambda: api.anonymous().call('/api/v2?cmd=get_activity'))
-    settings = call('get_settings')
-    expect(str(settings['Monitoring']['logging_ignore_interval']) == '0', 'short synthetic playback requires explicit zero ignore interval')
-    history = call('get_history', rating_key=marker['item_id'], include_activity=0)['data']
-    expect(not history, 'first playback-history exercise requires no previous synthetic history')
-    session = 'proof-session-' + secrets.token_hex(5)
-    query = {'path': '/library/metadata/' + marker['item_id'], 'mediaIndex': 0, 'partIndex': 0, 'protocol': 'http',
-             'directPlay': 1, 'directStream': 1, 'session': session, 'X-Plex-Client-Identifier': 'talos-proof-workflow'}
-    actual = plex.call('/video/:/transcode/universal/start?' + urllib.parse.urlencode(query), raw=True)
-    expect(hashlib.sha256(actual).digest() == hashlib.sha256(s.read_private(fixture, binary=True)).digest(), 'actual Plex session stream differs from fixture')
-    seen = False
-    for offset in (0, 500, 1000, 1500):
-        plex.call('/:/timeline?' + urllib.parse.urlencode({'ratingKey': marker['item_id'], 'key': '/library/metadata/' + marker['item_id'],
-                  'state': 'playing', 'time': offset, 'duration': 2128, 'session': session}), raw=True)
-        activity = call('get_activity')
-        seen |= any(str(x.get('rating_key')) == marker['item_id'] for x in activity.get('sessions', []))
-        time.sleep(1)
-    expect(seen, 'Tautulli never observed genuine Plex playback activity')
-    plex.call('/:/timeline?' + urllib.parse.urlencode({'ratingKey': marker['item_id'], 'key': '/library/metadata/' + marker['item_id'],
-              'state': 'stopped', 'time': 2128, 'duration': 2128, 'session': session}), raw=True)
-    rows = []
-    for _ in range(30):
-        rows = call('get_history', rating_key=marker['item_id'], include_activity=0)['data']
-        if rows:
-            break
-        time.sleep(2)
-    expect(len(rows) == 1 and str(rows[0]['rating_key']) == marker['item_id'] and int(rows[0]['duration']) > 0,
-           'no unique durable Tautulli history from actual playback')
-    s.write_private(state / 'tautulli-functional.json', json.dumps({'history_id': rows[0]['row_id'], 'rating_key': marker['item_id']}))
-    return {'checks': ['fresh API authentication', 'actual Plex bytes SHA256', 'real observed playing activity', 'durable nonempty playback history']}
+def tautulli(*_args, **_kwargs):
+    # Retired sequential download-then-playing simulation. It did not establish
+    # simultaneous decoder/session activity and must never produce acceptance.
+    raise RuntimeError('use talos-proof-media-browser.py plex --group media-plex-tautulli --tautulli with exact scanned browser fixture path; legacy sequential timeline gate retired')
 
 
 def main():

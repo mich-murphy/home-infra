@@ -214,3 +214,15 @@ See `docs/evidence/talos-media/dependency-workflow-preparation.md` for explicit 
 ## Offline native-browser/player checkpoint
 
 See [browser/player preparation](evidence/talos-media/browser-player-preparation.md) for native qBit5.3 login/CSRF gates, independent CA-verified exact leaf SPKI, pre-navigation HTTP/WSS guards, NEW immutable H264/AAC fixture and real Chrome frame/clock/seek checks. No live execution, receipt, credential or retained archive changed. Custom muted decoder is not app resume/native UI/audio-output proof; ACL/restart/restore remain explicit gates.
+
+## Reassigned-owner decoder integration checkpoint (offline)
+
+The browser/player evidence now documents explicit dependency-lease membership,
+nonempty exact SID-value equality, and a concurrent decoder→native Plex timeline→
+real Tautulli activity/history gate. The former sequential Tautulli simulation
+is retired and cannot return PASS. See
+[browser/player preparation](evidence/talos-media/browser-player-preparation.md)
+for the exact **unexecuted** command, zero tiny-clip history threshold, same-client
+checks, failure retention and remaining native UI/Jellyfin/ACL/recovery gaps.
+All old receipts remain revoked; wait for parent authorization. No cluster/host
+mutation, private-state access, credential rotation or live acceptance occurred.

@@ -9,6 +9,7 @@ import base64
 import hashlib
 import importlib
 import json
+import secrets
 from pathlib import Path
 import socket
 import ssl
@@ -33,9 +34,29 @@ def verified_spki(ca, host):
     return base64.b64encode(hashlib.sha256(der).digest()).decode()
 
 
+def lease_group(service, group=None):
+    """Validate membership before any target connection; never expand exclusivity."""
+    if service not in ('qbittorrent', 'plex', 'jellyfin'):
+        raise ValueError('unsupported browser service')
+    group = group or service
+    if group != service:
+        if service == 'qbittorrent' or service not in safety.DEPENDENCY_BATCHES.get(group, ()):
+            raise ValueError('browser service is not a member of the exact dependency lease')
+    return group
+
+
+def check_lease(service, group=None):
+    group = lease_group(service, group)
+    safety.lease(group)
+    safety.exclusivity(group)
+    return group
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('service', choices=['qbittorrent', 'plex', 'jellyfin'])
+    parser.add_argument('--tautulli', action='store_true', help='concurrent real decoder/timeline/activity/history gate')
+    parser.add_argument('--group', help='exact existing dependency lease group; never a second lease')
     parser.add_argument('--media-path', help='exact same-origin MP4 path from real server scan')
     parser.add_argument('--fixture', type=Path, help='new immutable twelve-second H264 fixture')
     parser.add_argument('--state', type=Path, required=True)
@@ -43,10 +64,11 @@ def main():
     parser.add_argument('--module', type=Path, required=True, help='installed Playwright module, no install/download')
     args = parser.parse_args()
     state = safety.private_dir(args.state)
-    safety.lease(args.service)
-    safety.exclusivity(args.service)
+    group = check_lease(args.service, args.group)
+    if args.tautulli and (args.service != 'plex' or group != 'media-plex-tautulli'):
+        raise ValueError('Tautulli decoder requires exact dependency group and Plex member')
     credentials = json.loads(safety.read_private(state / 'credentials.json'))[args.service]
-    payload = {'service': args.service, 'state': str(state), 'module': str(args.module.resolve()),
+    payload = {'service': args.service, 'group': group, 'state': str(state), 'module': str(args.module.resolve()),
                'spki': verified_spki(args.ca, args.service + '.proof.invalid'), **credentials}
     if args.service != 'qbittorrent':
         import re
@@ -63,11 +85,25 @@ def main():
         expected = safety.read_private(args.fixture, binary=True)
         if hashlib.sha256(api.call(args.media_path, raw=True)).digest() != hashlib.sha256(expected).digest():
             raise RuntimeError('actual server stream is not the new immutable fixture')
+        if args.tautulli:
+            playback = importlib.import_module('talos-proof-media-playback')
+            bridge = playback.prepare(state, args.ca, group)
+            headers.update({'X-Plex-Client-Identifier': bridge['client'], 'X-Plex-Session-Identifier': bridge['session']})
+            payload['bridge'] = bridge
         payload.update(mediaPath=args.media_path, headers=headers)
     process = subprocess.run(['node', str(safety.ROOT / 'tests/talos-proof-media-browser.mjs')],
                              input=json.dumps(payload).encode(), capture_output=True, timeout=150)
     # Child deliberately emits only fixed check names/status; never forward stderr.
     result = json.loads(process.stdout)
+    if args.tautulli and not process.returncode and result.get('status') == 'PASS':
+        try:
+            playback.finish(state, args.ca, bridge, result['decoder'])
+            result['checks'].append('same-client actual Tautulli activity and durable history')
+        except Exception as exc:
+            result.update(status='FAIL', failed_stage='Tautulli durable history', failure_type=type(exc).__name__)
+    # Retain every safe browser verdict, including failures; never credentials,
+    # DOM, raw child stderr, cookies or exception messages.
+    safety.write_private(state / ('browser-attempt-' + secrets.token_hex(8) + '.json'), json.dumps(result))
     print(json.dumps(result))
     if process.returncode or result.get('status') != 'PASS':
         raise RuntimeError('browser checks failed; no acceptance')

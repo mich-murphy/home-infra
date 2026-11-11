@@ -21,6 +21,44 @@ safety = importlib.import_module('talos-proof-media-safety')
 
 
 class BrowserPreparation(unittest.TestCase):
+    def test_exact_dependency_membership_and_original_exclusivity(self):
+        cases = [('qbittorrent', None, 'qbittorrent'), ('plex', None, 'plex'),
+                 ('plex', 'media-plex-tautulli', 'media-plex-tautulli'),
+                 ('jellyfin', 'media-plex-jellyplex', 'media-plex-jellyplex')]
+        for service, group, expected in cases:
+            with patch.object(safety, 'lease') as lease, patch.object(safety, 'exclusivity') as exclusive:
+                self.assertEqual(browser.check_lease(service, group), expected)
+                lease.assert_called_once_with(expected)
+                exclusive.assert_called_once_with(expected)
+        for service, group in [('qbittorrent', 'media-plex-tautulli'), ('plex', 'media-seerr-request'),
+                               ('jellyfin', 'media-plex-tautulli'), ('plex', 'qbittorrent'),
+                               ('plex', 'invented-group'), ('unknown', 'media-plex-tautulli')]:
+            with patch.object(safety, 'lease') as lease:
+                with self.assertRaises(ValueError):
+                    browser.check_lease(service, group)
+                lease.assert_not_called()
+        # Full shared-group cost remains unchanged; browser cannot grant admission.
+        self.assertEqual(sum(safety.BUDGET[x] for x in safety.DEPENDENCY_BATCHES['media-plex-tautulli']) + 192, 896)
+
+    def test_sid_value_equality_without_emission(self):
+        module = (ROOT / 'tests/talos-proof-media-cookie.mjs').as_uri()
+        source = """import {sameSID,authenticatedSID} from 'MODULE';
+        const c={name:'SID',value:'test-only-valid',domain:'qbittorrent.proof.invalid',path:'/',secure:true};
+        const sid=authenticatedSID([c],'https://qbittorrent.proof.invalid');
+        if(!sameSID('other=x; SID='+sid,sid)) process.exit(1);
+        for(const header of ['', 'SID=', 'SID=wrong', 'SID='+sid+'; SID='+sid]) {
+          if(sameSID(header,sid)) process.exit(2);
+        }
+        for(const cookies of [[],[c,c],[{...c,value:''}],[{...c,domain:'hostile.proof.invalid'}]]) {
+          let refused=false;try {authenticatedSID(cookies,'https://qbittorrent.proof.invalid');} catch {refused=true;}
+          if(!refused) process.exit(3);
+        }
+        """.replace('MODULE', module)
+        result = subprocess.run(['node', '--input-type=module', '-e', source], capture_output=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, b'')
+        self.assertEqual(result.stderr, b'')
+
     def test_host_allowlist_before_connect(self):
         with patch('socket.create_connection', side_effect=AssertionError('must not dial')):
             for host in ['production.invalid', 'plex.proof.invalid:18443', '127.0.0.1']:

@@ -105,3 +105,62 @@ mock-source downloads remain separate unimplemented/unproved gates.
 Offline tests include real local TLS trusted key success, wrong CA and wrong
 hostname failures, immutable fixture refusal and pre-navigation route checks.
 No live browser/application PASS follows from those tests or this document.
+
+## Reassigned-owner offline integration review checkpoint
+
+No new receipt, cluster/host access, private credential read/rotation, fixture
+replacement or live browser pass occurred in this checkpoint. Earlier failures,
+archives, original MPEG4 clip and recovered PVCs are unchanged.
+
+- Hostile qBit request now requires exactly one **nonempty SID value equal to**
+  the valid authenticated context's exact-host/root-path/secure SID. Empty,
+  different, duplicate and missing SID fail. Values never enter results/errors.
+- Browser `--group` is checked against existing safety `DEPENDENCY_BATCHES`
+  membership before connecting. Child lease rechecks use that **same group**.
+  qBit cannot use a dependency group. Unknown groups and wrong members fail;
+  standalone defaults remain unchanged. No second lease, exclusivity expansion,
+  reduced limits, stale memory fallback or admission bypass is introduced.
+- The legacy sequential Tautulli workflow is deliberately retired: downloading
+  bytes and subsequently posting playing timelines cannot establish concurrent
+  decoding. Its old CLI now fails with directions to the integrated gate.
+
+Prepared command, **NOT EXECUTED**, only with a newly granted exact896MiB
+Plex+Tautulli group receipt, fresh dual-metric admission and deleted helpers:
+
+```sh
+python3 scripts/talos-proof-media-browser.py plex --group media-plex-tautulli \
+  --tautulli --state "$STATE" --ca "$CA" --module /private/installed/playwright \
+  --fixture "$STATE/Proof Browser Fixture (2000).mp4" \
+  --media-path /library/parts/ACTUAL_ID/ACTUAL_TIMESTAMP/file.mp4
+```
+
+Requires real `plex-functional.json` IDs from a reviewed scan containing only the
+selected browser fixture, actual Tautulli setup, and explicit
+`Monitoring.logging_ignore_interval=0` for the tiny clip. Existing history is a
+hard failure, not cleared. The bridge sends identical freshly generated client
+and session identifiers on the decoded original-media GET and native Plex
+`/:/timeline` requests. Timeline position/duration come from the actual video,
+not fixed synthetic playing offsets. Activity must match that exact item/client
+and playing state. After callbacks return, the video must still be unpaused,
+not ended and advancing; an ended decoder can never establish simultaneous
+playing. Explicit pause posts stopped and checks Plex no longer reports this
+client playing, then real Tautulli durable history must match the item/client
+with positive duration. Strict server/session/version incompatibilities fail;
+no cloud identity or extra session is fabricated to get past them. Adapter key
+remains local proof authentication, not a Plex cloud token.
+
+HTTP and WSS guards still precede navigation; all external app requests are
+blocked on the Mac (Cilium does not protect this browser). Exact independently
+CA-verified leaf SPKI only, no global TLS ignore. Browser results, including
+failures, are retained as uniquely named sanitized private attempt JSON. A
+successful decoder followed by failed history has overall FAIL, not helper PASS.
+This is still a custom muted decoder, not native Plex UI/audible playback,
+resume, user ACL or recovery. Jellyfin actual start/progress/stop, resume,
+second-user denial and restart/different-PVC recovery remain separate pending
+gates. Other helper preparations are not replaced or promoted.
+
+Offline: browser7, playback3, dependency5, safety8 and media6 methods passed;
+Node syntax checks and Python compile checks passed. SID executable Node tests
+emit no values; group tests assert original group lease/exclusivity calls and
+unchanged896MiB budget. Mock callbacks verify exact-client activity discrimination
+and timeline identifiers; they do **not** establish real Plex/Tautulli behavior.

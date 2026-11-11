@@ -12,8 +12,8 @@ const here=path.dirname(fileURLToPath(import.meta.url));
 const result={status:'FAIL',checks:[]};
 let browser,stage='lease';
 function lease() {
-  const source='import sys,importlib;sys.path.insert(0,sys.argv[1]);s=importlib.import_module("talos-proof-media-safety");s.lease(sys.argv[2]);s.exclusivity(sys.argv[2])';
-  const check=spawnSync('python3',['-c',source,path.join(here,'../scripts'),input.service],{timeout:30000,stdio:'pipe'});
+  const source='import sys,importlib;sys.path.insert(0,sys.argv[1]);b=importlib.import_module("talos-proof-media-browser");b.check_lease(sys.argv[2],sys.argv[3])';
+  const check=spawnSync('python3',['-c',source,path.join(here,'../scripts'),input.service,input.group || input.service],{timeout:30000,stdio:'pipe'});
   if(check.status!==0) throw new Error('lease');
 }
 function requireCheck(ok,name) {if(!ok) throw new Error(name);result.checks.push(name);}
@@ -50,7 +50,14 @@ try {
     stage='actual server MP4 browser decode';
     await page.goto(origin+'/__proof_decoder');
     const {decode}=await import('./talos-proof-media-player.mjs');
-    result.decoder=await decode(page,input.mediaPath);
+    if(input.bridge) await page.exposeFunction('proofTimeline',async event=>{
+      lease();
+      const child=spawnSync('python3',[path.join(here,'../scripts/talos-proof-media-playback.py')],
+        {input:JSON.stringify({bridge:input.bridge,event}),timeout:60000,encoding:'utf8'});
+      if(child.status!==0) throw new Error('timeline callback failed');
+      return JSON.parse(child.stdout);
+    });
+    result.decoder=await decode(page,input.mediaPath,Boolean(input.bridge));
     result.checks.push('real server H264 video frames decoded/presented; clock advanced; target seek frame decoded');
     result.scope='custom muted Chrome decoder only; app resume/ACL/recovery and native UI require separate gates';
   } else {
@@ -72,6 +79,8 @@ try {
   stage='browser authenticated preferences';
   const before=await preferences();
   requireCheck(before.status===200,'browser session preferences HTTP200');
+  const {authenticatedSID,sameSID}=await import('./talos-proof-media-cookie.mjs');
+  const validSID=authenticatedSID(await context.cookies(origin),origin);
   lease();
   stage='hostile origin CSRF';
   const attacker=await context.newPage();
@@ -86,7 +95,7 @@ try {
   const hostileHeaders=await rejection.request().allHeaders();
   requireCheck(hostileHeaders.origin===hostile,'real browser hostile Origin retained');
   // Without the authenticated cookie a401 proves only auth, not CSRF. Fail closed.
-  requireCheck(/(?:^|;\s*)SID=/.test(hostileHeaders.cookie || ''),'hostile request carried real authenticated SID');
+  requireCheck(sameSID(hostileHeaders.cookie,validSID),'hostile request carried real authenticated SID');
   requireCheck(rejection.status()===401 || rejection.status()===403,'hostile authenticated mutation denied');
   const after=await preferences();
   requireCheck(after.status===200 && after.body.max_active_downloads===before.body.max_active_downloads,'preference unchanged after hostile mutation');
