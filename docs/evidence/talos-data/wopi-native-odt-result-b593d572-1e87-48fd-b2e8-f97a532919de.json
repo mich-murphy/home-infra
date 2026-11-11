@@ -1,0 +1,555 @@
+{
+  "output_prefix": "wopi-1794426697274610000-24e5b3934a6645c19af18be4ba386ab9",
+  "status": "failed",
+  "attempt": 1,
+  "started": 1794426697.2746692,
+  "document_format": "odt",
+  "scope": "CODE768 + WOPI fixture64 ONLY",
+  "observations": {
+    "kernel_samples": [
+      {
+        "phase": "before suite",
+        "pod_uid": "4a6fb5dc-5471-4012-be90-ca84a3d71e76",
+        "pod_phase": "Running",
+        "containers": [
+          {
+            "name": "collabora",
+            "imageID": "docker.io/collabora/code@sha256:95f29f1c0a1778999125f53f058d968fe0afb37c95e32ebfb9f3444140faebd2",
+            "containerID": "containerd://b800eff1871f00a85d057c90f235cc774834d9a57e7a0bb15f9b71ebdb8bb3a5",
+            "restartCount": 0,
+            "ready": true
+          }
+        ],
+        "time": 1794426710.232028,
+        "cgroup": {
+          "memory.current": "604196864\n",
+          "memory.peak": "805306368\n",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+          "memory.stat": "anon 245993472\nfile 323837952\nkernel 34365440\nkernel_stack 147456\npagetables 2215936\nsec_pagetables 0\npercpu 480\nsock 0\nvmalloc 36864\nshmem 4096\nzswap 0\nzswapped 0\nfile_mapped 94117888\nfile_dirty 5287936\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 156540928\nactive_anon 89452544\ninactive_file 245014528\nactive_file 78823424\nunevictable 0\nslab_reclaimable 31349304\nslab_unreclaimable 575800\nslab 31925104\nworkingset_refault_anon 0\nworkingset_refault_file 48580\nworkingset_activate_anon 0\nworkingset_activate_file 15498\nworkingset_restore_anon 0\nworkingset_restore_file 226\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 318545\npgsteal 276542\npswpin 0\npswpout 0\npgscan_kswapd 126935\npgscan_direct 191610\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 113364\npgsteal_direct 163178\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 72703\npgmajfault 875\npgrefill 10267\npgactivate 31126\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\n"
+        },
+        "read_times": {
+          "memory.current": 1794426710.395584,
+          "memory.peak": 1794426710.55122,
+          "memory.events": 1794426710.7037508,
+          "memory.stat": 1794426710.87068
+        }
+      },
+      {
+        "phase": "before suite",
+        "pod_uid": "fcb62a01-8757-41f2-981a-55003b050ceb",
+        "pod_phase": "Running",
+        "containers": [
+          {
+            "name": "wopi-fixture",
+            "imageID": "ghcr.io/immich-app/immich-machine-learning@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2",
+            "containerID": "containerd://1138113ae01bc64f7ecd08be5a949d68c77845b69de29eb412e9cdb39449321e",
+            "restartCount": 0,
+            "ready": true
+          }
+        ],
+        "time": 1794426710.87073,
+        "cgroup": {
+          "memory.current": "59064320\n",
+          "memory.peak": "62115840\n",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+          "memory.stat": "anon 42356736\nfile 15691776\nkernel 1015808\nkernel_stack 16384\npagetables 176128\nsec_pagetables 0\npercpu 208\nsock 0\nvmalloc 36864\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 7786496\nfile_dirty 4096\nfile_writeback 0\nswapcached 0\nanon_thp 33554432\nfile_thp 0\nshmem_thp 0\ninactive_anon 6696960\nactive_anon 35659776\ninactive_file 13373440\nactive_file 2318336\nunevictable 0\nslab_reclaimable 673192\nslab_unreclaimable 112728\nslab 785920\nworkingset_refault_anon 0\nworkingset_refault_file 2758\nworkingset_activate_anon 0\nworkingset_activate_file 1884\nworkingset_restore_anon 0\nworkingset_restore_file 17\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 4382\npgsteal 3702\npswpin 0\npswpout 0\npgscan_kswapd 4378\npgscan_direct 4\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 3698\npgsteal_direct 4\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 3799\npgmajfault 67\npgrefill 502\npgactivate 88\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 16\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\n"
+        },
+        "read_times": {
+          "memory.current": 1794426711.032337,
+          "memory.peak": 1794426711.189127,
+          "memory.events": 1794426711.345056,
+          "memory.stat": 1794426711.4974809
+        }
+      },
+      {
+        "phase": "during bounded suite",
+        "pod_uid": "4a6fb5dc-5471-4012-be90-ca84a3d71e76",
+        "pod_phase": "Running",
+        "containers": [
+          {
+            "name": "collabora",
+            "imageID": "docker.io/collabora/code@sha256:95f29f1c0a1778999125f53f058d968fe0afb37c95e32ebfb9f3444140faebd2",
+            "containerID": "containerd://b800eff1871f00a85d057c90f235cc774834d9a57e7a0bb15f9b71ebdb8bb3a5",
+            "restartCount": 0,
+            "ready": true
+          }
+        ],
+        "time": 1794426721.5865889,
+        "cgroup": {
+          "memory.current": "533483520\n",
+          "memory.peak": "805306368\n",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+          "memory.stat": "anon 286412800\nfile 206888960\nkernel 30498816\nkernel_stack 212992\npagetables 3252224\nsec_pagetables 0\npercpu 688\nsock 0\nvmalloc 36864\nshmem 4096\nzswap 0\nzswapped 0\nfile_mapped 82927616\nfile_dirty 5574656\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 128958464\nactive_anon 157458432\ninactive_file 158683136\nactive_file 48201728\nunevictable 0\nslab_reclaimable 25982776\nslab_unreclaimable 960856\nslab 26943632\nworkingset_refault_anon 0\nworkingset_refault_file 89641\nworkingset_activate_anon 0\nworkingset_activate_file 39764\nworkingset_restore_anon 0\nworkingset_restore_file 1168\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 398495\npgsteal 347272\npswpin 0\npswpout 0\npgscan_kswapd 206885\npgscan_direct 191610\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 184094\npgsteal_direct 163178\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 86351\npgmajfault 1111\npgrefill 15551\npgactivate 34201\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\n"
+        },
+        "read_times": {
+          "memory.current": 1794426721.747781,
+          "memory.peak": 1794426721.90917,
+          "memory.events": 1794426722.071585,
+          "memory.stat": 1794426722.2302258
+        }
+      },
+      {
+        "phase": "during bounded suite",
+        "pod_uid": "fcb62a01-8757-41f2-981a-55003b050ceb",
+        "pod_phase": "Running",
+        "containers": [
+          {
+            "name": "wopi-fixture",
+            "imageID": "ghcr.io/immich-app/immich-machine-learning@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2",
+            "containerID": "containerd://1138113ae01bc64f7ecd08be5a949d68c77845b69de29eb412e9cdb39449321e",
+            "restartCount": 0,
+            "ready": true
+          }
+        ],
+        "time": 1794426722.230269,
+        "cgroup": {
+          "memory.current": "50364416\n",
+          "memory.peak": "62115840\n",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+          "memory.stat": "anon 42356736\nfile 6987776\nkernel 1019904\nkernel_stack 16384\npagetables 176128\nsec_pagetables 0\npercpu 208\nsock 0\nvmalloc 36864\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 4886528\nfile_dirty 4096\nfile_writeback 0\nswapcached 0\nanon_thp 33554432\nfile_thp 0\nshmem_thp 0\ninactive_anon 39772160\nactive_anon 2584576\ninactive_file 5033984\nactive_file 1953792\nunevictable 0\nslab_reclaimable 674224\nslab_unreclaimable 112728\nslab 786952\nworkingset_refault_anon 0\nworkingset_refault_file 2758\nworkingset_activate_anon 0\nworkingset_activate_file 1884\nworkingset_restore_anon 0\nworkingset_restore_file 17\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 6539\npgsteal 5827\npswpin 0\npswpout 0\npgscan_kswapd 6535\npgscan_direct 4\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 5823\npgsteal_direct 4\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 3807\npgmajfault 67\npgrefill 1105\npgactivate 113\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 16\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\n"
+        },
+        "read_times": {
+          "memory.current": 1794426722.3942761,
+          "memory.peak": 1794426722.55681,
+          "memory.events": 1794426722.714428,
+          "memory.stat": 1794426722.871986
+        }
+      },
+      {
+        "phase": "after suite and negatives",
+        "pod_uid": "4a6fb5dc-5471-4012-be90-ca84a3d71e76",
+        "pod_phase": "Running",
+        "containers": [
+          {
+            "name": "collabora",
+            "imageID": "docker.io/collabora/code@sha256:95f29f1c0a1778999125f53f058d968fe0afb37c95e32ebfb9f3444140faebd2",
+            "containerID": "containerd://b800eff1871f00a85d057c90f235cc774834d9a57e7a0bb15f9b71ebdb8bb3a5",
+            "restartCount": 0,
+            "ready": true
+          }
+        ],
+        "time": 1794426731.496493,
+        "cgroup": {
+          "memory.current": "453963776\n",
+          "memory.peak": "805306368\n",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+          "memory.stat": "anon 286412800\nfile 140599296\nkernel 26951680\nkernel_stack 212992\npagetables 3252224\nsec_pagetables 0\npercpu 688\nsock 0\nvmalloc 36864\nshmem 4096\nzswap 0\nzswapped 0\nfile_mapped 67960832\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 159326208\nactive_anon 127090688\ninactive_file 115355648\nactive_file 25239552\nunevictable 0\nslab_reclaimable 22440048\nslab_unreclaimable 958024\nslab 23398072\nworkingset_refault_anon 0\nworkingset_refault_file 92046\nworkingset_activate_anon 0\nworkingset_activate_file 39780\nworkingset_restore_anon 0\nworkingset_restore_file 1168\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 417532\npgsteal 365872\npswpin 0\npswpout 0\npgscan_kswapd 225922\npgscan_direct 191610\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 202694\npgsteal_direct 163178\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 87738\npgmajfault 1116\npgrefill 18008\npgactivate 34223\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\n"
+        },
+        "read_times": {
+          "memory.current": 1794426731.657403,
+          "memory.peak": 1794426731.815356,
+          "memory.events": 1794426731.978549,
+          "memory.stat": 1794426732.1351979
+        }
+      },
+      {
+        "phase": "after suite and negatives",
+        "pod_uid": "fcb62a01-8757-41f2-981a-55003b050ceb",
+        "pod_phase": "Running",
+        "containers": [
+          {
+            "name": "wopi-fixture",
+            "imageID": "ghcr.io/immich-app/immich-machine-learning@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2",
+            "containerID": "containerd://1138113ae01bc64f7ecd08be5a949d68c77845b69de29eb412e9cdb39449321e",
+            "restartCount": 0,
+            "ready": true
+          }
+        ],
+        "time": 1794426732.1352372,
+        "cgroup": {
+          "memory.current": "47902720\n",
+          "memory.peak": "62115840\n",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+          "memory.stat": "anon 42373120\nfile 4726784\nkernel 835584\nkernel_stack 32768\npagetables 180224\nsec_pagetables 0\npercpu 208\nsock 0\nvmalloc 36864\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 2756608\nfile_dirty 4096\nfile_writeback 0\nswapcached 0\nanon_thp 33554432\nfile_thp 0\nshmem_thp 0\ninactive_anon 35115008\nactive_anon 7258112\ninactive_file 909312\nactive_file 3817472\nunevictable 0\nslab_reclaimable 457824\nslab_unreclaimable 124224\nslab 582048\nworkingset_refault_anon 0\nworkingset_refault_file 3196\nworkingset_activate_anon 0\nworkingset_activate_file 1908\nworkingset_restore_anon 0\nworkingset_restore_file 41\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 7616\npgsteal 6874\npswpin 0\npswpout 0\npgscan_kswapd 7612\npgscan_direct 4\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 6870\npgsteal_direct 4\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 8625\npgmajfault 76\npgrefill 1211\npgactivate 127\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 23\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\n"
+        },
+        "read_times": {
+          "memory.current": 1794426732.28963,
+          "memory.peak": 1794426732.4430451,
+          "memory.events": 1794426732.598366,
+          "memory.stat": 1794426732.751159
+        }
+      }
+    ],
+    "fixture": {
+      "events": [
+        "CheckFileInfo",
+        "GetFile",
+        "LOCK"
+      ],
+      "requests": [
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "CheckFileInfo",
+          "status": 200,
+          "bytes": 391
+        },
+        {
+          "event": "GetFile",
+          "status": 200,
+          "bytes": 1033
+        },
+        {
+          "event": "LOCK",
+          "status": 200,
+          "bytes": 0
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        }
+      ],
+      "sha256": "7478a63f5eec7da76114134da4d57715baffa48e29201dfd1065c8c2315313a5",
+      "bytes": 1033,
+      "format": "odt",
+      "marker_present": false
+    },
+    "negative": {
+      "bad-token": 401,
+      "wrong-lock": 409
+    },
+    "fixture_after_negatives": {
+      "events": [
+        "CheckFileInfo",
+        "GetFile",
+        "LOCK",
+        "lock-conflict"
+      ],
+      "requests": [
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "CheckFileInfo",
+          "status": 200,
+          "bytes": 391
+        },
+        {
+          "event": "GetFile",
+          "status": 200,
+          "bytes": 1033
+        },
+        {
+          "event": "LOCK",
+          "status": 200,
+          "bytes": 0
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "health",
+          "status": 200,
+          "bytes": 2
+        },
+        {
+          "event": "Get",
+          "status": 401,
+          "bytes": 0
+        },
+        {
+          "event": "PutFile",
+          "status": 409,
+          "bytes": 0
+        }
+      ],
+      "sha256": "7478a63f5eec7da76114134da4d57715baffa48e29201dfd1065c8c2315313a5",
+      "bytes": 1033,
+      "format": "odt",
+      "marker_present": false
+    },
+    "negative_bytes_unchanged": true
+  },
+  "cleanup": {
+    "selected_replicas": 0,
+    "pod_deletion_confirmed": true,
+    "global_labelled_pod_count": 0
+  },
+  "suite_exit": 1,
+  "suite": {
+    "group": "nextcloud",
+    "stage": "wopi",
+    "checks": [
+      "TLS Gateway route selected: collabora.proof.invalid",
+      "real CODE discovery offers editable odt action",
+      "discovered CODE editor retains exact public HTTPS origin"
+    ],
+    "limitations": [
+      "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate."
+    ],
+    "wopi_document_format": "odt",
+    "verified_code_leaf_sha256": "59a77080fb140a1eaaf42a143b69326005533d38cf909443164b5dadff728fe1",
+    "wopi_browser": {
+      "status": "failed",
+      "checks": [],
+      "editor_state": {
+        "docLoaded": true,
+        "permission": "edit",
+        "hasDocLayer": true,
+        "inputs": [
+          {
+            "id": "copy-paste-container",
+            "tag": "DIV",
+            "cls": ""
+          },
+          {
+            "id": "clipboard-area",
+            "tag": "DIV",
+            "cls": "clipboard"
+          }
+        ],
+        "dialogs": [
+          {
+            "id": "",
+            "visible": true
+          }
+        ],
+        "saveControls": [
+          {
+            "id": "save3-button",
+            "label": "Save",
+            "title": ""
+          },
+          {
+            "id": "file-save5-button",
+            "label": "Save",
+            "title": ""
+          }
+        ]
+      },
+      "welcome_frame_seen": true,
+      "welcome_controls": [
+        {
+          "id": "welcome-close",
+          "cls": "",
+          "tag": "DIV"
+        }
+      ],
+      "private_failure_artifact_sha256": "5aecb4b4cf0ab8c3497571bb326241cd1b68591c67937ff25a4b3c6014d57e1e",
+      "failed_stage": "actual document loaded/editable",
+      "failure_type": "TimeoutError",
+      "failure_detail": "locator.click: Timeout 15000ms exceeded."
+    },
+    "status": "failed",
+    "failure_type": "RuntimeError",
+    "failed_stage": "WOPI browser: actual document loaded/editable",
+    "memory_observation_gaps": [
+      {
+        "app": "collabora",
+        "reason": "suite final observation",
+        "error": "RuntimeError"
+      }
+    ],
+    "memory_observations": [
+      {
+        "app": "wopi-fixture",
+        "reason": "suite final observation",
+        "time": 1794426730.2824168,
+        "cgroup": {
+          "memory.current": {
+            "bytes": 53133312
+          },
+          "memory.peak": {
+            "bytes": 62115840
+          },
+          "memory.events": {
+            "low": 0,
+            "high": 0,
+            "max": 0,
+            "oom": 0,
+            "oom_kill": 0,
+            "oom_group_kill": 0
+          },
+          "memory.stat": {
+            "anon": 46895104,
+            "file": 4743168,
+            "kernel": 1220608,
+            "kernel_stack": 49152,
+            "pagetables": 438272,
+            "sec_pagetables": 0,
+            "percpu": 480,
+            "sock": 0,
+            "vmalloc": 73728,
+            "shmem": 0,
+            "zswap": 0,
+            "zswapped": 0,
+            "file_mapped": 4030464,
+            "file_dirty": 4096,
+            "file_writeback": 0,
+            "swapcached": 0,
+            "anon_thp": 37748736,
+            "file_thp": 0,
+            "shmem_thp": 0,
+            "inactive_anon": 35115008,
+            "active_anon": 11767808,
+            "inactive_file": 966656,
+            "active_file": 3776512,
+            "unevictable": 0,
+            "slab_reclaimable": 459056,
+            "slab_unreclaimable": 189128,
+            "slab": 648184,
+            "workingset_refault_anon": 0,
+            "workingset_refault_file": 3194,
+            "workingset_activate_anon": 0,
+            "workingset_activate_file": 1908,
+            "workingset_restore_anon": 0,
+            "workingset_restore_file": 41,
+            "workingset_nodereclaim": 0,
+            "pgdemote_kswapd": 0,
+            "pgdemote_direct": 0,
+            "pgdemote_khugepaged": 0,
+            "pgdemote_proactive": 0,
+            "pgscan": 7598,
+            "pgsteal": 6856,
+            "pswpin": 0,
+            "pswpout": 0,
+            "pgscan_kswapd": 7594,
+            "pgscan_direct": 4,
+            "pgscan_khugepaged": 0,
+            "pgscan_proactive": 0,
+            "pgsteal_kswapd": 6852,
+            "pgsteal_direct": 4,
+            "pgsteal_khugepaged": 0,
+            "pgsteal_proactive": 0,
+            "pgfault": 5623,
+            "pgmajfault": 74,
+            "pgrefill": 1139,
+            "pgactivate": 127,
+            "pgdeactivate": 0,
+            "pglazyfree": 0,
+            "pglazyfreed": 0,
+            "swpin_zero": 0,
+            "swpout_zero": 0,
+            "zswpin": 0,
+            "zswpout": 0,
+            "zswpwb": 0,
+            "thp_fault_alloc": 21,
+            "thp_collapse_alloc": 0,
+            "thp_swpout": 0,
+            "thp_swpout_fallback": 0
+          }
+        },
+        "pods": [
+          {
+            "uid": "fcb62a01-8757-41f2-981a-55003b050ceb",
+            "containers": [
+              {
+                "name": "wopi-fixture",
+                "image": "sha256:52479c9b30bd5870f5e61ac383075b9e22a0eadff80ecc690f7de7c9d952b1c7",
+                "imageID": "ghcr.io/immich-app/immich-machine-learning@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2",
+                "containerID": "containerd://1138113ae01bc64f7ecd08be5a949d68c77845b69de29eb412e9cdb39449321e",
+                "restartCount": 0,
+                "ready": true,
+                "started": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "finished": 1794426764.2526011
+}

@@ -1487,3 +1487,86 @@ reject a format/grant mismatch. CODE768 + fixture64 + reserve192 stay unchanged;
 no grant, fit, headroom, formatting fidelity or full Nextcloud Office acceptance
 is inferred from offline preparation. Current1068MiB cannot admit ML1216,
 Nextcloud web1280 or Immich app1408; prepared heavy workflows remain unrun.
+
+
+## Native ODT live checkpoint — one activation, failed UI, released
+
+The exclusive native-ODT receipt was consumed for **one activation and one suite
+attempt**, 2026-11-11 19:51–19:52 UTC (Unix1794426697–1794426764).
+The runner intrinsically cleans up after its first suite; its two-browser-attempt
+ceiling was not treated as permission to reactivate. The new receipt schema
+`max_activations:1` / `max_browser_attempts:2` is accepted with a single exclusive
+activation marker, without rewriting the receipt schema, identity or expiry.
+Only real dual-memory observation fields were refreshed. CODE768 + fixture64 +
+reserve192 remained unchanged. No Nextcloud web/PG/Redis, ML service, Immich or
+media controller was activated. The existing Python fixture image was reused;
+no extra interpreter or observer ran inside its64MiB container.
+
+[Append-only live result](evidence/talos-data/wopi-native-odt-result-b593d572-1e87-48fd-b2e8-f97a532919de.json)
+records actual `edit/odt` discovery, CA/hostname-verified leaf-derived exact SPKI,
+and a real1033-byte ODT with native `content.xml`. CODE loaded its document layer
+and reported **docLoaded:true, permission:edit**. Actual CheckFileInfo, GetFile
+and LOCK succeeded. This improves the observed loaded state, **not editing
+acceptance**: marker input, Save, accepted PutFile, close/reopen and host denial
+were not reached. Bad-token401 and wrong-lock409 passed independently; stored
+bytes and SHA256 stayed unchanged, marker_present:false. The rejected409 request
+is not an accepted CODE PutFile.
+
+### Concrete screenshot diagnosis; no retry
+
+The UUID-named private screenshot (SHA256 in the result) shows the welcome tour
+covered by a separate native dialog:
+
+> Your session will end in 10 minutes. Refresh the page to continue.
+
+The dialog has a **Close** button. The tour-close click timed out while that
+notice was above it. An offline-only handler now closes only this exact observed
+notice through its containing dialog before touching the welcome tour. It has
+**not run live**. No token lifetime, authentication, browser security, receipt,
+resource limit or fixture document was altered to claim success. The browser
+uses a real native Save button, not generic Control+S. Historical TXT handlers
+and all seven TXT failures remain preserved.
+
+The host-denial path was corrected offline to use
+`wopi-fixture.proof-nextcloud.svc:8082`, an alternate spelling of the same Service,
+with canonical and alternate `/healthz` controls from CODE and before/after
+callback/byte evidence. Ordinary health probes are excluded only from callback
+comparison. This path was **not reached**, so no host-denial, DNS reachability or
+positive-control success is claimed. The old deliberately dead hostname is no
+longer used. No production DNS, global rules or external probes were changed.
+
+### Time-correlated resource evidence, not headroom
+
+Six off-node cgroup samples (three per container) retain Pod UID/containerID,
+current/peak/events/stat and individual read times. CODE observations in MiB:
+
+| Unix sample | current | inclusive peak | anon | file | inactive_file |
+|---|---:|---:|---:|---:|---:|
+|1794426710.232|576.207|768.000|234.598|308.836|233.664|
+|1794426721.587|508.770|768.000|273.145|197.305|151.332|
+|1794426731.496|432.934|768.000|273.145|134.086|110.012|
+
+CODE's inclusive lifetime peak equals its768MiB limit. Sampled max/oom/oom_kill
+were0 and restart counts0; these do **not** prove anonymous768MiB, spare capacity,
+OOM safety or editing headroom. Fixture peak62115840bytes was59.23828125MiB.
+The suite's final CODE in-container observation failed and remains explicit;
+independent off-node samples do not erase that gap. No cache drop/limit change
+or host setting adjustment occurred.
+
+### Forensics, preservation and release
+
+[Forensic index](evidence/talos-data/wopi-native-odt-forensics-b593d572-1e87-48fd-b2e8-f97a532919de.json)
+records private0600 current logs and state/lastState for **both containers before
+deletion**. Restart counts were0, so previous logs were inapplicable. Empty
+pre-apply state was also recorded. Raw logs, screenshot bytes, credentials and
+ODT bytes stay private.
+
+[Independent release](evidence/talos-data/wopi-native-odt-release-c4f1f95b-202d-43d4-829b-b34dc296a59e.json)
+confirms all proof app/helper pods absent, all21 controllers0, all CronJobs
+suspended, receipt archived0600 then removed, and **312 preexisting private files
+hash-unchanged**, including credentials, authenticators, old archives and seven
+TXT failures. No live receipt remains. The
+[post-release observation](evidence/talos-data/wopi-native-odt-post-release-memory-b593d572-1e87-48fd-b2e8-f97a532919de.json)
+was kubelet1258/Talos1121/minimum1121MiB; this is not an admission receipt.
+No parent brief/readiness/gate files or new media arr/recovery files were changed.
+Native Nextcloud cron remains offline/unrun and has no live grant.

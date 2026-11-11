@@ -1,0 +1,13 @@
+{
+  "observed_at": 1794426784.540992,
+  "proof_app_helper_pods_remaining": 0,
+  "proof_controllers": 21,
+  "all_controller_replicas_zero": true,
+  "all_cronjobs_suspended": true,
+  "baseline_files": 312,
+  "changed_files": [],
+  "receipt_archived_mode": "0600",
+  "receipt_removed": true,
+  "receipt_archive_sha256": "ae3795b99dfd1591ddaafef6eb0a8dabc03290e435a09b49598603ee513de2f8",
+  "archive_file": "archived-data-nextcloud-wopi-native-odt-c4f1f95b-202d-43d4-829b-b34dc296a59e.json"
+}

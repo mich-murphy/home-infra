@@ -100,6 +100,15 @@ try {
     });
   }
   result.editor_state=await state();
+  // Native ODT attempt screenshot showed this exact session-warning dialog
+  // above the welcome tour. Close only the observed notice, never arbitrary UI.
+  const sessionNotice=frame.getByText('Your session will end in 10 minutes. Refresh the page to continue.',{exact:true});
+  if(await sessionNotice.isVisible()) {
+    stage='observed native session-warning Close';
+    const dialog=frame.getByRole('dialog').filter({has:sessionNotice});
+    await dialog.getByRole('button',{name:'Close',exact:true}).click();
+    result.checks.push('Exact observed ten-minute session warning closed');
+  }
   // The previous cropped screenshot showed the version-tour overlay and the
   // real Viewing selector. Dismiss only the known tour, then choose Editing UI.
   for(const candidate of page.frames()) {

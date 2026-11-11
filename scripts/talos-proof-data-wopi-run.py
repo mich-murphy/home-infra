@@ -28,14 +28,19 @@ def main():
     if receipt.get('document_format','txt') != args.format:
         raise RuntimeError('native ODT requires explicit new format-bound parent grant')
     os.environ['TALOS_PROOF_WOPI_FORMAT']=args.format
-    maximum=receipt.get('max_attempts')
+    # New grants bind one activation separately from the browser-attempt ceiling.
+    # This supervisor intentionally runs one suite, then unconditionally stops.
+    single_activation = 'max_activations' in receipt
+    if single_activation and (receipt['max_activations'] != 1 or receipt.get('max_browser_attempts') not in (1,2) or args.attempt != 1):
+        raise RuntimeError('exactly one activation and bounded browser attempts required')
+    maximum=1 if single_activation else receipt.get('max_attempts')
     if not receipt.get('lease_id') or maximum not in (1,2) or args.attempt>maximum:
         raise RuntimeError('explicit bounded attempt receipt required')
     limits=receipt.get('approved_controller_limits_mib')
     if (maximum==2 or limits is not None) and limits!={'collabora':768,'wopi-fixture':64}:
         raise RuntimeError('exact parent-approved controller limits required')
     lease_id=hashlib.sha256(str(receipt['lease_id']).encode()).hexdigest()[:16]
-    target=life.no_symlinks(state/f'wopi-retry-{lease_id}-{args.attempt}.json')
+    target=life.no_symlinks(state/(f'wopi-activation-{lease_id}.json' if single_activation else f'wopi-retry-{lease_id}-{args.attempt}.json'))
     if target.exists():raise RuntimeError('attempt already consumed for this lease')
     if args.attempt==2 and not (state/f'wopi-retry-{lease_id}-1.json').exists():raise RuntimeError('first bounded attempt must precede second')
     subprocess.run([sys.executable,str(ROOT/'scripts/talos-proof-data-memory.py'),'--group','nextcloud','--stage','wopi'],check=True,timeout=60)

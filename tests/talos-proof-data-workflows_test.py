@@ -233,6 +233,23 @@ class Workflows(unittest.TestCase):
         self.assertIn("'memory.current','memory.peak','memory.events','memory.stat'",source)
         self.assertIn("negative!={'bad-token':401,'wrong-lock':409}",source)
 
+    def test_wopi_native_receipt_and_observed_session_warning(self):
+        runner=(Path(__file__).resolve().parents[1]/'scripts/talos-proof-data-wopi-run.py').read_text()
+        self.assertIn("receipt['max_activations'] != 1",runner)
+        self.assertIn("receipt.get('max_browser_attempts') not in (1,2)",runner)
+        self.assertIn('args.attempt != 1',runner)
+        self.assertIn('wopi-activation-{lease_id}',runner)
+        source=Path(__file__).with_name('talos-proof-data-wopi.mjs').read_text()
+        self.assertIn('Your session will end in 10 minutes. Refresh the page to continue.',source)
+        self.assertIn("name:'Close',exact:true",source)
+        self.assertNotIn("keyboard.press('Control+s')",source)
+        import inspect
+        native=inspect.getsource(live.wopi_browser)
+        self.assertIn('http://wopi-fixture.proof-nextcloud.svc:8082',native)
+        self.assertNotIn('denied-wopi.proof.invalid',native)
+        self.assertIn("base+'/healthz'",native)
+        self.assertIn("r.get('event')!='health'",native)
+
     def test_wopi_format_warning_fix_is_exact_and_plain_text_only(self):
         source=Path(__file__).with_name('talos-proof-data-wopi.mjs').read_text()
         self.assertIn("if(input.mode!=='office' && (input.format || 'txt')==='txt')",source)

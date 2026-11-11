@@ -372,11 +372,29 @@ def wopi_browser():
     with forwarded('wopi-fixture',8082) as source:
         reopened_bytes=http(source,'/wopi/files/proof/contents?access_token='+CREDS['NEXTCLOUD_ADMIN_PASSWORD'],raw=True)
     check('WOPI saved marker and exact bytes survive real browser close/reopen',reopened_bytes==saved and wopi_document_tools().document_marker(reopened_bytes,format,marker))
-    payload['source']='http://denied-wopi.proof.invalid:8082/wopi/files/proof'
+    # Alternate Kubernetes DNS spelling of the SAME running Service, not a
+    # deliberately dead name. Positive controls run from CODE's network context.
+    alternate='http://wopi-fixture.proof-nextcloud.svc:8082'
+    canonical='http://wopi-fixture.proof-nextcloud.svc.cluster.local:8082'
+    controls={}
+    for name,base in [('canonical',canonical),('alternate',alternate)]:
+        controls[name]=execute('collabora',['curl','--noproxy','*','--fail','--silent','--show-error','--max-time','10',base+'/healthz']).decode().strip()=='ok'
+    RESULT['wopi_host_denial_positive_controls']=controls
+    check('canonical and nonallowlisted spellings reach same live fixture',all(controls.values()))
+    before_denial=json.loads(execute('wopi-fixture',['cat','/data/evidence.json']))
+    payload['source']=alternate+'/wopi/files/proof'
     payload['expectHostDenial']=True
     denied=subprocess.run(['node',str(Path(__file__).with_name('talos-proof-data-wopi.mjs'))],input=json.dumps(payload).encode(),capture_output=True,timeout=75)
     RESULT['wopi_host_denial_browser']=json.loads(denied.stdout)
-    check('real CODE rejects exact non-allowlisted WOPI host before document load',denied.returncode==0)
+    after_denial=json.loads(execute('wopi-fixture',['cat','/data/evidence.json']))
+    RESULT['wopi_host_denial_callback_evidence']={'before':before_denial,'after':after_denial}
+    check('real CODE explicitly rejects live non-allowlisted WOPI host',denied.returncode==0)
+    # Readiness/liveness health requests may legitimately occur during denial.
+    def denial_callbacks(evidence):
+        return [r for r in evidence['requests'] if r.get('event')!='health']
+    check('host denial leaves fixture bytes and callbacks unchanged',
+        all(before_denial[key]==after_denial[key] for key in ('sha256','bytes','events')) and
+        denial_callbacks(before_denial)==denial_callbacks(after_denial))
 
     RESULT['limitations'].append('Faithful single-file WOPI fixture + real CODE/browser edit/save ONLY, not Nextcloud/richdocuments integration, account authorization, multieditor, ODF formatting or production capacity.')
 
