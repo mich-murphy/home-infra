@@ -1,0 +1,897 @@
+{
+  "group": "miniflux",
+  "stage": null,
+  "checks": [
+    "TLS Gateway route selected: miniflux.proof.invalid",
+    "Miniflux fetches exactly one synthetic RSS article over explicitly allowed fixture flow",
+    "Miniflux changed theme and page-size preferences persist",
+    "Miniflux fixture starts unstarred",
+    "Miniflux actual bookmark toggle persists starred state",
+    "Miniflux entry update persists",
+    "TLS Gateway route selected: miniflux.proof.invalid",
+    "Miniflux feed survives PostgreSQL pod replacement",
+    "Miniflux star/read state survives PostgreSQL replacement",
+    "Miniflux preferences survive PostgreSQL replacement",
+    "clean restore uses distinct fresh PVC UID and PV: postgres",
+    "clean PostgreSQL PVC contains no source public tables before restore",
+    "full PostgreSQL logical backup restores into clean PVC cluster",
+    "TLS Gateway route selected: miniflux.proof.invalid",
+    "Miniflux authenticated application entry/read-state/content SHA256 match after clean-PVC restore",
+    "Miniflux theme/page-size preferences match after clean-PVC restore",
+    "TLS Gateway route selected: miniflux.proof.invalid",
+    "Miniflux feed/category CRUD completed"
+  ],
+  "limitations": [
+    "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate."
+  ],
+  "memory_observations": [
+    {
+      "app": "postgres",
+      "reason": "before replacement",
+      "time": 1794416761.241175,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 90136576
+        },
+        "memory.peak": {
+          "bytes": 93945856
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 9265152,
+          "file": 74772480,
+          "kernel": 6082560,
+          "kernel_stack": 196608,
+          "pagetables": 2019328,
+          "sec_pagetables": 0,
+          "percpu": 1056,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 18661376,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 30957568,
+          "file_dirty": 356352,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 18817024,
+          "active_anon": 8019968,
+          "inactive_file": 45957120,
+          "active_file": 10153984,
+          "unevictable": 1081344,
+          "slab_reclaimable": 2669928,
+          "slab_unreclaimable": 1094760,
+          "slab": 3764688,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 14,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 9,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 173,
+          "pgsteal": 91,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 173,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 91,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 31242,
+          "pgmajfault": 69,
+          "pgrefill": 3,
+          "pgactivate": 24,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "244b7d60-3f8a-4d2b-b5de-b26b19d75810",
+          "containers": [
+            {
+              "name": "postgres",
+              "image": "sha256:8bca9649e52d948114ccc8164b55b7ab26b64e729893e420114bb5c87bf7c7cc",
+              "imageID": "docker.io/library/postgres@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+              "containerID": "containerd://328e700ad1ee0b654ef674410242710289b6670a63be409f7b251f8ddc1e5348",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "miniflux",
+      "reason": "before scale0",
+      "time": 1794416774.380049,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 35618816
+        },
+        "memory.peak": {
+          "bytes": 38240256
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 13754368,
+          "file": 20430848,
+          "kernel": 1359872,
+          "kernel_stack": 147456,
+          "pagetables": 757760,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 4096,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 12521472,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 12390400,
+          "active_anon": 1294336,
+          "inactive_file": 18087936,
+          "active_file": 2347008,
+          "unevictable": 0,
+          "slab_reclaimable": 121056,
+          "slab_unreclaimable": 241808,
+          "slab": 362864,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 1,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 1,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 2,
+          "pgsteal": 2,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 2,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 2,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 6946,
+          "pgmajfault": 15,
+          "pgrefill": 0,
+          "pgactivate": 0,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "39127581-02e2-4984-b0e4-8f556a4d3416",
+          "containers": [
+            {
+              "name": "miniflux",
+              "image": "sha256:fd622fa7310da7f0c2c5cd627a2fd38f23e8250b28eaf8698f6353215fe1b686",
+              "imageID": "docker.io/miniflux/miniflux@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9",
+              "containerID": "containerd://aa3194af6cdc3a7b898a55391b3cd90891cffba81734e99930356b813401375e",
+              "restartCount": 2,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "postgres",
+      "reason": "before scale0",
+      "time": 1794416837.313814,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 54005760
+        },
+        "memory.peak": {
+          "bytes": 58245120
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 5668864,
+          "file": 44785664,
+          "kernel": 3457024,
+          "kernel_stack": 180224,
+          "pagetables": 1765376,
+          "sec_pagetables": 0,
+          "percpu": 992,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 22351872,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 17747968,
+          "file_dirty": 192512,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 0,
+          "active_anon": 26923008,
+          "inactive_file": 9203712,
+          "active_file": 13230080,
+          "unevictable": 1081344,
+          "slab_reclaimable": 437800,
+          "slab_unreclaimable": 971152,
+          "slab": 1408952,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 64,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 2,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 58,
+          "pgsteal": 58,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 58,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 58,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 76706,
+          "pgmajfault": 37,
+          "pgrefill": 55,
+          "pgactivate": 0,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "45b5075e-4bec-4da0-93a4-c8c60d61db53",
+          "containers": [
+            {
+              "name": "postgres",
+              "image": "sha256:8bca9649e52d948114ccc8164b55b7ab26b64e729893e420114bb5c87bf7c7cc",
+              "imageID": "docker.io/library/postgres@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+              "containerID": "containerd://20bcfee5a539c206b9fd149cc32f1890642deb305db843df432d1f6d0480b92b",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "miniflux",
+      "reason": "before scale0",
+      "time": 1794416872.3881788,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 34422784
+        },
+        "memory.peak": {
+          "bytes": 37666816
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 13115392,
+          "file": 20008960,
+          "kernel": 1343488,
+          "kernel_stack": 147456,
+          "pagetables": 765952,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 11886592,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 2478080,
+          "active_anon": 10567680,
+          "inactive_file": 16211968,
+          "active_file": 3801088,
+          "unevictable": 0,
+          "slab_reclaimable": 106320,
+          "slab_unreclaimable": 235424,
+          "slab": 341744,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 2,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 0,
+          "pgsteal": 0,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 0,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 0,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 6656,
+          "pgmajfault": 9,
+          "pgrefill": 0,
+          "pgactivate": 0,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "f1eee6c5-d168-4cdd-99a6-c137be50b30d",
+          "containers": [
+            {
+              "name": "miniflux",
+              "image": "sha256:fd622fa7310da7f0c2c5cd627a2fd38f23e8250b28eaf8698f6353215fe1b686",
+              "imageID": "docker.io/miniflux/miniflux@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9",
+              "containerID": "containerd://322c0906ff886f31bd287ccbd7e473c3d7d6b8704c2a6cd73ec6f183d4ccb9b7",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "postgres",
+      "reason": "before scale0",
+      "time": 1794416873.184611,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 127909888
+        },
+        "memory.peak": {
+          "bytes": 146288640
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 5648384,
+          "file": 115978240,
+          "kernel": 6201344,
+          "kernel_stack": 180224,
+          "pagetables": 1818624,
+          "sec_pagetables": 0,
+          "percpu": 992,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 18595840,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 14786560,
+          "file_dirty": 1409024,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 0,
+          "active_anon": 23121920,
+          "inactive_file": 40165376,
+          "active_file": 57217024,
+          "unevictable": 1081344,
+          "slab_reclaimable": 3141672,
+          "slab_unreclaimable": 962952,
+          "slab": 4104624,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 696,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 3486,
+          "pgsteal": 3127,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 3486,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 3127,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 88754,
+          "pgmajfault": 86,
+          "pgrefill": 310,
+          "pgactivate": 356,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "ecad5c48-04ea-4f88-b627-c7a25442ae56",
+          "containers": [
+            {
+              "name": "postgres",
+              "image": "sha256:8bca9649e52d948114ccc8164b55b7ab26b64e729893e420114bb5c87bf7c7cc",
+              "imageID": "docker.io/library/postgres@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+              "containerID": "containerd://e6adab0b3613f6cbb19a4ef811106a5658d3104485b375fc9e90c239265b4389",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "fixture",
+      "reason": "suite final observation",
+      "time": 1794416897.12697,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 63582208
+        },
+        "memory.peak": {
+          "bytes": 67100672
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 9535488,
+          "file": 51920896,
+          "kernel": 2203648,
+          "kernel_stack": 49152,
+          "pagetables": 647168,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 9216000,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 14970880,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 15138816,
+          "active_anon": 3596288,
+          "inactive_file": 40034304,
+          "active_file": 2662400,
+          "unevictable": 0,
+          "slab_reclaimable": 1060896,
+          "slab_unreclaimable": 353320,
+          "slab": 1414216,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 19750,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 16122,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 30847,
+          "pgsteal": 30092,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 448,
+          "pgscan_direct": 30399,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 448,
+          "pgsteal_direct": 29644,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 8496,
+          "pgmajfault": 158,
+          "pgrefill": 97,
+          "pgactivate": 486,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "b566a807-9fd4-44c4-9a51-32263bdde376",
+          "containers": [
+            {
+              "name": "fixture",
+              "image": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+              "imageID": "docker.io/library/nextcloud@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+              "containerID": "containerd://6d142c115ebb177580628d787361899a81fbf32d3ab374e630bd24a64de27be0",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "miniflux",
+      "reason": "suite final observation",
+      "time": 1794416897.479073,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 24580096
+        },
+        "memory.peak": {
+          "bytes": 28184576
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 13115392,
+          "file": 10223616,
+          "kernel": 1314816,
+          "kernel_stack": 147456,
+          "pagetables": 737280,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 4374528,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 0,
+          "active_anon": 13049856,
+          "inactive_file": 12288,
+          "active_file": 10215424,
+          "unevictable": 0,
+          "slab_reclaimable": 108184,
+          "slab_unreclaimable": 228752,
+          "slab": 336936,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 0,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 0,
+          "pgsteal": 0,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 0,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 0,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 6606,
+          "pgmajfault": 5,
+          "pgrefill": 0,
+          "pgactivate": 0,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "613c2f36-6b34-4cc4-abd3-ad71d3b51490",
+          "containers": [
+            {
+              "name": "miniflux",
+              "image": "sha256:fd622fa7310da7f0c2c5cd627a2fd38f23e8250b28eaf8698f6353215fe1b686",
+              "imageID": "docker.io/miniflux/miniflux@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9",
+              "containerID": "containerd://b7cc666c1f7dd735f24f2d73ed1e5087481990bb88acab4c66598b756f1abcdc",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "postgres",
+      "reason": "suite final observation",
+      "time": 1794416897.824309,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 34697216
+        },
+        "memory.peak": {
+          "bytes": 37998592
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 7700480,
+          "file": 23035904,
+          "kernel": 3702784,
+          "kernel_stack": 196608,
+          "pagetables": 1994752,
+          "sec_pagetables": 0,
+          "percpu": 1056,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 18022400,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 16924672,
+          "file_dirty": 356352,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 0,
+          "active_anon": 24530944,
+          "inactive_file": 4157440,
+          "active_file": 856064,
+          "unevictable": 1081344,
+          "slab_reclaimable": 342592,
+          "slab_unreclaimable": 1071768,
+          "slab": 1414360,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 8,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 9,
+          "pgsteal": 9,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 9,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 9,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 30502,
+          "pgmajfault": 4,
+          "pgrefill": 0,
+          "pgactivate": 0,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "c7e092eb-cf8e-4829-b4dc-2a2b04375b7a",
+          "containers": [
+            {
+              "name": "postgres",
+              "image": "sha256:8bca9649e52d948114ccc8164b55b7ab26b64e729893e420114bb5c87bf7c7cc",
+              "imageID": "docker.io/library/postgres@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+              "containerID": "containerd://5868355883e902661a5731127046c64146f13e7463e6a0686fe3c6aeca9ef56d",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "recovery_transients": [
+    {
+      "path": "/v1/feeds/3",
+      "statuses": [
+        401
+      ],
+      "recovered_within_seconds": 1
+    }
+  ],
+  "backup_sha256": "683cac5e58e468fcbbe6746da4c69546d186467de27fefccc3d3934d60c876f1",
+  "memory_observation_gaps": [
+    {
+      "app": "miniflux",
+      "reason": "before scale0",
+      "error": "RuntimeError"
+    }
+  ],
+  "restore_volumes": [
+    {
+      "app": "postgres",
+      "source_pvc": "postgres-data",
+      "source_uid": "04d80385-d11a-481e-b666-81162c795a0a",
+      "restored_pvc": "postgres-restore-6c270c8b3a3a",
+      "restored_uid": "1dc45c7d-0aa1-46da-a634-d46036993b3c",
+      "restored_pv": "pvc-1dc45c7d-0aa1-46da-a634-d46036993b3c"
+    }
+  ],
+  "status": "functional-checks-passed-with-limitations"
+}

@@ -12,7 +12,7 @@ import time
 ROOT=Path(__file__).resolve().parents[1]
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--group',required=True);p.add_argument('--stage',required=True)
+    p=argparse.ArgumentParser();p.add_argument('--group',required=True);p.add_argument('--stage')
     args=p.parse_args()
     spec=importlib.util.spec_from_file_location('life',ROOT/'scripts/talos-proof-data.py')
     life=importlib.util.module_from_spec(spec);spec.loader.exec_module(life)

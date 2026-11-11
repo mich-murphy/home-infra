@@ -21,6 +21,23 @@ DOCS = list(yaml.safe_load_all(subprocess.check_output(['kubectl', 'kustomize', 
 
 
 class DataContract(unittest.TestCase):
+    def test_helper_deletion_barrier_blocks_activation_on_timeout(self):
+        pods = {'items':[{'metadata':{'namespace':'proof-couchdb','name':'old-helper','ownerReferences':[{'kind':'Job'}]},'status':{'phase':'Succeeded'}}]}
+        def kube(*args):
+            if args[0]=='get': return json.dumps(pods)
+            if 'wait' in args: raise RuntimeError('helper still exists')
+            self.fail('activation must not follow helper wait failure')
+        with patch.object(life, 'kube', side_effect=kube), self.assertRaises(RuntimeError):
+            life.scale_selected('proof-couchdb', 1)
+
+    def test_helper_deletion_barrier_waits_before_activation(self):
+        pods = {'items':[{'metadata':{'namespace':'proof-couchdb','name':'old-helper','ownerReferences':[{'kind':'Job'}]}}]}
+        with patch.object(life, 'kube', side_effect=[json.dumps(pods), '', '', '']) as kube, patch.object(life, 'LEASE_GROUP', 'couchdb'), patch.object(life, 'LEASE_STAGE', None):
+            life.scale_selected('proof-couchdb', 1)
+        calls = [call.args for call in kube.call_args_list]
+        self.assertIn('--for=delete', calls[1])
+        self.assertIn('scale', calls[2])
+
     def test_parent_safety_validator(self):
         render = yaml.safe_dump_all(DOCS)
         subprocess.run(['python3', str(ROOT / 'tests/kubernetes-proof.py')], input=render, text=True, check=True, capture_output=True)
@@ -257,9 +274,9 @@ class DataContract(unittest.TestCase):
         self.assertEqual(life.selection('immich','ml')[1],1024)
 
     def test_stage_scales_only_exact_selected_deployments(self):
-        with patch.object(life,'LEASE_GROUP','nextcloud'), patch.object(life,'LEASE_STAGE','web'), patch.object(life,'kube') as kube:
+        with patch.object(life,'LEASE_GROUP','nextcloud'), patch.object(life,'LEASE_STAGE','web'), patch.object(life,'kube', return_value='{"items":[]}') as kube:
             life.scale_selected('proof-nextcloud',1)
-        command=kube.call_args_list[0].args
+        command=next(call.args for call in kube.call_args_list if 'scale' in call.args)
         self.assertNotIn('--all',command)
         self.assertNotIn('deployment/collabora',command)
         self.assertEqual(set(x for x in command if x.startswith('deployment/')),{'deployment/nextcloud','deployment/postgres','deployment/redis'})

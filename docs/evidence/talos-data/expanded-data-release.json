@@ -1,0 +1,109 @@
+{
+  "observed_at": 1794416946.8815858,
+  "proof_pods": [],
+  "proof_controllers": [
+    {
+      "namespace": "proof-audiobookshelf",
+      "name": "audiobookshelf",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-couchdb",
+      "name": "couchdb",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-miniflux",
+      "name": "fixture",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-miniflux",
+      "name": "miniflux",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-miniflux",
+      "name": "postgres",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-network-test",
+      "name": "denied-client",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-network-test",
+      "name": "fixture",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-nextcloud",
+      "name": "collabora",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-nextcloud",
+      "name": "wopi-fixture",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-pinchflat",
+      "name": "pinchflat",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-pocket-id",
+      "name": "pocket-id",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-qbittorrent",
+      "name": "download-protocols",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-qbittorrent",
+      "name": "qbittorrent",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-sabnzbd",
+      "name": "download-protocols",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-sabnzbd",
+      "name": "sabnzbd",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-validation",
+      "name": "client",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-wallabag",
+      "name": "fixture",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-wallabag",
+      "name": "mariadb",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-wallabag",
+      "name": "redis",
+      "replicas": 0
+    },
+    {
+      "namespace": "proof-wallabag",
+      "name": "wallabag",
+      "replicas": 0
+    }
+  ],
+  "expanded_data_leases_revoked": true,
+  "result": "miniflux-group-1794416897824335000-result.json",
+  "result_sha256": "6068cc8f90cf518e091ab032548500cc54bd0b1cee74c5fad92ca4ee6a22cf95"
+}

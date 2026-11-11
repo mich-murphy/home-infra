@@ -182,6 +182,8 @@ def memory_snapshot(app, reason):
 
 
 def scale(app, replicas):
+    if replicas:
+        LIFE.helper_deletion_barrier()
     if not replicas:
         memory_snapshot(app, 'before scale0')
     k('scale', 'deployment/' + app, '--replicas=' + str(replicas))
@@ -813,7 +815,7 @@ def couchdb():
             path = '/_users/org.couchdb.user:' + name
             revision = http(base, path, auth=auth)['_rev']
             http(base, path + '?rev=' + revision, 'DELETE', auth=auth)
-    RESULT['limitations'].append('Prepared same-instance replication and logical live-document/design/security/user recovery are unrun until explicitly leased. Not shard/full revision/tombstone/checkpoint/CORS/multi-node or historical database recovery.')
+    RESULT['limitations'].append('Bounded same-instance replication and logical live-document/design/security/user recovery only. Not shard/full revision/tombstone/checkpoint/CORS/multi-node or historical database recovery.')
 
 
 def png():
@@ -1089,7 +1091,13 @@ def main():
             RESULT['http_status'] = e.code
     if STATEPATH is not None:
         names, _ = LIFE.selection(GROUP)
-        for name in names or ():
+        if names is None:
+            try:
+                names = tuple(d['metadata']['name'] for d in json.loads(k('get', 'deployments', '-o', 'json'))['items'] if d['spec'].get('replicas', 0))
+            except Exception as error:
+                names = ()
+                RESULT.setdefault('memory_observation_gaps', []).append({'reason':'final deployment enumeration', 'error':type(error).__name__})
+        for name in names:
             memory_snapshot(name, 'suite final observation')
         for observation in RESULT.get('memory_observations', []):
             events = observation['cgroup'].get('memory.events', {})

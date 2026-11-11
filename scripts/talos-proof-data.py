@@ -63,7 +63,18 @@ def selected_controllers(group):
     return sorted(result)
 
 
+def helper_deletion_barrier():
+    """Do not start an application while any proof Job pod still exists."""
+    pods = json.loads(kube('get', 'pods', '-A', '-o', 'json'))['items']
+    for pod in pods:
+        meta = pod['metadata']
+        if meta['namespace'].startswith('proof-') and any(owner['kind']=='Job' for owner in meta.get('ownerReferences', [])):
+            kube('-n', meta['namespace'], 'wait', '--for=delete', 'pod/' + meta['name'], '--timeout=180s')
+
+
 def scale_selected(ns, replicas):
+    if replicas:
+        helper_deletion_barrier()
     names, _ = selection(LEASE_GROUP)
     targets = ['deployment/' + name for name in names] if names else ['deployment', '--all']
     kube('-n', ns, 'scale', *targets, '--replicas=' + str(replicas))

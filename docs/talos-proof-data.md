@@ -871,3 +871,92 @@ vectors. Neither stage is implicitly authorized or resource-approved. Nextcloud
 web/cron/version/trash/share/coordinated recovery and richdocuments remain unrun;
 CODE save/edit/reopen/host denial remain failed or unproved as recorded above.
 No limit, cache, host, source Docker, guest or global-policy changes were made.
+
+## Expanded CouchDB → Miniflux live checkpoint (2026-11-11 17:03–17:08 UTC)
+
+**Both expanded suites passed their named functional checks on the first live
+suite attempt.** This supersedes only the corresponding “prepared/unrun” checks
+in the preceding offline checkpoint. It is not full-service or capacity acceptance.
+Parent explicitly granted separate private CouchDB and Miniflux leases, in that
+order. No Immich/ML/Nextcloud/Office/other data controller was activated.
+
+### CouchDB: expanded bounded pass
+
+[Immutable expanded result](evidence/talos-data/couchdb-expanded-live-result.json)
+records36 checks: real update/stale-revision409, exact executable design view,
+member allow/other authenticated tenant read+write403, same-pod member-authenticated
+one-shot replication, replica exact document/revision and deletion propagation404.
+Recovery read a SHA-verified private archive containing actual `_security`, the
+actual design/live documents and two server-hashed `_users` records. Distinct
+fresh PVC `687843e6-a262-48d4-8371-6afd48b121d7` restored those records, not new
+user/password definitions; allowed/denied tenants and view execution passed there,
+and permissions passed again after replacement. Source PVC UID remains
+`2ec59c23-2b17-4b50-8f02-d84acbd6cd56`. Synthetic source databases/users were cleaned.
+
+The immutable result retains an obsolete limitation sentence saying these checks
+were “unrun until explicitly leased”; the recorded positive checks actually ran
+under the newly granted lease. That sentence is corrected in future code, not
+rewritten in the historical result. Shards/full revision trees/tombstones,
+replication checkpoints, CORS, multi-node and historical-data recovery remain
+outside this proof. Four observed pod UIDs had restartCount0; the final reattached
+source container was not cgroup-sampled before deletion (an explicit measurement
+gap, not an inferred zero). [CouchDB release](evidence/talos-data/expanded-couchdb-release.json)
+records all proof pods absent and CouchDB receipt removal **before** Miniflux.
+
+### Miniflux: star/preferences and PG recovery bounded pass
+
+[Immutable expanded result](evidence/talos-data/miniflux-expanded-live-result.json)
+records18 checks: exactly one fixture article with expected title/content, actual
+bookmark toggle, read state and changed valid theme/page-size preferences. State
+survived PostgreSQL replacement and a fresh-PVC logical restore validated through
+real authenticated Miniflux HTTP. Restored PG UID
+`1dc45c7d-0aa1-46da-a634-d46036993b3c` differs from source
+`04d80385-d11a-481e-b666-81162c795a0a`. Source feed/category were removed and original
+preferences restored.
+
+**Transient failures remain visible:** one post-PG-replacement401 recovered after
+one second; the first Miniflux pod had restartCount2, whereas restored/final app
+pods had0. [Retained events](evidence/talos-data/miniflux-expanded-pod-events.json)
+show initial BackOffs at17:05:40–47 and readiness/liveness503 during the PG restart.
+Deleted container exit states/logs were not captured, so exact restart causes are
+**not established**. One cgroup snapshot failed while a repeated scale0 targeted
+an already-stopped app; other source/restored/final snapshots remain. Do not turn
+this bounded functional pass into restart-free or soak acceptance.
+
+### Resources, preservation and release
+
+Fresh dual-memory minima at admission were1182MiB for CouchDB (kubelet1265,
+Talos1182) and1111MiB for Miniflux (kubelet1169, Talos1111). Only actual measured
+memory fields were refreshed; lease expiry/identity/group were unchanged. A new
+explicit helper-deletion barrier waits for every remaining proof Job pod before
+app activation, including restored app activation;41 offline contracts include
+wait-before-scale and fail-closed-on-wait-timeout checks.
+
+| Container | Maximum observed cgroup peak | Limit | Observed max/oom/oom_kill |
+|---|---:|---:|---|
+| CouchDB |193.8515625MiB|256MiB|0/0/0|
+| Miniflux |36.46875MiB|128MiB|0/0/0|
+| Miniflux PostgreSQL |139.51171875MiB|256MiB|0/0/0|
+| Miniflux fixture |63.9921875MiB|64MiB|0/0/0|
+
+**Fixture peak leaves only8192bytes (8KiB) below its limit.** At that observation,
+current memory was60.63671875MiB, anon9.09375MiB and file49.515625MiB. Those are
+current samples, not an exact decomposition of the earlier peak; inclusive
+cgroup/file-cache peak is not synonymous with anonymous pressure. No capacity
+headroom, zero-restart, representative concurrency or production-load claim is
+made; no limits/cache/host settings were altered.
+
+[Archive preservation](evidence/talos-data/expanded-archive-preservation.json)
+recomputes all **four previous parent-crosschecked archive hashes** unchanged,
+with original0600 modes. The new1087-byte CouchDB bundle and51495-byte Miniflux
+PG dump have distinct UUID paths,0600 modes and recorded SHA256; private state is
+0700. The CouchDB bundle contains two salted/derived-key records and no plaintext
+password field. No secret/archive payload was committed or printed.
+
+[Final release](evidence/talos-data/expanded-data-release.json) independently records
+all proof Deployment/StatefulSet replicas0, all proof pods absent and both expanded
+lease files removed. Separate checks found all proof CronJobs suspended and no
+active proof Jobs. No further live grant remains. The host guard/baseline was not
+reset or modified; no host execution, source data/credentials, production DNS,
+storage, GPU or other guest change was performed. Remaining priorities are the
+light-data negatives/Wallabag image+queue gaps, then Immich core as listed above.
