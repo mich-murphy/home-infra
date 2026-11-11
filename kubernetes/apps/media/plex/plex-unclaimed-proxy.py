@@ -34,6 +34,11 @@ def authorized(headers, query, key, password):
     return False
 
 
+def native_agent_discovery(method, parsed):
+    return (method == 'GET' and parsed.path == '/system/agents'
+            and urllib.parse.parse_qs(parsed.query, keep_blank_values=True) == {'mediaType': ['1']})
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
     def log_message(self, *args):
@@ -59,7 +64,9 @@ class Handler(BaseHTTPRequestHandler):
             if not authorized(self.headers, parsed.query, self.server.access_key, self.server.password):
                 self.error(401)
                 return
-            if parsed.path.startswith(('/myplex', '/updater', '/system/agents', '/:/plugins')):
+            # Narrow read-only native agent discovery; no agent/plugin writes.
+            discovery = native_agent_discovery(self.command, parsed)
+            if parsed.path.startswith(('/myplex', '/updater', '/system/agents', '/:/plugins')) and not discovery:
                 self.error(403)
                 return
             params = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)

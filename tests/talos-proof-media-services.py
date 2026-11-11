@@ -226,6 +226,22 @@ def plex_xml(api, path, method='GET'):
     return ET.fromstring(api.call(path, method, raw=True))
 
 
+def plex_creation_query(api):
+    """Legacy public-client contract, gated by THIS native server's agent list.
+
+    Current official provider-based API differs; no automatic fallback between
+    endpoint/type/location shapes. A discovery-only grant precedes more writes.
+    """
+    agents = plex_xml(api, '/system/agents?mediaType=1').findall('Agent')
+    personal = [x for x in agents if x.get('identifier') == 'com.plexapp.agents.none']
+    expect(len(personal) == 1, 'native discovery did not offer personal-media agent')
+    languages = [x.get('code') for x in personal[0].iter('Language')]
+    expect('xn' in languages, 'native personal-media agent did not advertise no-language code; stop for review')
+    query = urllib.parse.urlencode({'name': 'Proof', 'type': 'movie', 'agent': 'com.plexapp.agents.none',
+             'scanner': 'Plex Movie Scanner', 'language': 'xn', 'location': '/data/media'})
+    return query
+
+
 def plex(api, credential, fixture, state, phase):
     expect(fixture is not None and fixture.suffix == '.mp4', 'Plex requires locally generated synthetic MP4')
     reject_anonymous(api, '/library/sections')
@@ -249,8 +265,7 @@ def plex(api, credential, fixture, state, phase):
     else:
         library = next((x for x in sections.findall('Directory') if x.get('title') == 'Proof'), None)
         if library is None:
-            query = urllib.parse.urlencode({'name': 'Proof', 'type': 'movie', 'agent': 'com.plexapp.agents.none',
-                     'scanner': 'Plex Movie Scanner', 'language': 'en', 'location': '/data/media'})
+            query = plex_creation_query(api)
             plex_xml(api, '/library/sections?' + query, 'POST')
             library = next((x for x in plex_xml(api, '/library/sections').findall('Directory') if x.get('title') == 'Proof'), None)
         expect(library is not None, 'Plex personal-media library creation failed')

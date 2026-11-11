@@ -238,3 +238,20 @@ Future recovery now generates UUID-exclusive archives/append-only manifests;
 restore accepts explicit `--manifest`, never replaces old recovery receipts.
 No new recovery or archive capture ran in this window; original qBit/SAB files
 are unchanged. Parent owns acceptance.
+
+## Offline exact-source followup and standalone Jellyfin preparation
+
+See [Plex/qBit/Jellyfin source followup](evidence/talos-media/plex-qbit-jellyfin-source-followup.md)
+for native Plex query-vs-form diagnosis (retained `'language' is invalid`),
+read-only agent/language discovery before another creation attempt, exact qBit5.3
+Secure-cookie/reverse-proxy proposal and opt-in real Secure attribute gate.
+No qBit settings/routes changed; Secure-cookie gap remains open.
+
+New standalone Jellyfin preparation covers actual browser-coupled native
+start/progress/stop, persisted resume consumed by the custom decoder,
+authenticated outsider library/metadata/playback denial, and read-before-write
+restart/different-PVC verification. Explicit tiny-clip minimum resume duration1s
+is documented; no completion safeguard, resource ceiling or TLS/auth gate is
+lowered. Commands in that evidence are UNEXECUTED, all leases remain revoked.
+UUID-exclusive archives/append-only receipts retained. Reserved Pinchflat research
+files and parent readiness/matrix/brief are untouched.

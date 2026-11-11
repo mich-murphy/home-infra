@@ -39,6 +39,8 @@ def prepare(state, ca, group):
 def callback(payload):
     """Called while video is active, or immediately after its explicit pause."""
     bridge, event = payload['bridge'], payload['event']
+    if bridge.get('service') == 'jellyfin':
+        return importlib.import_module('talos-proof-media-jellyfin').callback(bridge, event)
     d.expect(bridge['group'] == 'media-plex-tautulli', 'wrong playback group')
     importlib.import_module('talos-proof-media-browser').check_lease('plex', bridge['group'])
     state = s.private_dir(Path(bridge['state']))
@@ -86,8 +88,19 @@ def finish(state, ca, bridge, decoder):
 
 
 if __name__ == '__main__':
+    payload = None
     try:
-        print(json.dumps(callback(json.load(sys.stdin))))
-    except Exception:
-        print(json.dumps({'failed': True}))
+        payload = json.load(sys.stdin)
+        print(json.dumps(callback(payload)))
+    except Exception as exc:
+        failure = {'failed': True, 'error_type': type(exc).__name__, 'http_status': getattr(exc, 'code', None)}
+        if payload:
+            try:
+                state = s.private_dir(Path(payload['bridge']['state']))
+                s.write_private(state / ('playback-callback-failure-' + secrets.token_hex(8) + '.json'), json.dumps(failure))
+                if isinstance(exc, urllib.error.HTTPError):
+                    s.write_private(state / ('playback-private-http-failure-' + secrets.token_hex(8) + '.log'), exc.read())
+            except Exception:
+                pass  # Never hide original failure or emit secret-bearing details.
+        print(json.dumps(failure))
         raise SystemExit(1)

@@ -72,7 +72,7 @@ try {
       if(child.status!==0) throw new Error('timeline callback failed');
       return JSON.parse(child.stdout);
     });
-    result.decoder=await decode(page,input.mediaPath,Boolean(input.bridge));
+    result.decoder=await decode(page,input.mediaPath,Boolean(input.bridge),input.bridge?.resume_seconds || 0);
     result.checks.push('real server H264 video frames decoded/presented; clock advanced; target seek frame decoded');
     result.scope='custom muted Chrome decoder only; app resume/ACL/recovery and native UI require separate gates';
   } else {
@@ -101,6 +101,9 @@ try {
   const cookieName='QBT_SID_8080'; // observed exact5.3 native session cookie, not legacy SID
   result.sid_cookie_metadata=cookies.filter(c=>c.name===cookieName).map(c=>({exact_host:c.domain.replace(/^\./,'')===new URL(origin).hostname,path_root:c.path==='/',secure:c.secure,nonempty:c.value.length>0}));
   const validSID=authenticatedSID(cookies,origin,cookieName);
+  result.secure_cookie_proved=cookies.find(c=>c.name===cookieName)?.secure===true;
+  result.production_ready_auth=false;
+  if(input.requireSecureCookie) requireCheck(cookies.find(c=>c.name===cookieName)?.secure===true,'native authenticated session cookie has actual Secure attribute');
   lease();
   stage='hostile origin CSRF';
   const attacker=await context.newPage();

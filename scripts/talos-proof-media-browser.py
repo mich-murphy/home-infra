@@ -55,6 +55,9 @@ def check_lease(service, group=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('service', choices=['qbittorrent', 'plex', 'jellyfin'])
+    parser.add_argument('--require-secure-cookie', action='store_true', help='qBit security followup gate; no app settings changed by runner')
+    parser.add_argument('--jellyfin-lifecycle', action='store_true', help='real native start/progress/stop, resume and outsider denial')
+    parser.add_argument('--resume-record', help='explicit prior Jellyfin functional basename; consume actual server resume')
     parser.add_argument('--tautulli', action='store_true', help='concurrent real decoder/timeline/activity/history gate')
     parser.add_argument('--group', help='exact existing dependency lease group; never a second lease')
     parser.add_argument('--media-path', help='exact same-origin MP4 path from real server scan')
@@ -67,9 +70,15 @@ def main():
     group = check_lease(args.service, args.group)
     if args.tautulli and (args.service != 'plex' or group != 'media-plex-tautulli'):
         raise ValueError('Tautulli decoder requires exact dependency group and Plex member')
+    if args.jellyfin_lifecycle and (args.service != 'jellyfin' or group != 'jellyfin'):
+        raise ValueError('Jellyfin lifecycle requires exact standalone receipt')
+    if args.resume_record and not args.jellyfin_lifecycle:
+        raise ValueError('resume requires real Jellyfin lifecycle')
+    if args.require_secure_cookie and args.service != 'qbittorrent':
+        raise ValueError('Secure-cookie followup is qBit-only')
     credentials = json.loads(safety.read_private(state / 'credentials.json'))[args.service]
     payload = {'service': args.service, 'group': group, 'state': str(state), 'module': str(args.module.resolve()),
-               'spki': verified_spki(args.ca, args.service + '.proof.invalid'), **credentials}
+               'requireSecureCookie': args.require_secure_cookie, 'spki': verified_spki(args.ca, args.service + '.proof.invalid'), **credentials}
     if args.service != 'qbittorrent':
         import re
         allowed = (r'/library/parts/[0-9]+/[0-9]+/file\.mp4' if args.service == 'plex'
@@ -78,8 +87,14 @@ def main():
             raise ValueError('exact scanned original MP4 path required; no arbitrary query/URL')
         if args.fixture is None or args.fixture.name != 'Proof Browser Fixture (2000).mp4':
             raise ValueError('new immutable browser fixture required')
-        headers = {'X-Plex-Token': credentials['api_key']} if args.service == 'plex' else {
-            'X-Emby-Token': json.loads(safety.read_private(state / 'jellyfin-session.json'))['token']}
+        if args.jellyfin_lifecycle:
+            jellyfin = importlib.import_module('talos-proof-media-jellyfin')
+            bridge = jellyfin.prepare_bridge(state, args.ca, args.fixture, args.resume_record)
+            headers = jellyfin.session_headers(state, bridge)
+            payload['bridge'] = bridge
+        else:
+            headers = {'X-Plex-Token': credentials['api_key']} if args.service == 'plex' else {
+                'X-Emby-Token': json.loads(safety.read_private(state / 'jellyfin-session.json'))['token']}
         api = importlib.import_module('talos-proof-media-http').API(
             'https://' + args.service + '.proof.invalid:18443', headers, service=args.service, ca=args.ca)
         expected = safety.read_private(args.fixture, binary=True)
@@ -101,6 +116,12 @@ def main():
             result['checks'].append('same-client actual Tautulli activity and durable history')
         except Exception as exc:
             result.update(status='FAIL', failed_stage='Tautulli durable history', failure_type=type(exc).__name__)
+    if args.jellyfin_lifecycle and not process.returncode and result.get('status') == 'PASS':
+        try:
+            result['functional_record'] = jellyfin.finish(state, args.ca, args.fixture, bridge, result['decoder'])
+            result['checks'].append('actual Jellyfin lifecycle/resume readback and authenticated outsider denial')
+        except Exception as exc:
+            result.update(status='FAIL', failed_stage='Jellyfin lifecycle/resume/ACL readback', failure_type=type(exc).__name__)
     # Retain every safe browser verdict, including failures; never credentials,
     # DOM, raw child stderr, cookies or exception messages.
     safety.write_private(state / ('browser-attempt-' + secrets.token_hex(8) + '.json'), json.dumps(result))
