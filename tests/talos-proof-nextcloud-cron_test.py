@@ -67,7 +67,7 @@ class NativeCron(unittest.TestCase):
         self.assertEqual(bundle['status'], 'OFFLINE_COMPILED_NOT_ADMITTED')
         self.assertEqual(bundle['budget_mib']['total'], 832)
         self.assertEqual(sum(v for k,v in bundle['budget_mib'].items() if k != 'total'),832)
-        self.assertEqual(len(bundle['jobs']), 5)
+        self.assertEqual(len(bundle['jobs']), 6)
         for job in bundle['jobs']:
             self.assertEqual(job['metadata']['namespace'],'proof-nextcloud')
             self.assertEqual(job['spec']['backoffLimit'], 0)
@@ -97,19 +97,22 @@ class NativeCron(unittest.TestCase):
             with patch.object(sys,'argv',['cron','compile','--output',str(alias)]), self.assertRaisesRegex(RuntimeError,'symlink'):
                 cron.main()
 
-    def test_native_contract_is_explicitly_unadmitted_and_never_fakes_job_state(self):
+    def test_native_contract_synthetic_age_no_global_ttl_or_job_spoof(self):
         php = (ROOT / 'scripts/talos-proof-nextcloud-cron.php').read_text()
-        self.assertIn('const MUTATION_INTEGRATION_READY = false;',php)
+        self.assertNotIn('MUTATION_INTEGRATION_READY',php)
         self.assertIn("'proof', 'proof', null, $token['name']",php)
         self.assertIn("time() - (int)$job['last_run'] > 86400",php)
         self.assertIn("['memory.current', 'memory.peak', 'memory.events', 'memory.stat']",php)
         self.assertIn("exclusive($journal . '/before.json', $state)",php)
-        self.assertLess(php.index("exclusive($journal . '/before.json', $state)"), php.index("$config->setSystemValue('session_lifetime', 5)"))
+        self.assertIn('$entity->setLastActivity(',php)
+        self.assertIn('$mapper->update($entity)',php)
+        self.assertNotIn("setSystemValue('session_lifetime'",php)
         self.assertNotIn('invalidateOldTokens(',php)
-        self.assertNotIn('->update(',php)
         self.assertNotIn('->insert(',php)
         self.assertNotIn('setLastRun',php)
-        self.assertNotIn('maintenance:install',php) # install blocked pending genuine emptiness/config preflight
+        self.assertIn('maintenance:install',php)
+        self.assertIn('out-of-scope token eligible',php)
+        self.assertIn("case 'before'",php)
 
     def test_completed_current_previous_logs_and_raw_laststate_saved_before_deletion(self):
         with tempfile.TemporaryDirectory() as temp:

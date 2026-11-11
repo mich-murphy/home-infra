@@ -13,7 +13,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE = 'nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2'
 CLASS = r'OC\Authentication\Token\TokenCleanupJob'
-PHASES = ('preflight', 'install-or-verify', 'fixture', 'cron', 'assert-restore')
+PHASES = ('preflight', 'install-or-verify', 'fixture', 'before', 'cron', 'assert-restore')
 GATE = ('Native cron live integration blocked: no reviewed serial-helper supervisor '
         'with per-operation endpoint/context/node UID/expiry, fresh dual-memory '
         '832MiB admission, PVC/Secret/backend identity inspection, private durable '
@@ -37,7 +37,7 @@ def barrier(pods):
                 raise RuntimeError('existing proof Job pod blocks every serial phase')
             if meta['namespace'] == 'proof-nextcloud' and meta.get('labels', {}).get('app.kubernetes.io/name') not in ('postgres', 'redis'):
                 raise RuntimeError('non-backend pod blocks CLI-only cron stage')
-            if meta['namespace'] not in ('proof-nextcloud', 'proof-validation', 'proof-gateway'):
+            if meta['namespace'] != 'proof-nextcloud':
                 raise RuntimeError('other proof application pod blocks cron stage')
 
 
@@ -72,15 +72,23 @@ def payload_sources():
     return {s['path']: s['sha256'] for s in source['sources'] if not s['path'].startswith('docker/')}
 
 
-def compile_bundle():
-    run_id = str(uuid.uuid4())
+def compile_bundle(run_id=None):
+    run_id = run_id or str(uuid.uuid4())
     native = (ROOT / 'scripts/talos-proof-nextcloud-cron.php').read_text()
     return dict(status='OFFLINE_COMPILED_NOT_ADMITTED', run_id=run_id, gate=GATE,
                 budget_mib=dict(postgres=384, redis=64, serial_cli=192, reserve=192, total=832),
                 payload=dict(apiVersion='v1', kind='ConfigMap', metadata=dict(namespace='proof-nextcloud',
                     name='nextcloud-cron-payload-' + run_id), data={'native.php':native,
-                    'core-hashes.json':json.dumps(payload_sources(), sort_keys=True)}),
+                    'core-hashes.json':json.dumps(payload_sources(), sort_keys=True),
+                    'docker-hashes.json':json.dumps({s['path']:s['sha256'] for s in json.loads((ROOT/'docs/evidence/talos-data/nextcloud-cron-docker-config-source.json').read_text())['sources']}),
+                    'intent.json':json.dumps(intent(run_id))}),
                 jobs=[job(phase, run_id) for phase in PHASES])
+
+
+def intent(run_id):
+    return dict(run_id=run_id, label='SYNTHETIC_AGE_NOT_REAL_ELAPSED_EXPIRY',
+                tokens={kind:dict(name='proof-cron-'+run_id+'-'+kind, remember=remember)
+                        for kind,remember in [('candidate',0),('control',1)]})
 
 
 def main():
@@ -89,7 +97,7 @@ def main():
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
     if args.action == 'run':
-        raise RuntimeError(GATE)  # before any subprocess, lease read or mutation
+        raise RuntimeError(GATE)  # use the separate receipt-bound supervisor, not a compiled bundle
     if args.output is None:
         parser.error('--output required; never emit payload/artifacts to stdout')
     # New UUID artifact, exclusive private creation; no overwriting old evidence.
@@ -98,6 +106,8 @@ def main():
     for path in (args.output, *args.output.absolute().parents):
         if path.is_symlink():
             raise RuntimeError('artifact symlink forbidden')
+    if ROOT == args.output.absolute() or ROOT in args.output.absolute().parents:
+        raise RuntimeError('private artifacts must be outside Git')
     fd = os.open(args.output, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, 'w') as stream:
         json.dump(compile_bundle(), stream, indent=2)

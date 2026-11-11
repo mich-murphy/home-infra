@@ -1,0 +1,65 @@
+{
+  "status": "PUBLIC_SOURCE_ONLY_NOT_IMAGE_ATTESTATION",
+  "sources": [
+    {
+      "path": "config/apache-pretty-urls.config.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/apache-pretty-urls.config.php",
+      "bytes": 60,
+      "sha256": "9d881cf59f450d5434ac146091b77e9544abf868d8b6c704482c54b9ef0ccf84"
+    },
+    {
+      "path": "config/apcu.config.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/apcu.config.php",
+      "bytes": 70,
+      "sha256": "d66658b683c7e96513a8fa06aab1dc7df7c69df969d1103db78fdff493b8cb59"
+    },
+    {
+      "path": "config/apps.config.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/apps.config.php",
+      "bytes": 377,
+      "sha256": "92817524be6545c000b00ad27fc7cfc57547d3ad2da4de11c56c400b63fb67b8"
+    },
+    {
+      "path": "config/autoconfig.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/autoconfig.php",
+      "bytes": 2110,
+      "sha256": "7376f55f45bbb574e0040a59c648bb72cec506b16aae3be993990cd16c1c69cd"
+    },
+    {
+      "path": "config/redis.config.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/redis.config.php",
+      "bytes": 837,
+      "sha256": "1b2ded11df1786ffb56d8fa1c959051343649c877fad3d18645f52ce39df8230"
+    },
+    {
+      "path": "config/reverse-proxy.config.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/reverse-proxy.config.php",
+      "bytes": 991,
+      "sha256": "95c4978e717c94c0a0f78197b44e5777a3109cc92d0bed4df762fe142718a4fa"
+    },
+    {
+      "path": "config/s3.config.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/s3.config.php",
+      "bytes": 2726,
+      "sha256": "00574a836266628b8c5bd96c7c17f38a917f754d6b4ba205dd04aa484c7f8480"
+    },
+    {
+      "path": "config/smtp.config.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/smtp.config.php",
+      "bytes": 933,
+      "sha256": "d1e5ce962c7610ecd193b4c1f5d9617576ae96c11eb35eb2d42507362adaf324"
+    },
+    {
+      "path": "config/swift.config.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/swift.config.php",
+      "bytes": 1103,
+      "sha256": "1da0b6258ab486c9eeff33a2f5b75dd9b2429fccceb476e3cc800a8ad05b7240"
+    },
+    {
+      "path": "config/upgrade-disable-web.config.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/upgrade-disable-web.config.php",
+      "bytes": 60,
+      "sha256": "282e2f702823e7fc4315a58b76644dcafed71ea4faad0c9af4f9a031e8d54ac2"
+    }
+  ]
+}

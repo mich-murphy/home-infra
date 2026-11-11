@@ -316,6 +316,18 @@ def guard(group):
         raise RuntimeError('insufficient memory headroom for group limits plus 192MiB reserve')
 
 
+def pending_native_cron(state):
+    """Append-only cron journals block activation, never deactivate/forensic cleanup."""
+    pending, clean = set(), set()
+    for path in state.glob('*.json'):
+        try: uuid.UUID(path.stem)
+        except ValueError: continue
+        value = json.loads(path.read_text())
+        if value.get('event') == 'pending': pending.add(value['run_id'])
+        elif value.get('event') == 'clean': clean.add(value['run_id'])
+    return pending - clean
+
+
 def main():
     global LEASE_GROUP, LEASE_STAGE, STATE_DIR
     p = argparse.ArgumentParser(description=__doc__)
@@ -331,6 +343,8 @@ def main():
     os.umask(0o077)
     state = private(a.state)
     STATE_DIR = state
+    if a.group == 'nextcloud' and a.action in ('apply', 'activate', 'run', 'test') and pending_native_cron(state):
+        raise RuntimeError('pending native cron cleanup blocks unsafe activation')
     creds = credentials(state)
     if a.action == 'prepare':
         print('Fresh proof credentials available privately (values never displayed).')

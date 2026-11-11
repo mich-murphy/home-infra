@@ -1,0 +1,35 @@
+{
+  "status": "OFFLINE_IMPLEMENTED_NOT_RUNTIME_PROVEN",
+  "live_grant": false,
+  "runtime_calls": 0,
+  "budget_mib": 832,
+  "tests": {
+    "cron": 8,
+    "supervisor": 8,
+    "data": 42
+  },
+  "syntax": {
+    "tool": "Nix workstation PHP 8.5.12 -l",
+    "result": "PASS_SYNTAX_ONLY"
+  },
+  "source_review": "27-file immutable original index preserved; ten Docker config source hashes supplemented",
+  "proof_kind": "SYNTHETIC_AGE_NOT_REAL_ELAPSED_EXPIRY",
+  "runtime_gates": [
+    "new exact parent receipt",
+    "actual image/config/retained-state/Redis preflight",
+    "native due class",
+    "native side effects",
+    "192MiB fit"
+  ],
+  "limitations": [
+    "guard/API failure cannot guarantee physical cleanup",
+    "no VM start or bypass",
+    "failed helper capture/deletion recovery needs parent direction"
+  ],
+  "unchanged": [
+    "Pocket-ID 34ef3547",
+    "Wallabag 5622c159",
+    "WOPI eight preserved failures",
+    "media ownership"
+  ]
+}

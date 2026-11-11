@@ -1,12 +1,12 @@
 <?php
-/** Offline-prepared payload. There is deliberately NO admitted mutation path yet.
- * Native methods below are version-bound to the reviewed Nextcloud 35.0.2 core.
- * Do not remove the gate until the guarded supervisor and restoration window exist.
+/** Version-bound native payload for the exact-receipt serial supervisor.
+ * Public source parity is checked at runtime; this is not image attestation.
+ * No manual application or direct payload invocation is authorized.
  */
 declare(strict_types=1);
 umask(0077);
 const CLEANUP_CLASS = 'OC\\Authentication\\Token\\TokenCleanupJob';
-const MUTATION_INTEGRATION_READY = false;
+// Only the receipt-bound serial supervisor may supply this payload.
 
 function need(bool $condition, string $gate): void {
     if (!$condition) { throw new RuntimeException($gate); }
@@ -72,6 +72,15 @@ function snapshot($config): array {
 function nativeContext(): array {
     parity('/usr/src/nextcloud');
     parity('/var/www/html');
+    $hashes=json_decode(file_get_contents('/proof/docker-hashes.json'),true,512,JSON_THROW_ON_ERROR);
+    foreach ($hashes as $path=>$hash) {
+        need(!is_link('/var/www/html/'.$path) && hash_file('sha256','/var/www/html/'.$path)===$hash, 'retained Docker config mismatch');
+    }
+    $allowed=array_map('basename',array_keys($hashes));
+    $allowed=array_merge($allowed,['config.php','config.sample.php','.htaccess']);
+    foreach (array_diff(scandir('/var/www/html/config'),['.','..']) as $name) {
+        need(in_array($name,$allowed,true) && !is_link('/var/www/html/config/'.$name), 'unknown retained config fragment');
+    }
     need(is_file('/var/www/html/config/config.php') && !is_link('/var/www/html/config/config.php')
         && fileowner('/var/www/html/config/config.php') === 33, 'retained config ownership invalid');
     require_once '/var/www/html/lib/base.php';
@@ -86,7 +95,7 @@ function nativeContext(): array {
     need(!\OC::checkUpgrade(), 'pending native upgrade blocks');
     need(\OCP\Server::get(\OCP\IUserManager::class)->get('proof') !== null, 'original proof user absent; never recreate/reset');
     $redis = $config->getSystemValue('redis');
-    need(is_array($redis) && ($redis['host'] ?? null) === 'redis'
+    need(is_array($redis) && in_array(($redis['host'] ?? null), ['redis', 'tcp://redis'], true)
         && ($redis['password'] ?? null) === getenv('REDIS_HOST_PASSWORD')
         && is_string($redis['password']) && $redis['password'] !== '', 'authenticated Redis configuration unverified');
     need($config->getSystemValue('memcache.locking') === '\\OC\\Memcache\\Redis', 'native Redis locking not configured');
@@ -97,41 +106,68 @@ function nativeContext(): array {
     $client->close();
     return [$config, \OCP\Server::get(\OC\Authentication\Token\IProvider::class)];
 }
+function eligible(array $row, $config, int $until): bool {
+    $type = (int)$row['type'];
+    $key = match ($type) {
+        \OCP\Authentication\Token\IToken::TEMPORARY_TOKEN => (int)$row['remember'] === 0 ? 'session_lifetime' : 'remember_login_cookie_lifetime',
+        \OCP\Authentication\Token\IToken::WIPE_TOKEN => 'token_auth_wipe_token_retention',
+        \OCP\Authentication\Token\IToken::PERMANENT_TOKEN => 'token_auth_token_retention',
+        default => throw new RuntimeException('unknown retained token class'),
+    };
+    $defaults = ['session_lifetime'=>86400, 'remember_login_cookie_lifetime'=>1296000,
+        'token_auth_wipe_token_retention'=>5184000, 'token_auth_token_retention'=>31536000];
+    $ttl = $config->getSystemValueInt($key, $defaults[$key]);
+    need($ttl > 3600, 'retention must exceed bounded run horizon');
+    return (int)$row['last_activity'] < $until - $ttl;
+}
 function fixture(string $journal): array {
     [$config, $provider] = nativeContext();
-    need(tokenRows() === [], 'retained token state blocks global TTL change');
-    $beforeJob = cleanupRow();
-    due($beforeJob); // BEFORE any setting/token mutation
-    need($config->getSystemValueInt('remember_login_cookie_lifetime', 1296000) > 3600,
-        'remembered control retention too short');
-    $state = ['settings' => snapshot($config), 'job' => $beforeJob, 'created_at' => time(), 'tokens' => []];
-    // Names + raw fixtures are journaled BEFORE the first mutation. Recovery uses
-    // unique names, even if the process dies after native insert and before IDs save.
-    foreach (['candidate', 'control'] as $kind) {
-        $state['tokens'][$kind] = ['name' => 'proof-cron-' . basename($journal) . '-' . $kind,
-            'raw' => bin2hex(random_bytes(32)), 'remember' => $kind === 'control'
-                ? \OCP\Authentication\Token\IToken::REMEMBER : \OCP\Authentication\Token\IToken::DO_NOT_REMEMBER];
+    $intent = json_decode(file_get_contents('/proof/intent.json'), true, 512, JSON_THROW_ON_ERROR);
+    $beforeJob = cleanupRow(); due($beforeJob);
+    foreach (tokenRows() as $row) {
+        need(!eligible($row, $config, time()+900), 'out-of-scope token eligible during run');
+        foreach ($intent['tokens'] as $t) { need($row['name'] !== $t['name'], 'fixture name already exists'); }
     }
-    exclusive($journal . '/before.json', $state);
-    $config->setSystemValue('session_lifetime', 5);
-    foreach ($state['tokens'] as $token) {
-        // NULL password is mandatory: do not call updatePasswords on retained tokens.
-        $provider->generateToken($token['raw'], 'proof', 'proof', null, $token['name'],
+    need(!file_exists($journal) && mkdir($journal, 0700), 'new private run journal required');
+    $state = ['settings'=>snapshot($config), 'job'=>$beforeJob, 'created_at'=>time(), 'tokens'=>$intent['tokens']];
+    exclusive($journal . '/before.json', $state); // intent already exported off-pod before this Job
+    $mapper = \OCP\Server::get(\OC\Authentication\Token\PublicKeyTokenMapper::class);
+    foreach ($state['tokens'] as $kind=>$token) {
+        $entity = $provider->generateToken(bin2hex(random_bytes(32)), 'proof', 'proof', null, $token['name'],
             \OCP\Authentication\Token\IToken::TEMPORARY_TOKEN, $token['remember']);
+        need($entity instanceof \OC\Authentication\Token\PublicKeyToken && $entity->getUID() === 'proof'
+            && $entity->getName() === $token['name'] && $entity->getPassword() === null, 'native owned entity invalid');
+        exclusive($journal . '/' . $kind . '.json', ['id'=>$entity->getId(), 'name'=>$token['name']]);
+        if ($kind === 'candidate') {
+            // Entity dirty tracking + native mapper updates ONLY this newly inserted owned entity.
+            // Synthetic age, NOT evidence of real elapsed expiry. Global TTL is unchanged.
+            $entity->setLastActivity(time() - $config->getSystemValueInt('session_lifetime',86400) - 60);
+            $mapper->update($entity);
+        }
     }
-    $deadline = hrtime(true) + 10000000000;
-    do {
-        $physical = tokenRows();
-        need(count($physical) === 2, 'native fixture rows missing/unexpected');
-        $expired = array_values(array_filter($physical, fn($r) => $r['name'] === $state['tokens']['candidate']['name']));
-        need(count($expired) === 1, 'candidate row ambiguous');
-        if ((int)$expired[0]['last_activity'] < time() - 5) { break; }
-        usleep(100000);
-    } while (hrtime(true) < $deadline);
-    need((int)$expired[0]['last_activity'] < time() - 5, 'genuine native session age timeout');
+    return ['synthetic_age'=>true, 'owned'=>array_values(array_filter(tokenRows(),
+        fn($r)=>in_array($r['name'], array_column($state['tokens'],'name'), true)))];
+}
+function beforeObservation(string $journal): array {
+    [$config] = nativeContext();
+    $state = json_decode(file_get_contents($journal . '/before.json'), true, 512, JSON_THROW_ON_ERROR);
+    $physical = tokenRows(); $own = [];
+    foreach ($physical as $row) {
+        $kind = array_search($row['name'], array_column($state['tokens'], 'name'), true);
+        if ($kind === false) { need(!eligible($row,$config,time()+600), 'out-of-scope token now eligible'); continue; }
+        $own[] = $row;
+    }
+    need(count($own) === 2, 'two owned fixtures required');
+    foreach ($state['tokens'] as $kind=>$token) {
+        $found = array_values(array_filter($own,fn($r)=>$r['name']===$token['name']));
+        $id = json_decode(file_get_contents($journal.'/'.$kind.'.json'),true,512,JSON_THROW_ON_ERROR)['id'];
+        need(count($found)===1 && (int)$found[0]['id']===$id && $found[0]['uid']==='proof'
+            && (int)$found[0]['type']===0 && (int)$found[0]['remember']===$token['remember'], 'owned fixture identity invalid');
+        need(eligible($found[0],$config,time()) === ($kind==='candidate'), 'candidate/control age invalid');
+    }
     due(cleanupRow());
-    exclusive($journal . '/fixture.json', ['rows' => $physical, 'observed_at' => time()]);
-    return ['candidate_aged' => true, 'rows' => 2, 'due' => true];
+    exclusive($journal.'/fixture.json',['rows'=>$own,'observed_at'=>time()]);
+    return ['synthetic_age'=>true,'owned'=>$own,'job'=>cleanupRow()];
 }
 function restore(string $journal): void {
     [$config, $provider] = nativeContext();
@@ -146,9 +182,10 @@ function restore(string $journal): void {
             $provider->invalidateTokenById('proof', (int)$row['id']);
         }
     }
+    $ownedNames=array_column($state['tokens'],'name');
+    need(count(array_filter(tokenRows(),fn($r)=>in_array($r['name'],$ownedNames,true)))===0, 'owned fixture cleanup incomplete');
     $old = $state['settings'];
-    if ($old['session_lifetime']['present']) { $config->setSystemValue('session_lifetime', $old['session_lifetime']['value']); }
-    else { $config->deleteSystemValue('session_lifetime'); }
+    need(snapshot($config)['session_lifetime'] === $old['session_lifetime'], 'global TTL changed unexpectedly');
     if ($old['backgroundjobs_mode']['present']) { $config->setAppValue('core', 'backgroundjobs_mode', $old['backgroundjobs_mode']['value']); }
     else { $config->deleteAppValue('core', 'backgroundjobs_mode'); }
     need(snapshot($config) === $old, 'exact typed setting restoration failed');
@@ -175,35 +212,85 @@ function assertion(string $journal): array {
     restore($journal); // native harness cleanup is AFTER acceptance observation
     return ['native_side_effect' => true, 'restored' => true];
 }
-try {
-    $phase = $argv[1] ?? '';
-    $run = $argv[2] ?? '';
-    need((bool)preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/D', $run), 'UUID required');
-    if ($phase === 'preflight') {
-        parity('/usr/src/nextcloud');
-        // No retained PHP config/bootstrap execution in read-only phase. Config
-        // evaluation, DB emptiness, Docker fragments and Redis are STILL GATES.
-        $root = '/var/www/html';
-        need(is_dir($root) && !is_link($root), 'PVC root absent/symlink');
-        $entries = array_values(array_diff(scandir($root), ['.', '..']));
-        foreach ($entries as $entry) { need(!is_link($root . '/' . $entry), 'retained root contains symlink'); }
-        $result = ['core_public_source_parity' => true, 'pvc_root_empty' => $entries === [],
-            'retained_state_redis_install_authorized' => false,
-            'gate' => 'PVC/DB/Secret identity, full retained inventory, Docker/config parity and read-only Redis preflight unresolved'];
-    } else {
-        need(MUTATION_INTEGRATION_READY, 'BLOCKED: serial guarded supervisor, retained-state/Redis preflight and durable off-pod recovery journal not implemented');
-        // Intentionally unreachable until reviewed integration exists. A setting,
-        // receipt field or caller-provided passing value cannot waive this gate.
-        $journal = '/var/www/html/.proof-cron-' . $run;
-        switch ($phase) {
-            case 'fixture': $result = fixture($journal); break;
-            case 'assert-restore': $result = assertion($journal); break;
-            default: throw new RuntimeException('install-or-verify/cron require reviewed supervisor; never invoke image entrypoint');
-        }
+function inventory(string $root): array {
+    need(is_dir($root) && !is_link($root), 'volume root absent/symlink');
+    $allowed=array_merge(array_diff(scandir('/usr/src/nextcloud'),['.','..']),['data']);
+    foreach (array_diff(scandir($root),['.','..']) as $name) {
+        need(in_array($name,$allowed,true) || preg_match('/^\.proof-(cron|install)-[0-9a-f-]{36}$/D',$name)===1, 'unknown retained volume entry');
     }
-    echo json_encode(['phase' => $phase, 'result' => $result, 'cgroups' => cgroups()], JSON_THROW_ON_ERROR) . PHP_EOL;
+    $count = 0;
+    $walk = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+    foreach ($walk as $file) {
+        need(!$file->isLink() && ($file->isFile() || $file->isDir()) && $file->getOwner() === 33,
+            'unknown retained ownership/type/symlink');
+        need(++$count < 500000, 'bounded retained inventory exceeded');
+    }
+    return ['entries'=>$count, 'empty'=>count(array_diff(scandir($root),['.','..']))===0];
+}
+function preflight(): array {
+    parity('/usr/src/nextcloud');
+    $docker = json_decode(file_get_contents('/proof/docker-hashes.json'),true,512,JSON_THROW_ON_ERROR);
+    foreach ($docker as $path=>$hash) {
+        need(!is_link('/usr/src/nextcloud/'.$path) && hash_file('sha256','/usr/src/nextcloud/'.$path)===$hash,
+            'packaged Docker config parity mismatch');
+    }
+    $volume = inventory('/var/www/html');
+    $db = new PDO('pgsql:host=postgres;dbname=nextcloud;connect_timeout=3','nextcloud',getenv('POSTGRES_PASSWORD'),
+        [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+    $db->exec('SET default_transaction_read_only = on');
+    $tables = $db->query("SELECT (SELECT count(*) FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%') + (SELECT count(*) FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname NOT IN ('pg_catalog','information_schema')) + (SELECT count(*) FROM pg_catalog.pg_namespace WHERE nspname NOT IN ('public','pg_catalog','information_schema') AND nspname NOT LIKE 'pg_toast%' AND nspname NOT LIKE 'pg_temp%')")->fetchColumn();
+    $r = new Redis();
+    need($r->connect('redis',6379,3.0) && $r->auth(getenv('REDIS_HOST_PASSWORD')) && $r->ping()!==false,
+        'read-only authenticated Redis preflight failed'); $r->close();
+    if ($volume['empty']) { need((int)$tables===0, 'nonempty DB with empty volume blocks install'); }
+    else { nativeContext(); need((int)$tables>0, 'retained volume with empty DB blocks'); }
+    return ['empty'=>$volume['empty'],'inventory'=>$volume,'db_tables'=>(int)$tables,'redis_authenticated'=>true];
+}
+function nativeCommand(array $args, string $log): void {
+    $f = fopen($log,'x'); need($f!==false && chmod($log,0600), 'private native log creation failed');
+    try {
+        $p = proc_open($args,[0=>['file','/dev/null','r'],1=>$f,2=>$f],$pipes,'/var/www/html');
+        need(is_resource($p) && proc_close($p)===0, 'native process failed; preserve partial state');
+        need(fflush($f) && fsync($f), 'native log fsync failed');
+    } finally { fclose($f); }
+}
+function installOrVerify(string $run): array {
+    $pre = preflight();
+    if ($pre['empty']) {
+        // Exactly once: rsync without --delete, no entrypoint, retries, chown or repair.
+        nativeCommand(['rsync','-rlD','/usr/src/nextcloud/','/var/www/html/'],'/tmp/install-copy-'.$run);
+        nativeCommand(['php','/var/www/html/occ','maintenance:install','--no-interaction','--database=pgsql',
+            '--database-host=postgres','--database-name=nextcloud','--database-user=nextcloud',
+            '--database-pass='.getenv('POSTGRES_PASSWORD'),'--admin-user=proof',
+            '--admin-pass='.getenv('NEXTCLOUD_ADMIN_PASSWORD'),'--data-dir=/var/www/html/data'],
+            '/var/www/html/.proof-install-'.$run);
+    }
+    nativeContext();
+    return ['native_install_or_retained_verify'=>true,'fresh_install'=>$pre['empty']];
+}
+try {
+    $phase = $argv[1] ?? ''; $run = $argv[2] ?? '';
+    need((bool)preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/D',$run),'UUID required');
+    $journal = '/var/www/html/.proof-cron-'.$run;
+    switch ($phase) {
+        case 'preflight': $result=preflight(); break;
+        case 'install-or-verify': $result=installOrVerify($run); break;
+        case 'fixture': $result=fixture($journal); break;
+        case 'before': $result=beforeObservation($journal); break;
+        case 'cron':
+            nativeContext(); due(cleanupRow());
+            nativeCommand(['php','-f','/var/www/html/cron.php','--',CLEANUP_CLASS],$journal.'/cron.log');
+            $result=['native_cron_exit_zero'=>true,'private_native_log'=>file_get_contents($journal.'/cron.log')]; break;
+        case 'assert-restore':
+            try { $result=assertion($journal); } finally {
+                if (!is_file($journal.'/restored.json')) { restore($journal); }
+            }
+            break;
+        case 'cleanup': restore($journal); $result=['cleanup_only'=>true]; break;
+        default: throw new RuntimeException('unknown phase');
+    }
+    echo json_encode(['phase'=>$phase,'result'=>$result,'cgroups'=>cgroups()],JSON_THROW_ON_ERROR).PHP_EOL;
 } catch (Throwable $e) {
-    // Never print exception messages: native errors can contain passwords/tokens.
-    echo json_encode(['status' => 'BLOCKED_OR_FAILED', 'error_type' => get_class($e), 'cgroups' => cgroups()]) . PHP_EOL;
+    echo json_encode(['status'=>'BLOCKED_OR_FAILED','error_type'=>get_class($e),'cgroups'=>cgroups()]).PHP_EOL;
     exit(1);
 }
