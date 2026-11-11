@@ -215,3 +215,26 @@ spec:
         persistentVolumeClaim:
           claimName: fixture
       terminationGracePeriodSeconds: 30
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: from-proof-gateway
+  namespace: proof-qbitwebui
+  labels:
+    app.kubernetes.io/name: qbitwebui
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: qbitwebui
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-gateway
+    ports:
+    - protocol: TCP
+      port: 3000

@@ -1,0 +1,19 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: from-proof-cilium-ingress
+  namespace: proof-plex
+  labels:
+    app.kubernetes.io/name: plex
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: plex
+  ingress:
+  - fromEntities:
+    - ingress
+    toPorts:
+    - ports:
+      - port: '32400'
+        protocol: TCP

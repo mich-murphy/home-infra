@@ -1,0 +1,19 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: from-proof-cilium-ingress
+  namespace: proof-tautulli
+  labels:
+    app.kubernetes.io/name: tautulli
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: tautulli
+  ingress:
+  - fromEntities:
+    - ingress
+    toPorts:
+    - ports:
+      - port: '8181'
+        protocol: TCP

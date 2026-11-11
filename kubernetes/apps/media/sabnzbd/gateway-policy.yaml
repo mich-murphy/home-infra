@@ -1,0 +1,19 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: from-proof-cilium-ingress
+  namespace: proof-sabnzbd
+  labels:
+    app.kubernetes.io/name: sabnzbd
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: sabnzbd
+  ingress:
+  - fromEntities:
+    - ingress
+    toPorts:
+    - ports:
+      - port: '8080'
+        protocol: TCP

@@ -1,0 +1,19 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: from-proof-cilium-ingress
+  namespace: proof-qbitwebui
+  labels:
+    app.kubernetes.io/name: qbitwebui
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: qbitwebui
+  ingress:
+  - fromEntities:
+    - ingress
+    toPorts:
+    - ports:
+      - port: '3000'
+        protocol: TCP

@@ -99,3 +99,11 @@ Helper execution requires a separately reviewed **dependency batch** and parent 
 ## Evidence required before acceptance
 
 Commit only sanitized summaries in `docs/evidence/talos-media/`: exact commands, image digests, UTC start/end, namespace/PVC UID, fixture checksum, test result, bounded resource measurements, restart and clean-PVC restore comparison, intentional auth/policy denials and unresolved limitations. Do not include Secret YAML, credentials, raw logs, session JSON or auth-bearing URLs. Current evidence contains only offline validation. Parent must review runtime test behavior and evidence before changing status.
+
+## Integrated Gateway ingress (added for parent review)
+
+All 13 UI services have an explicit HTTPRoute attached to Gateway `proof` in `proof-gateway`, host `<service>.proof.invalid`. Parent refs intentionally omit sectionName to attach to both existing HTTP/HTTPS wildcard listeners. There are no routes for helper CronJobs. Fresh proof namespaces carry the Gateway allowedRoutes label. No production DNS or public exposure is configured.
+
+Policies allow the proof-gateway namespace on only each application HTTP port. Since Cilium Gateway proxies use the reserved `ingress` identity rather than ordinary namespaced pod identity, an additional narrowly selected CiliumNetworkPolicy allows `fromEntities: [ingress]` on the same exact target port. Parent networking review must verify this behavior and that only the dedicated proof Gateway exists; these identity allowances are not a claim of measured enforcement.
+
+Once the platform is ready and a live lease is granted, test both route attachment (`Accepted`/`ResolvedRefs`) and functional traffic through the parent's SSH loopback forwards 18080→30080 and 18443→30443. For example, `curl --resolve radarr.proof.invalid:18443:127.0.0.1 --cacert /private/proof-ca.crt https://radarr.proof.invalid:18443/ping`; then run authenticated CRUD through that same trusted TLS route. Current API harness intentionally only accepts loopback HTTP and still requires an extension for trusted-CA hostname routing; do not treat port-forward success as integrated Gateway acceptance. No such live check has run.
