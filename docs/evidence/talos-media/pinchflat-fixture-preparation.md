@@ -1,6 +1,17 @@
 # Pinchflat offline fixture preparation — candidate, not acceptance
 
-## Status and scope
+## Current integration status
+
+Ownership transferred to media after the research worker stopped. The original
+13-test/two-second candidate below is retained as historical research; **do not
+run its old generation example for the current profile**. The implementation now
+uses the existing immutable12-second H264/AAC browser fixture, with HTML PT12S.
+See [native provider integration preparation](pinchflat-provider-integration.md)
+for the optional profile, exact receipt/budget gates,14 current socket tests,
+metadata-vs-download phase coverage and unexecuted Source/index/download verifier.
+Neither historical nor current tests establish playable/extractor compatibility.
+
+## Historical status and scope
 
 Implemented only a stdlib, loopback HTTP candidate origin and its offline socket
 protocol tests. **No real Pinchflat Source/index/download pipeline has passed.**

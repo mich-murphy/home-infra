@@ -2,7 +2,7 @@
 """Offline, loopback-only Pinchflat candidate origin; stdlib, no upstream client.
 
 Only protocol behavior is tested here, not Pinchflat/yt-dlp compatibility.
-Input must be a newly generated two-second synthetic H264/AAC MP4, never an
+Input must be a retained immutable twelve-second synthetic H264/AAC MP4, never an
 application download. See docs/evidence/talos-media/pinchflat-fixture-preparation.md.
 """
 import argparse
@@ -13,6 +13,7 @@ import os
 import re
 import stat
 import time
+import uuid
 
 MAX_MEDIA = 2 * 1024 * 1024
 MAX_REQUESTS = 512
@@ -71,13 +72,17 @@ class Fixture(HTTPServer):
     request_queue_size = 4
     allow_reuse_address = False
 
-    def __init__(self, media, port=0, max_requests=MAX_REQUESTS, max_bytes=MAX_BYTES):
+    def __init__(self, media, port=0, max_requests=MAX_REQUESTS, max_bytes=MAX_BYTES, phase_file=None):
         if not 12 <= len(media) <= MAX_MEDIA or media[4:8] != b"ftyp":
             raise ValueError("invalid MP4 snapshot")
         if not 1 <= max_requests <= MAX_REQUESTS or not 1 <= max_bytes <= MAX_BYTES:
             raise ValueError("invalid budget")
         super().__init__(("127.0.0.1", port), Handler)
         self.timeout = 0.25
+        self.instance_id = uuid.uuid4().hex
+        self.phase_file = phase_file
+        self.phase = 'metadata'
+        self.phases = {name: {'media_body_bytes':0, 'coverage':bytearray(len(media)), 'routes':dict.fromkeys(PATHS,0)} for name in ('metadata','download')}
         self.origin = f"http://127.0.0.1:{self.server_port}"
         self.media = bytes(media)
         self.max_requests, self.max_bytes = max_requests, max_bytes
@@ -92,8 +97,8 @@ class Fixture(HTTPServer):
         media = self.origin + PATHS[2]
         metadata = {"@context": "https://schema.org", "@type": "VideoObject",
                     "identifier": "proof-001", "name": TITLE,
-                    "description": "New synthetic two-second offline proof video",
-                    "uploadDate": UPLOAD_DATE, "duration": "PT2S",
+                    "description": "Retained synthetic twelve-second offline proof video",
+                    "uploadDate": UPLOAD_DATE, "duration": "PT12S",
                     "url": page, "contentUrl": media}
         html = (f'<!doctype html><html><head><title>{TITLE}</title>'
                 f'<link rel="canonical" href="{page}">'
@@ -119,8 +124,30 @@ class Fixture(HTTPServer):
         connection.settimeout(2)
         return connection, address
 
+    def update_phase(self):
+        if self.phase_file:
+            try:
+                with open(self.phase_file, encoding='ascii') as handle:
+                    value = handle.read(16).strip()
+            except FileNotFoundError:
+                value = 'metadata'
+            if value not in self.phases:
+                raise ValueError('invalid bounded fixture phase')
+            if self.phase == 'download' and value != 'download':
+                raise ValueError('fixture phase cannot move backwards')
+            self.phase = value
+
+    def publish(self, path):
+        self.update_phase()
+        temporary = str(path) + '.' + uuid.uuid4().hex
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, 'w') as handle:
+            json.dump(self.snapshot(), handle)
+        os.replace(temporary, path)  # ephemeral counter view only, NEVER an archive
+
     def snapshot(self):
-        return {"origin": self.origin, "requests": self.requests,
+        return {"instance_id":self.instance_id, "phase":self.phase,
+                "phases":{name:{'media_body_bytes':v['media_body_bytes'], 'media_unique_bytes':sum(v['coverage']), 'routes':dict(v['routes'])} for name,v in self.phases.items()}, "origin": self.origin, "requests": self.requests,
                 "rejected": self.rejected, "routes": dict(self.routes),
                 "sent_body_bytes": self.sent_bytes, "media_body_bytes": self.media_bytes,
                 "media_unique_bytes": sum(self.coverage), "media_size": len(self.media),
@@ -144,6 +171,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.server.requests >= self.server.max_requests:
             self.reply(429)
             return False
+        self.server.update_phase()
         self.server.requests += 1
         return True
 
@@ -169,6 +197,7 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(400)
             return
         fixture.routes[self.path] += 1
+        fixture.phases[fixture.phase]["routes"][self.path] += 1
         content_type, data = fixture.resources[self.path]
         start, end, code = 0, len(data) - 1, 200
         headers = {"Content-Type": content_type, "Accept-Ranges": "bytes"}
@@ -199,6 +228,8 @@ class Handler(BaseHTTPRequestHandler):
             except (BrokenPipeError, ConnectionResetError, TimeoutError):
                 return
             if self.path == PATHS[2]:
+                fixture.phases[fixture.phase]["media_body_bytes"] += length
+                fixture.phases[fixture.phase]["coverage"][start:end+1] = b"\x01" * length
                 fixture.media_bytes += length
                 fixture.coverage[start:end + 1] = b"\x01" * length
 
@@ -215,6 +246,8 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--evidence-file", help="ephemeral private latest counter view, not archive")
+    parser.add_argument("--phase-file", help="local sidecar-only metadata→download phase control")
     parser.add_argument("--mp4", required=True)
     parser.add_argument("--synthetic-input", action="store_true", required=True,
                         help="attest newly generated synthetic input, isolated from app downloads")
@@ -223,16 +256,20 @@ def main():
     args = parser.parse_args()
     if not 1 <= args.seconds <= 900 or not 0 <= args.port <= 65535:
         parser.error("seconds must be 1..900 and port 0..65535")
-    with Fixture(load_media(args.mp4), args.port) as fixture:
+    with Fixture(load_media(args.mp4), args.port, phase_file=args.phase_file) as fixture:
         print(json.dumps({"feed": fixture.origin + PATHS[0],
                           "scope": "offline candidate only"}), flush=True)
         deadline = time.monotonic() + args.seconds
         try:
             while time.monotonic() < deadline and fixture.requests < fixture.max_requests:
+                if args.evidence_file:
+                    fixture.publish(args.evidence_file)
                 fixture.handle_request()
         except KeyboardInterrupt:
             pass
         finally:
+            if args.evidence_file:
+                fixture.publish(args.evidence_file)
             print(json.dumps(fixture.snapshot(), sort_keys=True), flush=True)
 
 

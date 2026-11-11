@@ -69,6 +69,27 @@ class ProtocolTests(unittest.TestCase):
             self.allowed_port = server.server_port
             yield server
 
+    def test_download_phase_coverage_does_not_reuse_metadata_bytes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            phase=Path(temp)/'phase';evidence=Path(temp)/'latest.json'
+            with self.origin(phase_file=phase) as server:
+                request(server,'/media/proof-001.mp4')
+                self.assertEqual(server.snapshot()['phases']['download']['media_unique_bytes'],0)
+                phase.write_text('download')
+                server.publish(evidence)
+                baseline=json.loads(evidence.read_text())
+                self.assertEqual(baseline['phase'],'download')
+                self.assertEqual(baseline['phases']['metadata']['media_unique_bytes'],len(MEDIA))
+                self.assertEqual(baseline['phases']['download']['media_body_bytes'],0)
+                request(server,'/media/proof-001.mp4')
+                server.publish(evidence)
+                after=json.loads(evidence.read_text())
+                self.assertEqual(after['instance_id'],baseline['instance_id'])
+                self.assertEqual(after['phases']['download']['media_unique_bytes'],len(MEDIA))
+                self.assertEqual(after['phases']['metadata'],baseline['phases']['metadata'])
+                phase.write_text('metadata')
+                with self.assertRaises(ValueError):server.update_phase()
+
     def test_feed_is_single_collection_pointing_to_html_not_mp4(self):
         with self.origin() as server:
             status, headers, body = request(server, "/feed.xml")
@@ -91,7 +112,7 @@ class ProtocolTests(unittest.TestCase):
             self.assertEqual(metadata["identifier"], "proof-001")
             self.assertEqual(metadata["name"], fixture.TITLE)
             self.assertEqual(metadata["uploadDate"], fixture.UPLOAD_DATE)
-            self.assertEqual(metadata["duration"], "PT2S")
+            self.assertEqual(metadata["duration"], "PT12S")
             self.assertEqual(metadata["contentUrl"], server.origin + "/media/proof-001.mp4")
             self.assertIn(b"<video controls>", first)
             self.assertNotIn(b"evil.example", first)

@@ -1,0 +1,7 @@
+# OPTIONAL: never included in root media. Code/input require guarded provisioning.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../pinchflat
+patches:
+- path: provider.yaml

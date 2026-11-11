@@ -255,3 +255,18 @@ is documented; no completion safeguard, resource ceiling or TLS/auth gate is
 lowered. Commands in that evidence are UNEXECUTED, all leases remain revoked.
 UUID-exclusive archives/append-only receipts retained. Reserved Pinchflat research
 files and parent readiness/matrix/brief are untouched.
+
+## Offline optional native Pinchflat provider preparation
+
+Ownership transfer integrated the bounded generic RSS→metadata-bearing HTML→MP4
+origin with the retained immutable12sec H264 input. Separate optional
+`pinchflat-rss` profile stays0 and requires exact provider marker/full576MiB
+app+sidecar+reserve. Guarded prepare preserves current PVC refs; native Source/
+index/download verifier requires stock binary identity before/after, stage-isolated
+queue execution, empty unique output, real completed job relationships, actual
+native output hash and full download-phase unique byte coverage. No app-output
+preseed, replaced downloader, database writes or new Internet allowance.
+See [provider integration preparation](evidence/talos-media/pinchflat-provider-integration.md)
+for actual remaining compatibility gaps and unexecuted replacement/two-PVC recovery
+sequence. All old receipts remain revoked. Priority remains Jellyfin→narrow Plex
+native discovery/playback→separately granted provider if ready; no live acceptance.

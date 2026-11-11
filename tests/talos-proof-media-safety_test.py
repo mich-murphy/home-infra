@@ -55,6 +55,35 @@ class Safety(unittest.TestCase):
     def rewrite_receipt(self):
         safety.write_private(self.path, json.dumps(self.receipt), replace=True)
 
+    def test_pinchflat_optional_profile_requires_marker_and_full_576(self):
+        self.receipt.update(group='pinchflat',provider_fixture='pinchflat-rss',available_mib=575)
+        self.rewrite_receipt()
+        with self.assertRaisesRegex(RuntimeError,'insufficient'):
+            safety.pinchflat_provider_guard()
+        self.receipt['available_mib']=576;self.rewrite_receipt()
+        safety.pinchflat_provider_guard()
+        self.controllers=[{'metadata':{'namespace':'proof-pinchflat','name':'pinchflat'},'spec':{'replicas':0,'template':{
+            'metadata':{'annotations':{'talos-proof.home/provider-fixture':'pinchflat-rss'}},
+            'spec':{'containers':[{'name':'pinchflat'},{'name':'rss-fixture'}]}}}}]
+        safety.guard('pinchflat')
+        self.receipt.pop('provider_fixture');self.rewrite_receipt()
+        with self.assertRaisesRegex(RuntimeError,'exact parent receipt'):
+            safety.guard('pinchflat')
+
+    def test_wrong_or_inconsistent_provider_profile_rejected(self):
+        with self.assertRaisesRegex(RuntimeError,'exact pinchflat group'):
+            safety.guard('radarr',provider_selected=True)
+        self.receipt.update(group='pinchflat',provider_fixture='WRONG');self.rewrite_receipt()
+        with self.assertRaisesRegex(RuntimeError,'authorize'):
+            safety.pinchflat_provider_guard()
+        self.receipt['provider_fixture']='pinchflat-rss';self.rewrite_receipt()
+        for annotation,names in [('unknown',['pinchflat','rss-fixture']),('pinchflat-rss',['pinchflat'])]:
+            self.controllers=[{'metadata':{'namespace':'proof-pinchflat','name':'pinchflat'},'spec':{'replicas':0,'template':{
+                'metadata':{'annotations':{'talos-proof.home/provider-fixture':annotation}},
+                'spec':{'containers':[{'name':name} for name in names]}}}}]
+            with self.assertRaisesRegex(RuntimeError,'inconsistent'):
+                safety.guard('pinchflat')
+
     def test_valid_fake_receipt(self):
         safety.guard('radarr')
 

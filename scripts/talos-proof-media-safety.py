@@ -209,7 +209,14 @@ def protocol_guard(group):
     return guard(group, extra_mib=128, protocol_selected=True)
 
 
-def guard(group, extra_mib=0, budget_mib=None, protocol_selected=False):
+def pinchflat_provider_guard():
+    receipt, _ = lease('pinchflat')
+    if receipt.get('provider_fixture') != 'pinchflat-rss':
+        raise RuntimeError('parent receipt must authorize provider_fixture=pinchflat-rss')
+    return guard('pinchflat', provider_selected=True)
+
+
+def guard(group, extra_mib=0, budget_mib=None, protocol_selected=False, provider_selected=False):
     receipt, node = lease(group)
     exclusivity(group)
     alloc = node['status']['allocatable']['memory']
@@ -221,6 +228,25 @@ def guard(group, extra_mib=0, budget_mib=None, protocol_selected=False):
         raise RuntimeError('fresh valid guest available-memory receipt required')
     budget = (sum(BUDGET[n] for n in DEPENDENCY_BATCHES[group]) if group in DEPENDENCY_BATCHES else
               sum(PIPELINE_LIMITS[n] for n in PIPELINE_MEMBERS) if group == 'media-pipeline' else BUDGET[group])
+    if provider_selected and group != 'pinchflat':
+        raise RuntimeError('Pinchflat RSS profile requires exact pinchflat group')
+    if group == 'pinchflat':
+        controllers = json.loads(kubectl_read('get', 'deployments,statefulsets', '-A', '-o', 'json'))['items']
+        pods = json.loads(kubectl_read('get', 'pods', '-A', '-o', 'json'))['items']
+        declared = False
+        for item in [x for x in controllers + pods if x['metadata']['namespace'] == 'proof-pinchflat']:
+            template = item['spec'].get('template', item)
+            names = [c['name'] for c in template['spec'].get('containers', [])]
+            profile = template.get('metadata', {}).get('annotations', {}).get('talos-proof.home/provider-fixture')
+            if 'rss-fixture' in names or profile:
+                if profile != 'pinchflat-rss' or names.count('rss-fixture') != 1:
+                    raise RuntimeError('unknown or inconsistent Pinchflat provider profile')
+                declared = True
+        if declared or provider_selected:
+            if receipt.get('provider_fixture') != 'pinchflat-rss':
+                raise RuntimeError('declared provider requires exact parent receipt marker')
+            if budget_mib is None:
+                budget += 128
     # Charge a live/desired fixture even when activation is invoked through the basic runner.
     if group in ('qbittorrent', 'sabnzbd'):
         controllers = json.loads(kubectl_read('get', 'deployments,statefulsets', '-A', '-o', 'json'))['items']
