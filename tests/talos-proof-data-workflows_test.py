@@ -7,6 +7,11 @@ import json
 from pathlib import Path
 import stat
 import tempfile
+import hashlib
+import subprocess
+import shutil
+import struct
+import zlib
 import unittest
 from unittest.mock import patch
 import urllib.error
@@ -20,6 +25,125 @@ class Workflows(unittest.TestCase):
     def setUp(self):
         live.RESULT = {'checks':[], 'limitations':[]}
         live.CREDS = {'COUCHDB_PASSWORD':'offline-only', 'ADMIN_PASSWORD':'offline-only'}
+
+    def test_immich_fixture_real_exif_and_valid_png_chunks(self):
+        image=live.immich_fixture(); offset=8; chunks={}
+        while offset<len(image):
+            length=struct.unpack('!I',image[offset:offset+4])[0]
+            name=image[offset+4:offset+8]; value=image[offset+8:offset+8+length]
+            crc=struct.unpack('!I',image[offset+8+length:offset+12+length])[0]
+            self.assertEqual(crc,zlib.crc32(name+value)&0xffffffff)
+            chunks[name]=value; offset+=length+12
+        self.assertIn(b'eXIf',chunks)
+        if shutil.which('exiftool'):
+            data=json.loads(subprocess.run(['exiftool','-j','-'],input=image,capture_output=True,check=True).stdout)[0]
+            self.assertEqual((data['Make'],data['Model'],data['DateTimeOriginal']),('ProofCamera','SyntheticModel','2026:01:02 03:04:05'))
+            self.assertEqual((data['ImageWidth'],data['ImageHeight']),(224,224))
+            self.assertNotIn('Warning',data)
+
+    def test_immich_upload_uses_exact_v3_fields(self):
+        with patch.object(live,'http',return_value={'id':'asset'}) as http:
+            self.assertEqual(live.immich_upload('https://immich.proof.invalid',{'Authorization':'private'},b'image','proof.png','image/png'),'asset')
+        body=http.call_args.args[3]
+        self.assertIn(b'name="fileCreatedAt"',body)
+        self.assertIn(b'name="assetData"',body)
+        self.assertNotIn(b'deviceId',body)
+        self.assertNotIn(b'deviceAssetId',body)
+
+    def test_immich_negative_checks_require_exact_status(self):
+        for actual in (400,401,500):
+            error=urllib.error.HTTPError('https://proof.invalid',actual,'private error body',{},None)
+            with patch.object(live,'http',side_effect=error):
+                if actual==400: live.immich_deny('denied','https://proof.invalid','/api/assets/id',{})
+                else:
+                    with self.assertRaises(RuntimeError): live.immich_deny('denied','https://proof.invalid','/api/assets/id',{})
+
+    def test_immich_backup_quiesces_workers_and_restores_spec_without_starting(self):
+        original={'name':'immich','command':['original'],'volumeMounts':[{'name':'data','mountPath':'/data'}]}
+        calls=[]
+        def kube(*args,**kwargs):
+            calls.append(('k',args))
+            if args[0]=='get':return json.dumps({'spec':{'template':{'spec':{'containers':[original]}}}}).encode()
+            return b''
+        with patch.object(live,'k',side_effect=kube),patch.object(live,'scale',side_effect=lambda *a:calls.append(('scale',a))):
+            with live.immich_quiesced(): calls.append(('backup',()))
+        self.assertEqual([a for kind,a in calls if kind=='scale'],[('immich',0),('immich',1),('immich',0)])
+        patch_calls=[a for kind,a in calls if kind=='k' and a[0]=='patch']
+        self.assertEqual(json.loads(patch_calls[0][-1])[0]['value']['command'],['/bin/sh','-c','sleep 1800'])
+        self.assertEqual(json.loads(patch_calls[-1][-1])[0]['value'],original)
+        self.assertLess(next(i for i,c in enumerate(calls) if c==('scale',('immich',0))),next(i for i,c in enumerate(calls) if c[0]=='backup'))
+
+    def test_immich_coordinated_restore_orders_pg_files_then_runtime_and_fails_closed(self):
+        for corrupt in (False,True):
+            with self.subTest(corrupt=corrupt), tempfile.TemporaryDirectory() as directory:
+                live.CREDS={'PROOF_ADMIN_PASSWORD':'offline-only'}
+                live.RESULT={'checks':[],'limitations':[]}; live.STAGE='app'
+                specs={app:{'containers':[{'name':app}],'volumes':[{'name':'data','persistentVolumeClaim':{'claimName':app+'-source'}}]} for app in ('immich','postgres')}
+                order=[]
+                def kube(*args,**kwargs):
+                    if args[0]=='get':return json.dumps({'spec':{'template':{'spec':specs[args[2]]}}}).encode()
+                    raise AssertionError(args)
+                def http(base,path,method='GET',body=None,**kwargs):
+                    if path=='/api/auth/login':return {'accessToken':'private'}
+                    if path=='/api/admin/config':return {'job':{'thumbnail':{'concurrency':1}},'machineLearning':{'enabled':False}}
+                    if path=='/api/admin/users':return {'id':'viewer-id'}
+                    if path=='/api/albums':return {'id':'album'}
+                    if path=='/api/shared-links':return {'id':'link','key':'private-key'}
+                    if path.startswith('/api/assets/image/thumbnail'):return b'x'*40
+                    if path=='/api/assets/image':return {'exifInfo':{'make':'ProofCamera'}}
+                    if path=='/api/assets/video':return {'type':'VIDEO','duration':1000}
+                    if '/original?key=' in path:return live.immich_fixture()
+                    return {}
+                def execute(app,command,data=None):
+                    if command[0]=='find':return b''
+                    if command[0]=='tar':
+                        if '-czpf' in command:return b'private-archive'
+                        order.append('restore-files');return b''
+                    return b'video'
+                @contextlib.contextmanager
+                def fresh(app,dependents=(),bootstrap=False,resume=True):
+                    self.assertFalse(resume)
+                    self.assertEqual(bootstrap,app=='immich')
+                    old=copy.deepcopy(specs[app])
+                    specs[app]['volumes'][0]['persistentVolumeClaim']['claimName']=app+'-fresh'
+                    order.append('fresh-'+app)
+                    try: yield lambda:order.append('start-restored-app')
+                    finally:
+                        if not (corrupt and app=='immich'):specs[app]=old
+                        order.append('rollback-'+app)
+                def save(name,data):
+                    path=Path(directory)/name;path.write_bytes(data);return path
+                with patch.object(live,'k',side_effect=kube),patch.object(live,'http',side_effect=http),patch.object(live,'forwarded',side_effect=lambda *a:contextlib.nullcontext('https://immich.proof.invalid')),patch.object(live,'execute',side_effect=execute),patch.object(live,'bounded_immich_config',side_effect=lambda c,i:c),patch.object(live,'immich_upload',side_effect=['image','video']),patch.object(live,'immich_assert_state') as verify,patch.object(live,'immich_deny'),patch.object(live,'restart'),patch.object(live,'immich_quiesced',side_effect=lambda:contextlib.nullcontext()),patch.object(live,'postgres_dump',return_value=b'dump'),patch.object(live,'clean_postgres_restore',side_effect=lambda *a:order.append('restore-pg')),patch.object(live,'fresh_pvc',side_effect=fresh),patch.object(live,'save_private_new',side_effect=save),patch.object(live,'scale',side_effect=lambda a,n:order.append('scale-'+a+'-'+str(n))):
+                    if corrupt:
+                        with self.assertRaises(RuntimeError):live.immich()
+                        self.assertNotIn('scale-immich-1',order)
+                        self.assertNotIn('scale-postgres-1',order)
+                    else:
+                        live.immich()
+                        self.assertEqual(verify.call_count,4)
+                        self.assertLess(order.index('restore-pg'),order.index('restore-files'))
+                        self.assertLess(order.index('restore-files'),order.index('start-restored-app'))
+                        self.assertLess(order.index('rollback-postgres'),order.index('scale-postgres-1'))
+                        self.assertLess(order.index('scale-postgres-1'),order.index('scale-immich-1'))
+
+    def test_forensics_keeps_logs_private_and_strips_messages(self):
+        spec=importlib.util.spec_from_file_location('forensic_life',Path(__file__).resolve().parents[1]/'scripts/talos-proof-data.py')
+        life=importlib.util.module_from_spec(spec);spec.loader.exec_module(life)
+        pod={'metadata':{'uid':'pod-uid','name':'proof-pod'},'status':{'phase':'Running','containerStatuses':[{'name':'app','restartCount':2,'state':{'running':{'startedAt':'now'}},'lastState':{'terminated':{'reason':'Error','exitCode':1,'signal':0,'startedAt':'before','finishedAt':'then','message':'SECRET-MESSAGE'}}}]}}
+        with tempfile.TemporaryDirectory(dir='/private/tmp' if Path('/private/tmp').exists() else None) as directory:
+            Path(directory).chmod(0o700)
+            with patch.object(life,'STATE_DIR',Path(directory)),patch.object(life,'LEASE_GROUP','immich'),patch.object(life,'lease'),patch.object(life.subprocess,'run',side_effect=[subprocess.CompletedProcess([],0,json.dumps({'items':[pod]}).encode()),subprocess.CompletedProcess([],0,b'SECRET-LOG')]):
+                public=life.capture_forensics('proof-immich','before deletion')
+            self.assertEqual(set(public),{'phase','sha256'})
+            metadata=list(Path(directory).glob('pod-forensics-*.json'))[0]
+            self.assertEqual(public['sha256'],hashlib.sha256(metadata.read_bytes()).hexdigest())
+            self.assertNotIn('SECRET',metadata.read_text())
+            record=json.loads(metadata.read_text()); terminated=record['pods'][0]['containers'][0]['lastState']['terminated']
+            self.assertEqual(terminated['exitCode'],1)
+            log=list(Path(directory).glob('previous-log-*.txt'))[0]
+            self.assertEqual(log.read_bytes(),b'SECRET-LOG')
+            self.assertEqual(stat.S_IMODE(log.stat().st_mode),0o600)
+            self.assertEqual(stat.S_IMODE(metadata.stat().st_mode),0o600)
 
     def test_private_archive_is_exclusive_and_mode0600(self):
         with tempfile.TemporaryDirectory() as directory:

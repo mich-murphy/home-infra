@@ -4,6 +4,9 @@ import argparse
 import base64
 import json
 import math
+import hashlib
+import time
+import re
 import os
 from pathlib import Path
 import secrets
@@ -16,6 +19,7 @@ EXPECTED_ENDPOINT = 'https://127.0.0.1:64120'
 EXPECTED_HOSTNAME = 'talos-proof'
 LEASE_GROUP = None
 LEASE_STAGE = None
+STATE_DIR = None
 MUTATIONS = {'apply','scale','exec','rollout','delete','create','patch','label','annotate','run','replace','cp','edit','set'}
 GROUPS = ('nextcloud', 'immich', 'miniflux', 'wallabag', 'couchdb', 'pocket-id')
 # Includes fixture, excludes suspended cron. Conservative memory limits, MiB.
@@ -82,11 +86,60 @@ def scale_selected(ns, replicas):
         kube('-n', ns, 'wait', '--for=condition=available', *targets, '--timeout=900s')
 
 
+def destructive(args):
+    return (bool({'delete','apply','replace','set'}.intersection(args)) or ('scale' in args and '--replicas=0' in args) or
+            ('rollout' in args and 'restart' in args) or ('patch' in args and any('deployment' in arg for arg in args)))
+
+
+def capture_forensics(namespace, phase):
+    """Off-node API reads only. Raw previous logs never enter public stdout/evidence."""
+    if namespace != 'proof-' + str(LEASE_GROUP):
+        raise RuntimeError('forensics limited to the leased group')
+    if STATE_DIR is None:
+        raise RuntimeError('private forensic state directory required before deletion')
+    state = private(STATE_DIR)
+    def write(name, data):
+        path = no_symlinks(state / name)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, 'wb') as stream: stream.write(data)
+        return {'file':name,'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)}
+    lease(LEASE_GROUP)
+    proc = subprocess.run(['kubectl','-n',namespace,'get','pods','-o','json'],capture_output=True,check=True,timeout=30)
+    record = {'phase':phase, 'observed_at':time.time(), 'pods':[]}
+    for pod in json.loads(proc.stdout)['items']:
+        item = {'uid':pod['metadata']['uid'], 'phase':pod.get('status',{}).get('phase'), 'containers':[]}
+        for status in pod.get('status',{}).get('initContainerStatuses',[]) + pod.get('status',{}).get('containerStatuses',[]):
+            container = {key:status[key] for key in ('name','containerID','imageID','restartCount') if key in status}
+            for field in ('state','lastState'):
+                container[field]={}
+                for kind,value in status.get(field,{}).items():
+                    safe = {key:value[key] for key in ('exitCode','signal','startedAt','finishedAt') if key in value}
+                    if re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,63}',value.get('reason','')): safe['reason']=value['reason']
+                    container[field][kind]=safe
+            if status.get('restartCount',0):
+                lease(LEASE_GROUP)
+                try:
+                    logs = subprocess.run(['kubectl','-n',namespace,'logs',pod['metadata']['name'],'-c',status['name'],'--previous','--timestamps=true','--limit-bytes=1048576'],capture_output=True,timeout=30)
+                    if logs.returncode==0:
+                        container['previous_logs']=write('previous-log-'+secrets.token_hex(12)+'.txt',logs.stdout)
+                    else: container['previous_logs_gap']='APIUnavailable'
+                except subprocess.TimeoutExpired:
+                    container['previous_logs_gap']='TimeoutExpired'
+            item['containers'].append(container)
+        record['pods'].append(item)
+    saved = write('pod-forensics-'+str(time.time_ns())+'.json',json.dumps(record).encode())
+    # No raw states/messages, account data or log contents in public metadata.
+    return {'phase':phase,'sha256':saved['sha256']}
+
+
 def kube(*args, data=None):
     if MUTATIONS.intersection(args):
         if LEASE_GROUP not in GROUPS:
             raise RuntimeError('mutation requires an explicitly selected proof group')
         lease(LEASE_GROUP)
+        if destructive(args):
+            try: capture_forensics('proof-' + LEASE_GROUP, 'before mutation')
+            except Exception as error: print('Forensic capture gap: ' + type(error).__name__, file=sys.stderr)
     result = subprocess.run(['kubectl', *args], input=data, capture_output=True, text=True, timeout=960)
     if result.returncode:
         # Kubernetes errors can contain submitted manifests/credentials; never echo them.
@@ -252,7 +305,7 @@ def guard(group):
 
 
 def main():
-    global LEASE_GROUP, LEASE_STAGE
+    global LEASE_GROUP, LEASE_STAGE, STATE_DIR
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('action', choices=['prepare', 'apply', 'activate', 'deactivate', 'test', 'run', 'verify'])
     p.add_argument('--group', choices=GROUPS)
@@ -261,6 +314,7 @@ def main():
     a = p.parse_args()
     os.umask(0o077)
     state = private(a.state)
+    STATE_DIR = state
     creds = credentials(state)
     if a.action == 'prepare':
         print('Fresh proof credentials available privately (values never displayed).')

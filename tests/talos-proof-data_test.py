@@ -38,6 +38,19 @@ class DataContract(unittest.TestCase):
         self.assertIn('--for=delete', calls[1])
         self.assertIn('scale', calls[2])
 
+    def test_miniflux_init_pg_ready_uses_exact_pin_and_unchanged_effective_budget(self):
+        app=next(d for d in DOCS if d['kind']=='Deployment' and d['metadata']['name']=='miniflux')
+        pg=next(d for d in DOCS if d['kind']=='Deployment' and d['metadata']['name']=='postgres' and d['metadata']['namespace']=='proof-miniflux')
+        spec=app['spec']['template']['spec']
+        init=spec['initContainers'][0]; main=spec['containers'][0]
+        self.assertEqual(init['image'],pg['spec']['template']['spec']['containers'][0]['image'])
+        self.assertEqual(init['command'][:2],['sh','-ec'])
+        self.assertIn('pg_isready -h postgres -U miniflux -d miniflux -t 2',init['command'][2])
+        self.assertIn('test "$i" -lt 90 || exit 1',init['command'][2])
+        self.assertLessEqual(int(init['resources']['limits']['memory'][:-2]),int(main['resources']['limits']['memory'][:-2]))
+        self.assertEqual(life.selection('miniflux')[1],448)
+        self.assertNotIn('restartPolicy',init)  # sequential init, never a concurrent sidecar
+
     def test_parent_safety_validator(self):
         render = yaml.safe_dump_all(DOCS)
         subprocess.run(['python3', str(ROOT / 'tests/kubernetes-proof.py')], input=render, text=True, check=True, capture_output=True)

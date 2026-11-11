@@ -54,6 +54,12 @@ OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), ProofTLSHa
 
 def k(*args, data=None):
     LIFE.lease(GROUP)
+    if LIFE.destructive(args):
+        try:
+            observation = LIFE.capture_forensics(NS, 'before destructive suite mutation')
+            RESULT.setdefault('forensic_observations', []).append(observation)
+        except Exception as error:
+            RESULT.setdefault('forensic_gaps', []).append({'phase':'before destructive suite mutation','error':type(error).__name__})
     r = subprocess.run(['kubectl', '-n', NS, *args], input=data, capture_output=True, timeout=660)
     if r.returncode:
         raise RuntimeError('cluster command failed (details withheld to protect credentials)')
@@ -194,7 +200,7 @@ def scale(app, replicas):
 
 
 @contextlib.contextmanager
-def fresh_pvc(app, dependents=(), bootstrap=False):
+def fresh_pvc(app, dependents=(), bootstrap=False, resume=True):
     """Sequentially replace one data PVC with a newly provisioned claim, restoring
     the original binding in finally. No concurrent database or duplicate frontend.
     Retain both PVCs for audit; never delete source storage.
@@ -215,6 +221,7 @@ def fresh_pvc(app, dependents=(), bootstrap=False):
     def restore_runtime():
         nonlocal runtime_restored
         if bootstrap and not runtime_restored:
+            LIFE.helper_deletion_barrier()
             k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':'/spec/template/spec/containers/0','value':original_container}]))
             k('rollout','status','deployment/'+app,'--timeout=600s')
             runtime_restored = True
@@ -246,9 +253,11 @@ def fresh_pvc(app, dependents=(), bootstrap=False):
             if bootstrap:
                 k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':'/spec/template/spec/containers/0','value':original_container}]))
             k('patch','deployment',app,'--type=json','-p',json.dumps([{'op':'replace','path':path,'value':old}]))
-            scale(app,1)
-        for frontend in dependents:
-            scale(frontend,1)
+            if resume:
+                scale(app,1)
+        if resume:
+            for frontend in dependents:
+                scale(frontend,1)
 
 
 def authenticated_recovery(base,path,auth=None,headers=None):
@@ -272,7 +281,8 @@ def authenticated_recovery(base,path,auth=None,headers=None):
 
 def postgres_dump(app_user):
     dump = execute('postgres',['pg_dump','-U',app_user,'-d',app_user,'-Fc'])
-    save_private_new(GROUP + '-postgres-' + uuid.uuid4().hex + '.dump',dump)
+    path = save_private_new(GROUP + '-postgres-' + uuid.uuid4().hex + '.dump',dump)
+    RESULT['backup_file'] = path.name
     RESULT['backup_sha256'] = hashlib.sha256(dump).hexdigest()
     return dump
 
@@ -386,6 +396,7 @@ def office_saved(base,path,auth,marker):
     while True:
         data=http(base,path,auth=auth,raw=True)
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            check('Office saved file is actual ODT MIME type',archive.read('mimetype')==b'application/vnd.oasis.opendocument.text')
             text=''.join(ET.fromstring(archive.read('content.xml')).itertext())
         if marker in text:return data
         if time.monotonic()>=deadline:check('real WOPI PutFile must persist browser marker in ODT content',False)
@@ -400,10 +411,12 @@ def nextcloud_office(base,auth):
     office_browser(fileid,marker)
     saved=office_saved(base,path,auth,marker)
     check('Nextcloud actual WOPI save changes ODT bytes',saved!=original)
+    check('Office saved ODT retains expected Nextcloud file association',dav_fileid(base,path,auth)==fileid)
     check('Office WOPI save creates genuine Nextcloud version',bool(version_hashes(base,fileid,auth)))
     restart('nextcloud');restart('collabora');office_prepare()  # renew exact callback IP
     office_browser(fileid,marker,edit=False)
     check('saved Office ODT survives close/reopen and web/CODE replacement',office_saved(base,path,auth,marker)==saved)
+    check('Office reopened ODT retains expected Nextcloud file association',dav_fileid(base,path,auth)==fileid)
     RESULT['office_document']={'fileid':fileid,'sha256':hashlib.sha256(saved).hexdigest()}
     return path,fileid,marker,saved
 
@@ -906,7 +919,7 @@ def immich_search(asset,headers):
     uuid.UUID(asset)  # reject any non-UUID API value before read-only SQL
     while True:
         count = execute('postgres',['psql','-U','immich','-d','immich','-Atc',
-            "SELECT count(*) FROM smart_search WHERE \"assetId\"='"+asset+"'"]).decode().strip()
+            "SELECT count(*) FROM smart_search WHERE vector_dims(embedding)=512 AND \"assetId\"='"+asset+"'"]).decode().strip()
         if count == '1': break
         if time.monotonic() >= deadline: check('Immich own worker must persist uploaded-asset CLIP embedding',False)
         time.sleep(2)
@@ -916,7 +929,7 @@ def immich_search(asset,headers):
     with forwarded('immich',2283) as base:
         deadline = time.monotonic() + 240
         while True:
-            found = http(base,'/api/search/smart','POST',{'query':'a red and green image'},headers=headers)
+            found = http(base,'/api/search/smart','POST',{'query':'an entirely red image'},headers=headers)
             if any(item['id']==asset for item in found.get('assets',{}).get('items',[])):
                 check('Immich real smart text search returns uploaded asset after CLIP inference')
                 break
@@ -940,69 +953,177 @@ def bounded_immich_config(config, integrated):
     return config
 
 
+def immich_fixture():
+    """224px PNG with real TIFF EXIF: make/model/date, not API-written metadata."""
+    values = (b'ProofCamera\0', b'SyntheticModel\0', b'2026:01:02 03:04:05\0')
+    offset = 8 + 2 + 4*12 + 4
+    exif_offset = offset + sum(map(len,values))
+    entries = []
+    for tag,value in zip((0x010f,0x0110,0x0132),values):
+        entries.append(struct.pack('<HHII',tag,2,len(value),offset)); offset += len(value)
+    entries.append(struct.pack('<HHII',0x8769,4,1,exif_offset))
+    exif = b'II' + struct.pack('<HIH',42,8,4) + b''.join(entries) + struct.pack('<I',0) + b''.join(values)
+    exif += struct.pack('<HHHII',1,0x9003,2,len(values[2]),exif_offset+18) + struct.pack('<I',0) + values[2]
+    chunk = struct.pack('!I',len(exif))+b'eXIf'+exif+struct.pack('!I',zlib.crc32(b'eXIf'+exif)&0xffffffff)
+    image = color_png((255,0,0))
+    return image[:33] + chunk + image[33:]
+
+
+def immich_upload(base, headers, payload, filename, mime):
+    # v3.3.6 no longer accepts old deviceId/deviceAssetId upload fields.
+    body, content = multipart({'fileCreatedAt':'2026-01-02T03:04:05.000Z',
+        'fileModifiedAt':'2026-01-02T03:04:05.000Z'}, [('assetData',filename,mime,payload)])
+    return http(base, '/api/assets', 'POST', body, headers=dict(headers, **content))['id']
+
+
+def immich_deny(label, base, path, headers, method='GET', body=None, status=400):
+    try:
+        http(base,path,method,body,headers=headers,raw=True)
+    except urllib.error.HTTPError as error:
+        check(label,error.code==status)
+    else:
+        check(label,False)
+
+
+def immich_assert_state(base, owner, viewer, outsider, album, image, video, link, payloads):
+    for asset,payload in zip((image,video),payloads):
+        check('Immich owner original exact bytes/checksum', http(base,'/api/assets/'+asset+'/original',headers=owner,raw=True)==payload)
+        info = http(base,'/api/assets/'+asset,headers=owner)
+        check('Immich DB asset association and checksum', info['id']==asset and info['checksum']==base64.b64encode(hashlib.sha1(payload).digest()).decode())
+    video_info = http(base,'/api/assets/'+video,headers=owner)
+    check('Immich real video metadata dimensions/type/duration',video_info['type']=='VIDEO' and video_info['width']==160 and video_info['height']==120 and 900<=video_info['duration']<=1100)
+    info = http(base,'/api/assets/'+image,headers=owner)
+    exif = info.get('exifInfo',{})
+    check('Immich extracted actual EXIF make/model/date/dimensions', exif.get('make')=='ProofCamera' and exif.get('model')=='SyntheticModel' and str(exif.get('dateTimeOriginal','')).startswith('2026-01-02T03:04:05') and info['width']==224 and info['height']==224)
+    buckets = http(base,'/api/timeline/buckets?albumId='+album,headers=owner)
+    check('Immich album timeline has exactly image and video',sum(b['count'] for b in buckets)==2 and all(b['timeBucket'].startswith('2026-01') for b in buckets))
+    ids = []
+    for bucket in buckets:
+        data = http(base,'/api/timeline/bucket?'+urllib.parse.urlencode({'albumId':album,'timeBucket':bucket['timeBucket']}),headers=owner)
+        ids.extend(data['id'])
+    check('Immich timeline asset IDs match restored album association',set(ids)=={image,video})
+    check('Immich invited viewer reads album and original',http(base,'/api/albums/'+album,headers=viewer)['assetCount']==2 and http(base,'/api/assets/'+image+'/original',headers=viewer,raw=True)==payloads[0])
+    immich_deny('Immich outsider album denied400',base,'/api/albums/'+album,outsider)
+    immich_deny('Immich outsider original denied400',base,'/api/assets/'+image+'/original',outsider)
+    immich_deny('Immich viewer cannot remove album assets400',base,'/api/albums/'+album+'/assets',viewer,'DELETE',{'ids':[image]})
+    query = '?key='+urllib.parse.quote(link['key'],safe='')
+    check('Immich public share resolves exact album',http(base,'/api/shared-links/me'+query)['album']['id']==album)
+    thumb = http(base,'/api/assets/'+image+'/thumbnail'+query,raw=True)
+    check('Immich public share can view actual thumbnail',len(thumb)>32)
+    immich_deny('Immich public share download policy denied400',base,'/api/assets/'+image+'/original'+query,{})
+    immich_deny('Immich wrong share key denied401',base,'/api/shared-links/me?key='+uuid.uuid4().hex,{},status=401)
+    playback = http(base,'/api/assets/'+video+'/video/playback',headers=viewer,raw=True)
+    frames = execute('immich',['ffmpeg','-v','error','-threads','1','-i','pipe:0','-an','-f','rawvideo','-pix_fmt','rgb24','-threads','1','pipe:1'],playback)
+    check('Immich authenticated video playback decodes real frames',len(frames)==160*120*3*10)
+    RESULT.setdefault('video_decode_sha256',[]).append(hashlib.sha256(frames).hexdigest())
+
+
+@contextlib.contextmanager
+def immich_quiesced():
+    """Stop every app/worker before archiving /data and dumping PG; no helper Pod."""
+    original = json.loads(k('get','deployment','immich','-o','json'))['spec']['template']['spec']['containers'][0]
+    sleeper = json.loads(json.dumps(original))
+    sleeper['command']=['/bin/sh','-c','sleep 1800']; sleeper.pop('args',None)
+    for probe in ('startupProbe','readinessProbe','livenessProbe'):
+        sleeper[probe]={'exec':{'command':['/bin/sh','-c','test -d /data']},'periodSeconds':2,'timeoutSeconds':2,'failureThreshold':30}
+    scale('immich',0)
+    try:
+        k('patch','deployment','immich','--type=json','-p',json.dumps([{'op':'replace','path':'/spec/template/spec/containers/0','value':sleeper}]))
+        scale('immich',1)
+        yield
+    finally:
+        scale('immich',0)
+        k('patch','deployment','immich','--type=json','-p',json.dumps([{'op':'replace','path':'/spec/template/spec/containers/0','value':original}]))
+
+
 def immich():
     if STAGE == 'ml':
         immich_ml()
         return
     password = CREDS['PROOF_ADMIN_PASSWORD']
-    payload = png()
-    with forwarded('immich', 2283) as base:
-        try:
-            login = http(base, '/api/auth/login', 'POST', {'email':'proof@example.invalid', 'password':password})
-        except urllib.error.HTTPError as e:
-            if e.code not in (400, 401):
-                raise
-            http(base, '/api/auth/admin-sign-up', 'POST', {'email':'proof@example.invalid','password':password,'name':'Synthetic Proof'})
-            login = http(base, '/api/auth/login', 'POST', {'email':'proof@example.invalid', 'password':password})
-        headers = {'Authorization':'Bearer ' + login['accessToken']}
-        config = http(base,'/api/admin/config',headers=headers)
-        config = bounded_immich_config(config, STAGE == 'full')
-        applied = http(base,'/api/admin/config','PUT',config,headers=headers)
-        check('Immich supported admin API applies single-job concurrency and CLIP-only proof profile',
-            applied['machineLearning']['enabled'] == (STAGE=='full') and
-            all(v['concurrency']==1 for v in applied['job'].values()))
-        if STAGE == 'full':
-            subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/'scripts/talos-proof-data-models.py'),
-                'preload','--state',str(STATEPATH),'--stage','full'],check=True,timeout=660)
-        boundary = 'proof' + uuid.uuid4().hex
-        body = bytearray()
-        for key, value in {'deviceAssetId':uuid.uuid4().hex, 'deviceId':'proof', 'fileCreatedAt':'2026-01-01T00:00:00.000Z', 'fileModifiedAt':'2026-01-01T00:00:00.000Z', 'isFavorite':'false'}.items():
-            body.extend(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n'.encode())
-        body.extend(f'--{boundary}\r\nContent-Disposition: form-data; name="assetData"; filename="proof.png"\r\nContent-Type: image/png\r\n\r\n'.encode())
-        body.extend(payload + f'\r\n--{boundary}--\r\n'.encode())
-        asset = http(base, '/api/assets', 'POST', bytes(body), headers=dict(headers, **{'Content-Type':'multipart/form-data; boundary='+boundary}))['id']
-        check('Immich synthetic PNG upload/original download exact bytes', http(base, '/api/assets/' + asset + '/original', headers=headers, raw=True) == payload)
-    restart('immich')
-    with forwarded('immich', 2283) as base:
-        check('Immich original survives pod replacement on /data PVC', http(base, '/api/assets/' + asset + '/original', headers=headers, raw=True) == payload)
-    # Check generated thumbnail, not merely original storage or /ping.
-    with forwarded('immich', 2283) as base:
-        deadline = time.monotonic() + 180
+    def login(base,email,password):
+        return {'Authorization':'Bearer '+http(base,'/api/auth/login','POST',{'email':email,'password':password})['accessToken']}
+    image_payload = immich_fixture()
+    video_payload = execute('immich',['ffmpeg','-v','error','-f','lavfi','-i','testsrc=size=160x120:rate=10','-t','1','-an','-c:v','libx264','-threads','1','-pix_fmt','yuv420p','-movflags','frag_keyframe+empty_moov','-f','mp4','pipe:1'])
+    accounts=[]
+    with forwarded('immich',2283) as base:
+        try: owner=login(base,'proof@example.invalid',password)
+        except urllib.error.HTTPError as error:
+            if error.code not in (400,401): raise
+            http(base,'/api/auth/admin-sign-up','POST',{'email':'proof@example.invalid','password':password,'name':'Synthetic Proof'})
+            owner=login(base,'proof@example.invalid',password)
+        config=bounded_immich_config(http(base,'/api/admin/config',headers=owner),STAGE=='full')
+        applied=http(base,'/api/admin/config','PUT',config,headers=owner)
+        check('Immich supported single-worker CPU profile applied',all(v['concurrency']==1 for v in applied['job'].values()) and applied['machineLearning']['enabled']==(STAGE=='full'))
+        if STAGE=='full': model_action('preload')
+        for role in ('viewer','outsider'):
+            account={'email':'proof-'+uuid.uuid4().hex+'@example.invalid','password':uuid.uuid4().hex+uuid.uuid4().hex,'name':'Proof '+role,'notify':False,'shouldChangePassword':False}
+            account['id']=http(base,'/api/admin/users','POST',account,headers=owner)['id']; accounts.append(account)
+        save_private_new('immich-proof-users-'+uuid.uuid4().hex+'.json',json.dumps(accounts).encode())
+        viewer,outsider=[login(base,a['email'],a['password']) for a in accounts]
+        image=immich_upload(base,owner,image_payload,'proof-exif.png','image/png')
+        video=immich_upload(base,owner,video_payload,'proof-video.mp4','video/mp4')
+        album=http(base,'/api/albums','POST',{'albumName':'Proof '+uuid.uuid4().hex,'assetIds':[image,video]},headers=owner)['id']
+        http(base,'/api/albums/'+album+'/users','PUT',{'albumUsers':[{'userId':accounts[0]['id'],'role':'viewer'}]},headers=owner)
+        link=http(base,'/api/shared-links','POST',{'type':'ALBUM','albumId':album,'allowDownload':False,'allowUpload':False,'showMetadata':True},headers=owner)
+        deadline=time.monotonic()+240
         while True:
+            info=http(base,'/api/assets/'+image,headers=owner)
+            video_info=http(base,'/api/assets/'+video,headers=owner)
             try:
-                thumbnail = http(base, '/api/assets/' + asset + '/thumbnail?size=preview', headers=headers, raw=True)
-                check('Immich generated nonempty image thumbnail',len(thumbnail)>32 and (thumbnail.startswith(b'\xff\xd8') or thumbnail[8:12]==b'WEBP'))
-                break
+                thumb=http(base,'/api/assets/'+image+'/thumbnail?size=preview',headers=owner,raw=True)
+                if info.get('exifInfo',{}).get('make')=='ProofCamera' and video_info.get('type')=='VIDEO' and video_info.get('duration') and len(thumb)>32: break
             except urllib.error.HTTPError as error:
-                if error.code not in (400,404,500) or time.monotonic() >= deadline:
-                    raise
-                time.sleep(2)
-    if STAGE == 'full': immich_search(asset,headers)
-    scale('immich',0)
+                if error.code not in (400,404,500): raise
+            if time.monotonic()>=deadline: check('Immich actual metadata/thumbnail worker completion within bound',False)
+            time.sleep(2)
+        immich_assert_state(base,owner,viewer,outsider,album,image,video,link,(image_payload,video_payload))
+        http(base,'/api/shared-links/'+link['id'],'PATCH',{'allowDownload':True},headers=owner)
+        check('Immich enabled public download retrieves exact original',http(base,'/api/assets/'+image+'/original?key='+urllib.parse.quote(link['key'],safe=''),raw=True)==image_payload)
+        http(base,'/api/shared-links/'+link['id'],'PATCH',{'allowDownload':False},headers=owner)
+    if STAGE=='full': immich_search(image,owner)
+    restart('immich')
+    with forwarded('immich',2283) as base:
+        immich_assert_state(base,owner,viewer,outsider,album,image,video,link,(image_payload,video_payload))
+    originals = {app:json.loads(k('get','deployment',app,'-o','json'))['spec']['template']['spec'] for app in ('immich','postgres')}
     try:
-        dump = postgres_dump('immich')
-        with fresh_pvc('postgres',('immich',)):
+        with immich_quiesced():
+            dump=postgres_dump('immich')
+            archive=execute('immich',['tar','-czpf','-','-C','/data','.'])
+            archive_path=save_private_new('immich-data-'+uuid.uuid4().hex+'.tar.gz',archive)
+            RESULT['data_backup_sha256']=hashlib.sha256(archive).hexdigest()
+            RESULT['data_backup_file']=archive_path.name
+        # Both old/new files and PG are never presented to a running app as a mixed pair.
+        with fresh_pvc('postgres',('immich',),resume=False):
             clean_postgres_restore('immich',dump)
-            scale('immich',1)
-            with forwarded('immich',2283) as base:
-                check('Immich authenticated original survives clean vector PostgreSQL PVC restore',http(base,'/api/assets/'+asset+'/original',headers=headers,raw=True)==payload)
-            if STAGE == 'full':
-                immich_search(asset,headers)
-                check('Immich own restored asset embedding and text search survive distinct clean vector-PG PVC restore')
+            with fresh_pvc('immich',bootstrap=True,resume=False) as start_runtime:
+                check('Immich clean data PVC empty before restore',execute('immich',['find','/data','-mindepth','1','-print','-quit']).strip()==b'')
+                recovered=archive_path.read_bytes()
+                check('Immich data archive SHA256 verified',hashlib.sha256(recovered).hexdigest()==RESULT['data_backup_sha256'])
+                execute('immich',['tar','-xzpf','-','-C','/data'],recovered)
+                start_runtime()
+                with forwarded('immich',2283) as base:
+                    owner=login(base,'proof@example.invalid',password)
+                    viewer,outsider=[login(base,a['email'],a['password']) for a in accounts]
+                    immich_assert_state(base,owner,viewer,outsider,album,image,video,link,(image_payload,video_payload))
+                if STAGE=='full': immich_search(image,owner)
+                restart('immich')
+                with forwarded('immich',2283) as base:
+                    immich_assert_state(base,owner,viewer,outsider,album,image,video,link,(image_payload,video_payload))
     finally:
+        # Fail closed if a rollback patch failed: never boot a mixed source/restore pair.
+        for app,original in originals.items():
+            current = json.loads(k('get','deployment',app,'-o','json'))['spec']['template']['spec']
+            check('Immich coordinated rollback restores original claim/runtime: '+app,
+                  current['volumes']==original['volumes'] and current['containers']==original['containers'])
+        scale('postgres',1)
         scale('immich',1)
-    if STAGE != 'full':
-        RESULT['limitations'].append('App-only stage: ML indexing and integrated smart text search NOT proved. Retains original /data PVC during database recovery; no file-volume disaster recovery claim.')
+    with forwarded('immich',2283) as base:
+        owner=login(base,'proof@example.invalid',password)
+        http(base,'/api/shared-links/'+link['id'],'DELETE',headers=owner)
+        immich_deny('Immich revoked public share denied401',base,'/api/shared-links/me?key='+urllib.parse.quote(link['key'],safe=''),{},status=401)
+    RESULT['limitations'].append('Prepared synthetic EXIF/album/share ACL/video and coordinated data+PG restore, NOT live evidence. Retained proof users/album/assets for audit; no historical dataset or production capacity/GPU claim.')
+    if STAGE!='full': RESULT['limitations'].append('App-only stage disables ML: no inference/indexing/search claim. Full stage requires own-worker embedding and text query, with no harness vector writes.')
 
 
 def pocket_browser():
@@ -1073,6 +1194,7 @@ def main():
         life.lease(GROUP)
         life.participants(GROUP)
         STATEPATH = life.private(STATE)
+        life.STATE_DIR = STATEPATH
         credential_path = life.no_symlinks(STATEPATH / 'credentials.json')
         if not credential_path.exists():
             raise RuntimeError('prepared proof credentials required')

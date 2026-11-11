@@ -20,6 +20,28 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+      - name: wait-proof-postgres
+        image: postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
+        command:
+        - sh
+        - -ec
+        - 'i=0; until pg_isready -h postgres -U miniflux -d miniflux -t 2; do i=$((i+1)); test "$i" -lt 90 || exit 1; sleep 2; done'
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
+          runAsGroup: 999
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 1000m
+            memory: 128Mi
       containers:
       - name: miniflux
         image: miniflux/miniflux:2.3.5@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9

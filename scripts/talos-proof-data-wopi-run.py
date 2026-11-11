@@ -22,7 +22,7 @@ def main():
     spec=importlib.util.spec_from_file_location('life',ROOT/'scripts/talos-proof-data.py')
     life=importlib.util.module_from_spec(spec);spec.loader.exec_module(life)
     life.LEASE_GROUP='nextcloud';life.LEASE_STAGE='wopi'
-    state=life.private(args.state);receipt=life.lease('nextcloud')
+    state=life.private(args.state);life.STATE_DIR=state;receipt=life.lease('nextcloud')
     if not receipt.get('lease_id') or receipt.get('max_attempts')!=2:
         raise RuntimeError('explicit renewed two-attempt receipt required')
     if receipt.get('approved_controller_limits_mib')!={'collabora':768,'wopi-fixture':64}:
@@ -59,9 +59,9 @@ def main():
         with (state/f'wopi-retry-{lease_id}-{args.attempt}-cli.txt').open('w') as log:
             proc=subprocess.run([sys.executable,str(ROOT/'scripts/talos-proof-data.py'),'test','--group','nextcloud','--stage','wopi','--state',str(state)],stdout=log,stderr=log,timeout=420)
         result['suite_exit']=proc.returncode
-        output=state/'nextcloud-result.json'
-        if output.exists() and output.stat().st_mtime>=result['started']:
-            result['suite']=json.loads(output.read_text())
+        outputs=[p for p in state.glob('nextcloud-wopi-*-result.json') if p.stat().st_mtime>=result['started']]
+        if outputs:
+            result['suite']=json.loads(max(outputs,key=lambda p:p.stat().st_mtime).read_text())
         result['status']='passed-with-component-limitations' if proc.returncode==0 else 'failed'
     except Exception as error:
         result['status']='failed';result['failure_type']=type(error).__name__
