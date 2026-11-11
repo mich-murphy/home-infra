@@ -102,34 +102,31 @@ try {
   result.editor_state=await state();
   // Native ODT attempt screenshot showed this exact session-warning dialog
   // above the welcome tour. Close only the observed notice, never arbitrary UI.
-  const sessionNotice=frame.getByText('Your session will end in 10 minutes. Refresh the page to continue.',{exact:true});
-  if(await sessionNotice.isVisible()) {
-    stage='observed native session-warning Close';
-    const dialog=frame.getByRole('dialog').filter({has:sessionNotice});
-    await dialog.getByRole('button',{name:'Close',exact:true}).click();
-    result.checks.push('Exact observed ten-minute session warning closed');
+  async function closeObservedSessionNotice() {
+    const sessionNotice=frame.getByText('Your session will end in 10 minutes. Refresh the page to continue.',{exact:true});
+    if(await sessionNotice.isVisible()) {
+      stage='observed native session-warning Close';
+      const dialog=frame.getByRole('dialog').filter({has:sessionNotice});
+      await dialog.getByRole('button',{name:'Close',exact:true}).click();
+      await sessionNotice.waitFor({state:'hidden'});
+      result.checks.push('Exact observed ten-minute session warning closed');
+    }
   }
+  await closeObservedSessionNotice();
   // The previous cropped screenshot showed the version-tour overlay and the
   // real Viewing selector. Dismiss only the known tour, then choose Editing UI.
   for(const candidate of page.frames()) {
     const tour=candidate.getByText(/Explore The New/i).first();
     if(!/welcome/i.test(candidate.url()) && !await tour.isVisible().catch(()=>false)) continue;
     result.welcome_frame_seen=true;
-    const controls=candidate.locator('[id*="close" i], [class*="close" i], [aria-label*="close" i], [title*="close" i]');
+    const controls=candidate.locator('#welcome-close');
     result.welcome_controls=await controls.evaluateAll(elements=>elements.slice(0,12).map(e=>({id:e.id,cls:e.className,tag:e.tagName})));
     let dismissed=false;
     for(let index=0;index<await controls.count();index++) {
       const close=controls.nth(index);
       if(await close.isVisible()) {await close.click();dismissed=true;break;}
     }
-    if(!dismissed && await tour.isVisible()) {
-      // Version-tour body is a dedicated known iframe. Previous editor-only
-      // capture showed its X at top-right. Never apply this to the document body.
-      if(/welcome/i.test(candidate.url())) {
-        const box=await candidate.locator('body').boundingBox();
-        if(box) await candidate.locator('body').click({position:{x:box.width-28,y:32}});
-      }
-    }
+    if(!dismissed && await tour.isVisible()) throw new Error('known welcome tour has no observed close control');
   }
   // Some CODE builds render the tour inside an iframe-dialog wrapper whose
   // close control is in the editor document rather than the nested tour frame.
@@ -138,6 +135,7 @@ try {
     const close=frame.locator('.iframe-dialog-close, [id*="welcome" i] [class*="close" i], [class*="welcome" i] [class*="close" i]').first();
     if(await close.isVisible()) await close.click();
   }
+  await closeObservedSessionNotice();
   const viewing=frame.getByText('Viewing',{exact:true}).first();
   if(await viewing.isVisible()) {
     stage='observed real Editing Mode menu item';
@@ -156,6 +154,7 @@ try {
       result.checks.push('Explicit observed plain-text format warning acknowledged');
     }
   }
+  await closeObservedSessionNotice();
   const deadline=Date.now()+45000;
   while(true) {
     const current=await state();result.editor_state=current;
@@ -165,23 +164,35 @@ try {
   }
   lease();
   if (input.edit !== false) {
+    stage='fail closed on remaining overlays';
+    const visibleDialogs=await frame.getByRole('dialog').evaluateAll(elements=>elements.filter(e=>e.getClientRects().length).length);
+    if(visibleDialogs || await tourWrap.isVisible().catch(()=>false)) throw new Error('unhandled editor overlay');
     stage='real editor input focus';
-    const inputBox=frame.locator('#clipboard-area, #copy-paste-container[contenteditable=true], .clipboard[contenteditable=true], textarea.clipboard').first();
+    const inputBox=frame.locator('#clipboard-area');
+    if(await inputBox.count()!==1 || !await inputBox.evaluate(e=>e.isContentEditable)) throw new Error('observed native clipboard input unavailable');
     await inputBox.focus();
     const focused=await inputBox.evaluate(e=>document.activeElement===e);
     if(!focused) throw new Error('editor clipboard input did not acquire focus');
     result.checks.push('Actual loaded editable document and focused editor clipboard input');
-    await page.keyboard.press('Control+End');
+    // Type at the real current caret. No cross-platform cursor/save shortcuts,
+    // DOM value injection, dispatchEvent, or direct WOPI writes are used.
+    result.browser_platform=await page.evaluate(()=>navigator.platform);
     await page.keyboard.type(input.marker,{delay:35});
     stage='actual editor Save control';
-    const save=frame.getByRole('button',{name:/^Save(?:\s*\(|$)/i}).first();
+    const saves=frame.getByRole('button',{name:'Save',exact:true});
+    let save;
+    for(let index=0;index<await saves.count();index++) {
+      const candidate=saves.nth(index);
+      if(await candidate.isVisible() && await candidate.isEnabled()) {save=candidate;break;}
+    }
+    if(!save) throw new Error('no visible enabled native Save button');
     await save.click();
     result.checks.push('Actual editor Save button clicked; independent PutFile assertion required');
     await page.waitForTimeout(3000);
   }
   if (!websocketCount) throw new Error('no real editor websocket');
   result.status='browser-input-dispatched-not-functional-verdict';
-  result.checks.push('Pinned public HTTPS CODE iframe rendered; real WSS connected; keyboard edit/save dispatched');
+  result.checks.push(input.edit===false ? 'Pinned public HTTPS CODE iframe rendered; real WSS connected; reopened document loaded' : 'Pinned public HTTPS CODE iframe rendered; real WSS connected; keyboard edit/save dispatched');
   }
   result.chrome_version=browser.version();
 } catch (error) {

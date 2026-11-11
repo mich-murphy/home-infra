@@ -1570,3 +1570,44 @@ TXT failures. No live receipt remains. The
 was kubelet1258/Talos1121/minimum1121MiB; this is not an admission receipt.
 No parent brief/readiness/gate files or new media arr/recovery files were changed.
 Native Nextcloud cron remains offline/unrun and has no live grant.
+
+
+## Offline-only follow-up: complete UI path and native cron source review
+
+No new grant, cluster/host call, image execution, activation or browser attempt
+occurred in this follow-up. The eight live WOPI failures are unchanged.
+
+[Ordered UI review](talos-proof-wopi-ui-offline-review.md) covers session notice →
+welcome tour → real mode selection → TXT-only exact format warning → edit state →
+unknown-overlay refusal → actual clipboard focus/keyboard → visible enabled native
+Save → independent PutFile/content.xml → new-process reopen → live-host denial.
+The browser now removes guessed close-coordinate/cursor-shortcut fallbacks,
+rechecks the one exact observed session notice at mode transitions and refuses
+unknown dialogs before input. Native Save UI avoids Mac shortcut ambiguity; HTTP
+and WS guards still precede navigation. All these edits remain **offline-only,
+not evidence of marker/save/reopen success**.
+
+[Native CLI/cron preparation](talos-proof-nextcloud-cron-plan.md) reviews exact
+v35.0.2 core APIs against27 immutable public source files, indexed with hashes and
+URLs in [source evidence](evidence/talos-data/nextcloud-cron-source-review-97384394-9c9c-47d4-8d17-50e63b9b62fd.json).
+The unchanged budget is PG384 + Redis64 + one CLI/cron192 + reserve192 =832MiB.
+Each CLI/cron Job must be deleted and its pod absent before the next. Apache/web
+must not run under that CLI limit. No fresh credentials or retained config/data
+may be regenerated/overwritten.
+
+The prepared procedure uses native maintenance:install only for a proven empty
+own PVC/database, otherwise verifies retained installed state without reinstall;
+it then proposes native temporary-token creation with **null password**, natural
+aging under supported system session_lifetime, an independently remembered live
+control, actual native TokenCleanupJob via cron.php and exact proof-setting
+restoration. Internal token generation is version-bound, not a stable public CLI
+API. Explicit expires is not the cleanup retention predicate. A job-class filter
+does not defeat the real24hour job interval; recent/not-due retained state blocks,
+never resets scheduling/completion rows. Native exit0/lastcron alone is inadequate.
+
+Executable integration is deliberately **blocked** pending in-image source parity,
+read-only retained-state inventory, packaged Redis config/UID33 copy validation,
+serial-helper lease/guard integration, genuinely due job and bounded restoration
+safety. Public source review is not image attestation or192MiB fit evidence.
+The prior lastcron-only cron branch is not this stronger prepared proof. No cron
+live receipt exists, and no HTTP/WebDAV/Office or general cron acceptance is claimed.

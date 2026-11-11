@@ -1,0 +1,172 @@
+{
+  "status": "OFFLINE_SOURCE_REVIEW_NOT_IMAGE_OR_RUNTIME_VERIFIED",
+  "server_tag": "v35.0.2",
+  "server_commit": "ba900af933e61ffa005315b09d6454bfbbcbcc81",
+  "docker_source_commit": "7e9e152f77372845195ed28dc65569df74f582ff",
+  "image": "nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+  "gap": "Public source hashes are not image attestation. Compare in-image files before any future workload; no cluster or image execution performed.",
+  "sources": [
+    {
+      "path": "config/config.sample.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/config/config.sample.php",
+      "sha256": "0ee03e3fe1025db2bdacc22c46a5358549980526e90526fa4d00dcbd5c18d42a",
+      "bytes": 105300
+    },
+    {
+      "path": "core/BackgroundJobs/CleanupLoginFlowV2.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/core/BackgroundJobs/CleanupLoginFlowV2.php",
+      "sha256": "c4b6270867bfbfb2e08de527099581fb2719511c6cadd0899fef8b643afdada3",
+      "bytes": 623
+    },
+    {
+      "path": "core/Command/Maintenance/Install.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/core/Command/Maintenance/Install.php",
+      "sha256": "043918e7d0136ebedb7416d5703850742670cff246caeef8cb13c54c9f17aa6c",
+      "bytes": 10534
+    },
+    {
+      "path": "core/Command/Status.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/core/Command/Status.php",
+      "sha256": "444c897059f4e66692ed9d399badf881564548b47ada94d8183e4aff1da93fca",
+      "bytes": 1978
+    },
+    {
+      "path": "core/Service/CronService.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/core/Service/CronService.php",
+      "sha256": "51c095bea9a0ba9437be53a99838edb3d7c351b126c201d7b88cc580dbb12ff6",
+      "bytes": 9527
+    },
+    {
+      "path": "core/register_command.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/core/register_command.php",
+      "sha256": "41afab050747354b94d0f0fe7aa3a0de97cd062f2b11f56f7227eb14a18e0f76",
+      "bytes": 14106
+    },
+    {
+      "path": "cron.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/cron.php",
+      "sha256": "75e7d2c6e9d6817503cf2d8b22a8d2e81070fe2a356779a0d7b510dafd83c4ff",
+      "bytes": 1913
+    },
+    {
+      "path": "docker/35/apache/Dockerfile",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/Dockerfile",
+      "sha256": "405d4bc8deb793246bf8ecea546da0c8a19d9f8337b6dedeb142dd1965e60a9a",
+      "bytes": 6555
+    },
+    {
+      "path": "docker/35/apache/entrypoint.sh",
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/entrypoint.sh",
+      "sha256": "ec00e04f6cbb8b590dd74ca9d66e8118dd008fa3a45eb4167d9ea26023bc8071",
+      "bytes": 13699
+    },
+    {
+      "path": "lib/base.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/base.php",
+      "sha256": "2225732960bd3d09a12d5bd618a754cbe426f26c94b1e351d66803499d17bc6d",
+      "bytes": 232
+    },
+    {
+      "path": "lib/private/Authentication/Token/IProvider.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/IProvider.php",
+      "sha256": "873284c91009e7634ef07a75193f0f878a15606cfa6ce968dd3f4d5d61346eff",
+      "bytes": 4409
+    },
+    {
+      "path": "lib/private/Authentication/Token/IToken.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/IToken.php",
+      "sha256": "28f656dc9eca4670f0a4f1ea8bd4f752622672d9f4e90ac3fc04a2b863f6c72b",
+      "bytes": 417
+    },
+    {
+      "path": "lib/private/Authentication/Token/Manager.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/Manager.php",
+      "sha256": "df5575e634df02f5fd56cea00265d26fb5063077eda8dc785d8906c86dcbaf8e",
+      "bytes": 7152
+    },
+    {
+      "path": "lib/private/Authentication/Token/PublicKeyToken.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/PublicKeyToken.php",
+      "sha256": "ad5c66072e11f97f06c05f3979ba3fe2d6f34b26aad3cc2fdc92858163eeec36",
+      "bytes": 5254
+    },
+    {
+      "path": "lib/private/Authentication/Token/PublicKeyTokenMapper.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/PublicKeyTokenMapper.php",
+      "sha256": "f02c3b9488a9bb4725c8ade4c485f5b939834b000b3e454e20d45d1969408ec9",
+      "bytes": 8901
+    },
+    {
+      "path": "lib/private/Authentication/Token/PublicKeyTokenProvider.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/PublicKeyTokenProvider.php",
+      "sha256": "bc3963797dfb6d5f87298be36eb6450dd8fff36fe58a256530057971dac22aa5",
+      "bytes": 19427
+    },
+    {
+      "path": "lib/private/Authentication/Token/TokenCleanupJob.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/TokenCleanupJob.php",
+      "sha256": "8608c002e6aecd41ae2aa3f9a56e576033029c47635bd5dfea6f5a47247d0b5e",
+      "bytes": 657
+    },
+    {
+      "path": "lib/private/BackgroundJob/JobList.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/BackgroundJob/JobList.php",
+      "sha256": "c05dde00d5dcae9e4e611ddb491a356a013de49a252001bb02a0fd08d49b5903",
+      "bytes": 15549
+    },
+    {
+      "path": "lib/private/Repair/NC24/AddTokenCleanupJob.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Repair/NC24/AddTokenCleanupJob.php",
+      "sha256": "33e3a7709705eb815c01326cabde58b2c91af82b84a47cf36cc8727e0badbc46",
+      "bytes": 647
+    },
+    {
+      "path": "lib/private/Repair.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Repair.php",
+      "sha256": "01d707b9c0df4042ca3622d827f43b62f361b1b030acc727b5df4fc55db606d3",
+      "bytes": 9237
+    },
+    {
+      "path": "lib/private/Setup/PostgreSQL.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Setup/PostgreSQL.php",
+      "sha256": "48aa3463cbe164f4199a8ddc72a599db703c981eab2d8e189e5bd88517f7ca49",
+      "bytes": 6969
+    },
+    {
+      "path": "lib/private/Setup.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Setup.php",
+      "sha256": "f26542cbccc805872ce2f2b86f29c08d90964160b2bd75772d59dfa26dc24355",
+      "bytes": 22252
+    },
+    {
+      "path": "lib/private/User/BackgroundJobs/CleanupLoginTokens.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/User/BackgroundJobs/CleanupLoginTokens.php",
+      "sha256": "d93418c3fe9d5079928b3e895b85d8b809d37e8681250eb537e4b3d8fa4ab897",
+      "bytes": 1069
+    },
+    {
+      "path": "lib/public/Authentication/Token/IProvider.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/public/Authentication/Token/IProvider.php",
+      "sha256": "5922d9fad537286790c655449bc1a212099e5f80adc2acad39bcba207d145629",
+      "bytes": 956
+    },
+    {
+      "path": "lib/public/Authentication/Token/IToken.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/public/Authentication/Token/IToken.php",
+      "sha256": "567441824c22b07a7a3174e8540525852716e972182243681ac5c2a10f2c9c6d",
+      "bytes": 2827
+    },
+    {
+      "path": "lib/public/BackgroundJob/TimedJob.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/public/BackgroundJob/TimedJob.php",
+      "sha256": "ed0737f50481e55a850a4b0483d6a09ed5c656855e0c464987a454cbe5afafe9",
+      "bytes": 2581
+    },
+    {
+      "path": "version.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/version.php",
+      "sha256": "0c5e1bfe12870e43d2a9965063d97dd261a351e96d6d81f854b29857ceac5e25",
+      "bytes": 870
+    }
+  ]
+}
