@@ -7,7 +7,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
+from types import SimpleNamespace
 
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
@@ -158,6 +159,134 @@ class ReceiptTests(unittest.TestCase):
             result = subprocess.run([sys.executable, '-B', str(HELPER), str(path)],
                                     capture_output=True, text=True, timeout=5)
             self.assertEqual(result.returncode, 0, result.stderr)
+
+
+COLLECT_SPEC = importlib.util.spec_from_file_location('collector', ROOT / 'infrastructure/proxmox-proof/collect-isolation.py')
+c = importlib.util.module_from_spec(COLLECT_SPEC)
+COLLECT_SPEC.loader.exec_module(c)
+
+
+def collector_args():
+    return SimpleNamespace(address='127.0.0.1', protocol='TCP', port=18081,
+                           source_port=41000, run_id='b' * 32)
+
+
+def instrumented(args, packets=0):
+    tokens = c.rule(args)[1:]
+    tokens = [args.address + '/32' if t == args.address else t for t in tokens]
+    lines = policy().splitlines()
+    offset = next(i for i, line in enumerate(lines) if '-d 127.0.0.0/8' in line)
+    lines.insert(offset, f'[{packets}:{packets * 60}] -A {v.CHAIN} ' + ' '.join(tokens))
+    return '\n'.join(lines)
+
+
+class CollectorTests(unittest.TestCase):
+    def test_targetless_exact_counter_and_adjacency(self):
+        a = collector_args()
+        self.assertNotIn('-j', c.rule(a))
+        clean, packets = c.remove_counter(instrumented(a, 1), a)
+        self.assertEqual(packets, 1)
+        self.assertEqual(v.snapshot(clean, 4)[0], v.snapshot(policy(), 4)[0])
+        for text in (instrumented(a).replace('--sport 41000', '--sport 41001'),
+                     instrumented(a).replace('--comment', '-j DROP --comment'),
+                     instrumented(a).replace('-s 127.0.0.1/32', '-s 10.0.0.1/32')):
+            with self.assertRaises(RuntimeError): c.remove_counter(text, a)
+        text = instrumented(a).splitlines()
+        index = next(i for i, line in enumerate(text) if 'proof-isolation-' in line)
+        text[index], text[index + 1] = text[index + 1], text[index]
+        with self.assertRaises(RuntimeError): c.remove_counter('\n'.join(text), a)
+
+    def test_cleanup_exact_only_and_absence_check(self):
+        a = collector_args()
+        with patch.object(c.subprocess, 'run', side_effect=[Mock(returncode=0), Mock(returncode=1)]) as run, \
+             patch.object(c, 'command') as command:
+            c.cleanup(a)
+            argv = command.call_args.args[0]
+            self.assertIn('-D', argv)
+            self.assertNotIn('-F', argv)
+            self.assertEqual(argv[-len(c.rule(a)):], c.rule(a))
+            self.assertEqual(run.call_count, 2)
+        with patch.object(c.subprocess, 'run', return_value=Mock(returncode=1)), \
+             patch.object(c, 'command') as command:
+            c.cleanup(a)
+            command.assert_not_called()
+        with patch.object(c.subprocess, 'run', return_value=Mock(returncode=2)):
+            with self.assertRaises(RuntimeError): c.cleanup(a)
+
+    def test_worker_failure_pidfd_cleanup(self):
+        worker = Mock()
+        worker.poll.return_value = None
+        with patch.object(c.subprocess, 'Popen', return_value=worker), \
+             patch.object(c.os, 'pidfd_open', return_value=9, create=True), \
+             patch.object(c.signal, 'pidfd_send_signal', create=True) as send, \
+             patch.object(c.os, 'close') as close:
+            owned = c.OwnedChild(['offline-worker'])
+            owned.stop()
+            send.assert_called_once_with(9, c.signal.SIGKILL)
+            worker.wait.assert_called_once_with(timeout=2)
+            close.assert_called_once_with(9)
+
+    def test_exited_worker_never_signalled(self):
+        worker = Mock(); worker.poll.return_value = 1
+        with patch.object(c.subprocess, 'Popen', return_value=worker), \
+             patch.object(c.os, 'pidfd_open', return_value=9, create=True), \
+             patch.object(c.signal, 'pidfd_send_signal', create=True) as send, \
+             patch.object(c.os, 'close'):
+            c.OwnedChild(['offline-worker']).stop()
+            send.assert_not_called()
+
+    def test_pidfd_failure_kills_only_unreleased_popen_child(self):
+        worker = Mock()
+        with patch.object(c.subprocess, 'Popen', return_value=worker), \
+             patch.object(c.os, 'pidfd_open', side_effect=OSError(), create=True):
+            with self.assertRaises(OSError): c.OwnedChild(['offline-worker'])
+            worker.kill.assert_called_once()
+            worker.wait.assert_called_once_with(timeout=2)
+            worker.stdin.write.assert_not_called()
+
+    def test_supervisor_death_child_kernel_contract(self):
+        # Offline ordering check: PDEATHSIG and wall alarm precede GO, cgroup
+        # movement and socket creation. Integration kill test requires Linux.
+        import inspect
+        source = inspect.getsource(c.arm_child)
+        child_source = inspect.getsource(c.child)
+        self.assertIn('libc.prctl(1, signal.SIGKILL', source)
+        self.assertIn('signal.alarm(4)', source)
+        self.assertIn('os.getppid() == parent', source)
+        self.assertLess(child_source.index('arm_child()'), child_source.index('sys.stdin.buffer.read'))
+        self.assertLess(child_source.index('cgroup.procs'), child_source.index('with socket.socket'))
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux kernel PDEATHSIG integration')
+    def test_supervisor_crash_reaps_escaped_child_without_network(self):
+        # Child inherits stdout: communicate cannot finish until PDEATHSIG closes
+        # that descriptor. No sockets, cgroups, host access or signals to guests.
+        script = r"""
+import importlib.util, os, signal, sys
+spec = importlib.util.spec_from_file_location('c', sys.argv[1])
+c = importlib.util.module_from_spec(spec); spec.loader.exec_module(c)
+r,w = os.pipe()
+pid = os.fork()
+if pid == 0:
+    os.close(r); c.arm_child(); os.write(w,b'A'); os.close(w)
+    signal.pause()
+else:
+    os.close(w); assert os.read(r,1) == b'A'; os.close(r)
+    os._exit(7)
+"""
+        result = subprocess.run([sys.executable, '-B', '-c', script,
+                                 str(ROOT / 'infrastructure/proxmox-proof/collect-isolation.py')],
+                                capture_output=True, timeout=3)
+        self.assertEqual(result.returncode, 7)
+
+    def test_resource_and_swap_abort(self):
+        h = Mock(); h.same_process.return_value = True
+        base = dict(available_mib=2000, swap_used_kib=28, swap_io_pages=10,
+                    monotonic=1, psi_totals=dict(some=0, full=0))
+        with patch.object(c, 'command', return_value='active'):
+            for updates in ({'available_mib': 1791}, {'swap_used_kib': 29},
+                            {'swap_io_pages': 11}, {'psi_totals': dict(some=0, full=10000)}):
+                h.sample.return_value = {**base, 'monotonic': 2, **updates}
+                with self.assertRaises(RuntimeError): c.host_checks(h, {}, base, base)
 
 
 if __name__ == '__main__':

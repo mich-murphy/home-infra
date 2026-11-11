@@ -1,8 +1,9 @@
 # Controlled host-isolation evidence — offline verifier and proposed live plan
 
-**Status: offline only; no live test, listener, host metadata probe or policy
-instrumentation performed by this work. Parent approval and a separate execution
-window are required. This document does not release a platform gate.**
+**Status: implementation approved; live execution NOT approved. Authorized
+read-only metadata inspection completed; no listener, packet test, cgroup join or
+policy instrumentation performed. A separate parent execution grant is required.
+This document does not release a platform gate.**
 
 ## Why another test
 
@@ -102,7 +103,8 @@ checker exit code into a standalone isolation claim.
     filter structure persists, guard stays active, VM incarnation and other guest
     identities remain unchanged. No clearing counters or conntrack state.
 
-**No live runner is included.** Its review must settle backend/TRACE support,
+**The initial checkpoint had no runner. The implementation-only extension below
+now supersedes that statement.** Live review must still settle
 precise APIs/commands, safe endpoint, resource margin, independent cleanup and
 identity checks. The verifier cannot enforce these operating conditions.
 
@@ -162,3 +164,102 @@ checker is not an attestation system and does not authenticate those artifacts.
   UDP53 denial does not prove a restriction the policy does not implement.
 - Exhaustive isolation, root-operator bypass, application readiness or production
   cutover. Do not weaken policy to satisfy any synthetic test.
+
+## Implementation-only extension: actual backend and bounded collector
+
+Parent approved implementation, **not execution**. Read-only inspection using
+`ssh -o BatchMode=yes -o ConnectTimeout=5 root@proxmox` established:
+
+- iptables/ip6tables1.8.11 **legacy**, systemd257. No backend change is needed.
+- TRACE target not loaded; modules exist on disk. IPv4 nf_log is nfnetlink_log,
+  IPv6 is NONE. Neither journal TRACE nor xtables-monitor (nf_tables-only) is a
+  suitable assumed collector. No module or logger/sysctl changes were made.
+- Guard active, enrolled config valid, captured VM incarnation matches.
+  MemAvailable2134MiB, swap28KiB, swapIO10 at inspection (not execution admission).
+- Existing host addresses include10.77.1.100,127.0.0.1,::1. UDP53 and high18081
+  were absent from the listener inventory. Occupancy must be rechecked at binding.
+- Existing Cilium pod `cilium-8thlg` has hostNetwork=true. curl/wget/busybox absent;
+  bash5.3.9, perl, timeout and cilium-dbg present. Read-only Perl module loading
+  confirmed IO::Socket::INET without creating any socket. No token/config output.
+
+### Targetless counter alternative — approval still required
+
+`collect-isolation.py` supports one loopback **owned-child** trial only. It does
+not claim node transport and cannot be pointed at production endpoints. To avoid
+logger changes, it inserts a targetless counter rule directly before the existing
+private/IPv6 REJECT, matching source+destination literal address, protocol, source
+port, destination port, proof cgroup, and unique comment. A targetless iptables
+rule counts then continues; it neither allows nor denies. For IPv4 loopback this
+is rule5; for IPv6 rule2. The existing REJECT moves one position while the rule
+is present and is never replaced.
+
+The collector holds the existing isolation flock, verifies the exact reviewed
+policy, brackets one child attempt with outside-cgroup token controls, validates
+exact counter serialization and adjacency, requires exact counter growth and at
+least matching growth of the adjacent original REJECT, removes the exact rule,
+and verifies original policy structure. It emits a **different capture schema**,
+`controlled-host-isolation-capture`, with status
+`adjacent-counter-capture-pending-human-review`. The earlier TRACE receipt checker
+is intentionally not told to accept this capture as if it contained TRACE.
+A reviewer must accept/refuse this attribution method before any live window.
+
+Collector unit32MiB MemoryMax plus joined child32MiB RLIMIT_AS bounds extra test
+memory to<=64MiB. The joined child has CPU1s, fd24 and alarm4s bounds. It receives
+GO only after the supervisor holds its pidfd; it arms kernel PDEATHSIG and checks
+parent liveness first. It pins the original scope directory inode and reuses the
+existing lifecycle checks against the parent's incarnation digest before joining
+and before creating sockets. Only its own PID is written. No QEMU pidfd/signal
+is used. The unit's CPUQuota10% applies before joining; afterwards the child does
+only one small socket exchange, bounded by its CPU/wall limits.
+
+Normal/error cleanup uses the retained owned-child pidfd. If the supervisor is
+SIGKILLed, PDEATHSIG kills the escaped child; independent systemd ExecStopPost
+removes the exact counter. Runtime50s plus StopPost timeout10s bounds the unit
+lifecycle to60s. The collector rejects runtime/memory/cgroup/unit mismatches and
+checks the1792MiB floor, unchanged swap/IO and bounded PSI at checkpoints. These
+checks supplement, never replace or stop, the existing guard.
+
+### Exact proposed commands — DO NOT RUN without new parent grant
+
+Installed `systemd-run --help` confirms --unit, --service-type and --property.
+Stage only the new collector and verifier alongside the existing private
+host_lifecycle.py **after separately approved deployment**. No existing file is
+replaced. Generate a fresh32hex run id; never reuse one. Below is a proposal, not
+an execution receipt:
+
+```sh
+# On Proxmox only after explicit deployment AND live execution approval:
+STATE=/root/.local/state/home-infra/talos-proof
+COL=$STATE/collect-isolation.py
+ID=$(python3 -c 'import secrets; print(secrets.token_hex(16))')
+ARGS="--approve 555e8603-58e6-4fb6-a190-378a3f11c257 --address 127.0.0.1 --protocol TCP --port 18081 --source-port 41000 --run-id $ID"
+systemd-run --unit="talos-proof-isolation-$ID.service" --service-type=exec \
+  --property=RuntimeMaxSec=50 --property=TimeoutStopSec=10 \
+  --property=MemoryMax=32M --property=CPUQuota=10% --property=TasksMax=8 \
+  --property=LimitNOFILE=32 --property=UMask=0077 \
+  --property="ExecStopPost=/usr/bin/python3 -B $COL --cleanup $ARGS" \
+  /usr/bin/python3 -B "$COL" $ARGS --output "$STATE/isolation-$ID.json"
+```
+
+No --collect: retain failed unit status for inspection. A subsequent separately
+reviewed UDP53 or ::1 trial changes only the endpoint/protocol arguments in BOTH
+ExecStopPost and ExecStart, uses fresh ID/source port, and requires explicit
+optional-child approval. Do not run concurrent collectors.
+
+Actual node private TCP remains unimplemented. A concrete available-client
+candidate, whose interpreter/module presence is confirmed but whose network
+execution is **not** performed/approved, is:
+
+```sh
+KUBECONFIG="$HOME/.local/state/home-infra/talos-proof/config/kubeconfig" \
+  kubectl --request-timeout=5s -n kube-system exec cilium-8thlg -- \
+  timeout 3 perl -MIO::Socket::INET -e \
+  '$s=IO::Socket::INET->new(PeerAddr=>"10.77.1.100",PeerPort=>18081,Proto=>"tcp",Timeout=>1) or exit 2; print $s "SYNTHETIC_TOKEN"; $s->recv($r,128); print length($r)," bytes\n";'
+```
+
+Do not run this against an absent listener or treat it as standalone denial
+proof. It needs its own private-host-bound synthetic listener and controls, exact
+host-visible slirp tuple attribution, and parent-reviewed integration. No curl
+image pull or imaginary Talos command is required. The implemented loopback
+collector does **not** provide that listener and must not be misrepresented as
+completing the actual-node requirement.
