@@ -128,6 +128,8 @@ def main():
     ca = safety.private_file(args.ca)
     api = API(args.base, service=('pipeline-' if args.group else '') + args.service, ca=ca)
     try:
+        readiness = api.wait_ready({'pinchflat': '/healthcheck', 'audiobookshelf': '/status', 'plex': '/proof-health'}.get(args.service, '/'))
+        print(json.dumps({'service': args.service, 'gateway_readiness': readiness}))
         if args.service in ('audiobookshelf', 'pinchflat', 'qbitwebui', 'qbittorrent', 'plex'):
             checks = getattr(services, args.service)(api, credentials, args.fixture, state, args.phase)
         elif args.phase != 'exercise':

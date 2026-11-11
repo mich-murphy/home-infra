@@ -175,6 +175,16 @@ def exclusivity(group):
             raise RuntimeError('another proof group is activated, including controllers without pods')
 
 
+def require_helpers_deleted(group):
+    """Activation may not overlap ANY remaining helper Pod, including Terminating/Failed."""
+    pods = json.loads(kubectl_read('get', 'pods', '-A', '-o', 'json'))['items']
+    for pod in pods:
+        meta = pod['metadata']
+        if meta['namespace'] == 'proof-' + group and any(
+                owner.get('kind') == 'Job' for owner in meta.get('ownerReferences', [])):
+            raise RuntimeError('helper pod still exists; activation requires deletion, not Job completion')
+
+
 def guard(group, extra_mib=0, budget_mib=None):
     receipt, node = lease(group)
     exclusivity(group)

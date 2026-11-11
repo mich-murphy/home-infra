@@ -2,7 +2,7 @@
 
 ## Status and review gate
 
-**Implemented statically; no live deployment or functional pass claimed.** Parent must review tests and live evidence before acceptance. VM120 is now bounded at 3072 MiB configured RAM (reported guest total approximately 2823 MiB); this is not a media lease. Activate **one media Deployment at a time**, only under a coordinator-granted resource lease. Fresh-fixture experiment ceilings are 192–512 MiB per main application, plus explicitly charged sidecars, not evidence that all source services fit simultaneously. Requests are scheduling reservations, not measured steady state. Image unpacking, controllers, storage and init containers also consume resources.
+**Limited first live results, NOT full media acceptance.** Pinchflat profile-only and Audiobookshelf synthetic-playback workflows passed restart and distinct-fresh-PVC recovery; qBittorrent remains blocked by HTTP401. Failed attempts and procedural deviations are retained in `docs/evidence/talos-media/first-live-batch.md`. Parent must review tests and live evidence before acceptance. VM120 is now bounded at 3072 MiB configured RAM (reported guest total approximately 2823 MiB); this is not a media lease. Activate **one media Deployment at a time**, only under a coordinator-granted resource lease. Fresh-fixture experiment ceilings are 192–512 MiB per main application, plus explicitly charged sidecars, not evidence that all source services fit simultaneously. Requests are scheduling reservations, not measured steady state. Image unpacking, controllers, storage and init containers also consume resources.
 
 Current source of truth: `docker/{arrs,downloads,plex,jellyfin,jellyplex-watched,audiobookshelf,pinchflat,recyclarr}/compose.yml`. All **16 services** map to explicit Kustomize resources, with exact current Compose image digests (not running-image substitutions). Inventory notes a live-vs-Compose jellyplex-watched difference; this proof pins the requested current Compose and must not claim live-image fidelity for that service.
 
@@ -73,7 +73,7 @@ Restart persistence: record library/fixture IDs and played state, stop/start **w
 
 ## Per-service acceptance matrix
 
-Every row below is **PENDING LIVE**, not readiness-equivalent success.
+Except the bounded Pinchflat and Audiobookshelf results recorded in first-live-batch.md, rows remain **PENDING LIVE**; qBittorrent startup ran but login401 blocks acceptance. The following implementation descriptions are not readiness-equivalent success.
 
 | Source → proof workload | Implemented executable test / required remaining evidence |
 |---|---|
@@ -190,3 +190,8 @@ Use private media state under `~/.local/state/home-infra/talos-proof/media` and 
 Observation files are immutable, uniquely named private JSON: all namespace pod UIDs, image/imageID, current/previous termination reason/exit status/restart count, and each running container's cgroup-v2 `memory.current`, `memory.peak`, `memory.stat`, `memory.events`. No app logs or termination messages are collected. Missing/unreadable counters are explicit gaps, not zeroes. Rollout failure now captures this evidence before scaling down and waiting for deletion; stop/restart/snapshot also capture before deactivation. A sampled `memory.current` is not a measured startup peak when `memory.peak` is unavailable. Keep earlier observation files and any OOM/startup failure in the final sanitized chronology; a latest restartCount0 is insufficient.
 
 These are execution preparations and offline regression checks only, **not scaffold acceptance or functional recovery PASS**.
+
+
+## Offline hardening after first live checkpoint
+
+See `docs/evidence/talos-media/qbit-5.3-and-lifecycle-followup.md` for exact5.3 source diagnosis, prepared Host-without-port URLRewrite, activation refusal while any helperPod remains, negative no-scale unit evidence,503-only HTTP readiness convergence gate, and fresh dual-metric memory collector. These changes have not run live. Existing receipts are revoked and operations holds the live window; wait for parent grant. Credentials/retained restored PVCs are unchanged. Protocol ownership has transferred from the stopped fixture worker;43 offline methods now include its6 real local socket tests, not real downloader completion.

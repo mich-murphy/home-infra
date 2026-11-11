@@ -66,6 +66,7 @@ def main():
                               'preview_log_sha256': hashlib.sha256(logs).hexdigest()}))
         finally:
             kube('-n', NS, 'delete', 'job/recyclarr-proof-preview', '--wait=true', '--timeout=60s')
+            kube('-n', NS, 'wait', '--for=delete', 'pod', '-l', 'job-name=recyclarr-proof-preview', '--timeout=180s')
         return
     if args.action == 'verify':
         print('Verified exact target and coordinator media-pipeline lease for selected bounded pair.')
@@ -79,6 +80,7 @@ def main():
         print('Selected pipeline pair stopped; fresh shared data/config PVCs retained.')
         return
     safety.guard('media-pipeline')
+    safety.require_helpers_deleted('media-pipeline')
     if args.action == 'start':
         active = json.loads(safety.kubectl_read('get', 'deployments', '-A', '-o', 'json'))['items']
         if any(x['metadata']['namespace'] == NS and x['spec'].get('replicas', 1) for x in active):

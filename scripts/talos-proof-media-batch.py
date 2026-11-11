@@ -34,11 +34,17 @@ def main():
         return safety.kube(args.service, *command, **kwargs)
     if args.action in ('start', 'restart', 'activate'):
         safety.guard(args.service)
+        safety.require_helpers_deleted(args.service)
         if args.action == 'start':
             kube('apply', '-k', str(safety.ROOT / 'kubernetes/apps/media' / args.service))
             kube('apply', '-f', '-', data=json.dumps(secret).encode())
+            safety.require_helpers_deleted(args.service)
             kube('-n', ns, 'scale', 'deployment', args.service, '--replicas=1', capacity=True)
         elif args.action == 'activate':
+            # Route-only repair preserves any restored Deployment PVC references.
+            if args.service == 'qbittorrent':
+                kube('apply', '-f', str(safety.ROOT / 'kubernetes/apps/media/qbittorrent/httproute.yaml'))
+                safety.require_helpers_deleted(args.service)
             kube('-n', ns, 'scale', 'deployment', args.service, '--replicas=1', capacity=True)
         else:
             observe.capture(args.service, state)

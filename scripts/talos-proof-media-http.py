@@ -9,6 +9,8 @@ import http.cookiejar
 import json
 import socket
 import ssl
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -61,6 +63,27 @@ class API:
 
     def anonymous(self):
         return API(self.base, service=self.service, ca=self.ca, allow_http=self.allow_http)
+
+    def wait_ready(self, path='/', attempts=16):
+        """Bounded anonymous GET-only Gateway convergence gate, never retries 401/403.
+
+        Kubelet readiness/rollout does not ensure Envoy has published endpoints yet.
+        No authentication assertions or mutation requests run inside this gate.
+        """
+        probe = self.anonymous()
+        transient = 0
+        for attempt in range(attempts):
+            try:
+                probe.call(path, raw=True)
+                if probe.last_status != 200:
+                    raise RuntimeError('readiness requires HTTP200')
+                return {'path': path, 'gateway_503_attempts': transient}
+            except urllib.error.HTTPError as exc:
+                if exc.code != 503 or attempt == attempts - 1:
+                    raise
+                transient += 1
+                time.sleep(2)
+        raise RuntimeError('Gateway readiness exhausted')
 
     def call(self, path, method='GET', data=None, form=None, raw=False, headers=None, payload=None):
         if not path.startswith('/') or path.startswith('//'):

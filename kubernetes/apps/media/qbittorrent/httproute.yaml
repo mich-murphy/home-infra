@@ -13,6 +13,10 @@ spec:
   hostnames:
   - qbittorrent.proof.invalid
   rules:
-  - backendRefs:
+  - filters:
+    - type: URLRewrite
+      urlRewrite:
+        hostname: qbittorrent.proof.invalid
+    backendRefs:
     - name: qbittorrent
       port: 8080

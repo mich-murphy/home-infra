@@ -10,7 +10,7 @@ Owned implementation paths:
 
 - `kubernetes/apps/media/fixtures/download-protocols/server.py`: importable fixture and server CLI.
 - `scripts/talos-proof-media-protocols.py`: repository CLI wrapper.
-- `tests/talos-proof-media-protocols-test.py`: offline socket tests.
+- `tests/talos-proof-media-protocols_test.py`: offline socket tests.
 - Adjacent Kustomization/resources: optional, namespace supplied by caller, not linked into media root, **replicas: 0**.
 
 ## Invocation contract
@@ -18,7 +18,7 @@ Owned implementation paths:
 From repository root (commands here are local/offline examples):
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 python3 tests/talos-proof-media-protocols-test.py -v
+PYTHONDONTWRITEBYTECODE=1 python3 tests/talos-proof-media-protocols_test.py -v
 
 # Deterministic built-in non-media bytes; generates metadata, not a downloaded file.
 python3 scripts/talos-proof-media-protocols.py generate \
@@ -82,4 +82,4 @@ For **each** qBittorrent and SAB run, the owner must record:
 
 ## Offline results
 
-`PYTHONDONTWRITEBYTECODE=1 python3 tests/talos-proof-media-protocols-test.py -v`: **6 tests passed**. Tests use real local HTTP/TCP sockets and independently decode returned torrent pieces and yEnc content. Coverage includes compact peer discovery; exact handshake and infohash; bitfield/unchoke/interest; per-piece SHA1 and full SHA256; NZB message ID; NNTP pre-auth denial, wrong and public credentials, capability list, reader mode, BODY/ARTICLE/HEAD/STAT/QUIT; real dot-stuffing, CRC32 and exact bytes; unknown infohash/article/path rejection; invalid peer frame/request rejection; single-byte and maximum 2MiB yEnc round trips; symlinks, traversal, invalid name and size rejection. No Internet or subprocess is used by tests. The optional Kustomize resources are supplied for owner integration; no cluster apply/image pull or real-client compatibility validation was performed.
+`PYTHONDONTWRITEBYTECODE=1 python3 tests/talos-proof-media-protocols_test.py -v`: **6 tests passed**. Tests use real local HTTP/TCP sockets and independently decode returned torrent pieces and yEnc content. Coverage includes compact peer discovery; exact handshake and infohash; bitfield/unchoke/interest; per-piece SHA1 and full SHA256; NZB message ID; NNTP pre-auth denial, wrong and public credentials, capability list, reader mode, BODY/ARTICLE/HEAD/STAT/QUIT; real dot-stuffing, CRC32 and exact bytes; unknown infohash/article/path rejection; invalid peer frame/request rejection; single-byte and maximum 2MiB yEnc round trips; symlinks, traversal, invalid name and size rejection. No Internet or subprocess is used by tests. The optional Kustomize resources are supplied for owner integration; no cluster apply/image pull or real-client compatibility validation was performed.
