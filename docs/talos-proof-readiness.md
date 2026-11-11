@@ -48,7 +48,7 @@ this fresh-state test is **not** an upgrade/migration rehearsal of the source da
 |---|---|---|
 | `pinchflat` | Isolated frontend + config/download PVCs | **Partial:** trusted-TLS profile CRUD, replacement and different-fresh-PVC read-before-write recovery passed. Real provider/download workflow remains unproved. |
 | `audiobookshelf` | Isolated library/config/metadata PVCs | **Bounded pass:** generated audiobook scan, exact stream/range bytes, progress/bookmark CRUD, restart and three fresh-PVC recovery checks. No production library/podcast/provider migration. |
-| `qbittorrent` | Fresh private settings/data + BEP3 fixture | **Bounded pass7ac9f65c:** repaired route, actual5.3 auth204/preferences, real torrent transfer—1 handshake/2 pieces/32,044bytes—and completed on-disk SHA; fixture-off restart and different2PVC functional recovery. Initial401/API-response mismatch and progress1-without-file failure retained. Manual Origin-only401 is not native-browser evidence; browser/CSRF gate open. |
+| `qbittorrent` | Fresh private settings/data + BEP3 fixture | **Bounded pass7ac9f65c:** repaired route, actual5.3 auth204/preferences, real torrent transfer—1 handshake/2 pieces/32,044bytes—and completed on-disk SHA; fixture-off restart and different2PVC functional recovery. Initial401/API-response mismatch and progress1-without-file failure retained. Follow-upd65fce12 native browser login204/prefs200 and hostile same-site form with exact authenticated cookie denied/state unchanged passed. Six harness failures retained. Cookie lacked Secure behind TLS termination—separate security gap, not production auth parity. |
 | `qbitwebui` | Fresh user/instance state and proof qbit dependency | **Pending:** executable exact-version workflow, no live connection/auth/queue-state proof yet. |
 | `sabnzbd` | Fresh downloader + synthetic NNTP provider | **Bounded pass7ac9f65c:** real NNTP auth/body/yEnc32,044bytes, completed history and exact file SHA, fixture-off restart and different2PVC recovery. Hostname/API/lowercase AUTHINFO/output-name incompatibilities retained and corrected. Temporary provider removed, original directories restored. No real Usenet account/provider parity. |
 | `radarr` | Isolated base + explicit shared `/data` integration profile | **Pending:** meaningful import/library/path/hardlink and recovery, not only root-folder/profile CRUD. |
@@ -56,7 +56,7 @@ this fresh-state test is **not** an upgrade/migration rehearsal of the source da
 | `lidarr` | Same bounded media-pipeline approach | **Pending:** music workflow and real imported-file identity/persistence. |
 | `prowlarr` | Isolated indexer manager + local provider fixtures | **Pending:** actual test/query/result integration, not only empty configuration. |
 | `jellyfin` | Fresh local server, no GPU/devices | **Pending:** generated media playback/seek/resume/subtitle and ACL/recovery; no GPU claim. |
-| `plex` | Fresh unclaimed server + authenticated local-only adapter | **Pending:** actual scan/playback/watched-state/recovery. Adapter key is **not** a Plex cloud token; cloud claim/account/client parity unproved. |
+| `plex` | Fresh unclaimed server + authenticated local-only adapter | **Blocked d65fce12:** adapter port collision/restart5 and forwarded-client-header incompatibility repaired; native library creation400 remains. No scan/decoded playback/timeline/history/recovery pass. Adapter key is **not** a cloud token/claim; native cloud/client parity unproved. |
 | `tautulli` | Fresh monitor state against proof Plex | **Pending:** real playback/history/statistics integration and recovery. |
 | `seerr` | Fresh request manager + isolated media/provider dependencies | **Pending:** actual authenticated request lifecycle/dependency behavior. |
 | `recyclarr` | Suspended bounded Job + local provider fixtures | **Pending:** nonempty planned custom-format changes and unchanged app state required; empty preview is not a pass. |
@@ -65,7 +65,8 @@ this fresh-state test is **not** an upgrade/migration rehearsal of the source da
 
 Evidence: [media runbook](talos-proof-media.md),
 [first live batch including failures](evidence/talos-media/first-live-batch.md),
-[actual transfer/recovery chronology](evidence/talos-media/live-download-transfers.md), and
+[actual transfer/recovery chronology](evidence/talos-media/live-download-transfers.md),
+[native browser pass and player failures](evidence/talos-media/live-browser-player.md), and
 [synthetic download protocol contract](evidence/talos-media/download-protocol-fixtures.md).
 The first batch records a stale-Talos observation fallback, temporary helper overlap
 and transient post-restore failures; those are not erased by later successes.
@@ -85,7 +86,13 @@ subsequent transfer window; its app/fixture/helper pods were all deleted.
 
 Platform: [network/storage evidence](evidence/talos-network-storage/live-summary.md),
 [supervised lifecycle](talos-proof-host-lifecycle.md),
-[parent post-fault checks](evidence/talos-acceptance/platform-after-faults.md).
+[parent post-fault checks](evidence/talos-acceptance/platform-after-faults.md),
+[controlled actual-node TCP rejection](evidence/talos-platform/controlled-host-isolation-node-live.md).
+The latter has same-endpoint positive controls and adjacent predicate/REJECT+2,
+unchanged canonical policy and cleanup; it is not TRACE/full-five-tuple or
+DNS/IPv6/exhaustive bypass acceptance. Parent independently verified the raw receipt,
+plus6new archive hashes/modes and6distinct live PVC/PV/XFS paths:
+[follow-up review](evidence/talos-acceptance/followup-archive-and-host-review.json).
 Operations: [live evidence](evidence/talos-operations/README.md).
 Generic off-node file restore passed; the12,443,680-byte private etcd snapshot is
 **capture only**, not Talos/etcd disaster-recovery acceptance.

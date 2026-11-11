@@ -9,13 +9,17 @@
 
 - **Platform:** Ready control plane, dedicated XFS/PVC persistence, real NodePort
   trusted TLS and correlated Cilium policy drops; guard crash/watchdog stop and
-  recovery tested. Host reboot and comprehensive host DNS/IPv6 bypass coverage
+  recovery tested. Actual node TCP rejection now has same-endpoint live controls
+  and correlated adjacent predicate/REJECT counters with unchanged policy/cleanup.
+  This is not full-five-tuple tracing. Host reboot and DNS/IPv6/bypass coverage
   remain unproved.
 - **Data:** CouchDB document persistence/recovery, Miniflux feed/read-state recovery,
   actual Pocket-ID browser WebAuthn/signed OIDC and recovery, and Wallabag HTTP
   OAuth/article extraction/CRUD/recovery. Wallabag's exact synthetic fixture needs
   a documented narrow SSRF adapter; this is not production configuration parity.
-  Parent independently checked private backup hashes and distinct live PVC UIDs.
+  Expanded CouchDB tenant/view/replication/security recovery and Miniflux
+  bookmark/preferences recovery passed. Parent independently checked private
+  archive hashes and distinct live PVC/PV/XFS paths; restart/resource caveats remain.
 - **Operations:** observations/loopback alerts and off-node file restore passed;
   private etcd snapshot captured, **not restored**. After a genuine fresh capacity
   improvement, Flux reconciliation/drift repair/path rollback/negative RBAC passed.

@@ -1,0 +1,110 @@
+{
+  "utc": "2026-11-11T18:24:55.722873+00:00",
+  "scope": "Parent read-only archive bytes/modes and live PVC/PV/path identity checks; not a new app replay",
+  "archives": [
+    {
+      "file": "qbittorrent-config-snapshot.tar",
+      "sha256": "5842c04bdbbfeeebba105400ccadb57acd1add9fb2e3ce31d17f5d892065f5f7",
+      "bytes": 26112,
+      "mode": "0600",
+      "parent_checked": true
+    },
+    {
+      "file": "qbittorrent-fixture-snapshot.tar",
+      "sha256": "239d5f19817591490bbf5d498d2c0fe59717c0732c6711ddefb804e517fb4d87",
+      "bytes": 35328,
+      "mode": "0600",
+      "parent_checked": true
+    },
+    {
+      "file": "sabnzbd-config-snapshot.tar",
+      "sha256": "3d612104dc46e2d22f0d1097b6d03f023ed8f861b0b0874709ba44dd2589bc46",
+      "bytes": 88576,
+      "mode": "0600",
+      "parent_checked": true
+    },
+    {
+      "file": "sabnzbd-fixture-snapshot.tar",
+      "sha256": "b1c6bc573058652ce1617a4e6bd0c21a97bbaff73a598f07c8ae254c3247c2f1",
+      "bytes": 37888,
+      "mode": "0600",
+      "parent_checked": true
+    },
+    {
+      "file": "couchdb-logical-ccf926c1a3f741419d7a682b453fd83e.json",
+      "sha256": "6029a4f6ea9478f5709eca293247ae81f8519890ff8c3812aafd8b740a5f4afb",
+      "bytes": 1087,
+      "mode": "0600",
+      "parent_checked": true
+    },
+    {
+      "file": "miniflux-postgres-ce130815fcef407fa03422cc67acbfa8.dump",
+      "sha256": "683cac5e58e468fcbbe6746da4c69546d186467de27fefccc3d3934d60c876f1",
+      "bytes": 51495,
+      "mode": "0600",
+      "parent_checked": true
+    }
+  ],
+  "volumes": [
+    {
+      "namespace": "proof-qbittorrent",
+      "source_claim": "config",
+      "source_uid": "ee55f0dc-eca7-42b1-a173-48647c5594ee",
+      "restored_claim": "recovery-config-39bb8019",
+      "restored_uid": "dfaccc7f-aaa0-4002-b291-ba085ce1f7b7",
+      "distinct_live_pv_and_xfs_path": true
+    },
+    {
+      "namespace": "proof-qbittorrent",
+      "source_claim": "fixture",
+      "source_uid": "fbfa9fee-4b2c-4252-9150-71d4d8d690c4",
+      "restored_claim": "recovery-fixture-569068d7",
+      "restored_uid": "1f99edfa-b4de-4ee0-a641-089a671916d8",
+      "distinct_live_pv_and_xfs_path": true
+    },
+    {
+      "namespace": "proof-sabnzbd",
+      "source_claim": "config",
+      "source_uid": "b7795c44-9d0a-41f3-9c4e-0e52720758de",
+      "restored_claim": "recovery-config-200f4bc3",
+      "restored_uid": "3f9ca0dd-0865-4e08-998b-9e426209f16d",
+      "distinct_live_pv_and_xfs_path": true
+    },
+    {
+      "namespace": "proof-sabnzbd",
+      "source_claim": "fixture",
+      "source_uid": "cef1e33c-576d-497c-b620-1d845c6daf59",
+      "restored_claim": "recovery-fixture-8b0c88e8",
+      "restored_uid": "a767ace7-1e6f-4d1c-8e44-17ed0f8336d9",
+      "distinct_live_pv_and_xfs_path": true
+    },
+    {
+      "namespace": "proof-couchdb",
+      "source_claim": "couchdb-data",
+      "source_uid": "2ec59c23-2b17-4b50-8f02-d84acbd6cd56",
+      "restored_claim": "couchdb-restore-3c34b26267b5",
+      "restored_uid": "687843e6-a262-48d4-8371-6afd48b121d7",
+      "distinct_live_pv_and_xfs_path": true
+    },
+    {
+      "namespace": "proof-miniflux",
+      "source_claim": "postgres-data",
+      "source_uid": "04d80385-d11a-481e-b666-81162c795a0a",
+      "restored_claim": "postgres-restore-6c270c8b3a3a",
+      "restored_uid": "1dc45c7d-0aa1-46da-a634-d46036993b3c",
+      "distinct_live_pv_and_xfs_path": true
+    }
+  ],
+  "host_isolation": {
+    "raw_receipt_sha256_recomputed": "79dc13fe74a43b3c196989b441112b6f2ff3888abeb1c5efa08c9e8517fd104a",
+    "exact_adjacent_predicate_delta": 2,
+    "existing_reject_delta": 2,
+    "positive_controls": [
+      1,
+      1
+    ],
+    "node_acceptance": 0,
+    "all_five_canonical_policy_snapshots_equal": true,
+    "scope": "endpoint/cgroup-attributed node TCP only, no TRACE/5tuple/DNS/IPv6 claim"
+  }
+}

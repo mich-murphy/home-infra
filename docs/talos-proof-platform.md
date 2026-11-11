@@ -131,7 +131,16 @@ Early `network-test.txt` demonstrates public HTTPS200 and failures contacting
 private targets. Its `ISOLATION-PASS` line is an **unaccepted historical assertion**:
 timeouts lack per-test counter attribution, IPv6 `::1` is guest-local, and the
 slirp DNS proxy was not covered. Cumulative reject counters support filtering but
-do not complete those gates. Stronger controlled/correlated experiments are required.
+do not complete those gates.
+
+A later [controlled actual-node TCP trial](evidence/talos-platform/controlled-host-isolation-node-live.md)
+now proves a narrower result: the same owned private endpoint accepted both
+outside-cgroup controls, accepted no node connection, and its exact adjacent
+predicate and existing REJECT each increased by2. Canonical policy was unchanged
+and instrumentation removed. The parent independently rehashed/reparsed the
+private receipt. This is endpoint/cgroup attribution, **not** TRACE/full-five-tuple,
+DNS/IPv6 or exhaustive bypass proof. The first loader failure and earlier resource
+refusal remain recorded; the completed window grants no further host execution.
 
 ## Private tools, configuration and API access
 
