@@ -1,7 +1,7 @@
 {
-  "timestamp_utc": "2026-11-11T12:34:36.895126+00:00",
-  "render_sha256": "3f0f64bf3871fafddc95dcf7083ff10ec5eae461f2a290538ee0835b471f3b2a",
-  "offline_unit_tests": 26,
+  "timestamp_utc": "2026-11-11T13:55:24.471711+00:00",
+  "render_sha256": "bf7f5196a566400d66976e58bdda35aa5589ebb30e2c2c92b17557625240584d",
+  "offline_unit_tests": 29,
   "offline_unit_test_result": "passed",
   "parent_safety_validator": "passed",
   "api_endpoint_required": "https://127.0.0.1:64120",
@@ -9,8 +9,9 @@
   "mutation_checks": "every apply/scale/exec/patch/rollout; endpoint, TLS, context, group, expiry, node UID",
   "private_state_checks": "lstat rejects symlink file/directory/ancestor before resolve/open",
   "live_deployment": "All data app pods deactivated/deleted at checkpoint",
-  "live_functional_tests": "CouchDB bounded create/read/recovery, Miniflux functional+cleanPGPVC, Pocket-ID virtualWebAuthn/OIDC+cleanPVC PASS; Wallabag startup-only PARTIAL; Nextcloud/Immich NOT RUN",
+  "live_functional_tests": "CouchDB bounded create/read/recovery, Miniflux functional+cleanPGPVC, Pocket-ID virtualWebAuthn/OIDC+cleanPVC, Wallabag OAuth HTTP extract/CRUD+cleanMariaDBPVC PASS with explicit fixture adapter/resource qualifications; Nextcloud/Immich NOT RUN",
   "gateway_tests": "CouchDB trustedTLS integrated realGateway passed",
   "resource_capacity": "2560MiB node; large groups may fail conservative guard",
-  "acceptance": "pending parent integration"
+  "acceptance": "pending parent integration",
+  "oidc_audience_pure_cases": 13
 }

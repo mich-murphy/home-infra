@@ -1,0 +1,28 @@
+{
+  "latest_container_peaks": {
+    "wallabag": {
+      "latest_container_peak_bytes": 201289728,
+      "latest_container_oom_kill": 0,
+      "scope": "latest container only; earlier replaced-container peaks unknown"
+    },
+    "mariadb": {
+      "latest_container_peak_bytes": 107380736,
+      "latest_container_oom_kill": 0,
+      "scope": "latest container only; earlier replaced-container peaks unknown"
+    },
+    "redis": {
+      "latest_container_peak_bytes": 31641600,
+      "latest_container_oom_kill": 0,
+      "scope": "latest container only; earlier replaced-container peaks unknown"
+    },
+    "fixture": {
+      "latest_container_peak_bytes": 66637824,
+      "latest_container_oom_kill": 0,
+      "scope": "latest container only; earlier replaced-container peaks unknown"
+    }
+  },
+  "whole_run_peak": "unknown",
+  "node_minimum_available_during_peak": "unknown",
+  "guard_reserve_mib": 192,
+  "production_headroom_acceptance": "NOT CLAIMED; two latest peaks near their cgroup limits"
+}

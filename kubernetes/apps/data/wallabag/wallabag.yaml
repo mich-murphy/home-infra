@@ -153,6 +153,13 @@ spec:
           mountPath: /etc/php82/conf.d/99-proof.ini
           subPath: 99-proof.ini
           readOnly: true
+        - name: extractor-fixture
+          mountPath: /proof
+          readOnly: true
+        command:
+        - /bin/sh
+        - -ec
+        - php /proof/extractor-fixture.php; exec /entrypoint.sh wallabag
       volumes:
       - name: data
         persistentVolumeClaim:
@@ -160,6 +167,9 @@ spec:
       - name: single-worker
         configMap:
           name: wallabag-single-worker
+      - name: extractor-fixture
+        configMap:
+          name: wallabag-extractor-fixture
 ---
 apiVersion: v1
 kind: Service

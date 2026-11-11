@@ -1,32 +1,32 @@
 {
-  "captured_utc": "2026-11-11T13:39:09.676599+00:00",
+  "captured_utc": "2026-11-11T13:52:22.745518+00:00",
   "node_memory": {
-    "time": "2026-11-11T13:39:04Z",
-    "availableBytes": 922664960,
-    "usageBytes": 2139037696,
-    "workingSetBytes": 1577172992,
-    "rssBytes": 1105420288,
-    "pageFaults": 4674656,
-    "majorPageFaults": 17293,
+    "time": "2026-11-11T13:52:15Z",
+    "availableBytes": 870572032,
+    "usageBytes": 2140655616,
+    "workingSetBytes": 1629265920,
+    "rssBytes": 1192935424,
+    "pageFaults": 6889065,
+    "majorPageFaults": 32437,
     "psi": {
       "full": {
-        "total": 714370,
+        "total": 1529896,
         "avg10": 0,
-        "avg60": 0,
+        "avg60": 0.03,
         "avg300": 0
       },
       "some": {
-        "total": 946619,
+        "total": 1908102,
         "avg10": 0,
-        "avg60": 0,
-        "avg300": 0
+        "avg60": 0.06,
+        "avg300": 0.02
       }
     }
   },
   "pods": [
     {
-      "name": "fixture-56598fd6b7-vbvhj",
-      "uid": "ca30271b-c2e4-4b34-8daf-8d743ecb29c1",
+      "name": "fixture-6c9d4c5b57-bhrrr",
+      "uid": "0256e244-e7dd-4e76-941d-6690f728db83",
       "node": "talos-proof",
       "containers": [
         {
@@ -55,8 +55,8 @@
       ]
     },
     {
-      "name": "mariadb-858564b5d8-pnfs5",
-      "uid": "857f052f-b389-4f06-ae61-efc96236ac31",
+      "name": "mariadb-6f74785d4f-l72q4",
+      "uid": "4633735b-19f4-4ee1-aa23-10920380d3d1",
       "node": "talos-proof",
       "containers": [
         {
@@ -85,8 +85,8 @@
       ]
     },
     {
-      "name": "redis-7bc5ff86d8-zdrbl",
-      "uid": "15866d0c-a3ec-4749-9786-062f875a607c",
+      "name": "redis-7bc5ff86d8-crvpg",
+      "uid": "cea47a85-2d43-4953-8f31-580dad05813b",
       "node": "talos-proof",
       "containers": [
         {
@@ -115,8 +115,8 @@
       ]
     },
     {
-      "name": "wallabag-79d4467596-ffbh7",
-      "uid": "c758e75a-d011-4249-900a-0f367ae59454",
+      "name": "wallabag-5959dd6c75-xjmnk",
+      "uid": "a77ef5fc-801f-401d-b694-8924997e6b49",
       "node": "talos-proof",
       "containers": [
         {
@@ -148,18 +148,76 @@
   "pod_memory": [
     {
       "pod": {
-        "name": "redis-7bc5ff86d8-zdrbl",
+        "name": "fixture-6c9d4c5b57-bhrrr",
         "namespace": "proof-wallabag",
-        "uid": "15866d0c-a3ec-4749-9786-062f875a607c"
+        "uid": "0256e244-e7dd-4e76-941d-6690f728db83"
       },
       "memory": {
-        "time": "2026-11-11T13:38:54Z",
-        "availableBytes": 61202432,
-        "usageBytes": 6008832,
-        "workingSetBytes": 5906432,
-        "rssBytes": 4919296,
-        "pageFaults": 5404,
-        "majorPageFaults": 11,
+        "time": "2026-11-11T13:52:11Z",
+        "availableBytes": 47370240,
+        "usageBytes": 19959808,
+        "workingSetBytes": 19738624,
+        "rssBytes": 9355264,
+        "pageFaults": 7996,
+        "majorPageFaults": 182,
+        "psi": {
+          "full": {
+            "total": 8011,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 8011,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      },
+      "containers": [
+        {
+          "name": "fixture",
+          "memory": {
+            "time": "2026-11-11T13:52:18Z",
+            "availableBytes": 47669248,
+            "usageBytes": 19677184,
+            "workingSetBytes": 19439616,
+            "rssBytes": 9314304,
+            "pageFaults": 6782,
+            "majorPageFaults": 180,
+            "psi": {
+              "full": {
+                "total": 8081,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              },
+              "some": {
+                "total": 8081,
+                "avg10": 0,
+                "avg60": 0,
+                "avg300": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "pod": {
+        "name": "redis-7bc5ff86d8-crvpg",
+        "namespace": "proof-wallabag",
+        "uid": "cea47a85-2d43-4953-8f31-580dad05813b"
+      },
+      "memory": {
+        "time": "2026-11-11T13:52:14Z",
+        "availableBytes": 60911616,
+        "usageBytes": 6238208,
+        "workingSetBytes": 6197248,
+        "rssBytes": 4923392,
+        "pageFaults": 5275,
+        "majorPageFaults": 21,
         "psi": {
           "full": {
             "total": 0,
@@ -179,13 +237,13 @@
         {
           "name": "redis",
           "memory": {
-            "time": "2026-11-11T13:39:00Z",
-            "availableBytes": 61460480,
-            "usageBytes": 5750784,
-            "workingSetBytes": 5648384,
+            "time": "2026-11-11T13:52:19Z",
+            "availableBytes": 61419520,
+            "usageBytes": 5726208,
+            "workingSetBytes": 5689344,
             "rssBytes": 4882432,
-            "pageFaults": 4136,
-            "majorPageFaults": 11,
+            "pageFaults": 4052,
+            "majorPageFaults": 20,
             "psi": {
               "full": {
                 "total": 0,
@@ -206,85 +264,27 @@
     },
     {
       "pod": {
-        "name": "mariadb-858564b5d8-pnfs5",
+        "name": "wallabag-5959dd6c75-xjmnk",
         "namespace": "proof-wallabag",
-        "uid": "857f052f-b389-4f06-ae61-efc96236ac31"
+        "uid": "a77ef5fc-801f-401d-b694-8924997e6b49"
       },
       "memory": {
-        "time": "2026-11-11T13:39:00Z",
-        "availableBytes": 203583488,
-        "usageBytes": 87203840,
-        "workingSetBytes": 64851968,
-        "rssBytes": 59949056,
-        "pageFaults": 221996,
-        "majorPageFaults": 126,
+        "time": "2026-11-11T13:52:13Z",
+        "availableBytes": 143757312,
+        "usageBytes": 63819776,
+        "workingSetBytes": 57569280,
+        "rssBytes": 13602816,
+        "pageFaults": 87271,
+        "majorPageFaults": 166,
         "psi": {
           "full": {
-            "total": 156,
+            "total": 7584,
             "avg10": 0,
             "avg60": 0,
             "avg300": 0
           },
           "some": {
-            "total": 156,
-            "avg10": 0,
-            "avg60": 0,
-            "avg300": 0
-          }
-        }
-      },
-      "containers": [
-        {
-          "name": "mariadb",
-          "memory": {
-            "time": "2026-11-11T13:38:59Z",
-            "availableBytes": 204423168,
-            "usageBytes": 86347776,
-            "workingSetBytes": 64012288,
-            "rssBytes": 59908096,
-            "pageFaults": 217461,
-            "majorPageFaults": 125,
-            "psi": {
-              "full": {
-                "total": 156,
-                "avg10": 0,
-                "avg60": 0,
-                "avg300": 0
-              },
-              "some": {
-                "total": 156,
-                "avg10": 0,
-                "avg60": 0,
-                "avg300": 0
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "pod": {
-        "name": "wallabag-79d4467596-ffbh7",
-        "namespace": "proof-wallabag",
-        "uid": "c758e75a-d011-4249-900a-0f367ae59454"
-      },
-      "memory": {
-        "time": "2026-11-11T13:39:02Z",
-        "availableBytes": 134651904,
-        "usageBytes": 108806144,
-        "workingSetBytes": 66674688,
-        "rssBytes": 13418496,
-        "pageFaults": 213503,
-        "majorPageFaults": 278,
-        "psi": {
-          "full": {
-            "total": 5848,
-            "avg10": 0,
-            "avg60": 0,
-            "avg300": 0
-          },
-          "some": {
-            "total": 5848,
+            "total": 7584,
             "avg10": 0,
             "avg60": 0,
             "avg300": 0
@@ -295,22 +295,22 @@
         {
           "name": "wallabag",
           "memory": {
-            "time": "2026-11-11T13:39:08Z",
-            "availableBytes": 134893568,
-            "usageBytes": 108564480,
-            "workingSetBytes": 66433024,
-            "rssBytes": 13381632,
-            "pageFaults": 212200,
-            "majorPageFaults": 278,
+            "time": "2026-11-11T13:52:22Z",
+            "availableBytes": 144670720,
+            "usageBytes": 62935040,
+            "workingSetBytes": 56655872,
+            "rssBytes": 13561856,
+            "pageFaults": 86061,
+            "majorPageFaults": 165,
             "psi": {
               "full": {
-                "total": 6653,
+                "total": 7348,
                 "avg10": 0,
                 "avg60": 0,
                 "avg300": 0
               },
               "some": {
-                "total": 6653,
+                "total": 7348,
                 "avg10": 0,
                 "avg60": 0,
                 "avg300": 0
@@ -322,27 +322,27 @@
     },
     {
       "pod": {
-        "name": "fixture-56598fd6b7-vbvhj",
+        "name": "mariadb-6f74785d4f-l72q4",
         "namespace": "proof-wallabag",
-        "uid": "ca30271b-c2e4-4b34-8daf-8d743ecb29c1"
+        "uid": "4633735b-19f4-4ee1-aa23-10920380d3d1"
       },
       "memory": {
-        "time": "2026-11-11T13:39:03Z",
-        "availableBytes": 47566848,
-        "usageBytes": 26025984,
-        "workingSetBytes": 19542016,
-        "rssBytes": 9351168,
-        "pageFaults": 7896,
-        "majorPageFaults": 124,
+        "time": "2026-11-11T13:52:21Z",
+        "availableBytes": 203259904,
+        "usageBytes": 90357760,
+        "workingSetBytes": 65175552,
+        "rssBytes": 60207104,
+        "pageFaults": 113780,
+        "majorPageFaults": 145,
         "psi": {
           "full": {
-            "total": 5449,
+            "total": 458,
             "avg10": 0,
             "avg60": 0,
             "avg300": 0
           },
           "some": {
-            "total": 5449,
+            "total": 458,
             "avg10": 0,
             "avg60": 0,
             "avg300": 0
@@ -351,24 +351,24 @@
       },
       "containers": [
         {
-          "name": "fixture",
+          "name": "mariadb",
           "memory": {
-            "time": "2026-11-11T13:39:05Z",
-            "availableBytes": 47833088,
-            "usageBytes": 25759744,
-            "workingSetBytes": 19275776,
-            "rssBytes": 9310208,
-            "pageFaults": 6638,
-            "majorPageFaults": 124,
+            "time": "2026-11-11T13:52:16Z",
+            "availableBytes": 203501568,
+            "usageBytes": 89726976,
+            "workingSetBytes": 64933888,
+            "rssBytes": 60170240,
+            "pageFaults": 112417,
+            "majorPageFaults": 144,
             "psi": {
               "full": {
-                "total": 5985,
+                "total": 455,
                 "avg10": 0,
                 "avg60": 0,
                 "avg300": 0
               },
               "some": {
-                "total": 5985,
+                "total": 455,
                 "avg10": 0,
                 "avg60": 0,
                 "avg300": 0
@@ -379,10 +379,12 @@
       ]
     }
   ],
-  "wallabag_bounded_configuration": "{\"php_memory_limit\":\"128M\",\"opcache_memory_consumption\":\"32\"}",
-  "mariadb_bounded_configuration": "aria_pagecache_buffer_size\t16777216\ninnodb_buffer_pool_size\t67108864\nmax_connections\t12",
-  "wallabag_memory_peak_bytes": "201326592",
-  "mariadb_memory_peak_bytes": "102023168",
-  "redis_memory_peak_bytes": "15032320",
-  "fixture_memory_peak_bytes": "67104768"
+  "wallabag_cgroup": "memory.current\n64909312\nmemory.peak\n201289728\nmemory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+  "mariadb_cgroup": "memory.current\n98619392\nmemory.peak\n107380736\nmemory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+  "redis_cgroup": "memory.current\n6615040\nmemory.peak\n31641600\nmemory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+  "fixture_cgroup": "memory.current\n20815872\nmemory.peak\n66637824\nmemory.events\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+  "php_processes_after_gateway_request": "PID   PPID  COMMAND\n   52    51 php-fpm\n   55    52 php-fpm",
+  "php_limits": "{\"memory_limit\":\"128M\",\"opcache_memory_consumption\":\"32\"}",
+  "mariadb_configuration": "aria_pagecache_buffer_size\t16777216\ninnodb_buffer_pool_size\t67108864\nmax_connections\t12",
+  "redis_memory": "PONG\nused_memory:1445840\nused_memory_peak:1446160\nmaxmemory:0\nmaxmemory_policy:noeviction"
 }

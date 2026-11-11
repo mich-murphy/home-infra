@@ -312,6 +312,7 @@ def miniflux():
 
 
 def wallabag():
+    RESULT['limitations'].extend(['Proof-only exact fixture FQDN extractor private-IP exception; no general subnet/Internet exemption.', 'Synchronous capture tested; Redis queue/import-worker integration not claimed.'])
     execute('wallabag', ['sh', '-ec', 'cd /var/www/wallabag; php bin/console --env=prod fos:user:change-password wallabag "$PROOF_ADMIN_PASSWORD" --no-interaction'])
     client_path = LIFE.no_symlinks(STATEPATH/'wallabag-client.json')
     if client_path.exists():
@@ -337,7 +338,7 @@ def wallabag():
     with forwarded('wallabag',80) as base:
         http(base,'/api/info',raw=True)
         headers=login(base)
-        created=api(base,'/api/entries.json','POST',{'url':'http://fixture:8081/article.html?proof='+marker},headers)
+        created=api(base,'/api/entries.json','POST',{'url':'http://fixture.proof-wallabag.svc.cluster.local:8080/article.html?proof='+marker},headers)
         entry=created['id']
         original=api(base,f'/api/entries/{entry}.json',headers=headers)
         check('Wallabag OAuth password login and live fixture URL capture/extraction via trusted TLS Gateway','Synthetic proof content' in original['content'] and 'Proof article' in original['title'])

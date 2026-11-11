@@ -10,6 +10,7 @@ resources:
 - fixture.yaml
 - httproute.yaml
 - gateway-policy.yaml
+- extractor-fixture.yaml
 labels:
 - pairs:
     app.kubernetes.io/part-of: talos-proof

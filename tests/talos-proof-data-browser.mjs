@@ -5,6 +5,7 @@
  * ignoreHTTPSErrors; all non-proof network requests are aborted.
  */
 import fs from 'node:fs';
+import {audienceMatches} from './talos-proof-data-oidc.mjs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
@@ -146,7 +147,7 @@ try {
   const algorithm = {RS256:'RSA-SHA256',ES256:'sha256',EdDSA:null}[header.alg];
   assert(['RS256','ES256','EdDSA'].includes(header.alg), 'OIDC token uses an explicitly supported signing algorithm');
   assert(crypto.verify(algorithm,Buffer.from(jwt[0]+'.'+jwt[1]),header.alg==='ES256'?{key,dsaEncoding:'ieee-p1363'}:key,Buffer.from(jwt[2],'base64url')), 'OIDC ID token signature validates against issuer public JWKS');
-  assert(claims.iss===issuer && (claims.aud===client.id || claims.aud?.includes(client.id)) && claims.nonce===nonce && claims.sub===user.id && claims.exp > Date.now()/1000, 'OIDC ID token issuer/audience/nonce/subject/expiry validated');
+  assert(claims.iss===issuer && audienceMatches(claims.aud,client.id) && claims.nonce===nonce && claims.sub===user.id && claims.exp > Date.now()/1000, 'OIDC ID token issuer/audience/nonce/subject/expiry validated');
   const info = await page.evaluate(async accessToken => {
     const response = await fetch('/api/oidc/userinfo',{headers:{Authorization:'Bearer '+accessToken}});
     if(!response.ok) throw new Error('userinfo failed');

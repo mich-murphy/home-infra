@@ -215,6 +215,25 @@ class DataContract(unittest.TestCase):
             live.clean_postgres_restore('miniflux',b'dump')
         self.assertEqual(execute.call_count,1)
 
+    def test_wallabag_fixture_exception_is_exact_and_sha_pinned(self):
+        config=next(d for d in DOCS if d['kind']=='ConfigMap' and d['metadata']['name']=='wallabag-extractor-fixture')
+        source=config['data']['extractor-fixture.php']
+        self.assertIn("$host === \'fixture.proof-wallabag.svc.cluster.local\'",source.replace("\\'","'"))
+        self.assertIn('3825c3bed62f0bd07e6e81e543b0b4ad5907161af32f5fe7291d86719bcd9d09',source)
+        self.assertIn('substr_count($source,$old)!==1',source)
+        self.assertNotIn('10.0.0.0/8',source)
+        self.assertNotIn('0.0.0.0/0',source)
+
+    def test_wallabag_fixture_uses_upstream_allowed_port(self):
+        service=next(d for d in DOCS if d['kind']=='Service' and d['metadata']['namespace']=='proof-wallabag' and d['metadata']['name']=='fixture')
+        self.assertEqual(service['spec']['ports'][0]['port'],8080)
+        self.assertEqual(service['spec']['ports'][0]['targetPort'],8080)
+
+    def test_miniflux_scheduler_factor_supported(self):
+        deployment=next(d for d in DOCS if d['kind']=='Deployment' and d['metadata']['namespace']=='proof-miniflux' and d['metadata']['name']=='miniflux')
+        factor=next(e['value'] for e in deployment['spec']['template']['spec']['containers'][0]['env'] if e['name']=='SCHEDULER_ENTRY_FREQUENCY_FACTOR')
+        self.assertGreaterEqual(int(factor),1)
+
 
 if __name__ == '__main__':
     unittest.main()

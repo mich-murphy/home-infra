@@ -2,9 +2,9 @@
 
 ## Acceptance status
 
-**CouchDB create/read/recovery, Miniflux functional/recovery, and Pocket-ID virtual WebAuthn/OIDC/recovery live proofs PASSED.**
+**Bounded live workflow proofs passed for CouchDB create/read/recovery, Miniflux, Pocket-ID virtual WebAuthn/OIDC, and Wallabag HTTP extraction/CRUD/recovery.**
 The exclusive CouchDB lease was used and released after scale0/pod deletion.
-Wallabag startup/resource profile is demonstrated but its HTTP functional/restore proof remains incomplete; Nextcloud/Immich remain pending. Do not
+Wallabag passed with an explicit fixture-only extractor exception described below. Nextcloud/Immich remain untested live; overall integration/production-capacity acceptance is pending. Do not
 interpret manifest probes or executable plans for those applications as passed tests.
 This delivery needs parent integration acceptance. The source Docker host was not
 changed or copied. All persistent data is newly generated synthetic proof data.
@@ -166,15 +166,17 @@ error bodies are never printed. Parent may copy reviewed result JSON into eviden
 |---|---|---|
 | Nextcloud | authenticated WebDAV PUT/GET byte equality, pod replacement/read, deletion; full PG dump and independent restore with exact SQL sentinel; PG pod replacement; bounded cron.php execution | **All live checks pending**; interactive WOPI editing/callback, richdocuments provisioning, browser UX |
 | Collabora | real Gateway WOPI discovery action XML | startup/capability/resource fit; full interactive editor integration; no richdocuments Internet install attempted |
-| Miniflux | category/feed CRUD; fetch synthetic RSS fixture via allowed network flow; entry read-state update; PG replacement; full PG dump/independent restore | all live pending; external feed fetching intentionally forbidden |
-| Wallabag | rotate image default password; CLI v2 synthetic entry import with content update disabled; JSON export exact title/content; MariaDB replacement/export | all live pending; OAuth/browser login, article scraping, MariaDB backup restore |
-| CouchDB | **LIVE PASS:** trusted TLS Gateway auth denial401; authenticated document CRUD; pod replacement; logical JSON restore into distinct clean PVC; exact canonical SHA256; second replacement/read; source reattached and all pods deleted | replication, multi-node recovery, VM/disk loss |
+| Miniflux | **LIVE PASS:** authenticated category/feed CRUD, synthetic RSS fetch, read-state, PG replacement, distinct clean-PG-PVC logical restore with authenticated content SHA match | external feed fetching intentionally forbidden; whole-run resource peaks not captured |
+| Wallabag | **LIVE PASS with fixture exception:** real OAuth password login; HTTP URL capture/extraction/read/update/archive/star/delete+404; export content SHA; MariaDB replacement; clean-PVC logical restore and existing-user OAuth relogin with same article SHA | browser UX, Redis async queue/import worker, production resource capacity; earlier replaced-container peaks unknown |
+| CouchDB | **LIVE PASS:** trusted TLS Gateway auth denial401; authenticated document create/read and database deletion; pod replacement; logical JSON restore into distinct clean PVC; exact canonical SHA256; second replacement/read; source reattached and all pods deleted | replication, multi-node recovery, VM/disk loss |
 | Immich | synthetic PNG generated in memory; fresh admin signup/login; asset upload/original download byte equality; server replacement/download; full vector PG dump/restore; ML ping | all live pending; ML inference/model download, thumbnails/job completeness, GPU/video, external OIDC |
-| Pocket-ID | isolated OIDC discovery issuer/endpoints; public signing JWKS; pod replacement/discovery | all live pending; interactive admin/passkey enrollment, user persistence, authorization-code/token flow, human browser ceremony |
+| Pocket-ID | **LIVE PASS:** fresh virtual WebAuthn registration/login, PKCE code/state, signed ID token/JWKS/claims, userinfo, unknown client rejection; existing passkey/user after pod and distinct clean-PVC logical restore | physical authenticator UX/recovery, hardware attestation; replay/wrong-verifier negative tests not yet run; strict aud fix tested offline after live run |
 
 The PNG and RSS/article content are synthetic. Dumps contain only new proof data
-and remain0600 outside git. The restore target is a separate `proof_restore`
-database, not an overwrite of the running app database. PG dumps are hashed for
+and remain0600 outside git. The initial generic PG sentinel helper uses a separate `proof_restore` database.
+The actual Miniflux/Wallabag/Pocket-ID/CouchDB recovery suites additionally use
+distinct newly provisioned PVCs/PVs, stop the old instance, restore logically,
+validate existing application data/identity, and then reattach the retained source. PG dumps are hashed for
 reproducibility, but a hash is not a backup-durability claim. Pod replacement uses
 the same local PVC/node; it does not prove VM loss, disk loss, HA, remote recovery
 or node-reboot survival. Parent platform negative isolation and gateway evidence
@@ -185,9 +187,10 @@ must be combined with these functional checks for integration acceptance.
 ```sh
 kubectl kustomize kubernetes/apps/data | python3 tests/kubernetes-proof.py
 python3 tests/talos-proof-data_test.py
+node tests/talos-proof-data-oidc_test.mjs
 ```
 
-The26 offline tests cover parent safety validation, exact boundaries, current
+The29 offline tests cover parent safety validation, exact boundaries, current
 Compose image membership, Immich/PG18 paths, default-deny presence, group-budget
 accounting, no committed Secret manifests, fresh/private credential behavior,
 repository-state refusal, no implicit kubeconfig, expired leases, exact endpoint/TLS/node UID enforcement, symlink/ancestor
@@ -300,3 +303,62 @@ At the final safe checkpoint the global talos-proof-labelled pod query found
 **no resources**. No simultaneous groups or production copy were used. The early
 CouchDB proof is bounded to document create/read, database deletion and logical
 restore/restart—not document revision update/conflict/delete, CORS or replication.
+
+## Completed Wallabag HTTP and clean-PVC recovery proof
+
+The subsequent exclusive Wallabag run passed the actual real Gateway workflow:
+OAuth password token login with the **fresh proof** account; POST a synthetic
+article URL; real Graby extraction; GET; PATCH title/archive/star; export exact
+content SHA256; MariaDB replacement/read; full logical dump and restore into a
+distinct clean MariaDB PVC; **existing-user OAuth relogin**; read the same article,
+archive state and content SHA256; DELETE and404; reattach the retained source and
+clean up its test article through authenticated HTTP. Source PVC UID
+6e8d81ac-4551-46be-9640-431ddbbd100c and restored UID
+ad3caf6d-1fec-409e-9651-30900678e6f3 are distinct. Content SHA256 is
+776281cc58d4ac7357609e41bdad7c083337751f9b8e0ae30c369aabf78df105.
+A transient HTTP500 after database replacement recovered within1second and is
+recorded, not discarded. Earlier bootstrap/fixture failures remain in evidence.
+
+**Extractor exception, not an unchanged production security setting:** upstream
+Graby only permits80/443/8080 and blocks private addresses. The isolated fixture
+therefore uses8080 and a declarative, SHA-pinned proof adapter permits private-IP
+resolution **only for `fixture.proof-wallabag.svc.cluster.local`**. Every other
+Graby scheme/port/domain/IP check remains. The adapter refuses an unexpected
+upstream source hash. It patches only the proof container's ephemeral layer,
+never Docker-host or a production image/data volume. Cilium still allows only DNS
+and exact backend/fixture pod flows; there is **no subnet/Internet/host allowance**.
+This test-specific source/config delta is required by the synthetic private
+fixture topology and must be retained in acceptance qualifications. No production
+password was rotated: only `proof-wallabag`'s newly initialized account changed.
+The sole Docker-host interaction was read-only version/config discovery.
+
+Redis PING/memory and the actual PHP-FPM master+one worker were captured. Redis
+asynchronous queue/import-worker integration was not exercised. All group pods
+were deactivated, waited deleted, and the global talos-proof-labelled pod query
+returned no resources before releasing the exclusive lease for ops/media.
+
+### Resource qualification
+
+`wallabag-live-runtime.json` includes each **latest surviving container's**
+memory.current, memory.peak, memory.events and pod UID before final deactivation.
+These are not whole-run peaks: earlier containers replaced during restore were
+not sampled before deletion. Node available memory is a point-in-time observation,
+not a minimum correlated with peak application memory. No extra resident monitor
+or host changes were used. Latest sampled memory.events had oom/oom_kill/max0.
+Nevertheless Wallabag's latest peak was201,289,728bytes against192MiB limit and
+the fixture peak66,637,824bytes against64MiB—very near their cgroup limits, with
+reclaimable cache included. Thus a successful synthetic workflow is **not** a
+20–25% headroom or production-capacity acceptance. The192MiB guard reserve is only
+an operating safety floor. Nextcloud/Immich/full simultaneous deployment remain
+separate unproved resource gates. No limits were silently raised or OOMs hidden.
+
+### OIDC audience validation follow-up
+
+Parent review found generic `aud.includes(clientId)` would also match a substring
+when aud is a string. The shared strict `audienceMatches` helper now requires
+exact string equality, or an all-string array containing that exact client ID.
+Thirteen pure negative/positive cases cover substring strings, mixed arrays,
+null/object/number/empty inputs. The browser flow imports that helper. This fix
+was offline tested after the successful Pocket-ID runs; no extra Pocket-ID
+activation overlapped Wallabag. Authorization-code replay and wrong-PKCE-verifier
+negative live tests remain untested and are not implied by unknown-client denial.

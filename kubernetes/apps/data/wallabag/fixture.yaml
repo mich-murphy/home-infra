@@ -3,12 +3,83 @@ kind: ConfigMap
 metadata:
   name: fixture
 data:
-  feed.xml: <?xml version="1.0"?><rss version="2.0"><channel><title>Proof feed</title><link>http://fixture:8081/</link><description>Synthetic
-    only</description><item><title>Proof article</title><link>http://fixture:8081/article.html</link><guid>proof-article-1</guid><description>Synthetic
+  feed.xml: <?xml version="1.0"?><rss version="2.0"><channel><title>Proof feed</title><link>http://fixture:8080/</link><description>Synthetic
+    only</description><item><title>Proof article</title><link>http://fixture:8080/article.html</link><guid>proof-article-1</guid><description>Synthetic
     proof content</description></item></channel></rss>
-  article.html: <!doctype html><html><head><title>Proof article</title></head><body><article><h1>Proof
-    article</h1><p>Synthetic proof content for isolated validation. No production
-    data.</p></article></body></html>
+  article.html: <!doctype html><html><head><meta charset="utf-8"><title>Proof article</title></head><body><main><article><h1>Proof
+    article</h1><p>Synthetic proof content for isolated validation. This paragraph
+    describes a fictional library with red books, blue shelves, and a quiet reading
+    room. No production data or external integrations are present. The library is
+    an imaginary place used only to validate article extraction and persistence. A
+    reader opens a book, reads a chapter, and writes a short note in a synthetic notebook.
+    The text is intentionally long enough for readability extraction and contains
+    no external links.</p><p>Synthetic proof content for isolated validation. This
+    paragraph describes a fictional library with red books, blue shelves, and a quiet
+    reading room. No production data or external integrations are present. The library
+    is an imaginary place used only to validate article extraction and persistence.
+    A reader opens a book, reads a chapter, and writes a short note in a synthetic
+    notebook. The text is intentionally long enough for readability extraction and
+    contains no external links.</p><p>Synthetic proof content for isolated validation.
+    This paragraph describes a fictional library with red books, blue shelves, and
+    a quiet reading room. No production data or external integrations are present.
+    The library is an imaginary place used only to validate article extraction and
+    persistence. A reader opens a book, reads a chapter, and writes a short note in
+    a synthetic notebook. The text is intentionally long enough for readability extraction
+    and contains no external links.</p><p>Synthetic proof content for isolated validation.
+    This paragraph describes a fictional library with red books, blue shelves, and
+    a quiet reading room. No production data or external integrations are present.
+    The library is an imaginary place used only to validate article extraction and
+    persistence. A reader opens a book, reads a chapter, and writes a short note in
+    a synthetic notebook. The text is intentionally long enough for readability extraction
+    and contains no external links.</p><p>Synthetic proof content for isolated validation.
+    This paragraph describes a fictional library with red books, blue shelves, and
+    a quiet reading room. No production data or external integrations are present.
+    The library is an imaginary place used only to validate article extraction and
+    persistence. A reader opens a book, reads a chapter, and writes a short note in
+    a synthetic notebook. The text is intentionally long enough for readability extraction
+    and contains no external links.</p><p>Synthetic proof content for isolated validation.
+    This paragraph describes a fictional library with red books, blue shelves, and
+    a quiet reading room. No production data or external integrations are present.
+    The library is an imaginary place used only to validate article extraction and
+    persistence. A reader opens a book, reads a chapter, and writes a short note in
+    a synthetic notebook. The text is intentionally long enough for readability extraction
+    and contains no external links.</p><p>Synthetic proof content for isolated validation.
+    This paragraph describes a fictional library with red books, blue shelves, and
+    a quiet reading room. No production data or external integrations are present.
+    The library is an imaginary place used only to validate article extraction and
+    persistence. A reader opens a book, reads a chapter, and writes a short note in
+    a synthetic notebook. The text is intentionally long enough for readability extraction
+    and contains no external links.</p><p>Synthetic proof content for isolated validation.
+    This paragraph describes a fictional library with red books, blue shelves, and
+    a quiet reading room. No production data or external integrations are present.
+    The library is an imaginary place used only to validate article extraction and
+    persistence. A reader opens a book, reads a chapter, and writes a short note in
+    a synthetic notebook. The text is intentionally long enough for readability extraction
+    and contains no external links.</p><p>Synthetic proof content for isolated validation.
+    This paragraph describes a fictional library with red books, blue shelves, and
+    a quiet reading room. No production data or external integrations are present.
+    The library is an imaginary place used only to validate article extraction and
+    persistence. A reader opens a book, reads a chapter, and writes a short note in
+    a synthetic notebook. The text is intentionally long enough for readability extraction
+    and contains no external links.</p><p>Synthetic proof content for isolated validation.
+    This paragraph describes a fictional library with red books, blue shelves, and
+    a quiet reading room. No production data or external integrations are present.
+    The library is an imaginary place used only to validate article extraction and
+    persistence. A reader opens a book, reads a chapter, and writes a short note in
+    a synthetic notebook. The text is intentionally long enough for readability extraction
+    and contains no external links.</p><p>Synthetic proof content for isolated validation.
+    This paragraph describes a fictional library with red books, blue shelves, and
+    a quiet reading room. No production data or external integrations are present.
+    The library is an imaginary place used only to validate article extraction and
+    persistence. A reader opens a book, reads a chapter, and writes a short note in
+    a synthetic notebook. The text is intentionally long enough for readability extraction
+    and contains no external links.</p><p>Synthetic proof content for isolated validation.
+    This paragraph describes a fictional library with red books, blue shelves, and
+    a quiet reading room. No production data or external integrations are present.
+    The library is an imaginary place used only to validate article extraction and
+    persistence. A reader opens a book, reads a chapter, and writes a short note in
+    a synthetic notebook. The text is intentionally long enough for readability extraction
+    and contains no external links.</p></article></main></body></html>
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -38,7 +109,7 @@ spec:
         command:
         - php
         - -S
-        - 0.0.0.0:8081
+        - 0.0.0.0:8080
         - -t
         - /fixture
         resources:
@@ -55,15 +126,15 @@ spec:
             drop:
             - ALL
         ports:
-        - containerPort: 8081
+        - containerPort: 8080
         readinessProbe:
           httpGet:
             path: /feed.xml
-            port: 8081
+            port: 8080
         livenessProbe:
           httpGet:
             path: /article.html
-            port: 8081
+            port: 8080
         volumeMounts:
         - name: fixture
           mountPath: /fixture
@@ -81,5 +152,5 @@ spec:
   selector:
     app.kubernetes.io/name: fixture
   ports:
-  - port: 8081
-    targetPort: 8081
+  - port: 8080
+    targetPort: 8080
