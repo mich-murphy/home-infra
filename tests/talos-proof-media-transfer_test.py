@@ -18,7 +18,7 @@ t = importlib.import_module('talos-proof-media-transfer')
 
 class Transfer(unittest.TestCase):
     def test_explicit_lease_and_full_576_admission_no_shrink(self):
-        receipt = {'available_mib': 575, 'measured_at': 0}
+        receipt = {'kubelet_available_mib': 575,'talos_available_mib':575, 'measured_at': 0}
         node = {'status': {'allocatable': {'memory': '3000000Ki'}}}
         with patch.object(s, 'lease', return_value=(receipt, node)):
             with self.assertRaisesRegex(RuntimeError, 'explicitly authorize'):
@@ -27,14 +27,14 @@ class Transfer(unittest.TestCase):
         for svc in ('qbittorrent', 'sabnzbd'):
             with patch.object(s, 'lease', return_value=(receipt, node)), patch.object(s, 'exclusivity'), \
                  patch.object(s.time, 'time', return_value=101), patch.object(s, 'kubectl_read', return_value='{"items": []}'):
-                receipt['available_mib'] = 575
+                receipt['kubelet_available_mib'] = receipt['talos_available_mib'] = 575
                 with self.assertRaisesRegex(RuntimeError, 'headroom'):
                     s.protocol_guard(svc)
-                receipt['available_mib'] = 576
+                receipt['kubelet_available_mib'] = receipt['talos_available_mib'] = 576
                 s.protocol_guard(svc)
 
     def test_basic_activation_charges_desired_or_terminating_fixture(self):
-        receipt = {'available_mib': 575, 'measured_at': 100, 'protocol_fixture': 'download-protocols'}
+        receipt = {'kubelet_available_mib': 575,'talos_available_mib':575, 'measured_at': 100, 'protocol_fixture': 'download-protocols'}
         node = {'status': {'allocatable': {'memory': '3000000Ki'}}}
         controller = {'metadata': {'namespace': 'proof-qbittorrent', 'name': 'download-protocols'}, 'spec': {'replicas': 1}}
         pod = {'metadata': {'namespace': 'proof-qbittorrent', 'deletionTimestamp': 'now', 'labels': {'app.kubernetes.io/name': 'download-protocols'}}, 'status': {'phase': 'Running'}}
@@ -45,11 +45,11 @@ class Transfer(unittest.TestCase):
                  patch.object(s.time, 'time', return_value=101), patch.object(s, 'kubectl_read', side_effect=read):
                 with self.assertRaisesRegex(RuntimeError, 'headroom'):
                     s.guard('qbittorrent')
-                receipt['available_mib'] = 576
+                receipt['kubelet_available_mib'] = receipt['talos_available_mib'] = 576
                 s.guard('qbittorrent')
                 with self.assertRaisesRegex(RuntimeError, 'stop and delete'):
                     s.guard('qbittorrent', budget_mib=128)
-                receipt['available_mib'] = 575
+                receipt['kubelet_available_mib'] = receipt['talos_available_mib'] = 575
 
     def test_profiles_are_zero_no_client_volume_or_broad_peers(self):
         for svc in ('qbittorrent', 'sabnzbd'):

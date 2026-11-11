@@ -63,7 +63,7 @@ class Lifecycle(unittest.TestCase):
             self.assertEqual(probe.call.call_count, 3)
 
     def test_memory_reads_exact_endpoint_no_fallback_or_identity_edit(self):
-        original = {'group': 'qbittorrent', 'expires': 9999999999, 'node_uid': 'offline', 'available_mib': 10}
+        original = {'group': 'qbittorrent', 'expires': 9999999999, 'node_uid': 'offline', 'kubelet_available_mib': 10, 'talos_available_mib': 9}
         summary = json.dumps({'node': {'memory': {'availableBytes': 600 * 1048576}}})
         with patch.dict(os.environ, {'TALOSCONFIG': '/private/talosconfig', 'TALOS_PROOF_MEDIA_LEASE': '/private/lease'}), \
              patch.object(safety, 'lease', side_effect=lambda group: (original.copy(), {})), \
@@ -77,7 +77,7 @@ class Lifecycle(unittest.TestCase):
             self.assertEqual(command, ['/private/talosctl', '--talosconfig', '/private/talosconfig', '-e', '127.0.0.1:50120', '-n', '172.31.250.10', 'read', '/proc/meminfo'])
             written = json.loads(write.call_args.args[1])
             self.assertEqual({k: v for k, v in written.items() if k not in ('kubelet_available_mib', 'talos_available_mib', 'measured_at')},
-                             original)
+                             {k: v for k, v in original.items() if k not in ('kubelet_available_mib', 'talos_available_mib')})
             self.assertEqual(written['kubelet_available_mib'], 600)
             self.assertEqual(written['talos_available_mib'], 500)
             write.reset_mock()

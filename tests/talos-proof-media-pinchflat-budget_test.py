@@ -32,7 +32,7 @@ def profile():
 
 class Budget(unittest.TestCase):
     def setUp(self):
-        self.receipt={'provider_fixture':'pinchflat-rss','pinchflat_main_memory_mib':384,'available_mib':704,'measured_at':s.time.time()}
+        self.receipt={'provider_fixture':'pinchflat-rss','pinchflat_main_memory_mib':384,'kubelet_available_mib':704,'talos_available_mib':704,'measured_at':s.time.time()}
         self.controllers=[profile()]
         self.pods=[]
         self.node={'status':{'allocatable':{'memory':'2400000Ki'}}}
@@ -44,11 +44,11 @@ class Budget(unittest.TestCase):
             return s.guard('pinchflat',**kw)
     def test_plain_activation_charges_persistent_profile_full_704(self):
         self.guard()
-        self.receipt['available_mib']=703
+        self.receipt['kubelet_available_mib'] = self.receipt['talos_available_mib'] = 703
         with self.assertRaisesRegex(RuntimeError,'insufficient'):self.guard()
-        self.receipt['available_mib']=576
+        self.receipt['kubelet_available_mib'] = self.receipt['talos_available_mib'] = 576
         with self.assertRaises(RuntimeError):self.guard()
-        self.receipt['available_mib']=704
+        self.receipt['kubelet_available_mib'] = self.receipt['talos_available_mib'] = 704
         for value in (None,256,'384',True):
             self.receipt['pinchflat_main_memory_mib']=value
             with self.assertRaises(RuntimeError):self.guard()

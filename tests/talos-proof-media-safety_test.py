@@ -22,7 +22,7 @@ class Safety(unittest.TestCase):
         self.state = Path(self.temp.name).resolve()
         self.receipt = {'group': 'radarr', 'context': 'fake-proof-context', 'endpoint': safety.ENDPOINT,
                         'node_uid': 'OFFLINE-FAKE-UID', 'expires': time.time() + 600,
-                        'available_mib': 1800, 'measured_at': time.time()}
+                        'kubelet_available_mib': 1800, 'talos_available_mib': 1800, 'measured_at': time.time()}
         self.config = {'current-context': 'fake-proof-context', 'clusters': [{'cluster': {
             'server': safety.ENDPOINT, 'certificate-authority-data': 'OFFLINE-FAKE-CA'}}]}
         self.node = {'metadata': {'name': 'talos-proof', 'uid': 'OFFLINE-FAKE-UID',
@@ -68,11 +68,11 @@ class Safety(unittest.TestCase):
         safety.write_private(self.path, json.dumps(self.receipt), replace=True)
 
     def test_pinchflat_optional_profile_requires_marker_and_full_704(self):
-        self.receipt.update(group='pinchflat',provider_fixture='pinchflat-rss',pinchflat_main_memory_mib=384,available_mib=703)
+        self.receipt.update(group='pinchflat',provider_fixture='pinchflat-rss',pinchflat_main_memory_mib=384,kubelet_available_mib=703,talos_available_mib=703)
         self.rewrite_receipt()
         with self.assertRaisesRegex(RuntimeError,'insufficient'):
             safety.pinchflat_provider_guard()
-        self.receipt['available_mib']=704;self.rewrite_receipt()
+        self.receipt['kubelet_available_mib']=self.receipt['talos_available_mib']=704;self.rewrite_receipt()
         safety.pinchflat_provider_guard()
         import yaml
         doc = next(x for x in yaml.safe_load_all((safety.ROOT/'kubernetes/apps/media/pinchflat/resources.yaml').read_text()) if x['kind']=='Deployment')
@@ -146,27 +146,43 @@ class Safety(unittest.TestCase):
             safety.exclusivity('radarr')
 
     def test_independent_memory_minimum_overrides_legacy_and_requires_both(self):
-        self.receipt.update(kubelet_available_mib=1800, talos_available_mib=1800)
-        self.receipt.pop('available_mib')
-        self.rewrite_receipt();safety.guard('radarr')
-        self.receipt['available_mib']=1800
-        for field in ('kubelet_available_mib', 'talos_available_mib'):
-            for value in (None, True, -1, 500, float('nan')):
-                self.receipt[field]=value;self.rewrite_receipt()
-                with self.assertRaises(RuntimeError):safety.guard('radarr')
-            self.receipt[field]=1800
-        self.receipt.pop('talos_available_mib');self.rewrite_receipt()
-        with self.assertRaises(RuntimeError):safety.guard('radarr')
+        safety.guard('radarr')
+        pristine = self.receipt.copy()
+        fields = ('kubelet_available_mib', 'talos_available_mib')
+        for missing in (fields, fields[:1], fields[1:]):
+            self.receipt = dict(pristine, available_mib=999999)
+            for field in missing:
+                self.receipt.pop(field)
+            self.rewrite_receipt()
+            with self.assertRaisesRegex(RuntimeError, 'both independent'):
+                safety.guard('radarr')
+        for field in fields:
+            for value in (None, True, False, 0, -1, 500, float('nan'), float('inf'), -float('inf')):
+                with self.subTest(field=field, value=value):
+                    self.receipt = dict(pristine, available_mib=999999)
+                    self.receipt[field] = value
+                    self.rewrite_receipt()
+                    with self.assertRaises(RuntimeError), patch.object(safety.subprocess, 'run') as execution:
+                        safety.kube('radarr', 'scale', 'deployment', 'radarr', '--replicas=1', capacity=True)
+                    execution.assert_not_called()
 
     def test_stale_or_insufficient_memory(self):
-        for field, value in [('measured_at', 0), ('measured_at', time.time() + 300),
-                             ('available_mib', 500), ('available_mib', 999999), ('available_mib', -1)]:
-            saved = self.receipt[field]
+        pristine = self.receipt.copy()
+        self.receipt.pop('measured_at');self.rewrite_receipt()
+        with self.assertRaises(RuntimeError):safety.guard('radarr')
+        for field, value in [('measured_at', v) for v in (
+                None, 0, True, False, float('nan'), float('inf'), -float('inf'),
+                time.time() - 121, time.time() + 300)] + [
+                (f, v) for f in ('kubelet_available_mib', 'talos_available_mib')
+                for v in (500, 999999, -1)]:
+            self.receipt = dict(pristine)
+            # Both over-allocatable observations must fail the minimum gate too.
+            if value == 999999:
+                self.receipt.update(kubelet_available_mib=value, talos_available_mib=value)
             self.receipt[field] = value
             self.rewrite_receipt()
-            with self.assertRaises(RuntimeError):
+            with self.subTest(field=field, value=value), self.assertRaises(RuntimeError):
                 safety.guard('radarr')
-            self.receipt[field] = saved
 
     def test_recovery_budget_only_when_every_service_controller_and_pod_stopped(self):
         safety.guard('radarr', budget_mib=128)
