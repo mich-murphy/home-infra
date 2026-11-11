@@ -146,6 +146,15 @@ def save_private(name, data):
     return path
 
 
+def save_private_new(name, data):
+    """Append-only private evidence; refuse even a same-name existing archive."""
+    path = LIFE.no_symlinks(STATEPATH / name)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, 'wb') as stream:
+        stream.write(data)
+    return path
+
+
 def memory_snapshot(app, reason):
     """Read cgroup v2 before deleting each observed container; no cache/anon conflation."""
     try:
@@ -261,7 +270,7 @@ def authenticated_recovery(base,path,auth=None,headers=None):
 
 def postgres_dump(app_user):
     dump = execute('postgres',['pg_dump','-U',app_user,'-d',app_user,'-Fc'])
-    save_private(GROUP + '-postgres.dump',dump)
+    save_private_new(GROUP + '-postgres-' + uuid.uuid4().hex + '.dump',dump)
     RESULT['backup_sha256'] = hashlib.sha256(dump).hexdigest()
     return dump
 
@@ -278,7 +287,7 @@ def postgres_restore(app_user):
     marker = uuid.uuid4().hex
     execute('postgres', ['psql', '-U', app_user, '-d', app_user, '-v', 'ON_ERROR_STOP=1', '-c', f"CREATE TABLE IF NOT EXISTS proof_roundtrip (marker text PRIMARY KEY); INSERT INTO proof_roundtrip VALUES ('{marker}');"])
     dump = execute('postgres', ['pg_dump', '-U', app_user, '-d', app_user, '-Fc'])
-    save_private(GROUP + '-postgres.dump', dump)
+    save_private_new(GROUP + '-postgres-' + uuid.uuid4().hex + '.dump', dump)
     execute('postgres', ['dropdb', '-U', app_user, '--if-exists', 'proof_restore'])
     execute('postgres', ['createdb', '-U', app_user, 'proof_restore'])
     execute('postgres', ['pg_restore', '-U', app_user, '-d', 'proof_restore', '--exit-on-error'], dump)
@@ -549,7 +558,7 @@ def nextcloud():
     try:
         dump = postgres_dump('nextcloud')
         archive = execute('nextcloud',['tar','-czpf','-','-C','/var/www/html','.'])
-        save_private('nextcloud-html-files.tar.gz',archive)
+        save_private_new('nextcloud-html-files-' + uuid.uuid4().hex + '.tar.gz',archive)
         RESULT['html_files_backup_sha256']=hashlib.sha256(archive).hexdigest()
         scale('nextcloud',0)
         with fresh_pvc('postgres', ('nextcloud',)):
@@ -588,14 +597,26 @@ def miniflux():
         cat = http(base, '/v1/categories', 'POST', {'title': 'Proof-' + uuid.uuid4().hex}, auth)['id']
         feed = http(base, '/v1/feeds', 'POST', {'feed_url':'http://fixture:8081/feed.xml?proof='+uuid.uuid4().hex, 'category_id':cat}, auth)['feed_id']
         entries = http(base, f'/v1/feeds/{feed}/entries', auth=auth)['entries']
-        check('Miniflux fetches synthetic RSS over explicitly allowed fixture flow', any(e['title'] == 'Proof article' for e in entries))
+        check('Miniflux fetches exactly one synthetic RSS article over explicitly allowed fixture flow', len(entries)==1 and entries[0]['title']=='Proof article' and 'Synthetic proof content' in entries[0]['content'])
+        me = http(base, '/v1/me', auth=auth)
+        original_preferences = {key:me[key] for key in ('theme','entries_per_page')}
+        preferences = {'theme':'dark_serif' if me['theme']!='dark_serif' else 'light_serif', 'entries_per_page':17 if me['entries_per_page']!=17 else 19}
+        http(base, '/v1/users/' + str(me['id']), 'PUT', preferences, auth)
+        check('Miniflux changed theme and page-size preferences persist', all(http(base, '/v1/me', auth=auth)[key]==value for key,value in preferences.items()))
         entry = entries[0]['id']
+        check('Miniflux fixture starts unstarred', entries[0]['starred'] is False)
+        http(base, f'/v1/entries/{entry}/bookmark', 'PUT', auth=auth)
+        check('Miniflux actual bookmark toggle persists starred state', http(base, f'/v1/entries/{entry}', auth=auth)['starred'] is True)
         content_hash = hashlib.sha256(entries[0]['content'].encode()).hexdigest()
         http(base, '/v1/entries', 'PUT', {'entry_ids':[entry], 'status':'read'}, auth)
         check('Miniflux entry update persists', http(base, f'/v1/entries/{entry}', auth=auth)['status'] == 'read')
     restart('postgres')
     with forwarded('miniflux', 8080) as base:
         check('Miniflux feed survives PostgreSQL pod replacement', authenticated_recovery(base, f'/v1/feeds/{feed}', auth=auth)['id'] == feed)
+        current = http(base, f'/v1/entries/{entry}', auth=auth)
+        check('Miniflux star/read state survives PostgreSQL replacement', current['starred'] is True and current['status']=='read')
+        current_user = http(base, '/v1/me', auth=auth)
+        check('Miniflux preferences survive PostgreSQL replacement', all(current_user[key]==value for key,value in preferences.items()))
     scale('miniflux',0)
     try:
         dump = postgres_dump('miniflux')
@@ -604,12 +625,15 @@ def miniflux():
             scale('miniflux',1)
             with forwarded('miniflux',8080) as base:
                 restored = authenticated_recovery(base,f'/v1/entries/{entry}',auth=auth)
-                check('Miniflux authenticated application entry/read-state/content SHA256 match after clean-PVC restore', restored['status']=='read' and hashlib.sha256(restored['content'].encode()).hexdigest()==content_hash)
+                check('Miniflux authenticated application entry/read-state/content SHA256 match after clean-PVC restore', restored['status']=='read' and restored['starred'] is True and hashlib.sha256(restored['content'].encode()).hexdigest()==content_hash)
+                restored_user = http(base, '/v1/me', auth=auth)
+                check('Miniflux theme/page-size preferences match after clean-PVC restore', all(restored_user[key]==value for key,value in preferences.items()))
     finally:
         scale('miniflux',1)
     with forwarded('miniflux',8080) as base:
         http(base, f'/v1/feeds/{feed}', 'DELETE', auth=auth)
         http(base, f'/v1/categories/{cat}', 'DELETE', auth=auth)
+        http(base, '/v1/users/' + str(me['id']), 'PUT', original_preferences, auth)
     check('Miniflux feed/category CRUD completed')
 
 
@@ -658,7 +682,7 @@ def wallabag():
     scale('wallabag',0)
     try:
         dump=execute('mariadb',['sh','-ec','exec mariadb-dump --single-transaction --routines --triggers --events -uroot -p"$MYSQL_ROOT_PASSWORD" --databases wallabag'])
-        save_private('wallabag-mariadb.sql',dump)
+        save_private_new('wallabag-mariadb-' + uuid.uuid4().hex + '.sql',dump)
         RESULT['backup_sha256']=hashlib.sha256(dump).hexdigest()
         with fresh_pvc('mariadb',('wallabag',)):
             execute('mariadb',['sh','-ec','exec mariadb -uroot -p"$MYSQL_ROOT_PASSWORD"'],dump)
@@ -685,43 +709,111 @@ def wallabag():
     check('Wallabag source article cleaned up through authenticated HTTP API')
 
 
+def expect_http(label, status, base, path, method='GET', body=None, auth=None):
+    """Negative acceptance requires an actual HTTP status, never an exception-only pass."""
+    try:
+        http(base, path, method, body, auth)
+    except urllib.error.HTTPError as error:
+        check(label, error.code == status)
+    else:
+        check(label, False)
+
+
+def couch_documents(base, db, auth):
+    rows = http(base, '/' + db + '/_all_docs?include_docs=true', auth=auth)['rows']
+    return sorted(({k:v for k,v in row['doc'].items() if k != '_rev'} for row in rows), key=lambda doc: doc['_id'])
+
+
+def couch_replication(db, target, auth):
+    # CouchDB >=2 requires URLs. Both endpoints are literal same-pod loopback;
+    # no fixture-controlled host, production target, persistent or continuous job.
+    for name in (db, target):
+        if not re.fullmatch(r'proof_[0-9a-f]{32}(?:_replica)?', name):
+            raise RuntimeError('only fresh proof replication databases permitted')
+    headers = {'Authorization':'Basic ' + base64.b64encode(auth.encode()).decode()}
+    return {'source':{'url':'http://127.0.0.1:5984/' + db, 'headers':headers},
+            'target':{'url':'http://127.0.0.1:5984/' + target, 'headers':headers},
+            'doc_ids':['document', 'deleted'], 'continuous':False, 'create_target':False}
+
+
 def couchdb():
     auth = 'proof:' + CREDS['COUCHDB_PASSWORD']
     db = 'proof_' + uuid.uuid4().hex
+    target = db + '_replica'
     marker = uuid.uuid4().hex
+    names = ['proof_' + uuid.uuid4().hex for _ in range(2)]
+    passwords = [uuid.uuid4().hex + uuid.uuid4().hex for _ in names]
+    member, outsider = [name + ':' + password for name, password in zip(names, passwords)]
+    security = {'admins':{'names':[], 'roles':[]}, 'members':{'names':[names[0]], 'roles':[]}}
+    def permissions(base):
+        check('CouchDB exact database security metadata recovered', http(base, '/' + db + '/_security', auth=auth) == security)
+        check('CouchDB authorized tenant reads updated document', http(base, '/' + db + '/document', auth=member)['generation'] == 2)
+        expect_http('CouchDB other authenticated tenant read denied403', 403, base, '/' + db + '/document', auth=outsider)
+        expect_http('CouchDB other authenticated tenant write denied403', 403, base, '/' + db + '/forbidden', 'PUT', {'marker':marker}, outsider)
     with forwarded('couchdb', 5984) as base:
-        try:
-            http(base, '/_all_dbs', raw=True)
-        except urllib.error.HTTPError as error:
-            check('CouchDB unauthenticated database access denied with HTTP401',error.code==401)
-        else:
-            check('CouchDB rejects unauthenticated database access',False)
-        http(base, '/' + db, 'PUT', auth=auth)
-        http(base, '/' + db + '/document', 'PUT', {'marker':marker}, auth)
-        check('CouchDB authenticated document create/read', http(base, '/' + db + '/document', auth=auth)['marker'] == marker)
+        expect_http('CouchDB unauthenticated database access denied401', 401, base, '/_all_dbs')
+        if '_users' not in http(base, '/_all_dbs', auth=auth):
+            http(base, '/_users', 'PUT', auth=auth)
+        for name, password in zip(names, passwords):
+            http(base, '/_users/org.couchdb.user:' + name, 'PUT', {'name':name, 'password':password, 'roles':[], 'type':'user'}, auth)
+        for database in (db, target):
+            http(base, '/' + database, 'PUT', auth=auth)
+            http(base, '/' + database + '/_security', 'PUT', security, auth)
+        created = http(base, '/' + db + '/document', 'PUT', {'marker':marker, 'generation':1}, member)
+        http(base, '/' + db + '/document', 'PUT', {'_rev':created['rev'], 'marker':marker, 'generation':2}, member)
+        expect_http('CouchDB stale revision update rejected409', 409, base, '/' + db + '/document', 'PUT', {'_rev':created['rev'], 'marker':'stale'}, member)
+        http(base, '/' + db + '/_design/proof', 'PUT', {'views':{'by_marker':{'map':'function(doc) { if (doc.marker && doc.generation) emit(doc.marker, doc.generation); }'}}}, auth)
+        rows = http(base, '/' + db + '/_design/proof/_view/by_marker?key=' + urllib.parse.quote(json.dumps(marker)), auth=member)['rows']
+        check('CouchDB design view returns exact updated document', len(rows)==1 and rows[0]['id']=='document' and rows[0]['value']==2)
+        deleted = http(base, '/' + db + '/deleted', 'PUT', {'marker':marker}, member)
+        check('CouchDB authorized same-instance one-shot replication completed', http(base, '/_replicate', 'POST', couch_replication(db,target,member), auth)['ok'])
+        check('CouchDB replica contains exact revision and updated content', http(base, '/' + target + '/document', auth=member)==http(base, '/' + db + '/document', auth=member))
+        http(base, '/' + db + '/deleted?rev=' + deleted['rev'], 'DELETE', auth=member)
+        expect_http('CouchDB document deletion returns404', 404, base, '/' + db + '/deleted', auth=member)
+        check('CouchDB authorized deletion replication completed', http(base, '/_replicate', 'POST', couch_replication(db,target,member), auth)['ok'])
+        expect_http('CouchDB replicated deletion returns404', 404, base, '/' + target + '/deleted', auth=member)
+        permissions(base)
     restart('couchdb')
     with forwarded('couchdb', 5984) as base:
-        check('CouchDB document survives pod replacement', http(base, '/' + db + '/document', auth=auth)['marker'] == marker)
-        rows = http(base,'/' + db + '/_all_docs?include_docs=true',auth=auth)['rows']
-        docs = [{k:v for k,v in r['doc'].items() if k!='_rev'} for r in rows]
-        backup = json.dumps(docs,sort_keys=True).encode()
-        save_private('couchdb-documents.json',backup)
+        permissions(base)
+        docs = couch_documents(base, db, auth)
+        users = [http(base, '/_users/org.couchdb.user:' + name, auth=auth) for name in names]
+        users = [{k:v for k,v in user.items() if k != '_rev'} for user in users]
+        actual_security = http(base, '/' + db + '/_security', auth=auth)
+        backup = json.dumps({'documents':docs, 'security':actual_security, 'users':users}, sort_keys=True).encode()
+        archive_path = save_private_new('couchdb-logical-' + uuid.uuid4().hex + '.json', backup)
         RESULT['backup_sha256'] = hashlib.sha256(backup).hexdigest()
+        RESULT['backup_file'] = archive_path.name
+    recovered_bytes = archive_path.read_bytes()
+    check('CouchDB private archive SHA256 verified before restore', hashlib.sha256(recovered_bytes).hexdigest()==RESULT['backup_sha256'])
+    recovered = json.loads(recovered_bytes)
     with fresh_pvc('couchdb'):
-        with forwarded('couchdb',5984) as base:
-            databases = http(base,'/_all_dbs',auth=auth)
-            check('fresh CouchDB PVC has no source proof database before restore',db not in databases)
-            http(base,'/'+db,'PUT',auth=auth)
-            responses = http(base,'/'+db+'/_bulk_docs','POST',{'docs':docs},auth=auth)
-            check('CouchDB logical bulk document restore has no errors',all(r.get('ok') for r in responses))
-            restored = http(base,'/'+db+'/document',auth=auth)
-            restored.pop('_rev',None)
-            check('CouchDB restored application document exact canonical checksum',hashlib.sha256(json.dumps([restored],sort_keys=True).encode()).hexdigest()==RESULT['backup_sha256'])
+        with forwarded('couchdb', 5984) as base:
+            databases = http(base, '/_all_dbs', auth=auth)
+            check('fresh CouchDB PVC has no source proof database before restore', db not in databases)
+            if '_users' not in databases:
+                http(base, '/_users', 'PUT', auth=auth)
+            for database, documents in (('_users',recovered['users']), (db,recovered['documents'])):
+                if database == db:
+                    http(base, '/' + db, 'PUT', auth=auth)
+                responses = http(base, '/' + database + '/_bulk_docs', 'POST', {'docs':documents}, auth)
+                check('CouchDB logical restore has no errors: ' + database, len(responses)==len(documents) and all(r.get('ok') for r in responses))
+            http(base, '/' + db + '/_security', 'PUT', recovered['security'], auth)
+            check('CouchDB restored documents and design exact canonical content', couch_documents(base,db,auth)==docs)
+            permissions(base)
+            rows = http(base, '/' + db + '/_design/proof/_view/by_marker', auth=member)['rows']
+            check('CouchDB restored design view executes against recovered document', len(rows)==1 and rows[0]['key']==marker and rows[0]['value']==2)
         restart('couchdb')
-        with forwarded('couchdb',5984) as base:
-            check('CouchDB restored clean-PVC document survives second pod replacement',http(base,'/'+db+'/document',auth=auth)['marker']==marker)
-    with forwarded('couchdb',5984) as base:
-        http(base,'/'+db,'DELETE',auth=auth)
+        with forwarded('couchdb', 5984) as base:
+            permissions(base)
+    with forwarded('couchdb', 5984) as base:
+        for database in (db, target):
+            http(base, '/' + database, 'DELETE', auth=auth)
+        for name in names:
+            path = '/_users/org.couchdb.user:' + name
+            revision = http(base, path, auth=auth)['_rev']
+            http(base, path + '?rev=' + revision, 'DELETE', auth=auth)
+    RESULT['limitations'].append('Prepared same-instance replication and logical live-document/design/security/user recovery are unrun until explicitly leased. Not shard/full revision/tombstone/checkpoint/CORS/multi-node or historical database recovery.')
 
 
 def png():
@@ -942,7 +1034,7 @@ def pocket_id():
     with zipfile.ZipFile(io.BytesIO(archive)) as exported:
         check('Pocket-ID logical export contains database.json','database.json' in exported.namelist())
         database_hash = hashlib.sha256(exported.read('database.json')).hexdigest()
-    save_private('pocket-id-logical-export.zip',archive)
+    save_private_new('pocket-id-logical-export-' + uuid.uuid4().hex + '.zip',archive)
     RESULT['backup_sha256'] = hashlib.sha256(archive).hexdigest()
     RESULT['database_export_sha256'] = database_hash
     with fresh_pvc('pocket-id', bootstrap=True) as start_runtime:
@@ -1004,13 +1096,9 @@ def main():
             if events.get('oom', 0) or events.get('oom_kill', 0):
                 RESULT['status'] = 'failed'
                 RESULT['resource_failure'] = 'observed cgroup OOM; retained even if functional checks passed'
-        # Never discard earlier failures when a later attempt succeeds.
+        # Append-only observations: never overwrite even historical fixed-name results.
         history = GROUP + '-' + (STAGE or 'group') + '-' + str(time.time_ns()) + '-result.json'
-        save_private(history, json.dumps(RESULT, indent=2).encode())
-        path = LIFE.no_symlinks(STATEPATH / (GROUP + '-result.json'))
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
-        with os.fdopen(fd, 'w') as f:
-            json.dump(RESULT, f, indent=2)
+        save_private_new(history, json.dumps(RESULT, indent=2).encode())
     print(json.dumps(RESULT, indent=2))
     if RESULT['status'] == 'failed':
         sys.exit(1)

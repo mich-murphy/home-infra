@@ -797,3 +797,77 @@ Offline verification:39 data contract tests,12 local WOPI protocol tests, render
 app safety, Python compilation, browser syntax and diff checks pass. The new HTTP
 and UI code is not complete Nextcloud/Immich functional acceptance. Deferred Office,
 ML, database/files restore, tenant and media criteria remain as previously recorded.
+
+## Offline ownership checkpoint: CouchDB and Miniflux acceptance expansion
+
+**No live lease or controller activation occurred in this checkpoint.** Existing
+results above remain authoritative; newly prepared code is not a new pass.
+Acceptance was checked against the inventory and parent readiness matrix, not
+inferred from the earlier green suites. Wallabag recovery remains **MariaDB**,
+not PostgreSQL.
+
+### Prepared light-data checks (not run live)
+
+- **CouchDB3.5.3:** fresh proof users and two proof databases only; authorized
+  revision update, actual stale-revision409, executable design view with exact
+  marker/value, authorized tenant access and other authenticated tenant read/write
+ 403. One-shot replication uses explicit same-pod `127.0.0.1:5984` source/target
+  URLs with member credentials and bounded `doc_ids`; no external endpoint,
+  continuous job, automatic target creation or production checkpoint is used.
+  A second replication must propagate an actual document deletion to404.
+- CouchDB backup reads the **actual** `_security`, live documents (including the
+  design doc) and necessary proof `_users` records (server-generated password
+  hashes/salts, not just freshly constructed user definitions). Recovery reads
+  the persisted SHA-verified archive, restores those records and security onto a
+  distinct clean PVC, and revalidates allowed member, denied tenant read/write,
+  exact documents and an executing design view. Member/denied checks repeat after
+  replacement. This is **not** revision-tree, tombstone, shard, replication-
+  checkpoint, CORS, multi-node or historical dataset recovery.
+- **Miniflux2.3.5:** exactly one fixture entry with expected title/body; actual
+  bookmark toggle and read state; changed valid `dark_serif`/`light_serif` theme
+  and page-size preferences; assertions after PG replacement and clean-PVC PG
+  restore. Successful source cleanup restores original preferences. Still unrun.
+
+API contracts were checked against exact upstream tags:
+[CouchDB3.5.3 security](https://github.com/apache/couchdb/blob/3.5.3/src/docs/src/api/database/security.rst),
+[CouchDB3.5.3 replication](https://github.com/apache/couchdb/blob/3.5.3/src/docs/src/api/server/common.rst),
+[Miniflux2.3.5 routes](https://github.com/miniflux/v2/blob/2.3.5/internal/api/api.go),
+[user fields](https://github.com/miniflux/v2/blob/2.3.5/internal/model/user.go),
+[theme enum](https://github.com/miniflux/v2/blob/2.3.5/internal/model/theme.go), and
+[validation](https://github.com/miniflux/v2/blob/2.3.5/internal/validator/user.go).
+Offline fake HTTP checks validate harness behavior, not application compatibility.
+
+### Archive preservation and next runnable windows
+
+New PostgreSQL/MariaDB/Pocket-ID/Nextcloud archives and CouchDB logical bundles
+use UUID-suffixed filenames and exclusive0600 creation in the existing0700
+outside-Git private state. **No old archive is renamed, deleted or overwritten.**
+Results now append only `<group>-<stage-or-group>-<time_ns>-result.json`; old
+fixed-name `<group>-result.json` observations remain untouched and therefore do
+**not** identify a new run. CouchDB records its new private archive basename and
+SHA256 in its result. Other existing backup hashes remain in their result.
+
+After media release and **only with a new parent-issued exact group lease**, the
+existing entry points are runnable serially (the parent supplies STATE, CA,
+kubeconfig and selected-controller receipt/lease, never credentials in output):
+
+```sh
+python3 scripts/talos-proof-data.py run --group couchdb --state "$STATE"
+# Different explicit lease, not part of the CouchDB lease:
+python3 scripts/talos-proof-data.py run --group miniflux --state "$STATE"
+```
+
+Remaining light-data gaps: Pocket-ID actual wrong redirect/code replay/wrong PKCE
+negatives; Wallabag actual extracted image retrieval, supported async queue worker
+and Redis reconnect. They were not broadened into new partial frameworks here.
+
+**Next focused implementation is Immich core**, whose current code only prepares
+PNG upload/original checksum, thumbnail, pod replacement and **PG-only** clean-PVC
+restore while retaining `/data`. Album/member/public-share ACL, metadata/EXIF,
+video playback and coordinated fresh-`/data` + fresh-PG restore are still absent.
+Standalone `--stage ml` real inference/comparison/hash/timing is prepared but unrun;
+`--stage full` must observe Immich's own worker embedding/search, never inject
+vectors. Neither stage is implicitly authorized or resource-approved. Nextcloud
+web/cron/version/trash/share/coordinated recovery and richdocuments remain unrun;
+CODE save/edit/reopen/host denial remain failed or unproved as recorded above.
+No limit, cache, host, source Docker, guest or global-policy changes were made.
