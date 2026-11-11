@@ -43,7 +43,7 @@ def refresh(group, talosctl):
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('group', choices=safety.SERVICES)
+    p.add_argument('group', choices=[*safety.SERVICES, *safety.DEPENDENCY_BATCHES])
     p.add_argument('--talosctl', required=True, type=Path)
     args = p.parse_args()
     try:

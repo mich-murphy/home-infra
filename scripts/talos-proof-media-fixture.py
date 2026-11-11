@@ -22,13 +22,17 @@ def main():
     p.add_argument('--seed', choices=['jellyfin', 'plex', 'audiobookshelf'])
     p.add_argument('--video', action='store_true', help='generate two-second MP4 locally, never on the proof VM')
     p.add_argument('--ffmpeg', help='local Mac ffmpeg executable (or set FFMPEG)')
-    args = p.parse_args()
     safety = importlib.import_module('talos-proof-media-safety')
+    p.add_argument('--group', choices=safety.DEPENDENCY_BATCHES)
+    args = p.parse_args()
+    if args.group and args.seed not in safety.DEPENDENCY_BATCHES[args.group]:
+        p.error('fixture target must belong to exact dependency group')
+    group = args.group or args.seed
     os.umask(0o077)
     state = safety.private_dir(args.state_dir, create=True)
     repo = safety.ROOT
     if args.seed:
-        safety.guard(args.seed, extra_mib=64)
+        safety.guard(group, extra_mib=64)
     path = safety.no_symlinks(state / 'proof-tone.wav')
     stream = io.BytesIO()
     with wave.open(stream, 'wb') as wav:
@@ -64,7 +68,7 @@ def main():
     ns = 'proof-' + args.seed
     job = {'apiVersion': 'batch/v1', 'kind': 'Job', 'metadata': {'name': 'seed-synthetic-fixture', 'namespace': ns, 'labels': {'app.kubernetes.io/part-of': 'talos-proof'}}, 'spec': {'backoffLimit': 0, 'activeDeadlineSeconds': 120, 'template': {'metadata': {'labels': {'app.kubernetes.io/name': 'fixture-seeder', 'app.kubernetes.io/part-of': 'talos-proof'}}, 'spec': {'restartPolicy': 'Never', 'automountServiceAccountToken': False, 'securityContext': {'runAsUser': 1000, 'runAsGroup': 1000, 'fsGroup': 1000, 'seccompProfile': {'type': 'RuntimeDefault'}}, 'containers': [{'name': 'seed', 'image': image, 'command': ['/bin/sh', '-ec', 'sleep 110'], 'securityContext': {'allowPrivilegeEscalation': False, 'capabilities': {'drop': ['ALL']}}, 'resources': {'requests': {'cpu': '10m', 'memory': '16Mi'}, 'limits': {'cpu': '100m', 'memory': '64Mi'}}, 'volumeMounts': [{'name': 'fixture', 'mountPath': '/fixture'}]}], 'volumes': [{'name': 'fixture', 'persistentVolumeClaim': {'claimName': 'fixture'}}]}}}}
     def k(*command, **kwargs):
-        return safety.kube(args.seed, '-n', ns, *command, **kwargs)
+        return safety.kube(group, '-n', ns, *command, **kwargs)
     k('create', '-f', '-', data=json.dumps(job).encode(), capacity=True, extra_mib=64)
     try:
         k('wait', '--for=condition=Ready', 'pod', '-l', 'job-name=seed-synthetic-fixture', '--timeout=90s')

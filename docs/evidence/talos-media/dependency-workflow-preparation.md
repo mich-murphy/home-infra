@@ -1,0 +1,49 @@
+# Offline dependency workflow preparation — no live acceptance
+
+Existing fresh media credentials/PVCs/failed observations unchanged. No source/host or cluster calls. Explicit dependency receipts are NEW prospective grants, never inferred from qBit/SAB transfer grants. Root workloads remain replicas0/CronJobs suspended.57 offline methods and four existing renders pass. No new helper/app runtime PASS claimed.
+
+## Exact lease groups and limits+reserve
+
+- `media-plex-tautulli`: Plex384+adapter64+Tautulli256+reserve192 =896MiB.
+- `media-plex-kometa`: Plex448+Kometa384+native contract128+reserve192 =1152MiB.
+- `media-plex-jellyplex`: Plex448+Jellyfin512+jellyplex192+reserve192 =1344MiB; likely not admitted under1304 observation. No shrink/automatic extra VM memory.
+- `media-seerr-login`: Seerr384+contract128+Jellyfin512+reserve192 =1216MiB.
+- `media-seerr-request`: Seerr512+real Radarr384+contract128+reserve192 =1216MiB. Jellyfin must be stopped/deleted before this phase. Adding both dependencies simultaneously would cost1728MiB, NOT authorized by either group.
+
+`talos-proof-media-dependencies.py start --group GROUP --service ONE_SERVICE --state STATE` starts exactly one selected Deployment, never all members. Existing Deployment/PVC refs are preserved. `prepare --service kometa|jellyplex-watched` applies only the selected suspended helper and private bootstrap/CA. `stop` scales selected Deployments0 and waits every selected namespace's pods deleted. Parent lease identities/expiry/exclusivity/fresh min memory remain mandatory. Memory collector accepts these exact groups. Functional/fixture scripts accept explicit dependency group without accidentally selecting pipeline hostname; seeding charges additional64MiB against full group. No helper/recovery overlap authorized.
+
+Native metadata sidecars added to isolated Seerr and Radarr, and charged in BUDGET (both now512MiB including sidecar). Integration/pipeline Radarr remains384MiB, without this sidecar. All socket egress remains existing proof-only/DNS selectors; loopback fixtures initiate NO upstream connections. No world/host allowlist added.
+
+## Tautulli actual playback/activity/history
+
+Fresh-only config init copies a derived private Secret seed only if `/config/config.ini` absent. Uses existing fresh Tautulli API key and independent proof Plex adapter key; no credential rotation. Known Plex machine ID required from real `plex-functional.json`; fixed proof Plex endpoint32401, short-fixture ignore interval0, analytics/GitHub/update polling disabled. This is explicit config bootstrap, NOT an interactive wizard/account-login proof. API credential enforcement is tested; no Internet-safe unauthenticated-UI claim.
+
+`dependencies.py tautulli --group media-plex-tautulli --state STATE --ca CA --fixture SYNTHETIC_MP4` starts actual Plex direct-play session endpoint, hashes returned bytes, sends real Plex playing/stopped timeline events, and REQUIRES Tautulli observed activity plus unique positive-duration durable history for the real Plex ratingKey. No database/history insertion/mock response. Plex/Tautulli session-notification compatibility remains unverified; blocked sessions/history MUST fail rather than be substituted with scrobble/settings-only results. Fresh API/settings/history checked, marker retained privately. Tautulli restart/clean-PVC history verification still needs orchestration extension; no recovery claim.
+
+## Kometa actual collection and second run
+
+`dependencies.py kometa --group media-plex-kometa ...` invokes real bounded Job twice with `--collections-only --run-collections 'Proof Synthetic Collection'`. Requires no prior collection, then actual collection containing EXACT synthetic Plex item, then same collection ID/membership after second actual run. Reads real Plex API, not logs as acceptance. Suspended CronJob remains suspended. Job logs+pod image/failure status retained privately, sanitized hashes printed; helper pods deletion is mandatory before next run. Native sidecar schema/runtime and pinned CLI compatibility remain live gates. Live cgroup observations during short helper execution need separate timed capture; completed-job status is not a memory-peak substitute.
+
+## Jellyplex actual mutation, and honest cloud boundary blocker
+
+`dependencies.py jellyplex --group media-plex-jellyplex ...` prepares fresh Jellyfin movie library (requires same locally seeded video), establishes genuine Plex watched/Jellyfin unwatched divergence via real APIs, privately supplies real Jellyfin-issued token plus proof-local Plex adapter key, runs actual helper with DRYRUN=False and Plex→Jellyfin only, REQUIRES target watched mutation and unchanged source, then second actual run stable target. No database patch or direct Jellyfin marking accepted as helper success.
+
+IMPORTANT public `luigi311/JellyPlex-Watched/main/src/plex.py` unconditionally calls `PlexServer.myPlexAccount()` during initialization and `.users()` for mapping. The unclaimed real server and independent adapter key are NOT a cloud identity/token. No local-only fallback found. Exact digest source revision must be inspected later, but this is a likely genuine blocker to upstream helper operation. Do NOT fabricate myplex/account XML, cloud identities or allow Internet just to get a passing map. Runner hard-fails if upstream helper cannot authenticate/map; dryrun is not acceptance. Filename-based matching avoids inventing metadata IDs, but does not solve account discovery.
+
+## Seerr staged request/approval/permission workflow with REAL Radarr
+
+`talos-proof-media-seerr.py login --state STATE --ca CA` under login group uses actual fresh Jellyfin admin authentication (serverType2, proof .svc endpoint), initializes Seerr owner, sets fresh local owner password using existing Seerr credential, creates fresh REQUEST-only user (32) with deterministically derived proof-only password. No Plex claim/cloud account. Records user IDs, not credentials in committed evidence. Owner's local login permits stopping Jellyfin for request stage.
+
+`... request` under request group authenticates local owner/requester; connects/tests actual pinned Radarr quality profile/rootfolder API; configures only proof Radarr endpoint with preventSearch. REQUEST-only user must be denied settings mutation, self-escalation and approval. Real request must remain pending after denied approval. Owner approves; runner polls async request status AND actual Radarr `/api/v3/movie` and requires genuine synthetic movie ID/TMDbID/title. HTTP approval200 alone is insufficient; FAILED status immediately fails. `... verify` reads approved request/requester ID and same real Radarr object ID before configuration writes. No download/file/import claim.
+
+Exact public Radarr6.4.4 source `AddMovieService.AddSkyhookData` ALWAYS calls metadata service, even a full POST resource. `RadarrCloudRequestBuilder` hardcodes `https://api.radarr.video/v1/`; no discovered safe URL override. Therefore a second LOCAL metadata contract, not Arr stub, is necessary. Scoped native proxy now serves ONLY `GET api.radarr.video/v1/movie/900000001` with synthetic MovieResource. Unknown IDs, methods, queries and `/api/v3` (real Arr API) are refused. Real Radarr config uses explicit loopback HTTP proxy plus private CA via SSL_CERT_FILE; actual .NET proxy/CA compatibility remains live gate. No global trust-store modifications.
+
+Seerr3.5.1 TMDb client embeds its own app key and uses its custom proxy agent. It requests appended credits/external_ids/videos/keywords/release_dates/watch/providers and include_video_language; exact synthetic contract variant added. Seerr mode requires fresh Basic proxy authentication from private proof key (CONNECT auth carried into nested TLS handler); bundled app API key is NOT treated as fixture authentication and is not copied to fixtures/evidence. Kometa mode retains original fresh synthetic API-key enforcement. No upstream forwarding exists. Seerr proxy's built-in Google HEAD connectivity probe is intentionally denied; source keeps proxy agents installed after logged check failure. No Google/network allowance added.
+
+Dedicated offline CA generator now issues leaf SANs for api.themoviedb.org AND api.radarr.video, still private/loopback contract only, signing key never in Secret. No existing CA rotated. Start copies generated leaf Secret into selected Seerr/Radarr namespace under live lease. Seerr `NODE_EXTRA_CA_CERTS` is pod-only; custom proxy bypass explicitly only proof .svc endpoints. Fresh CA generation must precede first metadata-sidecar activation. Unknown contracts/auth fail closed; live calls may expose additional required synthetic-only contract fields, to be reviewed, not broadly allowed.
+
+## Source references / remaining gates
+
+Public version-specific sources read: Seerr v3.5.1 `routes/auth.ts`, `routes/user/index.ts`, `routes/user/usersettings.ts`, `routes/settings/{index,radarr}.ts`, `entity/MediaRequest.ts`, `subscriber/MediaRequestSubscriber.ts`, `api/{externalapi,themoviedb/index,servarr/radarr}.ts`, `utils/customProxyAgent.ts`; Radarr v6.4.4.10685 `Movies/AddMovieService.cs`, `Common/Cloud/RadarrCloudRequestBuilder.cs`, `MetadataSource/SkyHook/{SkyHookProxy,Resource/MovieResource}.cs`; Tautulli v2.18.2 `config.py`, `api2.py`, `webserve.py`, `activity_handler.py`, `plextv.py`; Kometa public master CLI (pinned nightly CLI still needs live inspection); Jellyplex public main (exact digest source still unknown).
+
+Remaining: execute all workflows under separately reviewed leases; resolve actual Plex session/Tautulli behavior and potential jellyplex cloud-discovery blocker honestly; dependency-group restart/clean-PVC recovery and timed helper cgroups; actual arr import/hardlink/shared recovery. This checkpoint is mandatory executable workflow preparation, not scaffold completion or acceptance.

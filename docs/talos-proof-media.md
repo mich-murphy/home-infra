@@ -200,3 +200,8 @@ See `docs/evidence/talos-media/qbit-5.3-and-lifecycle-followup.md` for exact5.3 
 ## Explicit real-transfer and helper execution preparation
 
 See `docs/evidence/talos-media/transfer-and-helper-integration.md`: optional protocol-qbittorrent/protocol-sabnzbd profiles and guarded completion/counter/output-SHA/persistence runner; actual two-run Recyclarr sync/no-drift gate; Kometa native loopback synthetic metadata sidecar and private dedicated-CA generator.52 offline tests and four static renders pass; no real-client/helper completion claimed. Parent must authorize receipt `protocol_fixture: download-protocols` and full576MiB prospective admission for qBit/SAB transfer. Existing creds/PVCs preserved; no activation while data holds exclusive window. Kometa main+sidecar ceiling is now512MiB (384+128), not384.
+
+
+## Dependency workflow preparation checkpoint
+
+See `docs/evidence/talos-media/dependency-workflow-preparation.md` for explicit groups/budgets, actual Tautulli playback/history, Kometa collection+second-run checks, real non-dry-run jellyplex mutation orchestration, staged Jellyfin-auth Seerr permission/request/approval against real Radarr, and strict separate Skyhook metadata contract. All remain PENDING LIVE; jellyplex cloud-discovery boundary may block genuine upstream mapping. Isolated Seerr and Radarr now each512MiB including128MiB native metadata sidecar; integration Radarr remains384MiB. No lease implied, credentials/retained state unchanged.

@@ -21,6 +21,18 @@ BUDGET = {'plex': 384, 'jellyfin': 512, 'tautulli': 256, 'seerr': 384, 'audioboo
 PIPELINE_LIMITS = {'radarr':384, 'sonarr':384, 'lidarr':384, 'prowlarr':256, 'qbittorrent':192, 'qbitwebui':192, 'sabnzbd':192, 'recyclarr':192}
 PIPELINE_PAIRS = ('qbittorrent+qbitwebui', 'qbittorrent+radarr', 'qbittorrent+sonarr', 'qbittorrent+lidarr', 'sabnzbd+radarr', 'radarr+recyclarr')
 PIPELINE_MEMBERS = None
+# Separate parent grants for each exact set; never an all-media authorization.
+DEPENDENCY_BATCHES = {
+    'media-plex-tautulli': ('plex', 'tautulli'),
+    'media-plex-kometa': ('plex', 'kometa'),
+    'media-plex-jellyplex': ('plex', 'jellyfin', 'jellyplex-watched'),
+    'media-seerr-login': ('seerr', 'jellyfin'),
+    'media-seerr-request': ('seerr', 'radarr'),
+}
+
+
+def group_namespaces(group):
+    return {'proof-' + name for name in DEPENDENCY_BATCHES.get(group, (group,))}
 
 def select_pipeline(pair):
     global PIPELINE_MEMBERS
@@ -29,6 +41,8 @@ def select_pipeline(pair):
     PIPELINE_MEMBERS = frozenset(pair.split('+'))
 
 BUDGET['plex'] += 64
+BUDGET['seerr'] += 128
+BUDGET['radarr'] += 128
 BUDGET['kometa'] += 128  # Native loopback metadata-contract sidecar, not free helper memory.
 MUTATIONS = {'apply', 'scale', 'exec', 'rollout', 'delete', 'create', 'patch', 'label', 'annotate',
              'run', 'replace', 'cp', 'edit', 'set', 'attach', 'port-forward'}
@@ -117,7 +131,7 @@ def number(value):
 
 
 def lease(group):
-    if group not in (*SERVICES, 'media-pipeline'):
+    if group not in (*SERVICES, 'media-pipeline', *DEPENDENCY_BATCHES):
         raise RuntimeError('unknown media lease group')
     if group == 'media-pipeline' and not PIPELINE_MEMBERS:
         raise RuntimeError('pipeline lease requires explicit bounded pair selection')
@@ -156,7 +170,7 @@ def lease(group):
 
 def exclusivity(group):
     """Reject data/media/unknown proof groups, including pending pods and active controllers."""
-    allowed = {'proof-' + group, 'proof-validation', 'proof-gateway'}
+    allowed = group_namespaces(group) | {'proof-validation', 'proof-gateway'}
     pods = json.loads(kubectl_read('get', 'pods', '-A', '-o', 'json'))['items']
     for pod in pods:
         ns = pod['metadata']['namespace']
@@ -181,7 +195,7 @@ def require_helpers_deleted(group):
     pods = json.loads(kubectl_read('get', 'pods', '-A', '-o', 'json'))['items']
     for pod in pods:
         meta = pod['metadata']
-        if meta['namespace'] == 'proof-' + group and any(
+        if meta['namespace'] in group_namespaces(group) and any(
                 owner.get('kind') == 'Job' for owner in meta.get('ownerReferences', [])):
             raise RuntimeError('helper pod still exists; activation requires deletion, not Job completion')
 
@@ -205,7 +219,8 @@ def guard(group, extra_mib=0, budget_mib=None, protocol_selected=False):
     age = time.time() - receipt.get('measured_at', 0)
     if not number(available) or not 0 <= age <= 120 or not 0 < available <= int(alloc[:-2]) / 1024:
         raise RuntimeError('fresh valid guest available-memory receipt required')
-    budget = sum(PIPELINE_LIMITS[n] for n in PIPELINE_MEMBERS) if group == 'media-pipeline' else BUDGET[group]
+    budget = (sum(BUDGET[n] for n in DEPENDENCY_BATCHES[group]) if group in DEPENDENCY_BATCHES else
+              sum(PIPELINE_LIMITS[n] for n in PIPELINE_MEMBERS) if group == 'media-pipeline' else BUDGET[group])
     # Charge a live/desired fixture even when activation is invoked through the basic runner.
     if group in ('qbittorrent', 'sabnzbd'):
         controllers = json.loads(kubectl_read('get', 'deployments,statefulsets', '-A', '-o', 'json'))['items']

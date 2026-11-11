@@ -5,6 +5,7 @@ configMapGenerator:
   files:
   - metadata-proxy.py
   - tmdb-contract.json
+  - skyhook-contract.json
 labels:
 - pairs:
     app.kubernetes.io/part-of: talos-proof

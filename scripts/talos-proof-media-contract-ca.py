@@ -29,7 +29,7 @@ def generate(state):
             '-addext', 'basicConstraints=critical,CA:TRUE')
     openssl('req', '-new', '-newkey', 'rsa:2048', '-nodes', '-subj', '/CN=api.themoviedb.org',
             '-keyout', str(state / 'metadata-tls.key'), '-out', str(state / 'metadata-tls.csr'))
-    safety.write_private(state / 'metadata-tls.ext', 'subjectAltName=DNS:api.themoviedb.org\nbasicConstraints=critical,CA:FALSE\n')
+    safety.write_private(state / 'metadata-tls.ext', 'subjectAltName=DNS:api.themoviedb.org,DNS:api.radarr.video\nbasicConstraints=critical,CA:FALSE\n')
     openssl('x509', '-req', '-in', str(state / 'metadata-tls.csr'), '-CA', str(state / 'metadata-ca.crt'),
             '-CAkey', str(state / 'metadata-ca.key'), '-set_serial', '1', '-days', '30',
             '-extfile', str(state / 'metadata-tls.ext'), '-out', str(state / 'metadata-tls.crt'))

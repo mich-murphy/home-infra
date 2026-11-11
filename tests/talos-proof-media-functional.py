@@ -108,7 +108,7 @@ def main():
     p.add_argument('service', choices=['radarr', 'sonarr', 'lidarr', 'prowlarr', 'qbittorrent', 'sabnzbd', 'jellyfin', 'audiobookshelf', 'pinchflat', 'qbitwebui', 'plex'])
     p.add_argument('--base', required=True)
     p.add_argument('--phase', choices=['exercise', 'verify'], default='exercise')
-    p.add_argument('--group', choices=['media-pipeline'], help='explicit integration profile lease')
+    p.add_argument('--group', choices=['media-pipeline', *safety.DEPENDENCY_BATCHES], help='explicit integration profile lease')
     p.add_argument('--pair', choices=safety.PIPELINE_PAIRS)
     p.add_argument('--state-dir', required=True, type=Path)
     p.add_argument('--fixture', type=Path)
@@ -117,7 +117,10 @@ def main():
     state = safety.private_dir(args.state_dir)
     credentials = json.loads(safety.read_private(state / 'credentials.json'))[args.service]
     group = args.group or args.service
-    if args.group:
+    if args.group in safety.DEPENDENCY_BATCHES:
+        if args.service not in safety.DEPENDENCY_BATCHES[args.group] or args.pair:
+            p.error("service/pair does not match exact dependency batch")
+    elif args.group:
         safety.select_pipeline(args.pair)
         if args.service not in safety.PIPELINE_MEMBERS:
             p.error('functional service must belong to selected pipeline pair')
@@ -126,7 +129,7 @@ def main():
     safety.lease(group)
     safety.exclusivity(group)
     ca = safety.private_file(args.ca)
-    api = API(args.base, service=('pipeline-' if args.group else '') + args.service, ca=ca)
+    api = API(args.base, service=('pipeline-' if args.group == 'media-pipeline' else '') + args.service, ca=ca)
     try:
         readiness = api.wait_ready({'pinchflat': '/healthcheck', 'audiobookshelf': '/status', 'plex': '/proof-health'}.get(args.service, '/'))
         print(json.dumps({'service': args.service, 'gateway_readiness': readiness}))

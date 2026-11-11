@@ -1,4 +1,3 @@
-# Fresh synthetic-fixture experiment; memory ceilings unproven until live evidence.
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -194,7 +193,44 @@ spec:
       - name: config
         persistentVolumeClaim:
           claimName: config
+      - name: seed
+        secret:
+          secretName: bootstrap
+          items:
+          - key: seed
+            path: seed
       terminationGracePeriodSeconds: 30
+      initContainers:
+      - name: seed-fresh-config
+        image: ghcr.io/linuxserver/tautulli:v2.18.2-ls251@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5
+        command:
+        - /bin/sh
+        - -ec
+        - if [ ! -e /config/config.ini ]; then cp /seed/seed /config/config.ini; chmod
+          600 /config/config.ini; chown 1000:1000 /config/config.ini; fi
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: seed
+          mountPath: /seed
+          readOnly: true
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
