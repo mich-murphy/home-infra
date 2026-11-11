@@ -1,0 +1,17 @@
+2026-11-11T23:09:38+11:00
+               total        used        free      shared  buff/cache   available
+Mem:           31834       27299        3479          18        1773        4535
+Swap:           3820           0        3820
+MemAvailable:    4644020 kB
+SwapTotal:       3911844 kB
+SwapFree:        3911820 kB
+some avg10=0.00 avg60=0.00 avg300=0.00 total=12274099
+full avg10=0.00 avg60=0.00 avg300=0.00 total=12256294
+      VMID NAME                 STATUS     MEM(MB)    BOOTDISK(GB) PID       
+       101 truenas              running    10240             32.00 2176      
+       102 docker-host          running    10240            128.00 2657      
+       111 unifi-controller     stopped    3072              40.00 0         
+      9001 ubuntu-server-24-04  stopped    1024               8.00 0         
+      9003 ubuntu-server-24-04-clean stopped    1024               3.50 0         
+net.ipv4.ip_forward = 0
+VM120 absent: creation blocked

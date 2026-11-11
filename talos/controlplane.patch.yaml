@@ -1,0 +1,31 @@
+machine:
+  certSANs:
+    - 127.0.0.1
+cluster:
+  discovery:
+    enabled: false
+---
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
+---
+apiVersion: v1alpha1
+kind: KubeProxyConfig
+enabled: false
+---
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+nodeIP:
+  validSubnets:
+    - 172.31.250.0/24
+taints:
+  node-role.kubernetes.io/control-plane: null
+---
+apiVersion: v1alpha1
+kind: ResolverConfig
+nameservers:
+  - address: 1.1.1.1
+  - address: 9.9.9.9
+hostDNS:
+  enabled: true
+  forwardKubeDNSToHost: false
