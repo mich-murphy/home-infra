@@ -33,7 +33,8 @@ clean-slate retry or retained-content chown/delete.
   and is forbidden.
 
 A new private0600 `TALOS_PROOF_DATA_LEASE` must contain existing data-lease
-context/endpoint/node UID/expiry fields and these exact bindings:
+context/endpoint/node UID/expiry fields and these exact bindings (including a
+parent-recorded `namespace_uid` for proof-nextcloud):
 
 - group `nextcloud`, stage `cron`, canonical run_id, canonical outside-Git
   state_dir (the **same existing private data state directory**, never a fresh
@@ -220,6 +221,13 @@ exact loopback endpoint, node_uid and expires fields, with:
 - explicit `html_claim` (no guessed alias); sorted unique
   `allowed_missing_resources` in lowercase kind/name notation, restricted to
   declarations from nextcloud.yaml, postgres.yaml, redis.yaml, cronjob.yaml;
+- `document_sha256`: mapping of **every canonical intended declaration** kind/name
+  to its SHA-256. Canonicalization is UTF-8 `json.dumps(document, sort_keys=True,
+  separators=(',', ':'), ensure_ascii=True)` after explicit HTML alias and
+  proof-nextcloud namespace substitution (`document_hashes(declarations(alias))`).
+  This binds actual intended content, not merely HEAD: dirty-file drift rejects
+  before API authorization and again before each create. Parent must independently
+  review those exact documents/hashes; this helper issues no grant;
 - `existing_uids`: **every** declaration not in the missing allowlist plus the
   already-existing `secret/proof-credentials`. No UID is guessed/enrolled.
 
@@ -322,3 +330,77 @@ is syntax-only, never pinned-image runtime evidence. No generated manifests or
 results are stored in Git. Parent review of14199547/b4acdca9 and this checkpoint
 is not live acceptance; static67ad's353 methods/443 resources and the prepared
 67 correction remain unrun. All eight WOPI failures remain retained.
+
+
+## Bounded offline correction after read-only review 5526425f
+
+This checkpoint follows b4acdca9/237ea686 and parent base64215964. Parent
+acceptance was held for six concrete static gaps. These local changes are **not
+live-ready acceptance** and do not authorize initialization, native install,
+PG/Redis/web/CODE start, API/host/production calls or lease issuance. The parent
+reports all proof applications released and Nextcloud PVC count0; neither was
+queried here. A NEW initialization receipt and, separately, NEW post-binding full
+UID handoff remain mandatory. Parent-owned root docs, gates, platform manifests,
+old archives/credentials/STOP/history and all eight WOPI failures are unchanged.
+
+Corrections implemented and exercised offline:
+
+1. Full pod comparison normalizes only enumerated exact core/v1 defaults on
+   **both sides**, including probe initialDelay0/timeout1/period10/success1/failure3,
+   HTTP schemeHTTP, volume defaultMode420 and fieldRef apiVersionv1 (env and
+   downward API, including projected sources). Regular and explicitly approved
+   init containers use the same normalization and exact quantity comparison.
+   Unknown fields, HTTPS/nondefault probe changes, security and limit changes
+   still reject. API-shaped provisioner/web/backend fixtures cover these fields;
+   the complete mocked initializer now executes the real `storage()` validator,
+   not a stub. The default definitions are documented in the Kubernetes
+   [Pod core/v1 API reference](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/);
+   no live schema/default query was made.
+2. Receipt `document_sha256` binds the canonical intended documents, including
+   dirty files. Independently of the hashes, creation enforces the fixed reviewed
+   kind/name set and namespace, Deployment replicas **explicit integer0**, CronJob
+   suspend **true** and no Secret candidate. At the create boundary the submitted
+   document must exactly equal the authorized missing declaration. The generated
+   binding Job must equal its single pre-exported own-run intent. Create-only API
+   semantics still reject existing-object races; no apply/overwrite/repair path
+   was added.
+3. Legacy data CLI and native supervisor/initializer use the same stable directory
+   inode OS flock. Legacy holds it across pending-check through mutation/failure;
+   supervisor remains fail-fast while legacy waits. No lock inode is unlinked;
+   process death releases the OS lock. Two real bounded workstation child-process
+   tests exercise both orderings (legacy waiting sees initializer PENDING before
+   credentials/mutation; legacy holding after check excludes a supervisor).
+   Pending state does not block exact owned-helper cleanup. Expiry/receipt/target
+   identity checks remain mandatory.
+4. Initialization cleanup records auxiliary provisioner-list failure, then still
+   captures the owned binding pod/logs and deletes with the exact Job UID API
+   precondition if its API is reachable. The real retirement sequence is tested,
+   rather than stubbing the retirement method. Such a gap raises failure and
+   leaves PENDING; it never records clean or deletes a foreign helper.
+5. Native receipts now require parent `namespace_uid`; activation identities and
+   mutation boundaries recheck it. PG/Redis changes use atomic JSON Patch UID
+   `test` followed by replicas `replace`, rather than scale-by-name. Native stop
+   deliberately does **not** require the activation/resource envelope, so an own
+   UID with a bad spec can be stopped, while a replacement namespace or backend
+   UID is rejected. A full stop-path test covers this narrow cleanup boundary.
+   Namespace checks are fresh API reads, not a cross-resource transaction; the
+   Deployment UID test is atomic at the actual patch operation.
+6. Failed real `CompletedProcess` results through `life.kube()` now raise a fixed
+   public-message exception carrying private stdout/stderr, never argv. Forensics
+   retains these payloads in UUID/O_EXCL0600 fsynced captures. Tests exercise the
+   real kube-to-forensics path, safe str/repr/args, private modes and overwrite
+   rejection; no injected CalledProcessError shortcut is relied on for this gap.
+
+**Resource contract unchanged:** actual binding64 + three automatic32 helpers +
+reserve192 = **352MiB**, still requiring conservative fresh independent **832MiB**
+dual minimum. No budgets/limits were reduced. Binding stays read-only; no native
+application operation occurred.
+
+Validation at this checkpoint: initializer20, supervisor29 (including two real
+workstation serialization tests), compiler8, data42, data-WOPI14 and
+workflows20 = **133 passing tests**. All cluster/host/runtime work was forbidden
+or mocked; real subprocesses in serialization tests execute only local Python.
+`git diff --check` passed. PHP is unchanged and no fresh PHP/runtime claim is made.
+The parent's64215964 root gate (395 methods /443 renders, no skips, actionlint)
+is historical base evidence, **not validation of these changes**. Full root CI,
+new parent read-only acceptance and every grant-bound measurement remain pending.

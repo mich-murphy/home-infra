@@ -16,6 +16,23 @@ ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('initializer',ROOT/'scripts/talos-proof-nextcloud-initialize.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 
+def api_deployment(doc):
+    d=copy.deepcopy(doc);p=d['spec']['template']['spec']
+    p.update(dnsPolicy='ClusterFirst',restartPolicy='Always',schedulerName='default-scheduler',terminationGracePeriodSeconds=30)
+    for c in p.get('containers',[])+p.get('initContainers',[]):
+        c.update(imagePullPolicy='IfNotPresent',terminationMessagePath='/dev/termination-log',terminationMessagePolicy='File')
+        for name in ('startupProbe','readinessProbe','livenessProbe'):
+            if name not in c:continue
+            probe=c[name]
+            for k,v in dict(initialDelaySeconds=0,timeoutSeconds=1,periodSeconds=10,successThreshold=1,failureThreshold=3).items():probe.setdefault(k,v)
+            if 'httpGet' in probe:probe['httpGet'].setdefault('scheme','HTTP')
+        for e in c.get('env',[]):
+            if 'fieldRef' in e.get('valueFrom',{}):e['valueFrom']['fieldRef'].setdefault('apiVersion','v1')
+    for v in p.get('volumes',[]):
+        if 'configMap' in v:v['configMap'].setdefault('defaultMode',420)
+    return d
+
+
 class InitializationTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
@@ -29,7 +46,7 @@ class InitializationTests(unittest.TestCase):
             cleanup_authorized=True,selected_controllers=['cronjob/nextcloud-cron','deployment/postgres','deployment/redis'],
             phases=['stopped-objects','readonly-binding'],namespace=m.NS,namespace_uid='ns-uid',storage_device='/dev/sdb1',storage_device_id='8:17',
             context='proof',node_uid='node-uid',endpoint=m.s.life.EXPECTED_ENDPOINT,expires=time.time()+2000,
-            html_claim='nextcloud-data',allowed_missing_resources=sorted(self.docs),existing_uids={'secret/proof-credentials':'secret-uid'})
+            document_sha256=m.document_hashes(self.docs),html_claim='nextcloud-data',allowed_missing_resources=sorted(self.docs),existing_uids={'secret/proof-credentials':'secret-uid'})
         self.receipt=self.state/'receipt';self.write()
         p=patch.dict(os.environ,TALOS_PROOF_DATA_LEASE=str(self.receipt));p.start();self.addCleanup(p.stop)
         self.secret=dict(kind='Secret',metadata=dict(name='proof-credentials',uid='secret-uid'),type='Opaque',data={k:'offline-placeholder' for k in ('POSTGRES_PASSWORD','NEXTCLOUD_ADMIN_PASSWORD','REDIS_HOST_PASSWORD')})
@@ -164,7 +181,7 @@ class InitializationTests(unittest.TestCase):
         name='nc-binding-'+self.run
         self.i.save(dict(event='initialization-binding-created',run_id=self.run,name=name,uid='own'))
         events=[]
-        with patch.object(self.i,'target'),patch.object(self.i,'obj',return_value={'items':[dict(metadata=dict(name=name,uid='own'))]}),patch.object(self.i,'provisioner_forensics',side_effect=lambda:events.append('provisioners')),patch.object(self.i,'forensics',side_effect=lambda n:events.append('raw')),patch.object(self.i,'delete_binding',side_effect=lambda n,u:events.append('delete-own')),patch.object(self.i,'barriers',side_effect=lambda:events.append('absent')),patch.object(self.i,'call',side_effect=AssertionError('no create/scale/storage delete')):
+        with patch.object(self.i,'target'),patch.object(self.i,'obj',return_value={'items':[dict(metadata=dict(name=name,uid='own'))]}),patch.object(self.i,'provisioner_forensics',side_effect=lambda:events.append('provisioners')),patch.object(self.i,'forensics',side_effect=lambda n:(events.append('raw') or ({'items':[]},{},[]))),patch.object(self.i,'delete_binding',side_effect=lambda n,u:events.append('delete-own')),patch.object(self.i,'barriers',side_effect=lambda:events.append('absent')),patch.object(self.i,'call',side_effect=AssertionError('no create/scale/storage delete')):
             self.i.cleanup_only()
         self.assertEqual(events,['provisioners','raw','delete-own','absent']);self.assertFalse(self.i.pending())
         self.assertEqual(self.i.scope,'initialization-cleanup')
@@ -184,13 +201,17 @@ class InitializationTests(unittest.TestCase):
                             hostPath=dict(path='/var/mnt/proof/'+pvname+'_'+m.NS+'_'+n),
                             nodeAffinity={'required':{'nodeSelectorTerms':[{'matchExpressions':[{'key':'kubernetes.io/hostname','operator':'In','values':['talos-proof']}]}]}}))
                 else:
-                    key=m.KINDS[d['kind']]+'/'+d['metadata']['name'];objects[key]=d;events.append(key)
+                    key=m.KINDS[d['kind']]+'/'+d['metadata']['name'];objects[key]=api_deployment(d) if d['kind']=='Deployment' else d;events.append(key)
                 return json.dumps(d)
             self.assertIn('wait',args);return ''
-        def obj(*args):return copy.deepcopy(objects[args[-2]+'/'+args[-1]])
+        def obj(*args):
+            if args[-1]=='proof-local':return dict(provisioner='rancher.io/local-path',volumeBindingMode='WaitForFirstConsumer',reclaimPolicy='Retain')
+            if args[-1]=='local-path-config':return {'data':copy.deepcopy(m.STORAGE_CONFIG)}
+            if args[-1]=='local-path-provisioner':return api_deployment(next(d for d in m.STORAGE_DOCS if d['kind']=='Deployment'))
+            return copy.deepcopy(objects[args[-2]+'/'+args[-1]])
         def forensics(name):
             events.append('raw-before-delete');e=self.evidence();e[0]['items'][0]['spec']=copy.deepcopy(binding['spec']['template']['spec']);return e
-        with patch.object(self.i,'authorize',return_value=self.r),patch.object(self.i,'target',return_value=self.r),patch.object(self.i,'inventory',return_value=self.docs),patch.object(self.i,'storage'),patch.object(self.i,'barriers'),patch.object(self.i,'memory_admission',side_effect=lambda:events.append('dual832')),patch.object(self.i,'call',side_effect=call),patch.object(self.i,'obj',side_effect=obj),patch.object(self.i,'provisioner_forensics'),patch.object(self.i,'forensics',side_effect=forensics),patch.object(self.i,'delete_binding',side_effect=lambda n,u:events.append('delete-own')):
+        with patch.object(self.i,'authorize',return_value=self.r),patch.object(self.i,'target',return_value=self.r),patch.object(self.i,'inventory',return_value=self.docs),patch.object(self.i,'barriers'),patch.object(self.i,'memory_admission',side_effect=lambda:events.append('dual832')),patch.object(self.i,'call',side_effect=call),patch.object(self.i,'obj',side_effect=obj),patch.object(self.i,'provisioner_forensics'),patch.object(self.i,'forensics',side_effect=forensics),patch.object(self.i,'delete_binding',side_effect=lambda n,u:events.append('delete-own')):
             self.i.initialize()
         self.assertLess(events.index('raw-before-delete'),events.index('delete-own'))
         self.assertTrue(events.index('dual832')<events.index('helper-create'))
@@ -199,6 +220,77 @@ class InitializationTests(unittest.TestCase):
         stopped=next(e for e in journal if e.get('event')=='initialization-stopped-bound')
         self.assertFalse(stopped['full_run_authorized']);self.assertFalse(stopped['provisioner_forensics_complete'])
         self.assertEqual(objects['secret/proof-credentials'],self.secret)
+
+    def test_api_shaped_provisioner_web_backends_and_approved_init(self):
+        docs=[next(d for d in m.STORAGE_DOCS if d['kind']=='Deployment')]+[self.docs['deployment/'+n] for n in ('nextcloud','postgres','redis')]
+        for doc in docs:
+            approved=copy.deepcopy(doc)
+            approved['spec']['template']['spec']['initContainers']=[copy.deepcopy(approved['spec']['template']['spec']['containers'][0])]
+            approved['spec']['template']['spec'].setdefault('volumes',[]).append(dict(name='downward',downwardAPI=dict(items=[dict(path='namespace',fieldRef=dict(fieldPath='metadata.namespace'))])))
+            actual=api_deployment(approved)
+            down=actual['spec']['template']['spec']['volumes'][-1]['downwardAPI']
+            down['defaultMode']=420;down['items'][0]['fieldRef']['apiVersion']='v1'
+            a=actual['spec']['template']['spec'];b=approved['spec']['template']['spec']
+            self.i.envelope(a,b)
+            for fault in ('scheme','mode','fieldref','probe','unknown','init-security','init-resource'):
+                bad=copy.deepcopy(a)
+                if fault=='scheme':bad['containers'][0].setdefault('readinessProbe',{}).setdefault('httpGet',{})['scheme']='HTTPS'
+                elif fault=='mode':bad.setdefault('volumes',[]).append(dict(name='foreign',configMap=dict(name='x',defaultMode=511)))
+                elif fault=='fieldref':bad['containers'][0].setdefault('env',[]).append(dict(name='foreign',valueFrom=dict(fieldRef=dict(apiVersion='v2',fieldPath='metadata.name'))))
+                elif fault=='probe':bad['containers'][0]['readinessProbe']['successThreshold']=2
+                elif fault=='unknown':bad['containers'][0]['unknownDefault']=True
+                elif fault=='init-security':bad['initContainers'][0].setdefault('securityContext',{})['privileged']=True
+                else:bad['initContainers'][0]['resources']['limits']['memory']='1Gi'
+                with self.assertRaisesRegex(RuntimeError,'envelope'):self.i.envelope(bad,b)
+
+    def test_document_hash_dirty_drift_and_independent_stopped_policy(self):
+        for fault in ('image','replicas','suspend','namespace','secret'):
+            docs=copy.deepcopy(self.docs)
+            if fault=='image':docs['deployment/postgres']['spec']['template']['spec']['containers'][0]['image']='changed'
+            elif fault=='replicas':docs['deployment/postgres']['spec']['replicas']=1
+            elif fault=='suspend':docs['cronjob/nextcloud-cron']['spec']['suspend']=False
+            elif fault=='namespace':docs['service/postgres']['metadata']['namespace']='foreign'
+            else:docs['secret/foreign']=dict(kind='Secret',metadata=dict(name='foreign',namespace=m.NS))
+            # Even an updated hash must not authorize active/foreign/Secret declarations.
+            if fault!='image':self.r['document_sha256']=m.document_hashes(docs);self.write()
+            with patch.object(m,'declarations',return_value=docs),patch.object(m.s.life,'lease',side_effect=AssertionError('API before local reject')):
+                with self.assertRaises(RuntimeError):self.i.authorize()
+
+    def test_dirty_manifest_drift_before_create_and_no_secret_create(self):
+        for args in [('apply','-f','-'),('patch','deployment','postgres'),('delete','secret','proof-credentials')]:
+            with patch.object(m.s.life,'kube',side_effect=AssertionError('mutation')):
+                with self.assertRaises(RuntimeError):self.i.call(*args,data='{}')
+        document=copy.deepcopy(self.docs['deployment/postgres'])
+        drift=copy.deepcopy(self.docs);drift['deployment/postgres']['spec']['template']['spec']['containers'][0]['image']='dirty-image'
+        with patch.object(m,'declarations',return_value=drift),patch.object(m.s.life,'lease'),patch.object(m.s.life,'kube',side_effect=AssertionError('mutation')):
+            with self.assertRaisesRegex(RuntimeError,'hash drift'):self.i.call('create','-f','-',data=json.dumps(document))
+        with patch.object(m.s.life,'lease'),patch.object(m.s.life,'kube',side_effect=AssertionError('mutation')):
+            with self.assertRaisesRegex(RuntimeError,'explicitly authorized'):
+                self.i.call('create','-f','-',data=json.dumps(dict(kind='Secret',metadata=dict(name='proof-credentials',namespace=m.NS))))
+
+    def test_aux_list_failure_still_captures_and_uid_retires_binding(self):
+        name='nc-binding-'+self.run
+        self.i.save(dict(event='pending',run_id=self.run,scope='initialize'))
+        self.i.save(dict(event='initialization-binding-created',run_id=self.run,name=name,uid='own'))
+        pod=dict(metadata=dict(name='binding-pod'),spec=dict(containers=[dict(name='binding')]))
+        events=[]
+        def obj(*args):
+            if 'local-path-storage' in args:events.append('aux-failed');raise RuntimeError('aux API unavailable')
+            if 'jobs' in args:return {'items':[dict(metadata=dict(name=name,uid='own'))]} if '--field-selector' not in args else {'items':[]}
+            if 'job' in args:return dict(metadata=dict(uid='own'))
+            if 'pods' in args:return {'items':[pod]} if not events or 'delete' not in events else {'items':[]}
+            raise AssertionError(args)
+        def call(*args,**kw):
+            if 'logs' in args:events.append('raw');return 'raw-private'
+            if 'delete' in args:
+                self.assertEqual(json.loads(kw['data'])['preconditions'],{'uid':'own'});events.append('delete');return ''
+            if 'wait' in args:return ''
+            raise AssertionError(args)
+        with patch.object(self.i,'target'),patch.object(self.i,'obj',side_effect=obj),patch.object(self.i,'call',side_effect=call),patch.object(self.i,'barriers'):
+            with self.assertRaisesRegex(RuntimeError,'owned helper retired'):self.i.retire_binding()
+        self.assertEqual(events,['aux-failed','raw','delete'])
+        self.assertEqual(self.i.pending(),{self.run})
+        self.assertTrue(any(e.get('event')=='initialization-provisioner-capture-gap' for e in m.s.life.native_cron_events(self.state)))
 
     def test_delete_uid_precondition_and_all_helper_absence(self):
         name='nc-binding-'+self.run

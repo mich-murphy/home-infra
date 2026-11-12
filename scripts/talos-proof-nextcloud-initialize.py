@@ -4,6 +4,7 @@ Never installs, starts applications, issues a full-run receipt, or deletes stora
 """
 import argparse
 import copy
+import hashlib
 import json
 import math
 import os
@@ -45,6 +46,25 @@ def declarations(html):
     return result
 
 
+def document_hashes(docs):
+    return {k:hashlib.sha256(json.dumps(d,sort_keys=True,separators=(',',':'),ensure_ascii=True).encode()).hexdigest()
+            for k,d in docs.items()}
+
+
+def stopped_documents(docs, html):
+    allowed={'deployment/nextcloud','deployment/postgres','deployment/redis',
+        'cronjob/nextcloud-cron','service/nextcloud','service/postgres','service/redis',
+        'configmap/nextcloud-apache-proof','pvc/'+html,'pvc/postgres-data','pvc/redis-data'}
+    if set(docs)!=allowed: raise RuntimeError('create allowlist mismatch')
+    for key,d in docs.items():
+        if (d['kind'] not in KINDS or KINDS[d['kind']]+'/'+d['metadata']['name']!=key
+            or d['metadata'].get('namespace')!=NS): raise RuntimeError('create kind/name/namespace mismatch')
+        if d['kind']=='Deployment' and (type(d['spec'].get('replicas')) is not int or d['spec']['replicas']!=0):
+            raise RuntimeError('explicit replicas zero required')
+        if d['kind']=='CronJob' and d['spec'].get('suspend') is not True:
+            raise RuntimeError('explicit suspend true required')
+
+
 class Initializer(s.Supervisor):
     def __init__(self,state,run):
         super().__init__(state,run)
@@ -67,6 +87,8 @@ class Initializer(s.Supervisor):
         if start and r['expires']-time.time()<900: raise RuntimeError('initialization cleanup window unavailable')
         if not re.fullmatch(r'[1-9][0-9]*:(?:0|[1-9][0-9]*)',str(r.get('storage_device_id',''))):raise RuntimeError('parent-bound storage major:minor identity required')
         docs=declarations(r['html_claim'])
+        stopped_documents(docs,r['html_claim'])
+        if r.get('document_sha256')!=document_hashes(docs): raise RuntimeError('intended document hash drift')
         missing=r.get('allowed_missing_resources')
         if not isinstance(missing,list) or not all(isinstance(k,str) for k in missing) or missing!=sorted(set(missing)) or not set(missing)<=set(docs): raise RuntimeError('exact allowed missing resources required')
         if not isinstance(r.get('existing_uids'),dict) or set(r['existing_uids'])!=set(docs)-set(missing)|{'secret/proof-credentials'}:
@@ -78,7 +100,28 @@ class Initializer(s.Supervisor):
         return r
 
     def call(self,*args,data=None):
-        if s.life.MUTATIONS.intersection(args):self.target()
+        mutations=s.life.MUTATIONS.intersection(args)
+        if mutations-{'create','delete'}:raise RuntimeError('initialization forbids existing resource changes')
+        if 'delete' in args:
+            expected_path='/apis/batch/v1/namespaces/'+NS+'/jobs/nc-binding-'+self.run
+            if args!=('delete','--raw',expected_path,'-f','-'):raise RuntimeError('only own binding retirement allowed')
+            options=json.loads(data)
+            bindings=[e['uid'] for e in s.life.native_cron_events(self.state)
+                if e.get('event')=='initialization-binding-created' and e.get('run_id')==self.run and e.get('name')=='nc-binding-'+self.run]
+            if len(bindings)!=1 or options.get('preconditions')!={'uid':bindings[0]}:
+                raise RuntimeError('recorded binding UID precondition required')
+        if 'create' in args:
+            r=self.authorize(); docs=declarations(r['html_claim'])
+            stopped_documents(docs,r['html_claim'])
+            if r.get('document_sha256')!=document_hashes(docs): raise RuntimeError('intended document hash drift')
+            d=json.loads(data); key=KINDS.get(d.get('kind'),'forbidden')+'/'+d.get('metadata',{}).get('name','')
+            if d.get('kind')=='Job':
+                # Binding is a separate generated document, not an arbitrary allowlist bypass.
+                intents=[e['job'] for e in s.life.native_cron_events(self.state) if e.get('event')=='initialization-binding-intent' and e.get('run_id')==self.run]
+                if len(intents)!=1 or d!=intents[0] or d['metadata']!={'name':'nc-binding-'+self.run,'namespace':NS}:
+                    raise RuntimeError('binding intent mismatch')
+            elif key not in r['allowed_missing_resources'] or d!=docs.get(key):
+                raise RuntimeError('create document not explicitly authorized')
         return super().call(*args,data=data)
 
     def target(self):
@@ -372,7 +415,16 @@ echo PROOF_BINDING_EMPTY_READONLY
             if j['metadata']['name']=='nc-binding-'+self.run:
                 name=j['metadata']['name'];uid=bindings.get(name)
                 if not uid:raise RuntimeError('unknown helper UID; new parent recovery needed')
-                self.provisioner_forensics();self.forensics(name);self.delete_binding(name,uid)
+                failure=None
+                try:self.provisioner_forensics()
+                except Exception as e:
+                    failure=e
+                    self.save(dict(event='initialization-provisioner-capture-gap',run_id=self.run,error=type(e).__name__,
+                        stdout=getattr(e,'stdout',None),stderr=getattr(e,'stderr',None)))
+                evidence=self.forensics(name)
+                self.delete_binding(name,uid)
+                if failure:raise RuntimeError('provisioner forensic gap; owned helper retired') from None
+                if evidence[2]:raise RuntimeError('binding forensic gap; owned helper retired')
         self.barriers()
         # Retain all created objects, including partially Bound PVCs. New init UUID cannot adopt them.
         self.save(dict(event='initialization-cleanup-stopped',run_id=self.run,retained_objects=True))

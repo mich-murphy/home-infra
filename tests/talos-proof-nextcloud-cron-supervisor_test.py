@@ -26,7 +26,7 @@ class SupervisorTests(unittest.TestCase):
             p.start();self.addCleanup(p.stop)
         self.path=Path(self.temp.name).resolve()/'receipt'
         self.receipt=dict(group='nextcloud',stage='cron',run_id=self.run,phases=list(m.cron.PHASES),budget_mib=832,
-            selected_controllers=['cronjob/nextcloud-cron','deployment/postgres','deployment/redis'],synthetic_age=True,cleanup_authorized=True,state_dir=str(self.s.state),expires=time.time()+3000,context='proof',node_uid='own',endpoint=m.life.EXPECTED_ENDPOINT)
+            selected_controllers=['cronjob/nextcloud-cron','deployment/postgres','deployment/redis'],synthetic_age=True,cleanup_authorized=True,state_dir=str(self.s.state),expires=time.time()+3000,namespace_uid='ns-own',context='proof',node_uid='own',endpoint=m.life.EXPECTED_ENDPOINT)
         self.env=patch.dict(os.environ,TALOS_PROOF_DATA_LEASE=str(self.path));self.env.start();self.addCleanup(self.env.stop)
 
     def write(self,changes=None):
@@ -54,7 +54,7 @@ class SupervisorTests(unittest.TestCase):
         self.assertEqual(path.stat().st_mode&0o777,0o600)
         with patch.object(self.s,'authorize'),patch.object(self.s,'admission',side_effect=AssertionError('pending activation')):
             with self.assertRaisesRegex(RuntimeError,'pending'): self.s.run_sequence()
-        with patch.object(self.s,'authorize'),patch.object(self.s,'obj',return_value={'items':[]}),patch.object(self.s,'call') as call:
+        with patch.object(self.s,'authorize'),patch.object(self.s,'scale_backends',side_effect=lambda n:self.s.call('scale')),patch.object(self.s,'obj',return_value={'items':[]}),patch.object(self.s,'call') as call:
             self.s.stop()
             self.assertTrue(any('scale' in c.args for c in call.call_args_list))
         self.s.save(dict(event='clean',run_id=self.run));self.assertFalse(self.s.pending())
@@ -66,7 +66,7 @@ class SupervisorTests(unittest.TestCase):
         self.assertEqual(m.life.pending_native_cron(self.s.state),set())
 
     def test_wrong_retained_uid_blocks(self):
-        with patch.object(self.s,'authorize',return_value={'object_uids':{}}),patch.object(self.s,'obj',return_value={'metadata':{'uid':'wrong'}}):
+        with patch.object(self.s,'target',return_value={'object_uids':{}}),patch.object(self.s,'obj',return_value={'metadata':{'uid':'wrong'}}):
             with self.assertRaisesRegex(RuntimeError,'UID'): self.s.identities()
 
     def test_active_helper_blocks_before_measurement_or_creation(self):
@@ -180,7 +180,7 @@ class SupervisorTests(unittest.TestCase):
     def test_cleanup_order_no_main_phases_and_new_receipt(self):
         self.s.save(dict(event='pending',run_id=self.run));events=[]
         r={**self.receipt,'action':'cleanup','phases':['cleanup']};self.path.write_text(json.dumps(r));self.path.chmod(0o600)
-        with patch.object(m.life,'lease'),patch.object(self.s,'identities',side_effect=lambda:events.append('identities')),patch.object(self.s,'retire_prior_jobs',side_effect=lambda:events.append('retire')),patch.object(self.s,'admission',side_effect=lambda:events.append('832')),patch.object(self.s,'require_stopped'),patch.object(self.s,'call',side_effect=lambda *a,**k:events.append('scale' if 'scale' in a else 'wait')),patch.object(self.s,'phase',side_effect=lambda p:events.append(p)),patch.object(self.s,'stop',side_effect=lambda:events.append('stop')):
+        with patch.object(m.life,'lease'),patch.object(self.s,'scale_backends',side_effect=lambda n:events.append('scale')),patch.object(self.s,'identities',side_effect=lambda:events.append('identities')),patch.object(self.s,'retire_prior_jobs',side_effect=lambda:events.append('retire')),patch.object(self.s,'admission',side_effect=lambda:events.append('832')),patch.object(self.s,'require_stopped'),patch.object(self.s,'call',side_effect=lambda *a,**k:events.append('scale' if 'scale' in a else 'wait')),patch.object(self.s,'phase',side_effect=lambda p:events.append(p)),patch.object(self.s,'stop',side_effect=lambda:events.append('stop')):
             self.s.cleanup_only()
         self.assertEqual(events,['identities','retire','832','scale','wait','cleanup','stop'])
         self.assertFalse(self.s.pending())
@@ -193,7 +193,7 @@ class SupervisorTests(unittest.TestCase):
 
     def test_stop_retires_own_failed_job_before_waiting_all_pods(self):
         events=[]
-        with patch.object(self.s,'authorize'),patch.object(self.s,'obj',return_value={'items':[]}),patch.object(self.s,'call',side_effect=lambda *a,**k:events.append('scale' if 'scale' in a else 'wait')),patch.object(self.s,'retire_prior_jobs',side_effect=lambda:events.append('retire')):
+        with patch.object(self.s,'authorize'),patch.object(self.s,'scale_backends',side_effect=lambda n:self.s.call('scale')),patch.object(self.s,'obj',return_value={'items':[]}),patch.object(self.s,'call',side_effect=lambda *a,**k:events.append('scale' if 'scale' in a else 'wait')),patch.object(self.s,'retire_prior_jobs',side_effect=lambda:events.append('retire')):
             self.s.stop()
         self.assertEqual(events,['scale','retire','wait'])
 
@@ -222,7 +222,7 @@ class SupervisorTests(unittest.TestCase):
         r,objects=self.identity_fixture();seen=[]
         def obj(*args):
             seen.append(args[-2:]);return objects[args[-2:]]
-        with patch.object(self.s,'authorize',return_value=r),patch.object(self.s,'obj',side_effect=obj),patch.object(self.s,'call',side_effect=AssertionError('mutation')):
+        with patch.object(self.s,'target',return_value=r),patch.object(self.s,'obj',side_effect=obj),patch.object(self.s,'call',side_effect=AssertionError('mutation')):
             self.s.identities()
         self.assertEqual(self.s.html,'restored-html')
         self.assertTrue(all(('pvc',name) in seen for name in ('restored-html','postgres-data','redis-data')))
@@ -248,11 +248,135 @@ class SupervisorTests(unittest.TestCase):
         with patch.object(self.s,'obj',return_value={'metadata':{'uid':'other'}}),patch.object(self.s,'call',side_effect=AssertionError('delete')):
             with self.assertRaisesRegex(RuntimeError,'UID mismatch'):self.s.delete_own_job(name)
 
+    def test_real_kube_failed_completed_process_preserved_privately(self):
+        pod=dict(metadata={'name':'own'},spec={'containers':[{'name':'cli'}]},status={})
+        failed=subprocess.CompletedProcess(['kubectl','fresh-secret-in-argv'],1,stdout='private-out',stderr='private-err')
+        with patch.object(self.s,'authorize'),patch.object(self.s,'obj',return_value={'items':[pod]}),patch.object(subprocess,'run',return_value=failed):
+            evidence=self.s.forensics('own')
+            self.assertTrue(evidence[2])
+            with self.assertRaises(m.life.KubeFailure) as caught:m.life.kube('get','fresh-secret-in-argv')
+        for public in (str(caught.exception),repr(caught.exception),str(caught.exception.args)):
+            for secret in ('private-out','private-err','fresh-secret-in-argv'):self.assertNotIn(secret,public)
+        gaps=[e for e in m.life.native_cron_events(self.s.state) if e.get('event')=='capture-gap']
+        self.assertEqual((gaps[-1]['stdout'],gaps[-1]['stderr']),('private-out','private-err'))
+        self.assertTrue(all(p.stat().st_mode&0o777==0o600 for p in self.s.state.glob('*.json')))
+        with patch.object(m.uuid,'uuid4',return_value=uuid.UUID(next(self.s.state.glob('*.json')).stem)):
+            with self.assertRaises(FileExistsError):self.s.save({'event':'overwrite'})
+
+    def test_native_namespace_receipt_and_atomic_stop_uid_patch_without_envelope(self):
+        self.write({'namespace_uid':''})
+        with patch.object(m.life,'lease',side_effect=AssertionError('API')):
+            with self.assertRaisesRegex(RuntimeError,'identity'):self.s.authorize()
+        r={**self.receipt,'object_uids':{'deployment/postgres':'pg-own','deployment/redis':'redis-own'}}
+        patches=[]
+        with patch.object(self.s,'authorize',return_value=r),patch.object(self.s,'obj',return_value={'metadata':{'uid':'replacement'}}),patch.object(self.s,'call',side_effect=AssertionError('mutation')):
+            with self.assertRaisesRegex(RuntimeError,'namespace UID'):self.s.scale_backends(0)
+        def call(*a,**kw):
+            patchdoc=json.loads(a[-1]);patches.append(patchdoc)
+            self.assertEqual(patchdoc[0]['op'],'test');self.assertEqual(patchdoc[0]['path'],'/metadata/uid')
+            if patchdoc[0]['value']=='pg-own':raise RuntimeError('atomic UID test failed on replacement')
+        with patch.object(self.s,'target',return_value=r),patch.object(self.s,'call',side_effect=call),patch.object(self.s,'identities',side_effect=AssertionError('stop must not require full envelope')):
+            with self.assertRaisesRegex(RuntimeError,'atomic UID'):self.s.scale_backends(0)
+        self.assertEqual(len(patches),1)
+        with patch.object(self.s,'target',return_value=r),patch.object(self.s,'call') as mutation:
+            self.s.scale_backends(0)
+            self.assertEqual(mutation.call_count,2)
+            self.assertEqual(json.loads(mutation.call_args.args[-1])[1],dict(op='replace',path='/spec/replicas',value=0))
+
+    def test_full_stop_accepts_bad_spec_only_for_own_namespace_and_atomic_uids(self):
+        r={**self.receipt,'object_uids':{'deployment/postgres':'pg-own','deployment/redis':'redis-own'}}
+        mutations=[];namespace=['ns-own']
+        def kube(*args,**kw):
+            if 'namespace' in args:return json.dumps({'metadata':{'uid':namespace[0]}})
+            if 'patch' in args:
+                patchdoc=json.loads(args[-1]);mutations.append((args[4],patchdoc))
+                self.assertEqual(patchdoc[0]['value'],r['object_uids']['deployment/'+args[4]])
+                return '{}'
+            if 'get' in args:return json.dumps({'items':[]})
+            if 'wait' in args:return ''
+            raise AssertionError(args)
+        # No full retained spec/resource envelope is read or required by stop.
+        with patch.object(self.s,'authorize',return_value=r),patch.object(m.life,'kube',side_effect=kube),patch.object(self.s,'identities',side_effect=AssertionError('activation envelope')):
+            self.s.stop()
+            self.assertEqual([x[0] for x in mutations],['postgres','redis'])
+            mutations.clear();namespace[0]='replacement'
+            with self.assertRaisesRegex(RuntimeError,'namespace UID'):self.s.stop()
+            self.assertEqual(mutations,[])
+
     def test_api_unreachable_failure_records_pending_and_stop_unconfirmed(self):
         self.s.html='restored-html'
         with patch.object(self.s,'authorize'),patch.object(self.s,'admission'),patch.object(self.s,'require_stopped'),patch.object(self.s,'call',side_effect=RuntimeError('API unreachable')),patch.object(self.s,'stop',side_effect=RuntimeError('API unreachable')):
             with self.assertRaisesRegex(RuntimeError,'unreachable'):self.s.run_sequence()
         self.assertEqual(self.s.pending(),{self.run})
         self.assertTrue(any(e.get('event')=='stop-unconfirmed' for e in m.life.native_cron_events(self.s.state)))
+
+class WorkstationSerializationTests(unittest.TestCase):
+    """Real bounded child processes; no cluster, host, lease, or runtime calls."""
+    def test_legacy_check_to_mutation_serializes_with_initializer_pending(self):
+        import select
+        import sys
+        with tempfile.TemporaryDirectory() as temp:
+            state=Path(temp).resolve();state.chmod(0o700)
+            code = """
+import importlib.util,json,os,sys
+from pathlib import Path
+spec=importlib.util.spec_from_file_location('life',sys.argv[1]);life=importlib.util.module_from_spec(spec);spec.loader.exec_module(life)
+state=Path(sys.argv[2]);life.CANONICAL_DATA_STATE=state
+life.kube=lambda *a,**k: (_ for _ in ()).throw(AssertionError('NO API'))
+life.credentials=lambda *a: (_ for _ in ()).throw(AssertionError('mutation reached'))
+sys.argv=['legacy','activate','--group','nextcloud','--stage','web','--state',str(state)]
+print('READY',flush=True)
+try:life.main()
+except RuntimeError as e:
+    assert str(e)=='pending native cron cleanup blocks unsafe activation', str(e)
+    print('PENDING_BLOCKED',flush=True)
+"""
+            with patch.object(m.life,'CANONICAL_DATA_STATE',state):
+                supervisor=m.Supervisor(state,str(uuid.uuid4()))
+            child=subprocess.Popen([sys.executable,'-c',code,str(ROOT/'scripts/talos-proof-data.py'),str(state)],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+            try:
+                self.assertTrue(select.select([child.stdout],[],[],5)[0]);self.assertEqual(child.stdout.readline().strip(),'READY')
+                self.assertFalse(select.select([child.stdout],[],[],0.2)[0])
+                self.assertIsNone(child.poll())
+                # Legacy is already entering main, but cannot pass the check until
+                # initializer has written PENDING and released the same OS lock.
+                supervisor.save(dict(event='pending',scope='initialize',run_id=supervisor.run))
+                os.close(supervisor.lock_fd);del supervisor.lock_fd
+                out,err=child.communicate(timeout=5)
+                self.assertEqual(child.returncode,0,err);self.assertEqual(out.strip(),'PENDING_BLOCKED')
+                # Process exit auto-frees the directory lock; no inode is unlinked.
+                fd=m.life.operation_lock(state,blocking=False);os.close(fd)
+            finally:
+                if child.poll() is None:child.kill();child.communicate(timeout=5)
+
+    def test_legacy_holds_operation_lock_from_check_through_mutation(self):
+        import select
+        import sys
+        with tempfile.TemporaryDirectory() as temp:
+            state=Path(temp).resolve();state.chmod(0o700)
+            code="""
+import importlib.util,sys
+from pathlib import Path
+spec=importlib.util.spec_from_file_location('life',sys.argv[1]);life=importlib.util.module_from_spec(spec);spec.loader.exec_module(life)
+state=Path(sys.argv[2]);life.CANONICAL_DATA_STATE=state
+life.kube=lambda *a,**k: (_ for _ in ()).throw(AssertionError('NO API'))
+def credentials(*a):
+    print('AFTER_CHECK_BEFORE_MUTATION',flush=True)
+    assert sys.stdin.readline().strip()=='RELEASE'
+    raise RuntimeError('offline boundary')
+life.credentials=credentials
+sys.argv=['legacy','activate','--group','nextcloud','--stage','web','--state',str(state)]
+try:life.main()
+except RuntimeError as e:assert str(e)=='offline boundary'
+"""
+            child=subprocess.Popen([sys.executable,'-c',code,str(ROOT/'scripts/talos-proof-data.py'),str(state)],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+            try:
+                self.assertTrue(select.select([child.stdout],[],[],5)[0]);self.assertEqual(child.stdout.readline().strip(),'AFTER_CHECK_BEFORE_MUTATION')
+                with patch.object(m.life,'CANONICAL_DATA_STATE',state):
+                    with self.assertRaisesRegex(RuntimeError,'another data operation'):m.Supervisor(state,str(uuid.uuid4()))
+                out,err=child.communicate('RELEASE\n',timeout=5);self.assertEqual(child.returncode,0,err)
+                fd=m.life.operation_lock(state,blocking=False);os.close(fd)
+            finally:
+                if child.poll() is None:child.kill();child.communicate(timeout=5)
 
 if __name__=='__main__':unittest.main()

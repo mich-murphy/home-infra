@@ -7,8 +7,6 @@ execution. All Kubernetes operations reuse the data lifecycle lease primitives.
 import argparse
 import copy
 import datetime
-import fcntl
-import hashlib
 import importlib.util
 import json
 import math
@@ -56,10 +54,7 @@ class Supervisor:
         if str(uuid.UUID(run)) != run or uuid.UUID(run).version != 4:
             raise RuntimeError('canonical parent-known v4 run UUID required')
         self.state = life.shared_data_state(state); self.run = run
-        self.lock_fd=os.open(self.state,os.O_RDONLY)
-        try: fcntl.flock(self.lock_fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
-        except BaseException:
-            os.close(self.lock_fd); del self.lock_fd; raise RuntimeError('another data supervisor owns journal directory')
+        self.lock_fd=life.operation_lock(self.state, blocking=False)
         self.active = None; self.original = None; self.scope = "run"; self.jobs = {}
         life.LEASE_GROUP='nextcloud'; life.LEASE_STAGE='cron'; life.STATE_DIR=self.state
 
@@ -94,7 +89,7 @@ class Supervisor:
             raise RuntimeError('expired receipt')
         if start and r['expires']-time.time()<len(cron.PHASES)*240+300:
             raise RuntimeError('full sequence and cleanup window unavailable')
-        if not r.get('context') or not r.get('node_uid') or r.get('endpoint')!=life.EXPECTED_ENDPOINT:
+        if not r.get('namespace_uid') or not r.get('context') or not r.get('node_uid') or r.get('endpoint')!=life.EXPECTED_ENDPOINT:
             raise RuntimeError('target identity missing')
         if self.original is not None and raw!=self.original:
             raise RuntimeError('immutable receipt changed')
@@ -104,9 +99,25 @@ class Supervisor:
 
     def call(self,*args,data=None):
         self.authorize()
+        if life.MUTATIONS.intersection(args): self.target()
         result=life.kube(*args,data=data)
         self.authorize()
         return result
+
+    def target(self):
+        r=self.authorize()
+        ns=self.obj('get','namespace',NS)
+        if ns['metadata']['uid']!=r['namespace_uid']: raise RuntimeError('namespace UID mismatch')
+        return r
+
+    def scale_backends(self, replicas):
+        # Atomic Deployment UID test protects the mutation itself, not just a prior read.
+        for name in ('postgres','redis'):
+            r=self.target(); uid=r.get('object_uids',{}).get('deployment/'+name)
+            if not uid: raise RuntimeError('backend UID binding required')
+            self.call('-n',NS,'patch','deployment',name,'--type=json','-p',json.dumps([
+                dict(op='test',path='/metadata/uid',value=uid),
+                dict(op='replace',path='/spec/replicas',value=replicas)]))
 
     def obj(self,*args):
         return json.loads(self.call(*args) if '--raw' in args else self.call(*args,'-o','json'))
@@ -124,7 +135,10 @@ class Supervisor:
         return next(d for d in yaml.safe_load_all(path.read_text()) if d['kind'] in ('Deployment','CronJob'))
 
     def envelope(self, actual, approved, actual_pod=False):
-        # Compare the complete reviewed template, allowing only documented API defaults.
+        # Compare complete templates on both sides. Exact core/v1 API defaults only:
+        # Probe (1/10/1/3), HTTPGetAction.scheme, *VolumeSource.defaultMode,
+        # ObjectFieldSelector.apiVersion; unknown fields/values remain significant.
+        # https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/
         def normalized(pod):
             pod=copy.deepcopy(pod)
             if pod.get('securityContext')=={}:pod.pop('securityContext')
@@ -141,15 +155,30 @@ class Supervisor:
             if 'resources' in pod: pod['resources']=resources(pod['resources'])
             if 'overhead' in pod:
                 pod['overhead']={k:quantity(v) if k in ('cpu','memory') else v for k,v in pod['overhead'].items()}
-            for c in pod.get('containers',[]):
+            for c in pod.get('containers',[])+pod.get('initContainers',[]):
                 if 'resources' in c: c['resources']=resources(c['resources'])
                 for key,value in dict(terminationMessagePath='/dev/termination-log',terminationMessagePolicy='File',imagePullPolicy='IfNotPresent').items():
                     if c.get(key)==value: c.pop(key)
+                for probe_name in ('startupProbe','livenessProbe','readinessProbe'):
+                    probe=c.get(probe_name,{})
+                    for key,value in dict(initialDelaySeconds=0,timeoutSeconds=1,periodSeconds=10,successThreshold=1,failureThreshold=3).items():
+                        if probe.get(key)==value: probe.pop(key)
+                    if probe.get('httpGet',{}).get('scheme')=='HTTP': probe['httpGet'].pop('scheme')
+                for env in c.get('env',[]):
+                    ref=env.get('valueFrom',{}).get('fieldRef',{})
+                    if ref.get('apiVersion')=='v1': ref.pop('apiVersion')
                 for port in c.get('ports',[]):
                     if port.get('protocol')=='TCP': port.pop('protocol')
                 for mount in c.get('volumeMounts',[]):
                     if mount.get('readOnly') is False: mount.pop('readOnly')
             for volume in pod.get('volumes',[]):
+                for source in ('configMap','secret','downwardAPI','projected'):
+                    v=volume.get(source,{})
+                    if v.get('defaultMode')==420: v.pop('defaultMode')
+                downward=[volume.get('downwardAPI',{})]+[source.get('downwardAPI',{}) for source in volume.get('projected',{}).get('sources',[])]
+                for item in [item for source in downward for item in source.get('items',[])]:
+                    ref=item.get('fieldRef',{})
+                    if ref.get('apiVersion')=='v1': ref.pop('apiVersion')
                 if volume.get('persistentVolumeClaim',{}).get('readOnly') is False:
                     volume['persistentVolumeClaim'].pop('readOnly')
             return pod
@@ -183,7 +212,7 @@ class Supervisor:
             raise RuntimeError('PV source/claim UID mismatch')
 
     def identities(self):
-        r=self.authorize(); expected=r.get('object_uids',{}); objects={}
+        r=self.target(); expected=r.get('object_uids',{}); objects={}
         for kind,name in [('secret','proof-credentials'),('deployment','nextcloud'),('deployment','postgres'),
                           ('deployment','redis'),('cronjob','nextcloud-cron')]:
             obj=self.obj('-n',NS,'get',kind,name)
@@ -384,7 +413,7 @@ class Supervisor:
         self.save(dict(event='stop-intent',run_id=self.run))
         # Strict capture here rather than the legacy best-effort deletion hook.
         self.save(dict(event='stop-pods',run_id=self.run,pods=self.obj('-n',NS,'get','pods')))
-        self.call('-n',NS,'scale','deployment/postgres','deployment/redis','--replicas=0')
+        self.scale_backends(0)
         self.retire_prior_jobs()
         self.call('-n',NS,'wait','--for=delete','pod','--all','--timeout=180s')
         if self.obj('-n',NS,'get','pods')['items']: raise RuntimeError('stop pods remain')
@@ -399,7 +428,7 @@ class Supervisor:
         self.save(dict(event='pending',run_id=self.run,intent=cron.intent(self.run)))
         try:
             self.save(dict(event='backend-start-intent',run_id=self.run))
-            self.call('-n',NS,'scale','deployment/postgres','deployment/redis','--replicas=1')
+            self.scale_backends(1)
             self.call('-n',NS,'wait','--for=condition=available','deployment/postgres','deployment/redis','--timeout=180s')
             self.admission()
             self.call('create','-f','-',data=json.dumps(bundle['payload']))
@@ -429,7 +458,7 @@ class Supervisor:
         try:
             self.retire_prior_jobs()
             self.admission(); self.require_stopped()
-            self.call('-n',NS,'scale','deployment/postgres','deployment/redis','--replicas=1')
+            self.scale_backends(1)
             self.call('-n',NS,'wait','--for=condition=available','deployment/postgres','deployment/redis','--timeout=180s')
             self.phase('cleanup')
             self.stop()

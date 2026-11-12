@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Private credentials and lease-gated sequential proof lifecycle. Never logs secrets."""
 import argparse
+import fcntl
 import base64
 import json
 import math
@@ -145,6 +146,24 @@ def capture_forensics(namespace, phase):
     return {'phase':phase,'sha256':saved['sha256']}
 
 
+class KubeFailure(RuntimeError):
+    """Private captured payload, never argv or payload in public str/repr/args."""
+    def __init__(self, stdout, stderr):
+        super().__init__('kubectl operation failed')
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+def operation_lock(state, blocking=True):
+    # Lock the stable directory inode; never create/unlink a waiter-visible lockfile.
+    fd = os.open(state, os.O_RDONLY | os.O_NOFOLLOW)
+    try: fcntl.flock(fd, fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB))
+    except BaseException:
+        os.close(fd)
+        raise RuntimeError('another data operation owns journal directory') from None
+    return fd
+
+
 def kube(*args, data=None):
     if MUTATIONS.intersection(args):
         if LEASE_GROUP not in GROUPS:
@@ -156,7 +175,7 @@ def kube(*args, data=None):
     result = subprocess.run(['kubectl', *args], input=data, capture_output=True, text=True, timeout=960)
     if result.returncode:
         # Kubernetes errors can contain submitted manifests/credentials; never echo them.
-        raise RuntimeError('kubectl operation failed: ' + ' '.join(args[:3]))
+        raise KubeFailure(result.stdout, result.stderr)
     return result.stdout
 
 
@@ -349,6 +368,16 @@ def pending_native_cron(state):
 
 
 def main():
+    # Hold through pending-check, credentials and every mutation, including failures.
+    try: _main()
+    finally:
+        if _OPERATION_FD[0] is not None:
+            os.close(_OPERATION_FD[0]); _OPERATION_FD[0] = None
+
+
+_OPERATION_FD = [None]
+
+def _main():
     global LEASE_GROUP, LEASE_STAGE, STATE_DIR
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('action', choices=['prepare', 'apply', 'activate', 'deactivate', 'test', 'run', 'verify'])
@@ -362,6 +391,7 @@ def main():
         raise RuntimeError('Native cron integration BLOCKED; see docs/talos-proof-nextcloud-cron-plan.md')
     os.umask(0o077)
     state = shared_data_state(a.state)
+    _OPERATION_FD[0] = operation_lock(state)
     STATE_DIR = state
     if a.group == 'nextcloud' and a.action in ('apply', 'activate', 'run', 'test') and pending_native_cron(state):
         raise RuntimeError('pending native cron cleanup blocks unsafe activation')
