@@ -404,3 +404,49 @@ or mocked; real subprocesses in serialization tests execute only local Python.
 The parent's64215964 root gate (395 methods /443 renders, no skips, actionlint)
 is historical base evidence, **not validation of these changes**. Full root CI,
 new parent read-only acceptance and every grant-bound measurement remain pending.
+
+## Exact service-account alias repair after actual API discovery
+
+Read-only evidence at `4507fd70` found one remaining real provisioner Deployment
+PodTemplate mismatch: API `serviceAccount` equals explicit
+`serviceAccountName: local-path-provisioner-service-account`, while the manifest
+only declares the canonical name. The shared pure envelope now removes the legacy
+alias **only when both explicit fields exist and equal each other**. The canonical
+name remains subject to the existing approved-name comparison/default policy;
+conflicts, jointly wrong identities and unknown fields still reject. The old
+provisioner-Pod-specific alias removal is removed, so it cannot independently
+bypass that comparison. Alias-only `serviceAccount: default` is no longer ignored.
+No security, image, resource or other default policy was loosened.
+
+Focused OFFLINE tests: supervisor30, initializer21, compiler8, data42 = **101
+passing tests**. Custom matching aliases pass for templates and Pods; mismatched
+aliases, both-wrong custom/default identities, alias without canonical name and
+unknown fields reject. The API-shaped provisioner fixture now includes the real
+legacy alias. An independent pure-validator replay against the privately captured
+actual Deployment and Pod (with cached ReplicaSet/Deployment UID chain) passes;
+four identity/unknown-field negative variants reject for each. Runtime subprocess
+calls were forbidden during replay; inputs were verified unchanged. No live API
+query, constructor, initialize/main invocation, receipt or activation was needed.
+
+Parent explicitly chose **desired new** HTML claim name `nextcloud-data` only
+after discovery found no native web/backend/CronJob declarations, Nextcloud PVCs
+or Nextcloud PV claimRefs. It is **not** a discovered/restored alias or adoption.
+Pure `declarations('nextcloud-data')`, stopped-document validation and canonical
+hashes for all eleven documents were compiled under that explicit choice.
+Private0700 artifacts, each UUID/O_EXCL0600, are in:
+`$HOME/.local/state/initialization-candidate-3c27eca2-a31d-4c8e-b62c-c7c6e25aad6f/`.
+The complete private candidate identity/hash plan is
+`candidate-identity-plan-14a104ad-0070-4dda-98d3-3ed37e4010f8.json`; its referenced
+exact declarations and captured-validator results are in the same directory.
+It records source-file hashes and historical captured identities, **not a receipt,
+grant, authority or fresh admission result**.
+
+Parent will create the fresh canonical0700 journal directory; completion was not
+assumed or performed here. Old `STATE/data` remains untouched, with no credential
+copy/generation, state migration or adoption. Parent independent source/document/
+identity review and fresh target/storage/quiescence/dual-memory measurements are
+still required, followed by a **NEW initialize-only receipt before create/bind**.
+The gate remains832MiB; actual binding64+3×32+192 remains352MiB. No main cron,
+web/backend/helper start or additional concrete compatibility blocker was observed
+in this bounded offline replay. Postbinding native cron requires separate new
+UID-bound authority and is not authorized by the candidate plan.

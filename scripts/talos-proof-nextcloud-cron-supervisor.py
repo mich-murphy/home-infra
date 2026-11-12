@@ -142,9 +142,15 @@ class Supervisor:
         def normalized(pod):
             pod=copy.deepcopy(pod)
             if pod.get('securityContext')=={}:pod.pop('securityContext')
+            # The legacy API alias is redundant only with an explicit matching
+            # canonical name. Preserve that name for approved-identity comparison;
+            # absent, conflicting or jointly wrong identities must not disappear.
+            if ('serviceAccountName' in pod and 'serviceAccount' in pod
+                and pod['serviceAccount']==pod['serviceAccountName']):
+                pod.pop('serviceAccount')
             defaults=dict(dnsPolicy='ClusterFirst',schedulerName='default-scheduler',
                 restartPolicy='Always',terminationGracePeriodSeconds=30,enableServiceLinks=True,
-                serviceAccount='default',serviceAccountName='default',priority=0,
+                serviceAccountName='default',priority=0,
                 preemptionPolicy='PreemptLowerPriority')
             if actual_pod:
                 defaults['nodeName']='talos-proof'

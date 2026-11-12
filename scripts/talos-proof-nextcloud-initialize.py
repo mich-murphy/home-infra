@@ -154,7 +154,8 @@ class Initializer(s.Supervisor):
             dep=self.obj('-n','local-path-storage','get','deployment','local-path-provisioner')
             if rs['metadata']['uid']!=owner['uid'] or not any(o.get('kind')=='Deployment' and o.get('uid')==dep['metadata']['uid'] for o in rs['metadata'].get('ownerReferences',[])):return False
             actual=copy.deepcopy(pod['spec'])
-            if actual.get('serviceAccount')=='local-path-provisioner-service-account':actual.pop('serviceAccount')
+            # Shared envelope validation checks the legacy alias against the
+            # explicit canonical name; never drop it independently here.
             volumes=actual.get('volumes',[])
             tokens=[v for v in volumes if v['name'].startswith('kube-api-access-')]
             if len(tokens)!=1:return False

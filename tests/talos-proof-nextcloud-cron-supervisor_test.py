@@ -161,6 +161,31 @@ class SupervisorTests(unittest.TestCase):
             bad=copy.deepcopy(actual);bad['unknownAPIDefault']=True
             with self.assertRaisesRegex(RuntimeError,'envelope'):self.s.envelope(bad,approved)
 
+    def test_explicit_custom_service_account_alias_preserves_identity(self):
+        import copy
+        approved=dict(containers=[],serviceAccountName='reviewed-custom-account')
+        actual={**approved,'serviceAccount':'reviewed-custom-account'}
+        for actual_pod in (False,True):
+            with self.subTest(actual_pod=actual_pod):
+                before=copy.deepcopy(actual)
+                self.s.envelope(actual,approved,actual_pod=actual_pod)
+                self.assertEqual(actual,before)
+                for change in (
+                    {'serviceAccount':'foreign-account'},
+                    {'serviceAccount':'default'},
+                    {'serviceAccountName':'foreign-account'},
+                    {'serviceAccount':'foreign-account','serviceAccountName':'foreign-account'},
+                    {'serviceAccount':'default','serviceAccountName':'default'},
+                    {'unknownServiceAccountDefault':True},
+                ):
+                    with self.subTest(change=change),self.assertRaisesRegex(RuntimeError,'envelope'):
+                        self.s.envelope({**actual,**change},approved,actual_pod=actual_pod)
+        # An alias alone is not proof of an explicit matching canonical name,
+        # even when its value is the ordinary default service account.
+        for alias in ('default','reviewed-custom-account'):
+            with self.subTest(alias=alias),self.assertRaisesRegex(RuntimeError,'envelope'):
+                self.s.envelope(dict(containers=[],serviceAccount=alias),dict(containers=[]))
+
     def test_cron_security_fails_before_fixture_mutation(self):
         approved=self.s.approved('nextcloud-cron')['spec']['jobTemplate']['spec']['template']['spec']
         import copy

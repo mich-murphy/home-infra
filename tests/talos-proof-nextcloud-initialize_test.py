@@ -19,6 +19,7 @@ m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 def api_deployment(doc):
     d=copy.deepcopy(doc);p=d['spec']['template']['spec']
     p.update(dnsPolicy='ClusterFirst',restartPolicy='Always',schedulerName='default-scheduler',terminationGracePeriodSeconds=30)
+    if 'serviceAccountName' in p:p['serviceAccount']=p['serviceAccountName']
     for c in p.get('containers',[])+p.get('initContainers',[]):
         c.update(imagePullPolicy='IfNotPresent',terminationMessagePath='/dev/termination-log',terminationMessagePolicy='File')
         for name in ('startupProbe','readinessProbe','livenessProbe'):
@@ -242,6 +243,36 @@ class InitializationTests(unittest.TestCase):
                 elif fault=='init-security':bad['initContainers'][0].setdefault('securityContext',{})['privileged']=True
                 else:bad['initContainers'][0]['resources']['limits']['memory']='1Gi'
                 with self.assertRaisesRegex(RuntimeError,'envelope'):self.i.envelope(bad,b)
+
+    def test_provisioner_pod_alias_uses_shared_identity_validation(self):
+        dep=api_deployment(next(d for d in m.STORAGE_DOCS if d['kind']=='Deployment'))
+        dep['metadata']['uid']='deployment-uid'
+        rs=dict(metadata=dict(name='local-path-provisioner-offline',uid='rs-uid',
+            ownerReferences=[dict(kind='Deployment',uid='deployment-uid')]))
+        pod=dict(metadata=dict(ownerReferences=[dict(kind='ReplicaSet',name=rs['metadata']['name'],uid='rs-uid')]),
+            spec=copy.deepcopy(dep['spec']['template']['spec']))
+        token=dict(name='kube-api-access-offline',projected=dict(defaultMode=420,sources=[
+            dict(serviceAccountToken=dict(expirationSeconds=3607,path='token')),
+            dict(configMap=dict(name='kube-root-ca.crt',items=[dict(key='ca.crt',path='ca.crt')])),
+            dict(downwardAPI=dict(items=[dict(path='namespace',fieldRef=dict(apiVersion='v1',fieldPath='metadata.namespace'))]))]))
+        pod['spec']['volumes'].append(token)
+        pod['spec']['containers'][0]['volumeMounts'].append(dict(name=token['name'],readOnly=True,mountPath='/var/run/secrets/kubernetes.io/serviceaccount'))
+        def obj(*args):
+            return rs if args[-2]=='replicaset' else dep
+        before=copy.deepcopy(pod)
+        with patch.object(self.i,'obj',side_effect=obj):
+            self.assertTrue(self.i.provisioner_pod(pod))
+            for change in (
+                {'serviceAccount':'foreign-account'},
+                {'serviceAccount':'default'},
+                {'serviceAccountName':'foreign-account'},
+                {'serviceAccount':'foreign-account','serviceAccountName':'foreign-account'},
+                {'serviceAccount':'default','serviceAccountName':'default'},
+                {'unknownServiceAccountDefault':True},
+            ):
+                bad=copy.deepcopy(pod);bad['spec'].update(change)
+                with self.subTest(change=change):self.assertFalse(self.i.provisioner_pod(bad))
+        self.assertEqual(pod,before)
 
     def test_document_hash_dirty_drift_and_independent_stopped_policy(self):
         for fault in ('image','replicas','suspend','namespace','secret'):
