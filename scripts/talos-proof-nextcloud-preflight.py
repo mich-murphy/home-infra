@@ -206,6 +206,7 @@ class Preflight(s.Supervisor):
             for c in self.obj('get','jobs,daemonsets','-A')['items']:
                 if c['metadata']['namespace'].startswith('proof-'):
                     raise RuntimeError('proof Job/DaemonSet blocks diagnosis')
+            counts={'postgres':0,'redis':0};observed_memory=0
             for pod in self.obj('get','pods','-A')['items']:
                 if not pod['metadata']['namespace'].startswith('proof-'): continue
                 if not getattr(self,'backends_started',False):
@@ -223,6 +224,24 @@ class Preflight(s.Supervisor):
                     or parent[0].get('controller') is not True
                     or parent[0].get('uid')!=r['object_uids']['deployment/'+app]):
                     raise RuntimeError('backend Pod deployment ownership mismatch')
+                counts[app]+=1
+                self.envelope(pod['spec'],self.approved(app)['spec']['template']['spec'],actual_pod=True)
+                # Charge every observed Pod, including duplicates; no Deployment-count shortcut.
+                observed_memory+=sum(s.quantity(c['resources']['limits']['memory']) for c in pod['spec']['containers'])
+                status=pod.get('status',{});containers=status.get('containerStatuses',[])
+                if (meta.get('deletionTimestamp') is not None or status.get('phase')!='Running'
+                    or not any(c.get('type')=='Ready' and c.get('status')=='True' for c in status.get('conditions',[]))
+                    or len(containers)!=len(pod['spec']['containers'])
+                    or {c.get('name') for c in containers}!={c['name'] for c in pod['spec']['containers']}
+                    or any(c.get('ready') is not True or type(c.get('restartCount')) is not int
+                        or c['restartCount']!=0 or set(c.get('state',{}))!={'running'}
+                        or c.get('lastState',{})!={} for c in containers)):
+                    raise RuntimeError('backend Pod not healthy running/ready without restart evidence')
+            if getattr(self,'backends_started',False):
+                if observed_memory+s.quantity('192Mi')+s.quantity('192Mi')>s.quantity('832Mi'):
+                    raise RuntimeError('all observed backend Pods exceed diagnostic memory budget')
+                if counts!={'postgres':1,'redis':1}:
+                    raise RuntimeError('exactly one healthy Pod per backend required')
         barriers()
         super().admission()
         barriers()
@@ -364,14 +383,14 @@ class Preflight(s.Supervisor):
         return super().call(*args,data=data)
 
     def diagnostic_capture_identity(self,evidence,name,uid):
-        expected=self.documents()[1]['spec']['template']['spec']
+        # Cleanup ownership only: drifted/failed Pods must still be capturable and
+        # retireable under the recorded Job UID, never accepted as healthy evidence.
         for pod in evidence[0]['items']:
             meta=pod['metadata'];owners=meta.get('ownerReferences',[])
             if (meta.get('namespace')!=s.NS or len(owners)!=1
                 or owners[0].get('kind')!='Job' or owners[0].get('name')!=name
                 or owners[0].get('uid')!=uid):
                 raise RuntimeError('diagnostic Pod owner/namespace mismatch')
-            self.envelope(pod['spec'],expected,actual_pod=True)
 
     def diagnostic_helper(self,job):
         self.admission();name=job['metadata']['name']

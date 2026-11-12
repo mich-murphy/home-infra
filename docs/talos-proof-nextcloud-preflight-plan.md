@@ -253,3 +253,29 @@ Fresh focused validation after this correction: recovery18 + compiler15 +
 supervisor40 + initializer35 + data42 + WOPI14 + workflows20 = **184 Python tests
 passing, no skips**; `git diff --check` passes. No PHP payload, browser, cluster,
 Talos, VM, credentials, CI, or full static gate was run for this correction.
+
+## Focused post-57af7334 follow-up — offline only
+
+Post-start diagnostic admission requires exactly one PostgreSQL Pod and one Redis
+Pod in each observed global Pod snapshot. Both must be Running and Ready, without
+termination, restart, previous container-state/OOM evidence or missing/unknown
+status; exact owner chains and actual Pod envelopes still apply. All observed
+backend Pod memory limits are summed, then the unchanged192MiB helper and192MiB
+reserve charged against832MiB. Duplicate valid Pods therefore cannot hide behind
+Deployment counts. Before startup, zero proof Pods remains mandatory. Deployment
+strategies, resource declarations and admission thresholds are unchanged.
+
+Diagnostic STOP helper retirement requires complete raw capture followed by strict
+namespace/recorded Job UID ownership and UID-preconditioned deletion, but no longer
+requires the captured Pod's resources/image/spec to match a healthy activation
+Pod. A drifted known-owned helper can be captured and retired without accepting
+its evidence or clearing diagnostic failure. Unknown ownership or changed live Job
+UID blocks retirement. Normal diagnostic activation/evidence envelopes remain
+strict. Main Supervisor/lifecycle semantics, target/expiry guards and no-retry
+behavior are unchanged.
+
+Expanded actual-admission/STOP regressions cover duplicate valid PostgreSQL Pods,
+terminating-plus-replacement Pods, terminal/unknown/Pending/unready/restarted/OOM
+backends, the healthy two-Running-Pod positive, drifted-resource helper raw capture
+and guarded retirement, and unknown-owner/live-UID retirement rejection. These are
+synthetic offline fixtures, not live acceptance or a private historical replay.

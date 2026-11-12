@@ -211,14 +211,33 @@ class PreflightTests(unittest.TestCase):
                         objects[:]=[dict(kind=kind,metadata=dict(namespace=ns),spec=spec,status={'succeeded':1})]
                         with self.subTest(kind=kind,ns=ns,spec=spec),self.assertRaises(RuntimeError):self.i.admission()
             objects.clear()
-            approved=self.i.approved('postgres')['spec']['template']['spec']
-            pods[:]=[dict(metadata=dict(namespace=m.s.NS,labels={'app.kubernetes.io/name':'postgres'},ownerReferences=[dict(kind='ReplicaSet',name='pg-rs',uid='rs-owned',controller=True)]),spec=copy.deepcopy(approved))]
-            self.cache['replicaset/pg-rs']=dict(metadata=dict(namespace=m.s.NS,uid='rs-owned',ownerReferences=[dict(kind='Deployment',name='postgres',uid=self.r['object_uids']['deployment/postgres'],controller=True)]))
+            for app in ('postgres','redis'):
+                spec=copy.deepcopy(self.i.approved(app)['spec']['template']['spec'])
+                pods.append(dict(metadata=dict(namespace=m.s.NS,labels={'app.kubernetes.io/name':app},ownerReferences=[dict(kind='ReplicaSet',name=app+'-rs',uid=app+'-rs-owned',controller=True)]),spec=spec,
+                    status=dict(phase='Running',conditions=[dict(type='Ready',status='True')],containerStatuses=[dict(name=c['name'],ready=True,restartCount=0,state={'running':{}}) for c in spec['containers']])))
+                self.cache['replicaset/'+app+'-rs']=dict(metadata=dict(namespace=m.s.NS,uid=app+'-rs-owned',ownerReferences=[dict(kind='Deployment',name=app,uid=self.r['object_uids']['deployment/'+app],controller=True)]))
             with self.assertRaisesRegex(RuntimeError,'before'):self.i.admission()
-            self.i.backends_started=True;self.i.admission()
-            self.cache['replicaset/pg-rs']['metadata']['ownerReferences'][0]['uid']='foreign'
+            self.i.backends_started=True;self.i.admission()  # two ordinary Running/Ready healthy Pods
+            healthy=copy.deepcopy(pods)
+            for fault in ('duplicate','terminating-replacement','terminal','unknown-phase','pending','unready','restart','oom','envelope','missing'):
+                pods[:]=copy.deepcopy(healthy)
+                if fault=='duplicate':pods.append(copy.deepcopy(pods[0]))
+                elif fault=='terminating-replacement':
+                    pods.append(copy.deepcopy(pods[0]));pods[0]['metadata']['deletionTimestamp']='2026-11-12T00:00:00Z'
+                elif fault=='terminal':pods[0]['status']['phase']='Failed'
+                elif fault=='unknown-phase':pods[0]['status'].pop('phase')
+                elif fault=='pending':pods[0]['status']['phase']='Pending'
+                elif fault=='unready':pods[0]['status']['containerStatuses'][0]['ready']=False
+                elif fault=='restart':pods[0]['status']['containerStatuses'][0]['restartCount']=1
+                elif fault=='oom':pods[0]['status']['containerStatuses'][0]['lastState']={'terminated':{'reason':'OOMKilled'}}
+                elif fault=='envelope':pods[0]['spec']['containers'][0]['resources']['limits']['memory']='385Mi'
+                else:pods.pop()
+                with self.subTest(fault=fault),self.assertRaisesRegex(RuntimeError,'memory budget' if fault=='duplicate' else '.'):
+                    self.i.admission()
+            pods[:]=copy.deepcopy(healthy)
+            self.cache['replicaset/postgres-rs']['metadata']['ownerReferences'][0]['uid']='foreign'
             with self.assertRaisesRegex(RuntimeError,'ownership'):self.i.admission()
-            pods.clear()
+            self.cache['replicaset/postgres-rs']['metadata']['ownerReferences'][0]['uid']=self.r['object_uids']['deployment/postgres']
             self.cache['deployment/nextcloud']['spec']['replicas']=1
             with self.assertRaisesRegex(RuntimeError,'unselected'):self.i.admission()
             self.cache['deployment/nextcloud']['spec']['replicas']=0
@@ -230,8 +249,9 @@ class PreflightTests(unittest.TestCase):
         name='nc-preflight-'+self.i.run
         self.i.save(dict(event='phase-created',run_id=self.i.run,name=name,uid='helper-owned'))
         self.i.save(dict(event='pending',run_id=self.i.run,scope='diagnose-preflight'))
-        for fault in ('postgres','redis','capture','retire',None):
+        for fault in ('postgres','redis','capture','retire','drift','owner','uid',None):
             operations=[];self.i.jobs={};self.i.helper_cleanup_attempted=set()
+            if fault=='drift':self.i.save(dict(event='diagnostic-failed',run_id=self.i.run,error_type='RuntimeException'))
             def kube(*args,data=None):
                 if 'patch' in args:
                     backend=args[4];operations.append(backend)
@@ -243,14 +263,16 @@ class PreflightTests(unittest.TestCase):
                     operations.append('capture')
                     if fault=='capture':raise RuntimeError('capture failed')
                     return 'bounded log'
-                if args[:3]==('-n',m.s.NS,'get') and args[3]=='job':return json.dumps({'metadata':{'uid':'helper-owned'}})
+                if args[:3]==('-n',m.s.NS,'get') and args[3]=='job':return json.dumps({'metadata':{'uid':'foreign' if fault=='uid' else 'helper-owned'}})
                 if args[:2]==('delete','--raw'):
                     operations.append('retire');self.assertEqual(json.loads(data)['preconditions'],{'uid':'helper-owned'})
                     if fault=='retire':raise RuntimeError('retirement failed')
                     return '{}'
                 if 'pods' in args:
                     if '-l' in args and 'retire' not in operations:
-                        return json.dumps({'items':[dict(metadata=dict(name='helper-pod',namespace=m.s.NS,ownerReferences=[dict(kind='Job',name=name,uid='helper-owned')]),spec=copy.deepcopy(self.i.documents()[1]['spec']['template']['spec']))]})
+                        spec=copy.deepcopy(self.i.documents()[1]['spec']['template']['spec'])
+                        if fault=='drift':spec['containers'][0]['resources']['limits']['memory']='999Mi'
+                        return json.dumps({'items':[dict(metadata=dict(name='helper-pod',namespace=m.s.NS,ownerReferences=[dict(kind='Job',name=name,uid='foreign' if fault=='owner' else 'helper-owned')]),spec=spec)]})
                     return json.dumps({'items':[]})
                 if 'jobs' in args:return json.dumps({'items':[]})
                 if 'deployments,statefulsets,daemonsets,cronjobs,jobs' in args:return json.dumps({'items':[]})
@@ -258,15 +280,19 @@ class PreflightTests(unittest.TestCase):
                 if 'wait' in args:return '{}'
                 raise AssertionError(args)
             with self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=kube):
-                if fault is None:self.i.stop()
+                if fault in (None,'drift'):self.i.stop()
                 else:
                     with self.assertRaisesRegex(RuntimeError,'unconfirmed'):self.i.stop()
             self.assertIn(self.i.run,self.i.pending())
             self.assertEqual(operations[:2],['postgres','redis'])
             self.assertIn('capture',operations)
-            if fault=='capture':self.assertNotIn('retire',operations)
+            if fault in ('capture','owner','uid'):self.assertNotIn('retire',operations)
             else:self.assertLess(operations.index('capture'),operations.index('retire'))
-            self.assertFalse(any(e.get('event')=='clean' and e.get('run_id')==self.i.run for e in m.s.life.native_cron_events(self.state)))
+            events=[e for e in m.s.life.native_cron_events(self.state) if e.get('run_id')==self.i.run]
+            self.assertFalse(any(e.get('event') in ('clean','diagnostic-result') for e in events))
+            if fault=='drift':
+                self.assertTrue(any(e.get('event')=='diagnostic-failed' for e in events))
+                self.assertTrue(any(e.get('event')=='pods' and e['pods']['items'][0]['spec']['containers'][0]['resources']['limits']['memory']=='999Mi' for e in events))
 
     def test_diagnostic_exact_readonly_documents_no_public_phase_no_cross_authority(self):
         self.diagnostic_fixture();cm,job=self.i.documents();pod=job['spec']['template']['spec'];c=pod['containers'][0]
