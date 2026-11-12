@@ -12,11 +12,31 @@ import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import select
+import re
 import socket
 import urllib.parse
 
 HOP_HEADERS = {'connection', 'proxy-connection', 'keep-alive', 'transfer-encoding', 'te', 'trailer', 'upgrade', 'proxy-authorization'}
 MAX_BODY = 1024 * 1024
+
+
+def framing(headers):
+    """Validate raw field multiplicity BEFORE http.client normalizes framing.
+
+    No TE is supported (including TE+CL); never turn ambiguous upstream bytes
+    into a seemingly valid fixed-length decoder response. Missing CL remains
+    close-delimited and cannot satisfy the strict decoder contract.
+    """
+    lengths = [v for k, v in headers if k.lower() == 'content-length']
+    if any(k.lower() == 'transfer-encoding' for k, _ in headers):
+        raise ValueError('unsupported transfer encoding')
+    if len(lengths) > 1 or (lengths and not re.fullmatch(r'[0-9]+', lengths[0])):
+        raise ValueError('invalid or duplicate content length')
+    nominated = {v.strip().lower() for k, value in headers if k.lower() == 'connection'
+                 for v in value.split(',')}
+    if 'content-length' in nominated:
+        raise ValueError('connection nominates framing')
+    return lengths[0] if lengths else None
 
 
 def authorized(headers, query, key, password):
@@ -89,10 +109,13 @@ class Handler(BaseHTTPRequestHandler):
         try:
             connection.request(self.command, target, body=payload, headers=headers)
             response = connection.getresponse()
+            length = framing(response.getheaders())
             self.send_response(response.status)
             for key, value in response.getheaders():
                 if key.lower() not in HOP_HEADERS | {'x-plex-token', 'content-length'}:
                     self.send_header(key, value)
+            if length is not None:
+                self.send_header('Content-Length', length)
             self.send_header('Connection', 'close')
             self.end_headers()
             while True:
@@ -100,7 +123,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not block:
                     break
                 self.wfile.write(block)
-        except (OSError, http.client.HTTPException):
+        except (OSError, ValueError, http.client.HTTPException):
             self.close_connection = True
         finally:
             connection.close()

@@ -81,8 +81,9 @@ def open_plex_stream(api, path, identity):
                 'exact HTTP200 original response required (no redirects)')
         require(response.headers.get('Content-Encoding', 'identity') == 'identity',
                 'encoded response forbidden')
-        length = response.headers.get('Content-Length')
-        require(length == str(FIXTURE_BYTES) and not response.headers.get('Transfer-Encoding'),
+        lengths = response.headers.get_all('Content-Length', [])
+        require(lengths == [str(FIXTURE_BYTES)] and
+                not response.headers.get_all('Transfer-Encoding', []),
                 'exact Content-Length and unchunked response required')
         return response
     except BaseException:
@@ -112,14 +113,25 @@ class StreamCheck:
 class Progress:
     frame: int
     media_us: int
+    batch: int = dataclasses.field(default=0, compare=False)
+    epoch: int = dataclasses.field(default=0, compare=False)
 
 
 class ProgressParser:
     def __init__(self):
         self.buffer, self.block = b'', {}
         self.last = Progress(0, 0)
+        self.batch, self.epoch, self.quarantine = 0, 0, False
+
+    def barrier(self):
+        # Pipe was drained to EAGAIN. Discard any partial block and also the
+        # next complete block, whose prefix may already exist in producer IO.
+        self.buffer, self.block = b'', {}
+        self.epoch += 1
+        self.quarantine = True
 
     def feed(self, data):
+        self.batch += 1
         self.buffer += data
         require(len(self.buffer) <= MAX_OUTPUT, 'progress buffer exceeded')
         result = []
@@ -127,11 +139,16 @@ class ProgressParser:
             line, self.buffer = self.buffer.split(b'\n', 1)
             key, sep, value = line.partition(b'=')
             require(bool(sep) and len(line) <= 4096, 'malformed progress')
+            if self.quarantine:
+                if key == b'progress':
+                    self.quarantine = False
+                continue
             self.block[key] = value.strip()
             if key == b'progress':
                 require(value.strip() in (b'continue', b'end'), 'invalid progress state')
                 try:
-                    current = Progress(int(self.block[b'frame']), int(self.block[b'out_time_us']))
+                    current = Progress(int(self.block[b'frame']), int(self.block[b'out_time_us']),
+                                       self.batch, self.epoch)
                 except (KeyError, ValueError):
                     raise Rejected('missing decoded frame/media time') from None
                 require(current.frame >= self.last.frame and current.media_us >= self.last.media_us
@@ -140,6 +157,22 @@ class ProgressParser:
                     result.append(current)
                 self.last, self.block = current, {}
         return result
+
+
+def progress_barrier(stream, parser, log, output):
+    """Bounded drain to EAGAIN, then quarantine the parser's partial block."""
+    while True:
+        try:
+            stale = os.read(stream.fileno(), CHUNK)
+        except BlockingIOError:
+            break
+        if not stale:
+            break
+        output += len(stale)
+        require(output <= MAX_OUTPUT, 'decoder backlog bound exceeded')
+        log.write(stale)
+    parser.barrier()
+    return output
 
 
 class Lifecycle:
@@ -327,7 +360,10 @@ def decode(source, ffmpeg, private_root, *, size=FIXTURE_BYTES, digest=FIXTURE_S
             require(cancel is None or not cancel.is_set(), 'decode cancelled')
             memory.check(process)
             if pump:
-                pump(process, parser.last, verified)
+                if pump(process, parser.last, verified):
+                    # Drain ALL currently queued stdout, not one read or report.
+                    # Output cap also bounds a continuously-writing adversary.
+                    output = progress_barrier(process.stdout, parser, logs[0], output)
             for key, _ in selector.select(timeout=0.05):
                 if key.data == 2:
                     if not pending:

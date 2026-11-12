@@ -64,27 +64,49 @@ def validate_receipt(receipt, binding, templates, now=None):
     h.require(digest == binding['decoder_sha256'], 'decoder hash changed')
 
 
+def aggregate_admission(controllers, pods):
+    """Conservative snapshot admission, not rollout/exclusivity authority.
+
+    Include terminal/terminating duplicates; no per-Pod or desired-replica-only
+    sum. Live wiring must additionally prevent changes between snapshots.
+    """
+    templates = {}
+    total = 0
+    for name, limit in LIMITS.items():
+        selected = [c for c in controllers if c['metadata']['namespace'] == 'proof-' + name]
+        h.require(len(selected) == 1, 'unsupported controller cardinality')
+        c = selected[0]
+        spec = c['spec']
+        h.require(c['metadata']['name'] == name and spec.get('replicas') == 1 and
+                  not c['metadata'].get('deletionTimestamp'), 'unsupported replica/deleting controller')
+        h.require((c['kind'] == 'Deployment' and spec.get('strategy') == {'type': 'Recreate'}) or
+                  (c['kind'] == 'StatefulSet' and spec.get('updateStrategy') == {'type': 'OnDelete'}),
+                  'surge/rolling or unknown update strategy unsupported')
+        templates[name] = spec['template']
+        actual = [p for p in pods if p['metadata']['namespace'] == 'proof-' + name]
+        h.require(len(actual) == 1, 'all simultaneous Pods including terminating duplicates required')
+        pod = actual[0]
+        h.require(not pod['metadata'].get('deletionTimestamp'), 'terminating Pod unsupported')
+        owners = pod['metadata'].get('ownerReferences', [])
+        h.require(len(owners) == 1 and owners[0].get('controller') is True,
+                  'unowned or ambiguous Pod unsupported')
+        memory = s.resources.effective_limits(pod['spec'])['memory']
+        h.require(memory == limit * s.resources.MIB, 'actual pod budget drift')
+        total += memory
+    h.require(total + 192 * s.resources.MIB <= 896 * s.resources.MIB,
+              'aggregate simultaneous Pod budget exceeded')
+    return templates
+
+
 def guard(binding):
     # Do not modify general group budgets/profiles to get admission. The old
     # aggregate happens to equal 896 but its component limits are NOT authority.
     receipt = s.guard(GROUP)
     s.require_helpers_deleted(GROUP)
     controllers = json.loads(s.kubectl_read('get', 'deployments,statefulsets', '-A', '-o', 'json'))['items']
-    templates = {}
-    for name in LIMITS:
-        selected = [c for c in controllers if c['metadata']['namespace'] == 'proof-' + name]
-        h.require(len(selected) == 1 and selected[0]['metadata']['name'] == name,
-                  'unsupported headless controller profile')
-        templates[name] = selected[0]['spec']['template']
-    validate_receipt(receipt, binding, templates)
-    # All actual Pods, including init/sidecars and terminal/terminating ones,
-    # must match the approved full spec resource envelope too.
     pods = json.loads(s.kubectl_read('get', 'pods', '-A', '-o', 'json'))['items']
-    for pod in pods:
-        name = pod['metadata']['namespace'].removeprefix('proof-')
-        if name in LIMITS:
-            h.require(s.resources.effective_limits(pod['spec'])['memory'] ==
-                      LIMITS[name] * s.resources.MIB, 'actual pod budget drift')
+    templates = aggregate_admission(controllers, pods)
+    validate_receipt(receipt, binding, templates)
     return receipt
 
 
@@ -205,9 +227,9 @@ def worker_binding(connection):
 class Worker:
     """One action in flight. Nonblocking poll; timeout is an UNKNOWN outcome.
 
-    Kill/reap the exact process before any cleanup stop, so a local in-flight
-    playing request cannot be sent after cleanup. A remote timed-out request may
-    still have unknown outcome: no acceptance, never retry playing.
+    Local kill/reap cannot cancel a server-accepted request or prove ordering.
+    A timed-out request remains UNRESOLVED remote completion, even after local
+    reap or a later stop acknowledgement: no acceptance, never retry playing.
     """
     def __init__(self, binding):
         self.connection, child = socket.socketpair()
@@ -295,6 +317,8 @@ class Pump:
         self.process = None
         self.ready_activity = None
         self.wait_watermark = False
+        self.required_epoch = 0
+        self.watermark_batch = None
         self.latest = h.Progress(0, 0)
 
     def tick(self, process, progress, verified):
@@ -311,6 +335,8 @@ class Pump:
                 # DO NOT use progress here: it can be queued before the response.
                 self.ready_activity = value
                 self.wait_watermark = True
+                self.required_epoch = progress.epoch + 1
+                return True  # request bounded pipe drain/parser quarantine
 
     def observe(self, progress, alive, verified):
         self.latest = progress
@@ -318,11 +344,16 @@ class Pump:
             h.require(self.life.stage == 'concurrent' and not self.wait_watermark,
                       'decoder ended before concurrent activity proof')
             return  # terminal reports may supply stop time, never concurrency
+        if progress.epoch < self.required_epoch:
+            return  # includes complete parser batches queued before the reply
+        if self.watermark_batch == (progress.epoch, progress.batch):
+            return  # ALL records in the watermark batch are conservative backlog
         if self.wait_watermark:
             # First complete report consumed AFTER response is only a watermark;
             # even if FFmpeg had queued it before response, it earns no concurrency.
             self.life.activity(self.ready_activity, self.process.poll() is None, progress)
             self.wait_watermark = False
+            self.watermark_batch = (progress.epoch, progress.batch)
             self.life.previous = progress
             return
         self.life.advanced(progress, alive, verified)
@@ -337,11 +368,12 @@ def run(binding, api, private_root):
     Caller must first supply reviewed native settings/source preflight and
     supported profile activation wiring. CLI intentionally cannot invoke this.
     """
+    raise h.Rejected('HOLD: upstream progress flush semantics, same-session native source '
+                     'contract and end-to-end deadline are not reviewed; no runtime adapter')
     receipt = guard(binding)
     identity = h.Identity(binding['client'], binding['session'], binding['item'])
     worker = Worker(binding)
     pump = None
-    success = False
     try:
         worker.submit('baseline')
         baseline = worker.wait()
@@ -368,21 +400,13 @@ def run(binding, api, private_root):
                 break
             time.sleep(0.2)
         h.require(pump.life.stage == 'complete', 'no unique positive native durable history')
-        success = True
         return {'mode': MODE, 'native_lifecycle': True, 'decoder': result}
     finally:
         # Drain by cancellation/reap BEFORE cleanup, never racing two local actions.
         worker.close()
-        if not success and pump is not None:
-            cleanup = Worker(binding)
-            try:
-                # Worker rechecks still-valid lease before stop; expiry forbids it.
-                cleanup.submit('stopped', {'media_us': pump.latest.media_us})
-                cleanup.wait()
-            except Exception:
-                pass  # failed/unknown cleanup never changes the failed verdict
-            finally:
-                cleanup.close()
+        # No automatic remote cleanup after failure/unknown HTTP completion.
+        # A later stop ACK would not resolve an earlier server-accepted playing
+        # request. Local reap is ONLY local cleanup, not remote completion.
 
 
 def main():

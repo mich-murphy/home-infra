@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Offline unit contracts only; mocks are NOT runtime application evidence."""
 import hashlib
+from email.message import Message
 import io
 import os
 import tempfile
@@ -223,7 +224,8 @@ class HTTPTests(unittest.TestCase):
         path = '/library/parts/1/2/file.mp4'
         class Response(io.BytesIO):
             status = 200
-            headers = {'Content-Length': str(h.FIXTURE_BYTES)}
+            headers = Message()
+            headers['Content-Length'] = str(h.FIXTURE_BYTES)
             def geturl(self):
                 return api.base + path
         response = Response()

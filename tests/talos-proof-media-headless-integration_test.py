@@ -137,9 +137,9 @@ class Watermark(unittest.TestCase):
     def test_first_after_response_report_is_only_watermark(self):
         self.response()
         self.assertEqual(self.pump.life.stage, 'playing')
-        self.pump.observe(h.Progress(3, 300000), True, True)
+        self.pump.observe(h.Progress(3, 300000, 1, 1), True, True)
         self.assertEqual(self.pump.life.stage, 'activity')
-        self.pump.observe(h.Progress(4, 400000), True, True)
+        self.pump.observe(h.Progress(4, 400000, 2, 1), True, True)
         self.assertEqual(self.pump.life.stage, 'concurrent')
         self.assertEqual(self.worker.actions[0][1]['media_us'], 200000)
         self.assertEqual([a[0] for a in self.worker.actions], ['playing', 'activity'])
@@ -148,7 +148,7 @@ class Watermark(unittest.TestCase):
         self.pump.observe(h.Progress(3, 300000), True, True)
         self.pump.observe(h.Progress(4, 400000), True, True)
         self.response()
-        self.pump.observe(h.Progress(5, 500000), True, True)
+        self.pump.observe(h.Progress(5, 500000, 1, 1), True, True)
         self.assertEqual(self.pump.life.stage, 'activity')
         with self.assertRaises(h.Rejected):
             self.pump.observe(h.Progress(6, 600000), False, True)
