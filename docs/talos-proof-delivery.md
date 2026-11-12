@@ -40,7 +40,27 @@ host maintenance/downtime, rollback and post-boot verification. It is NOT applie
 or a proven historical cause. Exact causal attribution and resolution remain pending;
 no application work proceeds merely because a startup window is approved.
 
-## Maintenance planning approval — no execution approval
+## Maintenance execution request — console risk accepted; preflight adjustments pending
+
+User explicitly directed execution despite no current BMC, accepting recovery once
+on-site. Do not re-request that same console waiver. Parent preflight capture:
+`diagnostics/host-maintenance-execution-8ecc697f-c493-4cc9-bfc8-f85bdae041dd`.
+No production mutation/shutdown/reboot or queued execution. VM120 remains off.
+36containers31healthy/5nohealth; host+NASpools healthy; NFSactive. Existing five
+NFSautomount units precede local-fs→sysinit→basic→Docker. Both ESPcurrentkernel/initrd
+hashes match `/boot`; both defaultproxmox-* and already contain newer7.0.14-24,
+while running7.0.14-17 has no pin. NASadmin viaProxmox timedout; established
+Dockerjump succeeded. Full NAShealth verification afterreboot therefore needs
+Docker's OS before application workloads. Requested two narrow additional changes:
+one-boot currentkernel selection and temporary persistent Docker.service/socket
+startup masks (both currentlyenabled/active), then exact restoration after NAS/NFS
+checks. These additions await explicitapproval under the linked maintenanceplan.
+Only documented existingNAS credentials used privately; temporary0600keyremoved.
+No credential values logged. Initial keyformat assertionfailed beforefilecreation;
+correct OpenSSH retrievalsucceeded. Local recorderhelper editor-createdthenchmod600
+(notO_EXCL), codeonly; capture recordsO_EXCL. Originalfailures/evidence preserved.
+
+### Earlier maintenance planning approval
 
 User approved **planning** the coordinated KHO mitigation window. Parent is sole
 writer/collector; no new worker or runtime lease. Read-only capture

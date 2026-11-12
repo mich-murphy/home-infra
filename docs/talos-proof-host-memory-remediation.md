@@ -1,15 +1,66 @@
 # Host swap stop: investigation and proposed maintenance
 
-**Status: maintenance planning approved; execution NOT authorized or applied.
-Investigation remains incomplete. VM120 stays off.**
+**Status: execution approved and delayed-console risk explicitly accepted by user;
+preflight complete, two additional execution adjustments await approval. No production
+mutation or reboot performed. VM120 stays off.**
 
-The user's “yes” approved planning a coordinated maintenance window, as asked.
-It did not select a start time or authorize boot changes, guest shutdown or reboot.
-Execution requires approval of the bounded scope below and confirmed console access.
+After confirming BMC is currently unavailable, the user explicitly directed execution
+and accepted recovery waiting until they are on-site. That waives the immediate-console
+gate for this window; it does not establish remote recovery capability. Do not ask for
+that same waiver again. Read-only preflight then found the boot-selection and NAS
+management dependencies below. They require explicit scope review, not a new console
+approval. No boot settings, VM startup flags, backup-storage settings or production
+workloads have been changed. Nothing is queued to run automatically.
 
 The user requires the underlying cause to be identified and resolved before further
 proof work. A restart, a quieter current snapshot, or a relaxed guard is not resolution.
-This plan does not authorize production changes, a host reboot, or VM120 startup.
+The user authorized the documented production maintenance, subject to the additional
+preflight scope decision below. VM120 startup remains excluded.
+
+## Execution preflight and requested adjustments
+
+Capture: `diagnostics/host-maintenance-execution-8ecc697f-c493-4cc9-bfc8-f85bdae041dd`.
+
+- Production baseline:36running containers,31healthy/5without health checks.
+  Host and NAS pools report healthy; NFS is active. Two established NAS client
+  rows were captured. No active Proxmox tasks were observed.
+- Both managed ESPs were inspected read-only in a private mount namespace. Their
+  current7.0.14-17 kernel/initrd hashes match `/boot`. Both loaders use default
+  `proxmox-*`; newer7.0.14-24 is already installed and present on both ESPs.
+  No permanent/next-boot pin was present. An ordinary default reboot would not
+  preserve the intended same-kernel comparison.
+- The five production NFS automount units are active and ordered before
+  local-fs→sysinit→basic→Docker. Docker's service/socket are both enabled/active.
+  This establishes existing ordering rather than relying only on repository defaults.
+- NAS administration succeeded through the established Docker SSH jump host.
+  The attempted Proxmox jump timed out and is preserved. Thus Docker's guest OS
+  is needed for full NAS pool-health verification after reboot, but application
+  workloads should not start before that verification.
+- Only the documented NAS SSH key/login were used privately. The first key-format
+  assertion failed before any key file was created; explicit OpenSSH-format retrieval
+  succeeded. The temporary0600key was removed after preflight. No credential values
+  were logged or published. The local recorder helper was editor-created then made
+ 0600 rather than O_EXCL-created; it contains code only. Capture records use O_EXCL.
+
+**Requested additional scope, not applied:**
+
+1. **One-boot selection of7.0.14-17-pve** using the supported next-boot selection,
+   with both ESP entries verified and the permanent default unchanged. This avoids
+   mixing a kernel upgrade with `kho=off`. Verify the one-shot selection is consumed
+   after boot; retain original/default selection metadata for rollback.
+2. **Temporary persistent startup masks for Docker service and socket on VM102**,
+   without stopping them merely to stage the masks. Preserve original unit state and
+   reject pre-existing/conflicting mask paths. Gracefully shut down the guest as
+   planned. After host/NAS recovery, start102's OS with both Docker units held,
+   use it as the SSH jump host to verify NAS pool/export health, verify all expected
+   NFS sources, then remove only the owned masks, restore the original enabled
+   states, and start Docker. No container configuration/data/credential changes.
+
+This changes the recovery sequence from “NAS fully verified before102 boots” to
+“NAS exports available,102OS boots with Docker held, NAS fully verified, then Docker
+workloads start”. If either unit starts unexpectedly or NAS verification fails,
+keep workloads held and preserve diagnostics; do not silently widen the procedure.
+These adjustments are not yet approved merely by accepting delayed BMC recovery.
 
 ## What is established
 
@@ -208,9 +259,10 @@ Execution approval must explicitly cover:
 - If timing, recovery access, synchronization or health is uncertain, abort or
   escalate. Do not convert the maintenance plan into permission for unrelated fixes.
 
-**Outstanding human inputs:** preferred window with timezone, outage acceptance,
-working independent console/operator, and explicit approval of the complete
-execution envelope above (including temporary VM102/storage settings and rollback).
+**Current decision:** immediate-console risk has been explicitly accepted. Approval
+is now needed for the one-boot kernel selection and temporary Docker service/socket
+startup holds described above. No production changes are queued or applied. Refresh
+volatile task, health and timing checks immediately before mutation.
 
 ## Verification and acceptance gates
 
