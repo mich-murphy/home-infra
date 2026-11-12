@@ -347,8 +347,24 @@ class Supervisor:
         if observation.get('status')=='BLOCKED_OR_FAILED': raise RuntimeError('native payload failed')
         if any(not isinstance(cg.get(k),str) for k in ('memory.peak','memory.current','memory.events','memory.stat')):
             raise RuntimeError('native cgroup measurement gap')
-        events=dict(line.split() for line in cg['memory.events'].splitlines())
-        if int(cg['memory.peak'])>192*1048576 or int(events.get('oom_kill','0')) or int(events.get('oom','0')):
+        def counters(raw,required):
+            values={}
+            for line in raw.splitlines():
+                match=re.fullmatch(r'([a-z][a-z0-9_]*)[ \t]+(0|[1-9][0-9]*)',line)
+                if not match or match[1] in values:
+                    raise RuntimeError('malformed/duplicate native cgroup counter')
+                values[match[1]]=int(match[2])
+            if not required<=values.keys():
+                raise RuntimeError('missing required native cgroup counters')
+            return values
+        events=counters(cg['memory.events'],{'oom','oom_kill'})
+        counters(cg['memory.stat'],{'anon','file'})
+        for name in ('memory.current','memory.peak'):
+            raw=cg[name]
+            if not re.fullmatch(r'[1-9][0-9]*',raw) or int(raw)>192*1048576:
+                raise RuntimeError('native cgroup byte measurement/limit failure')
+        # Kernel files are read sequentially; peak >= current is not asserted.
+        if events['oom_kill'] or events['oom']:
             raise RuntimeError('native cgroup OOM/limit failure')
         if c.get('state',{}).get('terminated',{}).get('exitCode')!=0:
             raise RuntimeError('native phase failed')

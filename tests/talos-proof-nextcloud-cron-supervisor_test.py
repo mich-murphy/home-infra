@@ -100,6 +100,62 @@ class SupervisorTests(unittest.TestCase):
                 with self.assertRaises((RuntimeError,ValueError)):self.s.validate_forensics(evidence)
         self.assertTrue(any(e['event']=='private-previous-log' for e in m.life.native_cron_events(self.s.state)))
 
+    def native_cgroup_evidence(self,changes=None):
+        # Untouched four native kernel observations retained from the read-only
+        # binding helper, NOT a Nextcloud native runtime/capacity observation.
+        cg={'memory.current': '1900544', 'memory.peak': '3973120', 'memory.events': 'low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0', 'memory.stat': 'anon 282624\nfile 0\nkernel 581632\nkernel_stack 32768\npagetables 319488\nsec_pagetables 0\npercpu 336\nsock 0\nvmalloc 36864\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 0\nfile_dirty 0\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 176128\ninactive_file 0\nactive_file 0\nunevictable 0\nslab_reclaimable 70976\nslab_unreclaimable 105024\nslab 176000\nworkingset_refault_anon 0\nworkingset_refault_file 0\nworkingset_activate_anon 0\nworkingset_activate_file 0\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgscan 0\npgsteal 0\npswpin 0\npswpout 0\npgscan_kswapd 0\npgscan_direct 0\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 0\npgsteal_direct 0\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 2616\npgmajfault 0\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0'}
+        cg.update(changes or {})
+        pod=dict(metadata=dict(name='own'),status=dict(containerStatuses=[dict(
+            name='cli',state={'terminated':{'exitCode':0}})]))
+        return {'items':[pod]},{('own','cli'):json.dumps({'cgroups':cg})},[]
+
+    def test_native_kernel_counter_example_and_sequential_reads(self):
+        self.s.validate_forensics(self.native_cgroup_evidence())
+        # Sequential kernel reads need not obey peak >= current.
+        self.s.validate_forensics(self.native_cgroup_evidence({'memory.current':'10','memory.peak':'1'}))
+        self.s.validate_forensics(self.native_cgroup_evidence({'memory.current':str(192*1048576),'memory.peak':str(192*1048576),
+            'memory.stat':'anon 0\nfile 0','memory.events':'oom 0\noom_kill 0\nfuture_counter 3'}))
+
+    def test_native_events_require_actual_oom_counters_and_strict_records(self):
+        bad=['','oom 0','oom_kill 0','low 0\nhigh 0',
+            'oom 0\noom_kill 0\noom 0','oom 0\noom_kill 0\nother 0\nother 0',
+            'oom -1\noom_kill 0','oom 0\noom_kill -1','oom 0\noom_kill 0\nother -1',
+            'oom 0\noom_kill 0\nmalformed','oom 0\noom_kill 0 extra',
+            'oom 0\n\noom_kill 0','oom 0\noom_kill 1','oom 1\noom_kill 0',
+            'oom 0\noom_kill 0\nother 1.5','oom +0\noom_kill 0']
+        for value in bad:
+            with self.subTest(events=value),self.assertRaises(RuntimeError):
+                self.s.validate_forensics(self.native_cgroup_evidence({'memory.events':value}))
+
+    def test_native_stat_requires_anon_file_and_strict_nonnegative_records(self):
+        bad=['','anon 0','file 0','other 0','anon -1\nfile 0','anon 0\nfile -1',
+            'anon 0\nfile 0\nother -1','anon 0\nfile 0\nanon 0',
+            'anon 0\nfile 0\nother 0\nother 0','anon 0\nfile 0 extra',
+            'anon 0\nfile 0\nmalformed','anon 0\n\nfile 0','anon 0.1\nfile 0']
+        for value in bad:
+            with self.subTest(stat=value),self.assertRaises(RuntimeError):
+                self.s.validate_forensics(self.native_cgroup_evidence({'memory.stat':value}))
+
+    def test_native_current_and_peak_are_positive_integer_bytes_under_ceiling(self):
+        for name in ('memory.current','memory.peak'):
+            for value in ('','0','-1','+1','1.5','1e6',' 1','1 ','1\n2',str(192*1048576+1),None,1):
+                with self.subTest(name=name,value=value),self.assertRaises(RuntimeError):
+                    self.s.validate_forensics(self.native_cgroup_evidence({name:value}))
+
+    def test_native_source_read_gaps_cannot_be_accepted(self):
+        for name in ('memory.current','memory.peak','memory.events','memory.stat'):
+            for value in ({'gap':'unavailable'},None):
+                with self.subTest(name=name,value=value),self.assertRaisesRegex(RuntimeError,'measurement gap'):
+                    self.s.validate_forensics(self.native_cgroup_evidence({name:value}))
+            evidence=self.native_cgroup_evidence();observation=json.loads(evidence[1][('own','cli')]);del observation['cgroups'][name]
+            evidence[1][('own','cli')]=json.dumps(observation)
+            with self.assertRaisesRegex(RuntimeError,'measurement gap'):self.s.validate_forensics(evidence)
+        php=(ROOT/'scripts/talos-proof-nextcloud-cron.php').read_text()
+        capture=php.split('function cgroups(): array {',1)[1].split('function parity(',1)[0]
+        self.assertIn("['memory.current', 'memory.peak', 'memory.events', 'memory.stat']",capture)
+        self.assertIn("@file_get_contents('/sys/fs/cgroup/' . $file)",capture)
+        self.assertIn("$value === false ? ['gap' => 'unavailable'] : trim($value)",capture)
+
     def test_capture_current_gap_still_attempts_previous(self):
         pod=dict(metadata={'name':'own'},spec={'containers':[{'name':'cli'}]},status={'containerStatuses':[{'name':'cli','restartCount':1}]})
         with patch.object(self.s,'obj',return_value={'items':[pod]}),patch.object(self.s,'call',side_effect=[RuntimeError('API gap'),'previous']) as call:
