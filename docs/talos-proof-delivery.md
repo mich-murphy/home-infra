@@ -9,6 +9,36 @@
 > https://github.com/mich-murphy/home-infra/blob/feat/talos-live-proof/docs/talos-proof-host-lifecycle.md.
 > Evidence: `docs/evidence/talos-acceptance/guard-stop-before-diagnostic-634f727438df495397f768820517280c.json`.
 > Underlying workload causing swap IO and post-stop guest integrity are unestablished.
+> User requires cause resolution before proceeding. Read-only investigation found
+> default-enabled KHO with2850MiB movable-only scratch; this is a confirmed allocator
+> restriction, NOT proven sole incident causation. See the proposed maintenance plan:
+> https://github.com/mich-murphy/home-infra/blob/feat/talos-live-proof/docs/talos-proof-host-memory-remediation.md.
+> No production boot change/reboot or new proof start is authorized.
+
+## Active root-cause investigation — user-directed, 2026-11-12
+
+Identify and resolve the underlying cause before proceeding; restarting or relaxing
+the guard is not resolution. Parent owns bounded read-only existing host telemetry,
+private immutable captures, integration and all edits. Worker `f08abd79-f0e6-4d1`
+is an independent OFFLINE read-only guard-semantics/evidence reviewer (8 turns),
+with no runtime or file-write authority. VM120 stays off; no production mutations,
+new instrumentation, ARC/sysctl changes, credential access or application grants.
+Acceptance requires distinguishing the immediate stop condition from attributable
+resource demand, an authorized cause-directed remedy, and verification without
+lowering existing safety gates. Reviewer completed both bounded read-only audits:
+trigger consistent with conservative policy; KHO contributor credible, incident-time
+allocator link unproved. Parent captured21private artifacts, unchanged111canonical
+files, same-boot kernel/config/KHO scratch metadata and historical host/VM RRD.
+Kernel7.0.14-17-pve enables KHO by default; scratch regions296+1242+1312=2850MiB,
+CmaTotal0/currentCmaFree~1446MiB. Both production VMs have PCI passthrough; their
+combined~20.41GiB host charges and proof~2.78GiB were stable near the stop. ARC
+shrank~430MiB before swap growth; current swapped residency is not initiator
+attribution. No guard defect demonstrated, no harmful-pressure/OOM claim inferred.
+Evidence `docs/evidence/talos-acceptance/guard-root-cause-investigation-6233d4277cec4d84bc87857368eba77f.json`.
+Recommended targeted `kho=off` mitigation requires separately approved production
+host maintenance/downtime, rollback and post-boot verification. It is NOT applied
+or a proven historical cause. Exact causal attribution and resolution remain pending;
+no application work proceeds merely because a startup window is approved.
 
 ## Scope and checkout
 - Dedicated worktree `/Users/mm/dev/home-infra-talos-proof`, branch `feat/talos-live-proof`, base `8de8c051` (`origin/main`), managed with `gh stack`.
@@ -144,7 +174,7 @@ Parent's later proof-only RAM window completed successfully in ONE start; lease 
 
 ## Next actions / unresolved acceptance
 1. Review released704MiB RPC failure and offline MFA/shutdown correction; no retry/grant or STOP acknowledgement exists. Jellyfin stream auth remains unsupported in reviewed native source; LAN/proxy reclassification is not a fix. Plex browser auth stays blocked.
-2. **Continue separately authorized diagnostic resolution, not native cron yet.** Initialization/binding/policy history and3Bound retained volumes are established, not new work. GET-only release resolved original33d6pending without erasing its lost RuntimeException. Separate43diagnostic failed metadata hash before source/HTML/SQL/Redis checks, stopped/released with84oldfilesunchanged. Parent reviewed1c15551b fixed confined projection reader and511/443 gate, independently rehashed4515captures/111journals and exact receipts. Next: VM120 must remain off pending explicit new guarded-start authorization after the sustained-swap-IO stop. No new application grant or startup bypass. Executor plan/recorder, parentv3fa1eeb13 full522/443+CI and public image metadata are reviewed, but do not authorize restart. Only after a separately approved guarded start, re-establish node/API/storage/identity and integrity observations, then obtain fresh global absence/dual832MiB/host-guard observations and a NEW one-shot diagnostic receipt if all admission conditions hold; old receipts cannot be reused. No reset/auth repair/main rerun or application acceptance. Keep backend writes and both unknown causes explicit. Preserve8WOPI failures; corrected UI unrun. Etcd proposal still needs a separate human policy exception (`docs/talos-proof-etcd-recovery-plan.md`); snapshot hash/embedded checksum is NOT a restore.
+2. **Continue separately authorized diagnostic resolution, not native cron yet.** Initialization/binding/policy history and3Bound retained volumes are established, not new work. GET-only release resolved original33d6pending without erasing its lost RuntimeException. Separate43diagnostic failed metadata hash before source/HTML/SQL/Redis checks, stopped/released with84oldfilesunchanged. Parent reviewed1c15551b fixed confined projection reader and511/443 gate, independently rehashed4515captures/111journals and exact receipts. Next: resolve the host root-cause/remediation hold first; KHO restriction is confirmed but incident attribution unproved, and proposed production maintenance is not authorized. VM120 stays off. A later guarded-start verification experiment requires explicit separate authority and does not itself clear the application hold. No new application grant or startup bypass. Executor plan/recorder, parentv3fa1eeb13 full522/443+CI and public image metadata are reviewed, but do not authorize restart. Only after accepted host-remediation verification and a separately approved guarded start, re-establish node/API/storage/identity and integrity observations, then obtain fresh global absence/dual832MiB/host-guard observations and a NEW one-shot diagnostic receipt if all admission conditions hold; old receipts cannot be reused. No reset/auth repair/main rerun or application acceptance. Keep backend writes and both unknown causes explicit. Preserve8WOPI failures; corrected UI unrun. Etcd proposal still needs a separate human policy exception (`docs/talos-proof-etcd-recovery-plan.md`); snapshot hash/embedded checksum is NOT a restore.
 3. Parent independently checked6new archive hashes/modes and6distinct live source/restore PVC/PV/XFS paths plus host receipt/policy/control consistency: `docs/evidence/talos-acceptance/followup-archive-and-host-review.json`. This is not a new functional replay. Pocket-ID negatives/retained credential and Wallabag image/native queue now passed narrowly; parent independently matched newest2archive hashes/0600 modes and2distinct live source/restore PVC/PV/path pairs in `pocket-wallabag-archive-review-ed9e5d54038c4ba79ff6c0c97a5571eb.json`; not a new functional replay or fresh image recovery. ML/web remain measured—not permanent—capacity gates. Native ODT editing still unproved after eight failures; no current data grant. Full Office/Immich integration remains required.
 4. Resolve/test bounded heavy-component profiles honestly; document any capacity or external-account boundary as BLOCKED, not PASS.
 5. Independently review results/identities/checksums; [all36-service readiness matrix](talos-proof-readiness.md) separates bounded passes from pending criteria. Parent mid-run and later post-node/browser comparisons found zero changes to all36 IDs/image references/imageIDs/creation/start/status/restarts/health; latest post-RSS384 checkpoint also found all36 unchanged/equal canonical projections (`source-post-rss384-comparison-7a8bf8ffc6ef46c3afb3128881ef3529.json`). Not final and not a claim ordinary app data never changes. Push/watch fresh CI.

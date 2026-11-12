@@ -3,7 +3,9 @@
 Current status: 2026-11-12. **VM120 is stopped; no production cutover is approved.**
 The guard reported sustained host swap IO at07:18:58UTC and confirmed QEMU exit.
 A later read-only admission failed before any new receipt or diagnostic invocation.
-The VM is left off pending explicit new guarded-start authorization. Historical
+The VM is left off pending root-cause remediation/verification and separate guarded-start
+authorization. The [KHO investigation and maintenance proposal](talos-proof-host-memory-remediation.md)
+is not an applied fix or proven incident attribution. Historical
 passes below remain evidence of their named windows, not current running state or
 post-stop integrity. See [the stop evidence](evidence/talos-acceptance/guard-stop-before-diagnostic-634f727438df495397f768820517280c.json).
 

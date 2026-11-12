@@ -20,6 +20,18 @@ post-stop guest API/storage integrity and recovery remain unestablished.
 [Sanitized evidence](evidence/talos-acceptance/guard-stop-before-diagnostic-634f727438df495397f768820517280c.json)
 preserves private capture hashes. The verified checkpoints below are historical.
 
+### Read-only allocator investigation
+
+The same boot has default-enabled KHO on kernel7.0.14-17-pve and2850MiB of
+nonoverlapping movable-only scratch. CurrentCmaFree~1446MiB withCmaTotal0 matches
+the mechanism documented by Proxmox. This is a confirmed allocation restriction
+and credible contributor, **not proof of the exact swap-triggering allocation**.
+Historical VM host-memory charges were stable; current swapped victims do not
+identify the reclaim initiator. See [the investigation and proposed maintenance](talos-proof-host-memory-remediation.md).
+The targeted `kho=off` boot mitigation requires explicit production-host maintenance
+approval and verification; it has not been applied. VM120 stays off and root-cause
+resolution is not claimed.
+
 ## Verified checkpoint — 2026-11-11
 
 VM120 is a new, isolated proof guest. Authenticated Talos1.14.5, etcd, kubelet and
