@@ -50,7 +50,16 @@ parent-recorded `namespace_uid` for proof-nextcloud):
 - html_claim bound to the current `/var/www/html` mapping in **both** the live
   Deployment and CronJob; no implicit `nextcloud-data` fallback after restore;
 - backend_images mapping postgres and redis to exact parent-reviewed image
-  references; these are compared to Deployments and actual pod specifications.
+  references; these are compared to Deployments and actual pod specifications;
+- `network_policy_uids`: an exact six-entry mapping from **unqualified policy
+  name** to parent-observed UID: `default-deny`, `dns`,
+  `nextcloud-to-postgres-ingress`, `nextcloud-to-postgres-egress`,
+  `nextcloud-to-redis-ingress`, `nextcloud-to-redis-egress`. Native activation
+  requires each live policy's exact UID, namespace `proof-nextcloud`, name,
+  networking.k8s.io/v1 kind and full spec matching its existing declaration in
+  `kubernetes/apps/data/nextcloud/networkpolicy.yaml`. Missing/terminating
+  policies, broader rules, DNS/default-deny drift and unknown spec fields reject.
+  No receipt field or activation check creates/repairs policies.
 
 The immutable receipt must cover the entire serial sequence plus cleanup window;
 start requires at least six240second phase allowances plus300seconds. This is a
@@ -148,6 +157,7 @@ only its UID-bound helper, then waits for namespace pod absence.
 
 `cleanup` requires a **new** `action: cleanup` receipt with `phases: [cleanup]`,
 the original pending run_id/intent, exact retained UIDs/images/HTML alias,
+the same six-entry `network_policy_uids` prerequisite for backend activation,
 budget832 and at least780seconds remaining. It never changes an old receipt or
 expiry. It prevalidates identities/stopped controllers, captures and deletes
 only the own prior UID-bound Job, performs fresh dual832 admission, starts
@@ -565,3 +575,42 @@ for **149 total passing tests**. Final source-hash-matched replay/candidate path
 and all-eleven resource keys are indexed in
 [evidence](evidence/talos-data/bind-created-offline-34a6bc9c-7a6a-46b3-ac59-528c84233bca.json).
 `git diff --check` passed. No root gate/CI/live acceptance is claimed.
+
+
+## Native backend NetworkPolicy prerequisite — OFFLINE checkpoint
+
+Parent read-only discovery reports the four declared backend policies absent
+while seven existing WOPI/default-deny/DNS policies are retained. That is parent
+context, not a query made by this correction. No policy/runtime/host call or
+creation occurred here. Parent alone may separately authorize bounded create-only
+creation of the four declared backend policies; this supervisor cannot create,
+replace, delete or broaden them. No manifest was edited.
+
+The new native receipt field `network_policy_uids` (documented above) binds the
+six prerequisite names. Native admission checks exact declared specs/identities
+before phase execution; positive backend scaling rechecks this prerequisite
+before any PG/Redis patch. Cleanup therefore requires it when activating
+backends too. An unavailable or mismatched policy cannot become a silent DB
+connection timeout followed by application mutation.
+
+Stop, replicas0 patches and exact-owned-helper retirement deliberately do **not**
+require this activation field or policy availability/specification. Cleanup may
+capture/retire its prior UID-bound helper before failing activation admission.
+Existing seven policies are neither enumerated as an exact namespace inventory
+nor altered: only the six receipt-bound prerequisites are checked. This does not
+assert the absence of additional additive policies or prove live connectivity.
+
+Offline tests: supervisor40 + initializer35 + compiler8 + data42 = **125 passing**.
+Coverage includes exact declared positives before backend patches, missing UID
+bindings/live policy, UID/name/namespace drift, broader backend/DNS rules,
+default-deny changes, unknown spec fields, terminating policies, cleanup
+admission before activation and policy-independent stop/helper retirement.
+All cluster/Talos/VM/image/native calls were forbidden or mocked; existing
+serialization tests use local Python processes only. `git diff --check` passed.
+
+Current supervisor SHA256: `ee48fca44047135bd614c73fd56e6220a01b6893a2299d9aa5824f178791e56b`.
+Parent must review this updated source hash before a separate new native grant.
+No credential/backend/native install/cron action, retry or functional/capacity
+acceptance occurred. Budgets/limits/ini remain unchanged;192MiB is still a
+bounded trial constraint, not Nextcloud capacity assurance. Parent-owned root
+docs/gates/integrity review and all retained binding/history remain untouched.

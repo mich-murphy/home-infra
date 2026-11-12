@@ -111,6 +111,7 @@ class Supervisor:
         return r
 
     def scale_backends(self, replicas):
+        if replicas: self.network_policies()
         # Atomic Deployment UID test protects the mutation itself, not just a prior read.
         for name in ('postgres','redis'):
             r=self.target(); uid=r.get('object_uids',{}).get('deployment/'+name)
@@ -259,6 +260,30 @@ class Supervisor:
         for claim in sorted(claims): self.bound_claim(claim,expected)
         self.html=html
 
+    def network_policies(self):
+        # Activation-only prerequisite. Stop and own-helper retirement must not
+        # depend on policy availability/specification or this receipt field.
+        r=self.target()
+        names={'default-deny','dns','nextcloud-to-postgres-ingress',
+               'nextcloud-to-postgres-egress','nextcloud-to-redis-ingress',
+               'nextcloud-to-redis-egress'}
+        uids=r.get('network_policy_uids')
+        if (not isinstance(uids,dict) or set(uids)!=names
+            or not all(isinstance(v,str) and v for v in uids.values())):
+            raise RuntimeError('exact six network policy UID bindings required')
+        declarations=[d for d in yaml.safe_load_all((ROOT/'kubernetes/apps/data/nextcloud/networkpolicy.yaml').read_text())
+                      if d['metadata']['name'] in names]
+        if len(declarations)!=6 or {d['metadata']['name'] for d in declarations}!=names:
+            raise RuntimeError('six declared native network policies required')
+        for d in declarations:
+            name=d['metadata']['name']
+            actual=self.obj('-n',NS,'get','networkpolicy',name)
+            meta=actual.get('metadata',{})
+            if (actual.get('apiVersion')!='networking.k8s.io/v1' or actual.get('kind')!='NetworkPolicy'
+                or meta.get('namespace')!=NS or meta.get('name')!=name or meta.get('uid')!=uids[name]
+                or meta.get('deletionTimestamp') is not None or actual.get('spec')!=d['spec']):
+                raise RuntimeError('native network policy identity/spec mismatch')
+
     def admission(self):
         self.identities()
         pods=self.obj('get','pods','-A')['items']
@@ -279,6 +304,7 @@ class Supervisor:
                     if not c['spec'].get('suspend',False): raise RuntimeError('unsuspended proof schedule')
                 elif not (ns==NS and m['name'] in ('postgres','redis')) and c['spec'].get('replicas',1):
                     raise RuntimeError('active unselected controller/helper')
+        self.network_policies()
         # Independent observations, never receipt-reported passing booleans.
         self.memory_admission()
 

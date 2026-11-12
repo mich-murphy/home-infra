@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """No API, VM, image, or production runtime calls: every command forbidden/mocked."""
 import importlib.util
+import copy
 import json
 import os
 from pathlib import Path
@@ -155,6 +156,70 @@ class SupervisorTests(unittest.TestCase):
         self.assertIn("['memory.current', 'memory.peak', 'memory.events', 'memory.stat']",capture)
         self.assertIn("@file_get_contents('/sys/fs/cgroup/' . $file)",capture)
         self.assertIn("$value === false ? ['gap' => 'unavailable'] : trim($value)",capture)
+
+    def network_policy_fixture(self):
+        names={'default-deny','dns','nextcloud-to-postgres-ingress',
+               'nextcloud-to-postgres-egress','nextcloud-to-redis-ingress','nextcloud-to-redis-egress'}
+        policies={d['metadata']['name']:copy.deepcopy(d) for d in m.yaml.safe_load_all(
+            (ROOT/'kubernetes/apps/data/nextcloud/networkpolicy.yaml').read_text()) if d['metadata']['name'] in names}
+        uids={name:str(uuid.uuid4()) for name in names}
+        for name,d in policies.items():d['metadata'].update(namespace=m.NS,uid=uids[name])
+        return {**self.receipt,'network_policy_uids':uids},policies
+
+    def test_network_policy_exact_declarations_pass_before_backend_patches(self):
+        r,policies=self.network_policy_fixture();events=[]
+        r['object_uids']={'deployment/postgres':'pg-own','deployment/redis':'redis-own'}
+        def obj(*a):events.append(a[-1]);return copy.deepcopy(policies[a[-1]])
+        with patch.object(self.s,'target',return_value=r),patch.object(self.s,'obj',side_effect=obj),patch.object(self.s,'call',side_effect=lambda *a:events.append('patch')):
+            self.s.scale_backends(1)
+        self.assertEqual(set(events[:6]),set(policies));self.assertEqual(events[6:],['patch','patch'])
+
+    def test_network_policy_missing_bindings_or_live_policy_reject_without_mutation(self):
+        r,policies=self.network_policy_fixture()
+        for bindings in (None,{},dict(list(r['network_policy_uids'].items())[:-1]),
+                         {**r['network_policy_uids'],'extra':'foreign'},
+                         {**r['network_policy_uids'],'dns':''}):
+            with self.subTest(bindings=bindings),patch.object(self.s,'target',return_value={**r,'network_policy_uids':bindings}),patch.object(self.s,'obj',side_effect=AssertionError('no policy reads before exact bindings')),patch.object(self.s,'call',side_effect=AssertionError('mutation')):
+                with self.assertRaisesRegex(RuntimeError,'six network policy'):self.s.scale_backends(1)
+        with patch.object(self.s,'target',return_value=r),patch.object(self.s,'obj',side_effect=RuntimeError('missing policy')),patch.object(self.s,'call',side_effect=AssertionError('mutation')):
+            with self.assertRaisesRegex(RuntimeError,'missing policy'):self.s.scale_backends(1)
+
+    def test_network_policy_uid_namespace_name_and_full_spec_drift_reject(self):
+        r,policies=self.network_policy_fixture()
+        for fault in ('uid','namespace','name','terminating','broader','default-deny','dns','unknown-spec'):
+            bad=copy.deepcopy(policies)
+            if fault in ('uid','namespace','name'):bad['default-deny']['metadata'][fault]='foreign'
+            elif fault=='terminating':bad['default-deny']['metadata']['deletionTimestamp']='now'
+            elif fault=='broader':bad['nextcloud-to-postgres-ingress']['spec']['ingress']=[{}]
+            elif fault=='default-deny':bad['default-deny']['spec']['policyTypes']=['Ingress']
+            elif fault=='dns':bad['dns']['spec']['egress']=[{}]
+            else:bad['default-deny']['spec']['unknownDefault']=True
+            with self.subTest(fault=fault),patch.object(self.s,'target',return_value=r),patch.object(self.s,'obj',side_effect=lambda *a:bad[a[-1]]),patch.object(self.s,'call',side_effect=AssertionError('mutation')):
+                with self.assertRaisesRegex(RuntimeError,'identity/spec'):self.s.scale_backends(1)
+
+    def test_admission_checks_policies_before_memory_and_cleanup_before_activation(self):
+        events=[]
+        with patch.object(self.s,'identities'),patch.object(self.s,'obj',return_value={'items':[]}),patch.object(self.s,'network_policies',side_effect=lambda:events.append('policies')),patch.object(self.s,'memory_admission',side_effect=lambda:events.append('memory')):
+            self.s.admission()
+        self.assertEqual(events,['policies','memory']);events=[]
+        self.s.save(dict(event='pending',run_id=self.run))
+        r={**self.receipt,'action':'cleanup','phases':['cleanup']}
+        with (patch.object(self.s,'authorize',return_value=r),patch.object(self.s,'target',return_value=r),
+              patch.object(self.s,'identities'),patch.object(self.s,'require_stopped'),
+              patch.object(self.s,'obj',return_value={'items':[]}),patch.object(self.s,'retire_prior_jobs',side_effect=lambda:events.append('retire')),
+              patch.object(self.s,'stop',side_effect=lambda:events.append('stop')),
+              patch.object(self.s,'call',side_effect=AssertionError('no backend mutation without policies')),
+              patch.object(self.s,'memory_admission',side_effect=AssertionError('policy check first'))):
+            with self.assertRaisesRegex(RuntimeError,'six network policy'):self.s.cleanup_only()
+        self.assertEqual(events,['retire','stop'])
+
+    def test_owned_helper_retirement_does_not_require_network_policy(self):
+        name='nc-fixture-'+self.run;self.s.jobs[name]='own'
+        with (patch.object(self.s,'network_policies',side_effect=AssertionError('retirement is policy independent')),
+              patch.object(self.s,'obj',side_effect=[{'metadata':{'uid':'own'}},{'items':[]},{'items':[]}]),
+              patch.object(self.s,'call') as call):
+            self.s.delete_own_job(name)
+        self.assertEqual(json.loads(call.call_args_list[0].kwargs['data'])['preconditions'],{'uid':'own'})
 
     def test_capture_current_gap_still_attempts_previous(self):
         pod=dict(metadata={'name':'own'},spec={'containers':[{'name':'cli'}]},status={'containerStatuses':[{'name':'cli','restartCount':1}]})
@@ -377,7 +442,7 @@ class SupervisorTests(unittest.TestCase):
             if 'wait' in args:return ''
             raise AssertionError(args)
         # No full retained spec/resource envelope is read or required by stop.
-        with patch.object(self.s,'authorize',return_value=r),patch.object(m.life,'kube',side_effect=kube),patch.object(self.s,'identities',side_effect=AssertionError('activation envelope')):
+        with patch.object(self.s,'authorize',return_value=r),patch.object(m.life,'kube',side_effect=kube),patch.object(self.s,'identities',side_effect=AssertionError('activation envelope')),patch.object(self.s,'network_policies',side_effect=AssertionError('stop is policy independent')):
             self.s.stop()
             self.assertEqual([x[0] for x in mutations],['postgres','redis'])
             mutations.clear();namespace[0]='replacement'
