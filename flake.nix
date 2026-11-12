@@ -80,6 +80,18 @@
       kubeconform = pkgs.kubeconform;
       kubernetes-proof-tools = pkgs.python3.withPackages (ps: [ps.pyyaml]);
       nodejs = pkgs.nodejs;
+      # Locked workstation/CI loopback regression tools, not the proof image's
+      # runtime. Selecting explicit prefixes prevents silently skipped RPC tests.
+      talos-proof-rpc-tools = let
+        beam = pkgs.beam.packages.erlang_27;
+      in
+        pkgs.writeShellScriptBin "talos-proof-rpc-env" ''
+          case "$1" in
+            otp) printf '%s\n' '${beam.erlang}/lib/erlang' ;;
+            elixir) printf '%s\n' '${beam.elixir}/lib/elixir' ;;
+            *) exit 2 ;;
+          esac
+        '';
       portainer-drift-tools = pkgs.yq-go;
       shellcheck = pkgs.shellcheck;
       terraform-ci = terraformCiFor pkgs;
@@ -116,6 +128,7 @@
           self.packages.${system}.kubeconform
           self.packages.${system}.kubernetes-proof-tools
           self.packages.${system}.nodejs
+          self.packages.${system}.talos-proof-rpc-tools
           self.packages.${system}.shellcheck
         ];
       };

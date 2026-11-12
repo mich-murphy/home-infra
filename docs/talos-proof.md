@@ -28,6 +28,9 @@
   private etcd snapshot captured, **not restored**. After a genuine fresh capacity
   improvement, Flux reconciliation/drift repair/path rollback/negative RBAC passed.
   The earlier memory refusal and unexplained first apply failure remain recorded.
+  Snapshot hash/embedded checksum independently match; the [same-VM recovery
+  proposal](talos-proof-etcd-recovery-plan.md) still needs an explicit exception
+  to the separate-target policy. No reset/reboot authority exists.
 - **Media:** Pinchflat profile recovery and Audiobookshelf fixture streaming/state
   recovery passed. qBit/BEP3 and SAB/NNTP now have actual32,044-byte local transfers,
   exact output hashes, fixture-off restart and distinct-PVC functional recovery.
@@ -35,12 +38,16 @@
   cookie lacked Secure behind TLS termination. Later Plex scan/bytes/range/watched
   CRUD passed, but native Origin/Referer401 blocks browser playback. Jellyfin leaked
   exact video bytes to an anonymous client; Pinchflat RPC hit OOM before provider
-  proof. These are preserved blockers, not player/provider acceptance.
+  proof. A later704MiB trial verified bundled lightweight transport identity but
+  returned no structured RPC result; provider work was not reached. Main384MiB
+  peak/max2028 and cleanup STOP are preserved. Source-backed MFA fixes passed
+  workstation tests only; no retry/grant exists. These are blockers, not acceptance.
 - **Heavy data:** CODE established real WOPI read/lock and token/lock negatives,
   but eight attempts (sevenTXT, one nativeODT) did not reach typing/save/reopen;
   actualODT loaded with edit permission but a session warning blocked automation.
-  No Office editing acceptance. Actual ML inference
-  and full Nextcloud/Immich integration remain unproved.
+  No Office editing acceptance. A native cron side-effect runner and stopped/read-only
+  initialization path are prepared, not executed; Nextcloud PVCs are still absent.
+  Actual ML inference and full Nextcloud/Immich integration remain unproved.
 
 See the [all36-service readiness matrix](talos-proof-readiness.md), service-specific
 evidence and [current delivery record](talos-proof-delivery.md) for exact scope,
