@@ -1,0 +1,86 @@
+{
+  "observed_utc": "2026-11-12T03:20:55.300887+00:00",
+  "source_commit": "b4c99169",
+  "source_run_id": "34a6bc9c-7a6a-46b3-ac59-528c84233bca",
+  "binding_authorization_id": "b808f115-af83-421b-9091-01bc2e56a9a9",
+  "scope": "independent bounded empty-readonly binding and release acceptance; NOT Nextcloud functional/native-cron acceptance",
+  "verified_journal_files": 51,
+  "original_pending_and_clean_events": [
+    1,
+    1
+  ],
+  "helper_pod_uid": "8d5a8794-1f45-4bc7-845f-fb2dd4be245b",
+  "helper_job_uid": "33ea3216-82c4-4ec6-b40d-ed141c124df5",
+  "helper_log_sha256": "78005c2a782c3240e715571e1490d3ea9407aab3f593fcdf99c2ccc500d976bd",
+  "helper_peak_bytes": 3973120,
+  "helper_exit_code": 0,
+  "native_empty_readonly_checks": 3,
+  "native_device": "/dev/sdb1",
+  "native_device_id": "8:17",
+  "issued_final_receipt_bytes_identical": true,
+  "active_receipt_absent": true,
+  "all15_object_uids_unchanged": true,
+  "bound_volumes": [
+    {
+      "claim": "nextcloud-data",
+      "pvc_uid": "a8243a0f-baab-4fb3-a1d4-441274a27efc",
+      "pv_name": "pvc-a8243a0f-baab-4fb3-a1d4-441274a27efc",
+      "pv_uid": "a763daa6-9882-4664-897a-3cbdb32fcba2",
+      "path": "/var/mnt/proof/pvc-a8243a0f-baab-4fb3-a1d4-441274a27efc_proof-nextcloud_nextcloud-data",
+      "claimRef": {
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "name": "nextcloud-data",
+        "namespace": "proof-nextcloud",
+        "resourceVersion": "108140",
+        "uid": "a8243a0f-baab-4fb3-a1d4-441274a27efc"
+      },
+      "capacity": {
+        "storage": "4Gi"
+      },
+      "reclaimPolicy": "Retain"
+    },
+    {
+      "claim": "postgres-data",
+      "pvc_uid": "f8d5b400-5256-4565-942e-633c7dd4546e",
+      "pv_name": "pvc-f8d5b400-5256-4565-942e-633c7dd4546e",
+      "pv_uid": "d80233d3-2793-4ba1-aa90-867636231807",
+      "path": "/var/mnt/proof/pvc-f8d5b400-5256-4565-942e-633c7dd4546e_proof-nextcloud_postgres-data",
+      "claimRef": {
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "name": "postgres-data",
+        "namespace": "proof-nextcloud",
+        "resourceVersion": "108143",
+        "uid": "f8d5b400-5256-4565-942e-633c7dd4546e"
+      },
+      "capacity": {
+        "storage": "4Gi"
+      },
+      "reclaimPolicy": "Retain"
+    },
+    {
+      "claim": "redis-data",
+      "pvc_uid": "169af8e3-4a76-4821-83b6-e6f19815f48f",
+      "pv_name": "pvc-169af8e3-4a76-4821-83b6-e6f19815f48f",
+      "pv_uid": "4a2d31be-8af9-4a08-b27d-d7d489b312ad",
+      "path": "/var/mnt/proof/pvc-169af8e3-4a76-4821-83b6-e6f19815f48f_proof-nextcloud_redis-data",
+      "claimRef": {
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "name": "redis-data",
+        "namespace": "proof-nextcloud",
+        "resourceVersion": "108138",
+        "uid": "169af8e3-4a76-4821-83b6-e6f19815f48f"
+      },
+      "capacity": {
+        "storage": "1Gi"
+      },
+      "reclaimPolicy": "Retain"
+    }
+  ],
+  "proof_helper_pods_absent": true,
+  "unresolved_pending_runs": 0,
+  "automatic_provisioner_lifetime_forensics_complete": false,
+  "native_application_executed": false
+}
