@@ -177,12 +177,14 @@ class NativeCron(unittest.TestCase):
             with self.assertRaises(RuntimeError):cron.packaged_metadata()
         with tempfile.TemporaryDirectory() as temp:
             target=Path(temp)/'bridge.json'
-            for fault in ('hash','extra','index','image','public-evidence'):
+            for fault in ('hash','extra','index','image','public-evidence','review-path','review-hash'):
                 bad=copy.deepcopy(bridge)
                 if fault=='extra':bad['overrides']['lib/base.php']=copy.deepcopy(bad['overrides']['version.php'])
                 elif fault=='index':bad['evidence_sha256']['docs/evidence/talos-data/nextcloud-cron-source-review-97384394-9c9c-47d4-8d17-50e63b9b62fd.json']='0'*64
                 elif fault=='image':bad['image']='different-image'
                 elif fault=='public-evidence':bad['evidence_sha256']['docs/evidence/talos-data/nextcloud-public-image-parity-412faf37-f124-44b2-b52a-418ad71f9cd0.json']='0'*64
+                elif fault=='review-path':bad['parent_review_identity']['path']='docs/evidence/talos-data/other.json'
+                elif fault=='review-hash':bad['parent_review_identity']['sha256']='0'*64
                 target.write_text(json.dumps(bad))
                 approved=cron.PACKAGED_METADATA_SHA256 if fault=='hash' else hashlib.sha256(target.read_bytes()).hexdigest()
                 with self.subTest(fault=fault),patch.object(cron,'PACKAGED_METADATA',target),patch.object(cron,'PACKAGED_METADATA_SHA256',approved):

@@ -82,10 +82,11 @@ class PreflightTests(unittest.TestCase):
             dict(event='private-log',run_id=self.run,job=self.name,pod=pod['metadata']['name'],container='cli',log=json.dumps({'status':'BLOCKED_OR_FAILED','error_type':'RuntimeException'})),
             dict(event='blocked-pending-cleanup',run_id=self.run,active=None),dict(event='stop-intent',run_id=self.run),
             dict(event='stop-pods',run_id=self.run,pods={'items':[]})]
+        history.extend(dict(event='memory',run_id=self.run,kubelet=900,talos=900,at=time.time()-2000) for _ in range(3))
         self.r['origin_journal_sha256']={}
         for e in history:
             p=self.i.save(e);self.r['origin_journal_sha256'][p.name]=m.digest(p.read_bytes())
-        stopped=dict(at=time.time()-500,namespace=dict(metadata=dict(uid=self.r['namespace_uid'])),nodes=[dict(metadata=dict(uid=self.r['node_uid']))],pods={'items':[]},controllers={'items':[]})
+        stopped=dict(at=time.time()-500,namespace=dict(metadata=dict(uid=self.r['namespace_uid'])),nodes=[dict(metadata=dict(uid=self.r['node_uid']))],pods={'items':[]},controllers={'items':[copy.deepcopy(self.cache[k]) for k in self.r['object_uids'] if k.startswith(('deployment/','cronjob/'))]})
         self.r['origin_stop_snapshot_path'],self.r['origin_stop_snapshot_sha256']=self.artifact('old-stop',stopped)
         uid=str(uuid.uuid4());self.r['payload_configmap_uid']=uid
         cm=dict(kind='ConfigMap',metadata=dict(name='nextcloud-cron-payload-'+self.run,namespace=m.s.NS,uid=uid),data={'native.php':self.old_php})
@@ -174,6 +175,98 @@ class PreflightTests(unittest.TestCase):
             if key.startswith('origin_') or key in ('preflight_job_uid','payload_configmap_uid'):self.r.pop(key)
         self.write();self.r['document_sha256']=self.i.document_hashes();self.write()
         return self.r
+
+    def test_release_complete_memory_multiplicity_and_nonvacuous_snapshot(self):
+        self.i.release_provenance(self.r)
+        name=next(n for n in self.r['origin_journal_sha256'] if json.loads((self.state/n).read_text())['event']=='memory')
+        raw=(self.state/name).read_bytes();sha=self.r['origin_journal_sha256'].pop(name);(self.state/name).unlink()
+        with self.assertRaisesRegex(RuntimeError,'twelve-event'):self.i.release_provenance(self.r)
+        (self.state/name).write_bytes(raw);(self.state/name).chmod(0o600);self.r['origin_journal_sha256'][name]=sha
+        path=Path(self.r['origin_stop_snapshot_path']);baseline=json.loads(path.read_bytes())
+        for fault in ('empty','missing','sparse','uid','active','unsuspended'):
+            data=copy.deepcopy(baseline)
+            if fault=='empty':data['controllers']['items']=[]
+            elif fault=='missing':data['controllers']['items'].pop()
+            elif fault=='sparse':data['controllers']['items']=[{'kind':'Deployment','metadata':{'namespace':m.s.NS},'spec':{'replicas':0}}]
+            elif fault=='uid':data['controllers']['items'][0]['metadata']['uid']='foreign'
+            elif fault=='active':data['controllers']['items'][0]['spec']['replicas']=1
+            else:next(c for c in data['controllers']['items'] if c['kind']=='CronJob')['spec']['suspend']=False
+            path.write_text(json.dumps(data));self.r['origin_stop_snapshot_sha256']=m.digest(path.read_bytes())
+            with self.subTest(fault=fault),self.assertRaises(RuntimeError):self.i.release_provenance(self.r)
+
+    def test_actual_diagnostic_admission_global_jobs_ds_and_backend_ownership(self):
+        self.diagnostic_fixture();self.i.consume()
+        objects=[];pods=[]
+        def obj(*args):
+            if args==('get','jobs,daemonsets','-A'):return {'items':objects}
+            if args==('get','pods','-A'):return {'items':pods}
+            if args==('get','deployments,statefulsets','-A'):return {'items':[self.cache['deployment/'+n] for n in ('postgres','redis','nextcloud')]}
+            if args==('get','cronjobs','-A'):return {'items':[self.cache['cronjob/nextcloud-cron']]}
+            return self.obj(*args)
+        with patch.object(self.i,'obj',side_effect=obj),patch.object(self.i,'memory_admission'),patch.object(m.s.life,'lease'):
+            self.i.admission()  # actual identities/envelopes/policies/controller barriers
+            for kind in ('Job','DaemonSet'):
+                for ns in (m.s.NS,'proof-other'):
+                    for spec in ({'suspend':True},{'replicas':0},{}):
+                        objects[:]=[dict(kind=kind,metadata=dict(namespace=ns),spec=spec,status={'succeeded':1})]
+                        with self.subTest(kind=kind,ns=ns,spec=spec),self.assertRaises(RuntimeError):self.i.admission()
+            objects.clear()
+            approved=self.i.approved('postgres')['spec']['template']['spec']
+            pods[:]=[dict(metadata=dict(namespace=m.s.NS,labels={'app.kubernetes.io/name':'postgres'},ownerReferences=[dict(kind='ReplicaSet',name='pg-rs',uid='rs-owned',controller=True)]),spec=copy.deepcopy(approved))]
+            self.cache['replicaset/pg-rs']=dict(metadata=dict(namespace=m.s.NS,uid='rs-owned',ownerReferences=[dict(kind='Deployment',name='postgres',uid=self.r['object_uids']['deployment/postgres'],controller=True)]))
+            with self.assertRaisesRegex(RuntimeError,'before'):self.i.admission()
+            self.i.backends_started=True;self.i.admission()
+            self.cache['replicaset/pg-rs']['metadata']['ownerReferences'][0]['uid']='foreign'
+            with self.assertRaisesRegex(RuntimeError,'ownership'):self.i.admission()
+            pods.clear()
+            self.cache['deployment/nextcloud']['spec']['replicas']=1
+            with self.assertRaisesRegex(RuntimeError,'unselected'):self.i.admission()
+            self.cache['deployment/nextcloud']['spec']['replicas']=0
+            self.cache['cronjob/nextcloud-cron']['spec']['suspend']=False
+            with self.assertRaises(RuntimeError):self.i.admission()
+
+    def test_actual_stop_independent_guarded_backends_and_helper_failures(self):
+        self.diagnostic_fixture()
+        name='nc-preflight-'+self.i.run
+        self.i.save(dict(event='phase-created',run_id=self.i.run,name=name,uid='helper-owned'))
+        self.i.save(dict(event='pending',run_id=self.i.run,scope='diagnose-preflight'))
+        for fault in ('postgres','redis','capture','retire',None):
+            operations=[];self.i.jobs={};self.i.helper_cleanup_attempted=set()
+            def kube(*args,data=None):
+                if 'patch' in args:
+                    backend=args[4];operations.append(backend)
+                    patchdoc=json.loads(args[7]);self.assertEqual(patchdoc[0]['value'],self.r['object_uids']['deployment/'+backend]);self.assertEqual(patchdoc[1]['value'],0)
+                    if fault==backend:raise RuntimeError('patch failure')
+                    return '{}'
+                if args[:3]==('get','namespace',m.s.NS):return json.dumps(self.cache['namespace/'+m.s.NS])
+                if 'logs' in args:
+                    operations.append('capture')
+                    if fault=='capture':raise RuntimeError('capture failed')
+                    return 'bounded log'
+                if args[:3]==('-n',m.s.NS,'get') and args[3]=='job':return json.dumps({'metadata':{'uid':'helper-owned'}})
+                if args[:2]==('delete','--raw'):
+                    operations.append('retire');self.assertEqual(json.loads(data)['preconditions'],{'uid':'helper-owned'})
+                    if fault=='retire':raise RuntimeError('retirement failed')
+                    return '{}'
+                if 'pods' in args:
+                    if '-l' in args and 'retire' not in operations:
+                        return json.dumps({'items':[dict(metadata=dict(name='helper-pod',namespace=m.s.NS,ownerReferences=[dict(kind='Job',name=name,uid='helper-owned')]),spec=copy.deepcopy(self.i.documents()[1]['spec']['template']['spec']))]})
+                    return json.dumps({'items':[]})
+                if 'jobs' in args:return json.dumps({'items':[]})
+                if 'deployments,statefulsets,daemonsets,cronjobs,jobs' in args:return json.dumps({'items':[]})
+                if 'deployment' in args:return json.dumps({'spec':{'replicas':0}})
+                if 'wait' in args:return '{}'
+                raise AssertionError(args)
+            with self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=kube):
+                if fault is None:self.i.stop()
+                else:
+                    with self.assertRaisesRegex(RuntimeError,'unconfirmed'):self.i.stop()
+            self.assertIn(self.i.run,self.i.pending())
+            self.assertEqual(operations[:2],['postgres','redis'])
+            self.assertIn('capture',operations)
+            if fault=='capture':self.assertNotIn('retire',operations)
+            else:self.assertLess(operations.index('capture'),operations.index('retire'))
+            self.assertFalse(any(e.get('event')=='clean' and e.get('run_id')==self.i.run for e in m.s.life.native_cron_events(self.state)))
 
     def test_diagnostic_exact_readonly_documents_no_public_phase_no_cross_authority(self):
         self.diagnostic_fixture();cm,job=self.i.documents();pod=job['spec']['template']['spec'];c=pod['containers'][0]
@@ -283,6 +376,23 @@ class PreflightTests(unittest.TestCase):
                 else:
                     with self.assertRaises(RuntimeError):self.i.diagnostic_helper(job)
             self.assertEqual(events,['capture','uid-retire'])
+
+    def test_parent_review_missing_or_changed_blocks_before_consumption_or_runtime(self):
+        self.diagnostic_fixture()
+        review=m.s.cron.ROOT/m.s.cron.PARENT_REVIEW
+        read=Path.read_bytes
+        for missing in (False,True):
+            def changed(path):
+                if path==review:
+                    if missing:raise FileNotFoundError('missing review')
+                    return b'changed review'
+                return read(path)
+            with self.subTest(missing=missing),patch.object(Path,'read_bytes',changed),patch.object(m.s.life,'kube',side_effect=AssertionError('no runtime')):
+                with self.assertRaises((RuntimeError,FileNotFoundError)):self.i.consume()
+            self.assertFalse(any(e.get('event')=='preflight-authorized' and e.get('run_id')==self.i.run for e in m.s.life.native_cron_events(self.state)))
+        self.i.consume()
+        with patch.object(Path,'read_bytes',changed),patch.object(m.s.life,'kube',side_effect=AssertionError('no runtime after drift')):
+            with self.assertRaises(FileNotFoundError):self.i.call('get','namespace',m.s.NS)
 
     def test_diagnostic_requires_exact_compiler_packaged_and_index_hash_bindings(self):
         self.diagnostic_fixture();baseline=copy.deepcopy(self.r)

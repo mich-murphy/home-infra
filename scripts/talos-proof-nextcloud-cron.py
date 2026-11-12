@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 IMAGE = 'nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2'
 PACKAGED_METADATA = ROOT/'docs/evidence/talos-data/nextcloud-packaged-metadata-bridge-49e437a1-23fe-491f-92e9-541137daaa6a.json'
 PACKAGED_METADATA_SHA256 = '86a6fd499c4bc438efc6cc0e4b87b11b69c8c21b111de29c6f2fce3d73bde32c'
+PARENT_REVIEW = 'docs/evidence/talos-acceptance/nextcloud-public-image-review-a8a4347c61c34638a3b4946fb331c769.json'
 CLASS = r'OC\Authentication\Token\TokenCleanupJob'
 PHASES = ('preflight', 'install-or-verify', 'fixture', 'before', 'cron', 'assert-restore')
 GATE = ('Native cron live integration blocked: no reviewed serial-helper supervisor '
@@ -78,6 +79,11 @@ def packaged_metadata():
     for name,sha in bridge['evidence_sha256'].items():
         if hashlib.sha256((ROOT/name).read_bytes()).hexdigest()!=sha:
             raise RuntimeError('packaged metadata evidence/source index drift')
+    review=bridge['parent_review_identity']
+    if review.get('path')!=PARENT_REVIEW:
+        raise RuntimeError('fixed parent acceptance record required')
+    if hashlib.sha256((ROOT/PARENT_REVIEW).read_bytes()).hexdigest()!=review.get('sha256'):
+        raise RuntimeError('packaged metadata parent review drift')
     return bridge
 
 

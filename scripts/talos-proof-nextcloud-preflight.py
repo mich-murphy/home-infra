@@ -65,6 +65,7 @@ class Preflight(s.Supervisor):
             raise RuntimeError('reviewed preflight source drift')
         if r.get('reviewed_artifact_sha256')!={name:digest((s.ROOT/name).read_bytes()) for name in ARTIFACTS}:
             raise RuntimeError('reviewed packaged metadata/source index drift')
+        s.cron.packaged_metadata()  # Includes transitive parent record, before consumption/API.
         events=s.life.native_cron_events(self.state)
         if start and any(e.get('authorization_id')==r['authorization_id'] for e in events): raise RuntimeError('replayed preflight authorization')
         if self.scope=='release-preflight': self.release_provenance(r)
@@ -120,6 +121,9 @@ class Preflight(s.Supervisor):
         for kind in allowed:
             if sum(e.get('event')==kind for e in prior)!=sum(e.get('event')==kind for e in history):
                 raise RuntimeError('duplicate/unreferenced original history')
+        counts={kind:(3 if kind=='memory' else 1) for kind in allowed}
+        if any(sum(e.get('event')==kind for e in history)!=count for kind,count in counts.items()):
+            raise RuntimeError('complete original twelve-event history required')
         if any(e.get('event') not in allowed for e in history): raise RuntimeError('unknown/unconfirmed/later original history')
         def one(kind):
             found=[e for e in history if e.get('event')==kind]
@@ -162,7 +166,107 @@ class Preflight(s.Supervisor):
         if (type(stopped.get('at')) not in (int,float) or not math.isfinite(stopped['at'])
             or not origin['issued']<finished<=stopped['at']<r['issued']):
             raise RuntimeError('post-failure confirmed stop timestamp required')
-        self.stopped_items(stopped['pods']['items'],stopped['controllers']['items'])
+        self.stopped_snapshot(stopped,r)
+        # Independently accepted provenance exists for this historical run only.
+        if self.run=='33d6df9f-c2a8-459f-8eef-bc5fc3bfbdc1':
+            review=json.loads((s.ROOT/'docs/evidence/talos-acceptance/nextcloud-native-failure-review-320eb83b065948108cf7672f6157a58b.json').read_bytes())
+            if (r['origin_stop_snapshot_sha256']!=review['postfailure_snapshot_sha256']
+                or r['preflight_job_uid']!=review['failed_helper_job_uid']
+                or meta.get('uid')!=review['failed_helper_pod_uid']):
+                raise RuntimeError('independently accepted historical provenance mismatch')
+
+    def stopped_snapshot(self,stopped,r):
+        # Snapshot contains raw API objects, not a receipt-reported passing flag.
+        for field in ('pods','controllers'):
+            if not isinstance(stopped.get(field),dict) or not isinstance(stopped[field].get('items'),list):
+                raise RuntimeError('raw stopped snapshot list required')
+        controllers=stopped['controllers']['items'];seen={}
+        for c in controllers:
+            if (c.get('kind') not in ('Deployment','StatefulSet','DaemonSet','CronJob','Job')
+                or not isinstance(c.get('spec'),dict) or not all(c.get('metadata',{}).get(k) for k in ('name','namespace','uid'))):
+                raise RuntimeError('raw stopped controller identity/spec required')
+            key=c['kind'].lower()+'/'+c['metadata']['name']
+            identity=(c['metadata']['namespace'],key)
+            if identity in seen: raise RuntimeError('duplicate stopped controller')
+            seen[identity]=c
+        required={k:v for k,v in r['object_uids'].items() if k.startswith(('deployment/','cronjob/'))}
+        if not {'deployment/nextcloud','deployment/postgres','deployment/redis','cronjob/nextcloud-cron'}<=required.keys():
+            raise RuntimeError('retained stopped controllers required')
+        for key,uid in required.items():
+            c=seen.get((s.NS,key),{})
+            if c.get('metadata',{}).get('uid')!=uid:
+                raise RuntimeError('missing/changed retained stopped controller')
+            if c['kind']!='CronJob' and type(c['spec'].get('replicas')) is not int:
+                raise RuntimeError('explicit stopped replica state required')
+        self.stopped_items(stopped['pods']['items'],controllers)
+
+    def admission(self):
+        # Diagnostic-only extension: no Job/DS object is safe, even without Pods.
+        def barriers():
+            for c in self.obj('get','jobs,daemonsets','-A')['items']:
+                if c['metadata']['namespace'].startswith('proof-'):
+                    raise RuntimeError('proof Job/DaemonSet blocks diagnosis')
+            for pod in self.obj('get','pods','-A')['items']:
+                if not pod['metadata']['namespace'].startswith('proof-'): continue
+                if not getattr(self,'backends_started',False):
+                    raise RuntimeError('proof Pod before diagnostic backend startup')
+                meta=pod['metadata'];app=meta.get('labels',{}).get('app.kubernetes.io/name')
+                owners=meta.get('ownerReferences',[])
+                if (meta['namespace']!=s.NS or app not in ('postgres','redis') or len(owners)!=1
+                    or owners[0].get('kind')!='ReplicaSet' or owners[0].get('controller') is not True):
+                    raise RuntimeError('exact owned backend Pod required')
+                rs=self.obj('-n',s.NS,'get','replicaset',owners[0]['name'])
+                r=self.authorize();parent=rs.get('metadata',{}).get('ownerReferences',[])
+                if (rs.get('metadata',{}).get('uid')!=owners[0].get('uid')
+                    or rs['metadata'].get('namespace')!=s.NS or len(parent)!=1
+                    or parent[0].get('kind')!='Deployment' or parent[0].get('name')!=app
+                    or parent[0].get('controller') is not True
+                    or parent[0].get('uid')!=r['object_uids']['deployment/'+app]):
+                    raise RuntimeError('backend Pod deployment ownership mismatch')
+        barriers()
+        super().admission()
+        barriers()
+
+    def stop(self):
+        # Diagnostic only: each guarded cleanup gets one independent attempt.
+        if self.scope!='diagnose-preflight': raise RuntimeError('diagnostic stop only')
+        self.authorize()
+        failures=list(getattr(self,'cleanup_uncertainty',[]))
+        def attempt(label,fn):
+            try: fn()
+            except Exception as e:
+                failures.append(label)
+                self.save(dict(event='diagnostic-cleanup-failed',run_id=self.run,operation=label,
+                    error_type=type(e).__name__,private_message=str(e)[:1024]))
+        self.save(dict(event='stop-intent',run_id=self.run))
+        attempt('stop-pods',lambda:self.save(dict(event='stop-pods',run_id=self.run,pods=self.obj('-n',s.NS,'get','pods'))))
+        for name in ('postgres','redis'):
+            def backend(name=name):
+                r=self.target();uid=r['object_uids'].get('deployment/'+name)
+                if not uid: raise RuntimeError('backend UID binding required')
+                self.call('-n',s.NS,'patch','deployment',name,'--type=json','-p',json.dumps([
+                    dict(op='test',path='/metadata/uid',value=uid),dict(op='replace',path='/spec/replicas',value=0)]))
+            attempt(name,backend)
+        records=[e for e in s.life.native_cron_events(self.state) if e.get('run_id')==self.run and e.get('event')=='phase-created']
+        def helper():
+            if not records: return
+            name='nc-preflight-'+self.run
+            if len(records)!=1 or records[0].get('name')!=name or not records[0].get('uid'):
+                raise RuntimeError('single recorded diagnostic helper UID required')
+            if name in getattr(self,'helper_cleanup_attempted',set()): return
+            self.helper_cleanup_attempted={name}
+            self.jobs[name]=records[0]['uid']
+            evidence=self.forensics(name)
+            if evidence[2]: raise RuntimeError('helper capture incomplete')
+            self.diagnostic_capture_identity(evidence,name,records[0]['uid'])
+            self.delete_own_job(name)
+        attempt('helper-capture-retirement',helper)
+        attempt('pod-absence',lambda:self.call('-n',s.NS,'wait','--for=delete','pod','--all','--timeout=180s'))
+        attempt('stopped-controllers',self.require_stopped)
+        attempt('global-absence',self.stopped_world)
+        if failures:
+            self.save(dict(event='stop-unconfirmed',run_id=self.run,failures=failures))
+            raise RuntimeError('diagnostic cleanup unconfirmed: '+','.join(failures))
 
     def identities(self):
         super().identities()
@@ -259,6 +363,16 @@ class Preflight(s.Supervisor):
                     raise RuntimeError('only recorded diagnostic helper UID retirement allowed')
         return super().call(*args,data=data)
 
+    def diagnostic_capture_identity(self,evidence,name,uid):
+        expected=self.documents()[1]['spec']['template']['spec']
+        for pod in evidence[0]['items']:
+            meta=pod['metadata'];owners=meta.get('ownerReferences',[])
+            if (meta.get('namespace')!=s.NS or len(owners)!=1
+                or owners[0].get('kind')!='Job' or owners[0].get('name')!=name
+                or owners[0].get('uid')!=uid):
+                raise RuntimeError('diagnostic Pod owner/namespace mismatch')
+            self.envelope(pod['spec'],expected,actual_pod=True)
+
     def diagnostic_helper(self,job):
         self.admission();name=job['metadata']['name']
         self.save(dict(event='phase-intent',run_id=self.run,phase='diagnose-preflight',job=job))
@@ -268,7 +382,13 @@ class Preflight(s.Supervisor):
         failure=None
         try:self.call('-n',s.NS,'wait','--for=condition=complete','job/'+name,'--timeout=190s')
         except Exception as e:failure=e
-        evidence=self.forensics(name)
+        self.helper_cleanup_attempted={name}
+        try:
+            evidence=self.forensics(name)
+            if evidence[2]: raise RuntimeError('helper capture incomplete')
+        except Exception:
+            self.cleanup_uncertainty=['helper-capture']
+            raise
         try:
             for pod in evidence[0]['items']:
                 if (pod['metadata'].get('namespace')!=s.NS or not any(o.get('kind')=='Job' and o.get('name')==name
@@ -282,7 +402,10 @@ class Preflight(s.Supervisor):
                 or type(result.get('db_tables')) is not int or result['db_tables']!=0 or result.get('redis_authenticated') is not True):
                 raise RuntimeError('explicit diagnostic empty-HTML/read-only backend result required')
         except Exception as e:failure=e
-        self.delete_own_job(name)
+        try: self.delete_own_job(name)
+        except Exception:
+            self.cleanup_uncertainty=['helper-retirement']
+            raise
         if failure:raise failure
 
     def diagnose_preflight(self):
@@ -296,6 +419,7 @@ class Preflight(s.Supervisor):
         try:
             self.admission();self.require_stopped()
             self.scale_backends(1)
+            self.backends_started=True
             self.call('-n',s.NS,'wait','--for=condition=available','deployment/postgres','deployment/redis','--timeout=180s')
             self.admission();cm,job=self.documents()
             self.save(dict(event='diagnostic-payload-intent',run_id=self.run,document=cm))

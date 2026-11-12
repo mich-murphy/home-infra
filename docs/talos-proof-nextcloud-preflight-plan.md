@@ -57,6 +57,13 @@ A parent-issued immutable0600 `TALOS_PROOF_DATA_LEASE` must contain:
   `docs/evidence/talos-data/nextcloud-packaged-metadata-bridge-49e437a1-23fe-491f-92e9-541137daaa6a.json`,
   `docs/evidence/talos-data/nextcloud-public-image-parity-412faf37-f124-44b2-b52a-418ad71f9cd0.json`.
 
+These remain **four direct artifacts**, not five: the fixed parent acceptance
+record `docs/evidence/talos-acceptance/nextcloud-public-image-review-a8a4347c61c34638a3b4946fb331c769.json`
+is a **transitive** bridge binding. Every compiler bridge validation checks that
+exact permitted path and its recorded SHA256; authorization invokes it before
+consumption and on later operations, before any runtime operation. A missing or
+changed parent review rejects. Source5/artifact4/document bindings remain separate.
+
 Both maps are checked locally by authorization, including on later operations;
 missing/extra/changed bindings reject before API work. Compiler code determines
 Job and payload, while packaged metadata and indexes determine effective parity:
@@ -76,6 +83,10 @@ Additional exact bindings:
   receipt. **Do not substitute current hashes into this original map.**
 - `origin_journal_sha256`: original-run canonical UUID.json basename→SHA256 map,
   covering all12 original-run events, not unrelated credentials/forensic files.
+  Exact multiplicities are one each of pending, backend-start-intent, phase-intent,
+  phase-created, pods, private-log, blocked-pending-cleanup, stop-intent and
+  stop-pods, plus **three memory events**. Missing/extra events reject even when
+  the remaining files and map are rehashed.
 - `origin_preflight_document_sha256`: canonical JSON SHA256 of the exact original
   Job document (`json.dumps(..., sort_keys=True, separators=(',', ':'))`).
 - `preflight_job_uid`: exact original observed Job UID;
@@ -93,7 +104,14 @@ blocked/retired-helper state and stop records. Missing/changed/duplicate/unknown
 history, stop-unconfirmed, foreign pending, clean, cleanup or any later-phase
 intent/create rejects. The original runner had no final stop-confirmed journal
 event: the separately hash-bound post-failure stopped snapshot is therefore
-mandatory, not an invented historical event.
+mandatory, not an invented historical event. Raw snapshot controller entries must
+carry kind/name/namespace/UID/spec, include every retained Deployment/CronJob
+(including frontend, both backends and the suspended cron schedule), match retained
+UIDs and explicitly show stopped replica state. Empty/sparse controller lists do
+not prove absence. For the known original run, snapshot hash and failed Job/Pod
+UIDs must also match the independently accepted public native-failure review
+320eb83b; this is provenance binding, not a new attestation. Fresh runtime checks
+remain independent of this snapshot.
 
 Runtime operations are **GET-only** (trusted lifecycle target validation also
 reads local kube config). No Kubernetes mutation, backend/helper activation,
@@ -131,7 +149,11 @@ Jobs, arbitrary patches/deletes, exec and main phases reject.
 
 Reuse fresh dual832 admission, native identities/envelopes, all retained UIDs,
 six policies and global proof barriers before starting only PG384/Redis64 and
-before the one192MiB helper. PHP `preflight(true)` requires HTML empty **before
+before the one192MiB helper. Diagnostic-specific admission additionally rejects
+every global proof Job/DaemonSet object, including suspended, terminal and Podless
+objects. Before startup no proof Pod is allowed; after startup only full-envelope
+backend Pods with exact ReplicaSet UID and retained Deployment ownership pass.
+The original main Supervisor and lifecycle semantics are unchanged. PHP `preflight(true)` requires HTML empty **before
 PDO/cache checks**; on nonempty HTML it never calls nativeContext/loads core.
 PDO uses session default_transaction_read_only; Redis only connects/AUTH/PING.
 No install, token generation/aging, job execution, TTL/last_run change or native
@@ -142,7 +164,14 @@ HTML, zero application DB objects and authenticated Redis result fields.
 Capture all helper raw state/current/applicable previous logs and actual kernel
 counters before interpretation/deletion; validate namespace/owner UID/full Pod
 envelope. Retire only the observed recorded UID using existing exact Job deletion
-and Pod absence checks. Always attempt guarded backend stop, including on failure.
+and Pod absence checks. Always attempt guarded backend stop, including on failure. Diagnostic-only stop
+independently attempts each backend UID-tested zero-replica patch and recorded
+helper capture/UID retirement, accumulating failures rather than aborting the
+chain. Helper capture must precede deletion; incomplete capture prevents deletion.
+No unknown UID is adopted and no failed helper cleanup is automatically retried
+by the final stop in the same invocation. Target, namespace, receipt expiry and
+UID guards remain mandatory for each operation. Any cleanup uncertainty keeps
+final confirmation failed/PENDING even if later absence reads appear stopped.
 Only confirmed final backend/helper/global proof absence plus stopped controllers
 permits `diagnostic-result` and one clean, even if the diagnostic failed: no
 fixture was authorized. Failure status remains and CLI still exits1. This narrow
@@ -200,3 +229,27 @@ It binds all five current source files, all four current artifacts, original
 provenance and separate diagnostic documents. New authorization/time fields are
 parent placeholders. Fresh parent review, separate grants, runtime admission and
 pinned-image behavior remain unmeasured; original PENDING has not been released.
+
+## Focused HOLD remediation — offline only
+
+The positive synthetic release fixture now contains all12 required events (including
+three memory observations) and actual retained stopped controller objects. New
+regressions remove a memory event entirely, remove retained controllers, and
+rehash empty/sparse/changed snapshots; each rejects. Diagnostic admission and stop
+regressions exercise the actual validators/cleanup chain (API responses and the
+external memory probe are mocked, not the entire admission/stop method). They
+cover global Podless/suspended/terminal Jobs/DaemonSets, startup/owned-backend
+boundaries, first/second backend patch failures, capture failure and UID retirement
+failure, with no clean on uncertainty. Missing/changed transitive parent review
+also rejects before authorization consumption or runtime work.
+
+This correction did not read private historical proof state or perform another
+historical replay. The earlier replay/static-gate reports above are prior evidence,
+not fresh attestation. No historical file, receipt, immutable public image/source
+artifact, parent acceptance record, grant, original PENDING event or RELEASED
+receipt was changed. No live acceptance or pending release is claimed.
+
+Fresh focused validation after this correction: recovery18 + compiler15 +
+supervisor40 + initializer35 + data42 + WOPI14 + workflows20 = **184 Python tests
+passing, no skips**; `git diff --check` passes. No PHP payload, browser, cluster,
+Talos, VM, credentials, CI, or full static gate was run for this correction.
