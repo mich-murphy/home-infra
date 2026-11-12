@@ -450,3 +450,118 @@ The gate remains832MiB; actual binding64+3×32+192 remains352MiB. No main cron,
 web/backend/helper start or additional concrete compatibility blocker was observed
 in this bounded offline replay. Postbinding native cron requires separate new
 UID-bound authority and is not authorized by the candidate plan.
+
+
+## Post-create binding continuation — OFFLINE, NEW authority required
+
+The single initializer run `34a6bc9c-7a6a-46b3-ac59-528c84233bca` created
+all eleven declarations but stopped before binding; see
+[evidence](evidence/talos-data/initialization-live-34a6bc9c-7a6a-46b3-ac59-528c84233bca.md).
+Its receipt was released, its three PVCs remain Pending and its original pending
+journal remains. This section is implementation, **not a live grant or retry**.
+
+Two exact empty-serialization corrections now compare container `env: []` with
+absence (on both sides) and CronJob `jobTemplate.metadata: {}` with absence.
+Nonempty env/metadata, malformed env types, unknown fields, image/security/limit
+changes remain rejected. All eleven privately captured actual objects pass the
+real corrected readback validators in an offline replay; this is historical
+snapshot compatibility, not fresh runtime admission.
+
+### New receipt schema (parent only)
+
+CLI: `scripts/talos-proof-nextcloud-initialize.py bind-created --state
+<canonical-shared-state> --run-id 34a6bc9c-7a6a-46b3-ac59-528c84233bca`.
+No alternate state, generated receipt, VM start or legacy CLI is involved.
+`TALOS_PROOF_DATA_LEASE` must name a NEW private0600 immutable receipt with:
+
+- `action: bind-created`, `phases: [readonly-binding]`, original canonical v4
+  `run_id`, **new** canonical v4 `authorization_id`, numeric finite Unix `issued`
+  and `expires`. Issuance must follow original issuance and not be in the future;
+  expiry must leave at least900seconds at invocation. The old expiry is inert
+  provenance, never authority. Bytes remain immutable through stop.
+- Exact unchanged original `group: nextcloud`, `stage: cron`, canonical
+  `state_dir`, `budget_mib: 832`, `cleanup_authorized: true`, sorted
+  `selected_controllers: [cronjob/nextcloud-cron, deployment/postgres,
+  deployment/redis]`, `namespace: proof-nextcloud`, `namespace_uid`, `context`,
+  loopback `endpoint`, `node_uid`, `html_claim: nextcloud-data`,
+  `storage_device: /dev/sdb1`, `storage_device_id: "8:17"` and all eleven
+  canonical `document_sha256` bindings.
+- `allowed_missing_resources: []`; `existing_uids` maps **all eleven** original
+  declaration keys plus `secret/proof-credentials` to exact original UIDs.
+- `origin_created_uids`: all eleven exact declaration-key→created-UID bindings,
+  matching `existing_uids` minus Secret. Canonical unique UIDs required.
+- `origin_receipt_path`: private outside-Git path of the immutable **issued**
+  original initialize receipt; `origin_receipt_sha256`: its exact SHA256.
+- `origin_journal_sha256`: exact original UUID.json basename→SHA256 map in the
+  canonical shared journal root. Referenced bytes/modes/names/run IDs are checked
+  on each authorization. Original hashes do not freeze future own append-only
+  observations. The parent must independently review this original history.
+
+The original receipt must bind this same target/documents, all eleven originally
+missing objects and only the existing Secret. Referenced history must contain
+one original initialize pending event, eleven unique exact document-create
+intents and eleven unique exact UID create observations. No arbitrary retained
+PVC or guessed UID can be enrolled. Unreferenced original create/intents/pending
+history rejects. The sole pending run must be the original run; clean history,
+foreign pending, any prior binding intent/create, or reused authorization ID
+rejects entry. Original `initialize` still rejects partial/retained/reused state.
+
+### Bounded execution and failure semantics
+
+After purely local provenance verification, a fsynced UUID/O_EXCL0600
+`initialization-continuation` event consumes the new authorization ID **before
+any runtime query**, without a second pending event. An unreachable first
+admission still consumes this ID. Every subsequent authorization checks this
+single consumed event plus the immutable original provenance/new receipt.
+No existing binding intent can earn another continuation, even under a new ID.
+
+Before the one generated helper: recheck exact Node/namespace/Secret and all
+created identities, full corrected stopped declarations, every PVC Pending
+with no volumeName, and absence of PV claimRefs for these UIDs (also any
+Nextcloud namespace claimRef). Reuse the reviewed storage/provisioner checks,
+all-proof Pod/controller barriers and fresh independent dual832 memory gate.
+Repeat created-object/PVC/PV checks immediately before entering shared binding.
+No declaration creation, patch/replacement/deletion, credentials, backend,
+web/CODE, native install or cron operation exists in this scope. The mutation
+boundary explicitly rejects **every non-Job create**.
+
+The existing generated read-only64MiB Job, exact original-run helper name,
+three32MiB automatic helper ceiling, emptiness/XFS/device/path checks,
+capture-before-UID-delete, helper absence and Bound/Retain/path/capacity/claimRef
+oracle are shared unchanged with initialization. Successful observations append
+one original-run clean event only after final stopped/absence checks. No native
+acceptance or full-run receipt is produced. Automatic provisioner lifetime
+log/cgroup capture gaps remain explicit, not hidden as acceptance.
+
+Failure preserves original pending state and all declarations/PVCs. `stop` under
+the unexpired **new bind-created receipt** can capture/retire only the exact
+journal UID-bound original-run binding helper; the expired original receipt is
+not consulted for permission. Otherwise the existing separate NEW
+`initialization-cleanup` receipt is required. No unknown UID adoption, wider
+cleanup or automatic restart exists. A native post-binding grant remains a
+separate parent decision after actual binding evidence.
+
+### Offline validation and private candidate
+
+Focused tests: initializer35 + supervisor30 + compiler8 + data42 = **115**.
+New coverage includes empty serialization positives/nonempty/malformed/unknown
+negatives, provenance/hash/target/UID/name/namespace drift, retained/Bound PVCs,
+PV claimRefs, foreign pending, prior binding, replay, non-Job mutation rejection,
+unreachable admission consuming authority, full mocked Bound handoff and
+capture-before-exact-UID retirement. All runtime subprocess calls are forbidden
+or mocked; no cluster/Talos/VM/image/native query occurred in this correction.
+
+Private candidate (NOT a receipt, authority, or fresh admission result):
+`$HOME/.local/state/home-infra/talos-proof/diagnostics/bind-created-offline-candidate-plan-35e212e0-cec4-4f53-98d5-19ba8869f589.json`.
+It includes exact eleven UIDs, original issued receipt hash/path, all36 original
+journal hashes and intended document hashes. New authorization ID/time fields
+are **placeholders for the parent**, not issued values. Its referenced historical
+all-eleven-object replay is recorded separately. Parent must review current
+source hashes and independently perform fresh measurements before issuing any
+authorization. Original state/history/receipt/credentials remain unchanged.
+
+Additional offline regressions: data-WOPI14 and data-workflows20 also pass,
+for **149 total passing tests**. Final source-hash-matched replay/candidate paths
+and all-eleven resource keys are indexed in
+[evidence](evidence/talos-data/bind-created-offline-34a6bc9c-7a6a-46b3-ac59-528c84233bca.json).
+`git diff --check` passed. No root gate/CI/live acceptance is claimed.

@@ -162,6 +162,11 @@ class Supervisor:
             if 'overhead' in pod:
                 pod['overhead']={k:quantity(v) if k in ('cpu','memory') else v for k,v in pod['overhead'].items()}
             for c in pod.get('containers',[])+pod.get('initContainers',[]):
+                # Empty env is omitted by core/v1 serialization; nonempty or
+                # wrongly typed values remain part of the full comparison.
+                if 'env' in c and not isinstance(c['env'],list):
+                    raise RuntimeError('invalid env envelope')
+                if c.get('env')==[]: c.pop('env')
                 if 'resources' in c: c['resources']=resources(c['resources'])
                 for key,value in dict(terminationMessagePath='/dev/termination-log',terminationMessagePolicy='File',imagePullPolicy='IfNotPresent').items():
                     if c.get(key)==value: c.pop(key)

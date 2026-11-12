@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """OFFLINE only: no kubectl/Talos/VM/image/native runtime execution permitted."""
 import copy
+import hashlib
 import importlib.util
 import json
 import os
@@ -330,5 +331,237 @@ class InitializationTests(unittest.TestCase):
             self.assertEqual(json.loads(call.call_args_list[0].kwargs['data'])['preconditions'],{'uid':'own'})
         with patch.object(self.i,'obj',return_value=dict(metadata=dict(uid='foreign'))),patch.object(self.i,'call',side_effect=AssertionError('delete')):
             with self.assertRaisesRegex(RuntimeError,'UID'):self.i.delete_binding(name,'own')
+
+
+    def continuation_fixture(self):
+        self.r['issued']=time.time()-4000
+        self.r['expires']=time.time()-1000  # inert expired provenance
+        self.write();origin=self.state/'origin-receipt'
+        origin.write_bytes(self.receipt.read_bytes());origin.chmod(0o600)
+        created={key:str(uuid.uuid4()) for key in self.docs}
+        self.i.save(dict(event='pending',run_id=self.run,scope='initialize',allowed_missing_resources=sorted(self.docs)))
+        for key,d in self.docs.items():
+            self.i.save(dict(event='initialization-create-intent',run_id=self.run,key=key,document=d))
+            self.i.save(dict(event='initialization-created',run_id=self.run,key=key,uid=created[key]))
+        self.i.save(dict(event='initialization-blocked-pending',run_id=self.run,created_uids=created))
+        hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in self.state.glob('*.json')}
+        self.r.update(action='bind-created',phases=['readonly-binding'],allowed_missing_resources=[],
+            existing_uids={**created,'secret/proof-credentials':'secret-uid'},
+            authorization_id=str(uuid.uuid4()),issued=time.time()-1,expires=time.time()+2000,
+            origin_receipt_path=str(origin),origin_receipt_sha256=hashlib.sha256(origin.read_bytes()).hexdigest(),
+            origin_journal_sha256=hashes,origin_created_uids=created)
+        self.write();self.i.scope='bind-created'
+        return created
+
+    def consume_continuation(self):
+        with patch.object(m.s.life,'lease'):
+            self.i.authorize(start=True)
+        self.i.save(dict(event='initialization-continuation',run_id=self.run))
+
+    def test_empty_serialization_only_positive_and_negative(self):
+        redis=self.docs['deployment/redis']['spec']['template']['spec']
+        actual=copy.deepcopy(redis);actual['containers'][0].pop('env')
+        self.i.envelope(actual,redis);self.i.envelope(redis,actual)
+        for value in ([dict(name='UNKNOWN',value='x')],{},None):
+            bad=copy.deepcopy(actual);bad['containers'][0]['env']=value
+            with self.assertRaises(RuntimeError):self.i.envelope(bad,redis)
+        cron=self.docs['cronjob/nextcloud-cron'];actual=copy.deepcopy(cron)
+        actual['spec']['jobTemplate']['metadata']={}
+        self.i.validate_present('cronjob/nextcloud-cron',actual,cron)
+        for metadata in ({'labels':{}},{'annotations':{'injected':'x'}},{'unknown':None}):
+            actual['spec']['jobTemplate']['metadata']=metadata
+            with self.assertRaises(RuntimeError):self.i.validate_present('cronjob/nextcloud-cron',actual,cron)
+
+    def test_continuation_exact_expired_provenance_and_appended_own_events(self):
+        self.continuation_fixture();self.consume_continuation()
+        self.i.save(dict(event='memory',run_id=self.run,kubelet=900,talos=900))
+        with patch.object(m.s.life,'lease'):
+            self.i.authorize()
+            with self.assertRaisesRegex(RuntimeError,'replayed'):self.i.authorize(start=True)
+        events=m.s.life.native_cron_events(self.state)
+        self.assertEqual(sum(e['event']=='pending' for e in events),1)
+        self.assertEqual(sum(e['event']=='initialization-continuation' for e in events),1)
+
+    def test_continuation_receipt_provenance_hash_uid_and_target_drift(self):
+        self.continuation_fixture();baseline=copy.deepcopy(self.r)
+        faults=[dict(origin_receipt_sha256='0'*64),dict(origin_journal_sha256={}),
+            dict(origin_created_uids={**self.r['origin_created_uids'],'pvc/redis-data':str(uuid.uuid4())}),
+            dict(existing_uids={**self.r['existing_uids'],'pvc/redis-data':str(uuid.uuid4())}),
+            dict(namespace_uid='foreign'),dict(node_uid='foreign'),dict(html_claim='arbitrary-retained'),
+            dict(allowed_missing_resources=['pvc/redis-data']),dict(authorization_id='not-uuid'),
+            dict(issued=time.time()+50)]
+        for change in faults:
+            self.r={**copy.deepcopy(baseline),**change};self.write()
+            with self.subTest(change=change),patch.object(m.s.life,'lease',side_effect=AssertionError('API forbidden')):
+                with self.assertRaises(RuntimeError):self.i.authorize(start=True)
+        self.r=baseline;name=next(iter(self.r['origin_journal_sha256']))
+        self.r['origin_journal_sha256'][name]='0'*64;self.write()
+        with patch.object(m.s.life,'lease',side_effect=AssertionError('API forbidden')):
+            with self.assertRaisesRegex(RuntimeError,'hash'):self.i.authorize(start=True)
+
+    def test_continuation_foreign_pending_prior_binding_clean_and_duplicate_records(self):
+        self.continuation_fixture()
+        cases=[dict(event='pending',run_id=str(uuid.uuid4())),
+            dict(event='initialization-binding-intent',run_id=self.run),
+            dict(event='initialization-binding-created',run_id=self.run),
+            dict(event='clean',run_id=self.run),
+            next(e for e in m.s.life.native_cron_events(self.state) if e['event']=='initialization-created')]
+        for event in cases:
+            path=self.i.save(event)
+            with self.subTest(event=event),patch.object(m.s.life,'lease',side_effect=AssertionError('API forbidden')):
+                with self.assertRaises(RuntimeError):self.i.authorize(start=True)
+            path.unlink()  # test-only fixture isolation; never runtime cleanup
+
+    def test_continuation_does_not_loosen_original_initialize(self):
+        self.continuation_fixture()
+        with patch.object(self.i,'authorize'),patch.object(self.i,'inventory',side_effect=AssertionError('no adoption')):
+            with self.assertRaisesRegex(RuntimeError,'pending'):self.i.initialize()
+
+    def test_continuation_fresh_uid_name_namespace_and_pending_readback(self):
+        created=self.continuation_fixture();key='pvc/redis-data';good=self.fixture(key)
+        good['metadata']['uid']=created[key];good['status']={'phase':'Pending'}
+        for fault in ('uid','name','namespace','bound','volume','unknown'):
+            bad=copy.deepcopy(good)
+            if fault in ('uid','name','namespace'):bad['metadata'][fault]='foreign'
+            elif fault=='bound':bad['status']['phase']='Bound'
+            elif fault=='volume':bad['spec']['volumeName']='existing'
+            else:bad['spec']['unknown']=True
+            with self.subTest(fault=fault),patch.object(self.i,'target',return_value=self.r),patch.object(self.i,'obj',return_value=bad):
+                with self.assertRaises(RuntimeError):self.i.verify_created({key:self.docs[key]},created,True)
+        with patch.object(self.i,'obj',return_value={'items':[dict(spec=dict(claimRef=dict(uid=created[key])))]}):
+            with self.assertRaisesRegex(RuntimeError,'claimRef'):self.i.no_claimrefs(created)
+
+    def test_continuation_call_rejects_declarations_patches_and_foreign_jobs(self):
+        self.continuation_fixture();self.consume_continuation()
+        job=self.i.binding_job(sorted(['nextcloud-data','postgres-data','redis-data']),
+            {k.split('/')[1]:v for k,v in self.r['origin_created_uids'].items() if k.startswith('pvc/')},'8:17')
+        self.i.save(dict(event='initialization-binding-intent',run_id=self.run,job=job))
+        with patch.object(m.s.life,'lease'),patch.object(m.s.life,'kube',side_effect=AssertionError('mutation forbidden')):
+            for doc in list(self.docs.values())+[dict(kind='Secret',metadata=dict(name='proof-credentials'))]:
+                with self.assertRaisesRegex(RuntimeError,'explicitly authorized'):self.i.call('create','-f','-',data=json.dumps(doc))
+            for verb in ('patch','apply','replace','scale'):
+                with self.assertRaisesRegex(RuntimeError,'forbids'):self.i.call(verb,'deployment/redis')
+            bad=copy.deepcopy(job);bad['metadata']['namespace']='foreign'
+            with self.assertRaisesRegex(RuntimeError,'intent'):self.i.call('create','-f','-',data=json.dumps(bad))
+        self.i.save(dict(event='initialization-binding-created',run_id=self.run,name=job['metadata']['name'],uid='own'))
+        with patch.object(m.s.life,'lease'),patch.object(m.s.life,'kube',side_effect=AssertionError('second create')):
+            with self.assertRaisesRegex(RuntimeError,'one binding'):self.i.call('create','-f','-',data=json.dumps(job))
+
+    def test_continuation_positive_offline_handoff_reuses_binding_path(self):
+        created=self.continuation_fixture();events=[]
+        def binding(d,c,r):
+            self.assertEqual(d,self.docs);self.assertEqual(c,created)
+            events.append('shared-binding')
+            self.i.save(dict(event='initialization-stopped-bound',run_id=self.run,created_uids=c,full_run_authorized=False))
+            self.i.save(dict(event='clean',run_id=self.run))
+        with (patch.object(m.s.life,'lease'),patch.object(self.i,'verify_created',side_effect=lambda *a,**kw:events.append('readback')),
+             patch.object(self.i,'no_claimrefs',side_effect=lambda c:events.append('pv-absence')),
+             patch.object(self.i,'storage',side_effect=lambda:events.append('storage')),
+             patch.object(self.i,'barriers',side_effect=lambda:events.append('barrier')),
+             patch.object(self.i,'memory_admission',side_effect=lambda:events.append('dual832')),
+             patch.object(self.i,'bind_readonly',side_effect=binding)):
+            self.i.bind_created()
+        self.assertEqual(events,['readback','pv-absence','storage','barrier','dual832','barrier','readback','pv-absence','shared-binding'])
+        self.assertFalse(self.i.pending())
+        self.assertEqual(sum(e['event']=='pending' for e in m.s.life.native_cron_events(self.state)),1)
+
+    def test_continuation_failure_preserves_pending_and_original_objects(self):
+        self.continuation_fixture()
+        with (patch.object(m.s.life,'lease'),patch.object(self.i,'verify_created',side_effect=RuntimeError('drift')),
+             patch.object(self.i,'call',side_effect=AssertionError('mutation'))):
+            with self.assertRaisesRegex(RuntimeError,'drift'):self.i.bind_created()
+        self.assertEqual(self.i.pending(),{self.run})
+        with patch.object(m.s.life,'lease'):
+            with self.assertRaisesRegex(RuntimeError,'replayed'):self.i.authorize(start=True)
+
+    def test_continuation_full_mocked_bound_handoff_capture_before_uid_delete(self):
+        created=self.continuation_fixture();objects={};binding={};events=[]
+        for key,d in self.docs.items():
+            obj=api_deployment(d) if d['kind']=='Deployment' else copy.deepcopy(d)
+            obj['metadata']['uid']=created[key]
+            if d['kind']=='PersistentVolumeClaim':obj['status']={'phase':'Pending'}
+            objects[key]=obj
+        objects['secret/proof-credentials']=copy.deepcopy(self.secret)
+        def obj(*args):
+            if args==('get','pv'):return {'items':[]}
+            return copy.deepcopy(objects[args[-2]+'/'+args[-1]])
+        def call(*args,**kwargs):
+            if args[0]=='create':
+                job=json.loads(kwargs['data']);self.assertEqual(job['kind'],'Job')
+                binding.update(job);binding['metadata']['uid']='own-job';events.append('one-job')
+                for key,pvc in list(objects.items()):
+                    if not key.startswith('pvc/'):continue
+                    n=key.split('/')[1];pvname='pvc-'+created[key]
+                    pvc['spec']['volumeName']=pvname;pvc['status']={'phase':'Bound'}
+                    objects['pv/'+pvname]=dict(metadata=dict(name=pvname,uid=str(uuid.uuid4())),spec=dict(
+                        storageClassName='proof-local',persistentVolumeReclaimPolicy='Retain',accessModes=['ReadWriteOnce'],
+                        capacity=dict(storage=pvc['spec']['resources']['requests']['storage']),
+                        claimRef=dict(name=n,namespace=m.NS,uid=created[key]),
+                        hostPath=dict(path='/var/mnt/proof/'+pvname+'_'+m.NS+'_'+n),
+                        nodeAffinity={'required':{'nodeSelectorTerms':[{'matchExpressions':[{'key':'kubernetes.io/hostname','operator':'In','values':['talos-proof']}]}]}}))
+                return json.dumps(binding)
+            self.assertIn('wait',args);return ''
+        def capture(name):
+            events.append('capture');e=self.evidence()
+            e[0]['items'][0]['spec']=copy.deepcopy(binding['spec']['template']['spec']);return e
+        with (patch.object(m.s.life,'lease'),patch.object(self.i,'target',return_value=self.r),
+              patch.object(self.i,'obj',side_effect=obj),patch.object(self.i,'call',side_effect=call),
+              patch.object(self.i,'storage'),patch.object(self.i,'barriers'),patch.object(self.i,'memory_admission'),
+              patch.object(self.i,'provisioner_forensics'),patch.object(self.i,'forensics',side_effect=capture),
+              patch.object(self.i,'delete_binding',side_effect=lambda n,u:events.append(('delete',n,u)))):
+            self.i.bind_created()
+        self.assertEqual(events,['one-job','capture',('delete','nc-binding-'+self.run,'own-job')])
+        journal=m.s.life.native_cron_events(self.state)
+        self.assertEqual(sum(e['event']=='pending' for e in journal),1)
+        self.assertEqual(sum(e['event']=='clean' for e in journal),1)
+        self.assertEqual(sum(e['event']=='initialization-bound-observation' for e in journal),3)
+        self.assertFalse(self.i.pending())
+
+    def test_continuation_stop_real_capture_exact_uid_retirement_and_no_foreign_delete(self):
+        self.continuation_fixture();self.consume_continuation();name='nc-binding-'+self.run
+        self.i.save(dict(event='initialization-binding-created',run_id=self.run,name=name,uid='own'))
+        events=[]
+        def obj(*args):
+            if 'jobs' in args:return {'items':[]} if '--field-selector' in args else {'items':[dict(metadata=dict(name=name,uid='own'))]}
+            if 'job' in args:return dict(metadata=dict(uid='own'))
+            if 'pods' in args:return {'items':[]}
+            raise AssertionError(args)
+        def call(*args,**kw):
+            if args[0]=='delete':
+                self.assertEqual(json.loads(kw['data'])['preconditions'],{'uid':'own'});events.append('delete-own')
+            else:self.assertIn('wait',args)
+            return ''
+        with (patch.object(self.i,'target'),patch.object(self.i,'obj',side_effect=obj),patch.object(self.i,'call',side_effect=call),
+              patch.object(self.i,'provisioner_forensics'),patch.object(self.i,'forensics',side_effect=lambda n:(events.append('capture') or ({'items':[]},{},[]))),
+              patch.object(self.i,'barriers')):
+            self.i.stop()
+        self.assertEqual(events,['capture','delete-own']);self.assertFalse(self.i.pending())
+
+    def test_continuation_origin_filename_and_document_intent_hash_rebinding_reject(self):
+        self.continuation_fixture();baseline=copy.deepcopy(self.r)
+        self.r['origin_journal_sha256']={'../outside.json':'0'*64};self.write()
+        with patch.object(m.s.life,'lease',side_effect=AssertionError('no API')):
+            with self.assertRaises(RuntimeError):self.i.authorize(start=True)
+        self.r=baseline
+        path=next(p for p in self.state.glob('*.json') if json.loads(p.read_text()).get('event')=='initialization-create-intent')
+        e=json.loads(path.read_text());e['document']['metadata']['namespace']='foreign'
+        path.write_text(json.dumps(e));self.r['origin_journal_sha256'][path.name]=hashlib.sha256(path.read_bytes()).hexdigest();self.write()
+        with patch.object(m.s.life,'lease',side_effect=AssertionError('no API')):
+            with self.assertRaisesRegex(RuntimeError,'eleven create'):self.i.authorize(start=True)
+
+    def test_continuation_unreachable_first_admission_consumes_authority_no_retry(self):
+        self.continuation_fixture()
+        with patch.object(m.s.life,'lease',side_effect=RuntimeError('unreachable')):
+            with self.assertRaisesRegex(RuntimeError,'unreachable'):self.i.bind_created()
+        self.assertEqual(self.i.pending(),{self.run})
+        with patch.object(m.s.life,'lease',side_effect=AssertionError('retry API forbidden')):
+            with self.assertRaisesRegex(RuntimeError,'replayed'):self.i.bind_created()
+
+    def test_continuation_stop_uses_new_scope_and_existing_uid_capture_retirement(self):
+        self.continuation_fixture();self.consume_continuation()
+        with patch.object(self.i,'retire_binding') as retire:
+            self.i.stop();retire.assert_called_once();self.assertEqual(self.i.scope,'bind-created')
+        with patch.object(m.s.life,'lease'):
+            self.i.authorize()  # new receipt, not expired origin, remains authority
 
 if __name__=='__main__':unittest.main()

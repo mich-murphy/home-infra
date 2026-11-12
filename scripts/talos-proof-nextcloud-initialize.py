@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Separate create-only stopped objects / read-only binding scope. OFFLINE until new grant.
-Never installs, starts applications, issues a full-run receipt, or deletes storage.
+"""Separate stopped-object initialization / provenance-bound read-only binding.
+OFFLINE until a NEW exact parent grant. Never installs, starts applications,
+issues a full-run receipt, or deletes storage. bind-created cannot initialize.
 """
 import argparse
 import copy
@@ -12,6 +13,7 @@ import re
 import stat
 import time
 import yaml
+import uuid
 
 import importlib.util
 from pathlib import Path
@@ -78,7 +80,9 @@ class Initializer(s.Supervisor):
         expected=dict(group='nextcloud',stage='cron',action=self.scope,run_id=self.run,
             state_dir=str(self.state),budget_mib=832,cleanup_authorized=True,
             selected_controllers=['cronjob/nextcloud-cron','deployment/postgres','deployment/redis'],
-            phases=['stopped-objects','readonly-binding'] if self.scope=='initialize' else ['initialization-cleanup'],
+            phases=({'initialize':['stopped-objects','readonly-binding'],
+                     'bind-created':['readonly-binding'],
+                     'initialization-cleanup':['initialization-cleanup']}[self.scope]),
             namespace=NS,storage_device='/dev/sdb1')
         if any(r.get(k)!=v for k,v in expected.items()): raise RuntimeError('separate exact initialization receipt required')
         if (type(r.get('expires')) not in (int,float) or not math.isfinite(r['expires']) or r['expires']<=time.time()
@@ -95,9 +99,128 @@ class Initializer(s.Supervisor):
             raise RuntimeError('all existing identities must be parent-bound')
         if set(r['existing_uids']) & set(missing) or not all(r['existing_uids'].values()): raise RuntimeError('invalid existing UID bindings')
         if self.original is not None and self.original!=raw: raise RuntimeError('immutable initialization receipt changed')
+        if self.scope=='bind-created':
+            self.continuation_provenance(r,start)
+            if start:
+                # Consume locally valid authority before the first runtime query;
+                # even an unreachable target cannot earn a same-ID invocation retry.
+                self.original=raw
+                return r
         s.life.lease('nextcloud')
         self.original=raw
         return r
+
+    def continuation_provenance(self,r,start=False):
+        """Local immutable provenance only. An old receipt never supplies authority."""
+        ident=r.get('authorization_id')
+        try:
+            if str(uuid.UUID(ident))!=ident or uuid.UUID(ident).version!=4: raise ValueError()
+        except (ValueError,TypeError,AttributeError): raise RuntimeError('new canonical authorization_id required') from None
+        if (type(r.get('issued')) not in (int,float) or not math.isfinite(r['issued'])
+            or not 0<r['issued']<=time.time() or r['issued']>=r['expires']):
+            raise RuntimeError('new issued/expires window required')
+        docs=declarations(r['html_claim']); created=r.get('origin_created_uids')
+        if r['allowed_missing_resources']!=[] or not isinstance(created,dict) or set(created)!=set(docs):
+            raise RuntimeError('all eleven original created identities required; no missing declarations')
+        try:
+            if len(set(created.values()))!=11: raise ValueError()
+            for value in created.values():
+                if str(uuid.UUID(value))!=value: raise ValueError()
+        except (ValueError,TypeError,AttributeError): raise RuntimeError('canonical unique original UIDs required') from None
+        if r['existing_uids']!={**created,'secret/proof-credentials':r['existing_uids'].get('secret/proof-credentials')}:
+            raise RuntimeError('created UID handoff mismatch')
+        def read_private(path,digest):
+            path=s.life.no_symlinks(path); info=path.lstat()
+            if (not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode)!=0o600
+                or path==s.ROOT or s.ROOT in path.parents): raise RuntimeError('private immutable origin required')
+            raw=path.read_bytes()
+            if hashlib.sha256(raw).hexdigest()!=digest: raise RuntimeError('origin history hash mismatch')
+            return json.loads(raw)
+        origin=read_private(r.get('origin_receipt_path','/nonexistent'),r.get('origin_receipt_sha256'))
+        for key in ('group','stage','run_id','state_dir','budget_mib','cleanup_authorized',
+                    'selected_controllers','namespace','namespace_uid','context','endpoint','node_uid',
+                    'html_claim','document_sha256','storage_device','storage_device_id'):
+            if origin.get(key)!=r.get(key): raise RuntimeError('origin receipt target/document drift')
+        if (type(origin.get('issued')) not in (int,float) or not math.isfinite(origin['issued']) or r['issued']<=origin['issued']):
+            raise RuntimeError('new issuance must follow original provenance')
+        if (origin.get('action')!='initialize' or origin.get('phases')!=['stopped-objects','readonly-binding']
+            or origin.get('allowed_missing_resources')!=sorted(docs)
+            or origin.get('existing_uids')!={'secret/proof-credentials':r['existing_uids']['secret/proof-credentials']}):
+            raise RuntimeError('original all-missing initialization receipt required')
+        hashes=r.get('origin_journal_sha256')
+        if not isinstance(hashes,dict) or not hashes: raise RuntimeError('original journal hashes required')
+        history=[]
+        for name,digest in hashes.items():
+            try:
+                if str(uuid.UUID(name.removesuffix('.json')))+'.json'!=name: raise ValueError()
+            except (ValueError,TypeError,AttributeError): raise RuntimeError('canonical origin journal filename required') from None
+            event=read_private(self.state/name,digest)
+            if event.get('run_id')!=self.run: raise RuntimeError('foreign original journal run')
+            history.append(event)
+        events=s.life.native_cron_events(self.state)
+        prior=[e for e in events if e.get('run_id')==self.run]
+        # No unreferenced original creates/intents/pending may be enrolled. New
+        # own binding/forensic events remain append-only and are not hash-pinned.
+        original_types={'pending','initialization-created','initialization-create-intent','memory','initialization-blocked-pending'}
+        original=[e for e in history if e.get('event') in original_types]
+        if len(original)!=len(history): raise RuntimeError('unexpected original history event')
+        for e in prior:
+            if e.get('event') in original_types and e not in history:
+                # New phase memory and blocked events are allowed only after the
+                # continuation intent, and never treated as original provenance.
+                if e.get('authorization_id')!=ident or e.get('event') not in ('memory','initialization-blocked-pending'):
+                    raise RuntimeError('unreferenced original history')
+        pending=[e for e in history if e.get('event')=='pending']
+        records=[e for e in history if e.get('event')=='initialization-created']
+        intents=[e for e in history if e.get('event')=='initialization-create-intent']
+        if (len(pending)!=1 or pending[0].get('scope')!='initialize'
+            or pending[0].get('allowed_missing_resources')!=sorted(docs)
+            or len(records)!=11 or len(intents)!=11
+            or len([e for e in prior if e.get('event')=='initialization-created'])!=11
+            or len([e for e in prior if e.get('event')=='initialization-create-intent'])!=11
+            or {e.get('key'):e.get('uid') for e in records}!=created
+            or {e.get('key'):e.get('document') for e in intents}!=docs):
+            raise RuntimeError('exact original eleven create records/intents required')
+        if (len([e for e in prior if e.get('event')=='pending'])!=1
+            or any(e.get('event')=='clean' for e in prior) or self.pending()!={self.run}):
+            raise RuntimeError('exact sole pending original transaction required')
+        if start:
+            if any(e.get('event') in ('initialization-binding-intent','initialization-binding-created') for e in prior):
+                raise RuntimeError('prior binding intent forbids continuation')
+            if any(e.get('authorization_id')==ident for e in events): raise RuntimeError('replayed binding authorization')
+        else:
+            own=[e for e in prior if e.get('event')=='initialization-continuation' and e.get('authorization_id')==ident]
+            if len(own)!=1: raise RuntimeError('single consumed binding authorization required')
+        return created
+
+    def save(self,value):
+        # Tag new continuation observations, without modifying original journals.
+        if self.scope=='bind-created' and self.original is not None:
+            value={**value,'authorization_id':json.loads(self.original)['authorization_id']}
+        return super().save(value)
+
+    def bind_created(self):
+        self.scope='bind-created'
+        r=self.authorize(start=True)
+        self.save(dict(event='initialization-continuation',run_id=self.run))
+        created=r['origin_created_uids']; docs=declarations(r['html_claim'])
+        try:
+            self.authorize()  # fresh target lease after durable single-use intent
+            self.verify_created(docs,created,before_binding=True)
+            self.no_claimrefs(created)
+            self.storage();self.barriers();self.memory_admission();self.barriers()
+            self.verify_created(docs,created,before_binding=True);self.no_claimrefs(created)
+            self.bind_readonly(docs,created,r)
+        except BaseException:
+            self.save(dict(event='initialization-blocked-pending',run_id=self.run,created_uids=created))
+            raise
+
+    def no_claimrefs(self,created):
+        claims={uid for key,uid in created.items() if key.startswith('pvc/')}
+        for pv in self.obj('get','pv')['items']:
+            ref=pv.get('spec',{}).get('claimRef',{})
+            if ref.get('uid') in claims or ref.get('namespace')==NS:
+                raise RuntimeError('existing PV claimRef blocks binding continuation')
 
     def call(self,*args,data=None):
         mutations=s.life.MUTATIONS.intersection(args)
@@ -118,9 +241,12 @@ class Initializer(s.Supervisor):
             if d.get('kind')=='Job':
                 # Binding is a separate generated document, not an arbitrary allowlist bypass.
                 intents=[e['job'] for e in s.life.native_cron_events(self.state) if e.get('event')=='initialization-binding-intent' and e.get('run_id')==self.run]
+                if (self.scope=='bind-created' and any(e.get('event')=='initialization-binding-created' and e.get('run_id')==self.run
+                    for e in s.life.native_cron_events(self.state))):
+                    raise RuntimeError('one binding create only')
                 if len(intents)!=1 or d!=intents[0] or d['metadata']!={'name':'nc-binding-'+self.run,'namespace':NS}:
                     raise RuntimeError('binding intent mismatch')
-            elif key not in r['allowed_missing_resources'] or d!=docs.get(key):
+            elif self.scope=='bind-created' or key not in r['allowed_missing_resources'] or d!=docs.get(key):
                 raise RuntimeError('create document not explicitly authorized')
         return super().call(*args,data=data)
 
@@ -195,7 +321,7 @@ class Initializer(s.Supervisor):
                 if a.get(k)==v:a.pop(k)
         elif actual['kind']=='CronJob':
             for jt in (a['jobTemplate'],b['jobTemplate']):
-                if jt.get('metadata')=={'creationTimestamp':None}: jt.pop('metadata')
+                if jt.get('metadata') in ({},{'creationTimestamp':None}): jt.pop('metadata')
             ap=a['jobTemplate']['spec'];bp=b['jobTemplate']['spec']
             self.envelope(ap['template']['spec'],bp['template']['spec'])
             self.template_metadata(ap['template'].get('metadata',{}),bp['template'].get('metadata',{}))
@@ -246,10 +372,12 @@ class Initializer(s.Supervisor):
         for key,doc in docs.items():
             kind,name=key.split('/')
             obj=self.obj('-n',NS,'get',kind,name)
-            if obj['metadata']['uid']!=created.get(key,r['existing_uids'].get(key)):
-                raise RuntimeError('created/existing UID drift')
+            if (obj['metadata']['uid']!=created.get(key,r['existing_uids'].get(key))
+                or obj['metadata'].get('name')!=name or obj['metadata'].get('namespace')!=NS):
+                raise RuntimeError('created/existing UID/name/namespace drift')
             if kind=='pvc':
-                if before_binding and (obj.get('status',{}).get('phase') not in (None,'Pending') or obj['spec'].get('volumeName')):
+                phases=('Pending',) if self.scope=='bind-created' else (None,'Pending')
+                if before_binding and (obj.get('status',{}).get('phase') not in phases or obj['spec'].get('volumeName')):
                     raise RuntimeError('partial/unexpected binding before helper')
                 actual=copy.deepcopy(obj['spec']);expected=doc['spec']
                 actual.pop('volumeName',None)
@@ -325,7 +453,7 @@ echo PROOF_BINDING_EMPTY_READONLY
         if self.pending():raise RuntimeError('pending cleanup blocks initialization')
         self.unused_run()
         docs=self.inventory();self.storage();self.barriers();self.memory_admission();self.barriers()
-        r=self.authorize(); claims=sorted([r['html_claim'],'postgres-data','redis-data'])
+        r=self.authorize()
         self.save(dict(event='pending',run_id=self.run,scope='initialize',allowed_missing_resources=r['allowed_missing_resources']))
         created={}
         try:
@@ -338,47 +466,52 @@ echo PROOF_BINDING_EMPTY_READONLY
                 self.save(dict(event='initialization-created',run_id=self.run,key=key,uid=created[key]))
             self.verify_created(docs,created,before_binding=True)
             self.storage();self.barriers();self.memory_admission();self.barriers()
-            job=self.binding_job(claims,{n:created['pvc/'+n] for n in claims},r['storage_device_id']);name=job['metadata']['name']
-            self.save(dict(event='initialization-binding-intent',run_id=self.run,job=job))
-            obj=json.loads(self.call('create','-f','-','-o','json',data=json.dumps(job)))
-            uid=obj['metadata']['uid']
-            self.save(dict(event='initialization-binding-created',run_id=self.run,name=name,uid=uid))
-            failure=None
-            try:self.call('-n',NS,'wait','--for=condition=complete','job/'+name,'--timeout=190s')
-            except Exception as e:failure=e
-            try:self.provisioner_forensics()
-            except Exception as e:
-                failure=failure or e
-                self.save(dict(event='initialization-provisioner-capture-gap',run_id=self.run,error=type(e).__name__))
-            evidence=self.forensics(name) # raw current/previous logs + states BEFORE delete
-            self.delete_binding(name,uid)
-            if failure:raise failure
-            rawpods,_,_=evidence
-            for pod in rawpods['items']:
-                self.envelope(pod['spec'],job['spec']['template']['spec'],actual_pod=True)
-            self.validate_binding_evidence(evidence)
-            expected={'pvc/'+n:created['pvc/'+n] for n in claims}
-            for n in claims:
-                pvc=self.obj('-n',NS,'get','pvc',n)
-                pv=self.obj('get','pv',pvc['spec']['volumeName'])
-                expected['pv/'+pv['metadata']['name']]=pv['metadata']['uid']
-                self.bound_claim(n,expected)
-                ps=pv['spec']; path=ps.get('local',ps.get('hostPath',{})).get('path','')
-                if (ps.get('persistentVolumeReclaimPolicy')!='Retain' or
-                    path!='/var/mnt/proof/'+ 'pvc-'+pvc['metadata']['uid']+'_'+NS+'_'+n or
-                    ps.get('accessModes')!=['ReadWriteOnce'] or
-                    s.quantity(ps.get('capacity',{}).get('storage','-1'))!=s.quantity(pvc['spec']['resources']['requests']['storage']) or
-                    ps.get('nodeAffinity')!={'required':{'nodeSelectorTerms':[{'matchExpressions':[{'key':'kubernetes.io/hostname','operator':'In','values':['talos-proof']}]}]}}):
-                    raise RuntimeError('unexpected retained PV path/policy')
-                self.save(dict(event='initialization-bound-observation',run_id=self.run,pvc=pvc,pv=pv))
-            self.verify_created(docs,created)
-            self.barriers()
-            self.save(dict(event='initialization-stopped-bound',run_id=self.run,created_uids=created,
-                full_run_authorized=False,provisioner_forensics_complete=False))
-            self.save(dict(event='clean',run_id=self.run))
+            self.bind_readonly(docs,created,r)
         except BaseException:
             self.save(dict(event='initialization-blocked-pending',run_id=self.run,created_uids=created))
             raise
+
+    def bind_readonly(self,docs,created,r):
+        # Shared single helper / capture-before-delete / retained PV oracle.
+        claims=sorted([r['html_claim'],'postgres-data','redis-data'])
+        job=self.binding_job(claims,{n:created['pvc/'+n] for n in claims},r['storage_device_id']);name=job['metadata']['name']
+        self.save(dict(event='initialization-binding-intent',run_id=self.run,job=job))
+        obj=json.loads(self.call('create','-f','-','-o','json',data=json.dumps(job)))
+        uid=obj['metadata']['uid']
+        self.save(dict(event='initialization-binding-created',run_id=self.run,name=name,uid=uid))
+        failure=None
+        try:self.call('-n',NS,'wait','--for=condition=complete','job/'+name,'--timeout=190s')
+        except Exception as e:failure=e
+        try:self.provisioner_forensics()
+        except Exception as e:
+            failure=failure or e
+            self.save(dict(event='initialization-provisioner-capture-gap',run_id=self.run,error=type(e).__name__))
+        evidence=self.forensics(name) # raw current/previous logs + states BEFORE delete
+        self.delete_binding(name,uid)
+        if failure:raise failure
+        rawpods,_,_=evidence
+        for pod in rawpods['items']:
+            self.envelope(pod['spec'],job['spec']['template']['spec'],actual_pod=True)
+        self.validate_binding_evidence(evidence)
+        expected={'pvc/'+n:created['pvc/'+n] for n in claims}
+        for n in claims:
+            pvc=self.obj('-n',NS,'get','pvc',n)
+            pv=self.obj('get','pv',pvc['spec']['volumeName'])
+            expected['pv/'+pv['metadata']['name']]=pv['metadata']['uid']
+            self.bound_claim(n,expected)
+            ps=pv['spec']; path=ps.get('local',ps.get('hostPath',{})).get('path','')
+            if (ps.get('persistentVolumeReclaimPolicy')!='Retain' or
+                path!='/var/mnt/proof/'+ 'pvc-'+pvc['metadata']['uid']+'_'+NS+'_'+n or
+                ps.get('accessModes')!=['ReadWriteOnce'] or
+                s.quantity(ps.get('capacity',{}).get('storage','-1'))!=s.quantity(pvc['spec']['resources']['requests']['storage']) or
+                ps.get('nodeAffinity')!={'required':{'nodeSelectorTerms':[{'matchExpressions':[{'key':'kubernetes.io/hostname','operator':'In','values':['talos-proof']}]}]}}):
+                raise RuntimeError('unexpected retained PV path/policy')
+            self.save(dict(event='initialization-bound-observation',run_id=self.run,pvc=pvc,pv=pv))
+        self.verify_created(docs,created)
+        self.barriers()
+        self.save(dict(event='initialization-stopped-bound',run_id=self.run,created_uids=created,
+            full_run_authorized=False,provisioner_forensics_complete=False))
+        self.save(dict(event='clean',run_id=self.run))
 
     @staticmethod
     def validate_binding_evidence(evidence):
@@ -400,8 +533,12 @@ echo PROOF_BINDING_EMPTY_READONLY
         if not re.search(r'^oom 0$',log,re.M) or not re.search(r'^oom_kill 0$',log,re.M):raise RuntimeError('binding OOM or missing events')
 
     def stop(self):
-        # Original unexpired initialization grant permits retirement, never activation.
-        self.scope='initialize';self.retire_binding()
+        # Original unexpired initialization or NEW bind-created grant permits
+        # only recorded UID retirement, never application/declaration activation.
+        receipt=json.loads(s.life.no_symlinks(os.environ.get('TALOS_PROOF_DATA_LEASE','/nonexistent')).read_bytes())
+        if receipt.get('action') not in ('initialize','bind-created'):
+            raise RuntimeError('original or new binding authorization required for stop')
+        self.scope=receipt['action'];self.retire_binding()
 
     def cleanup_only(self):
         self.scope='initialization-cleanup';self.retire_binding()
@@ -434,9 +571,10 @@ echo PROOF_BINDING_EMPTY_READONLY
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('action',choices=['initialize','stop','cleanup']);p.add_argument('--state',required=True);p.add_argument('--run-id',required=True)
+    p.add_argument('action',choices=['initialize','bind-created','stop','cleanup']);p.add_argument('--state',required=True);p.add_argument('--run-id',required=True)
     a=p.parse_args();i=Initializer(a.state,a.run_id)
     if a.action=='initialize':i.initialize()
+    elif a.action=='bind-created':i.bind_created()
     elif a.action=='stop':i.stop()
     else:i.cleanup_only()
     print('Stopped initialization scope ended. NEW post-binding parent UID receipt still required; no native acceptance.')
