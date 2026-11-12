@@ -85,7 +85,8 @@ class API:
                 time.sleep(2)
         raise RuntimeError('Gateway readiness exhausted')
 
-    def call(self, path, method='GET', data=None, form=None, raw=False, headers=None, payload=None):
+    def call(self, path, method='GET', data=None, form=None, raw=False, headers=None, payload=None,
+             *, max_bytes=None, timeout=45):
         if not path.startswith('/') or path.startswith('//'):
             raise ValueError('API path must remain same-origin')
         hdr = {**self.headers, **(headers or {})}
@@ -96,11 +97,17 @@ class API:
             payload = urllib.parse.urlencode(form).encode()
             hdr['Content-Type'] = 'application/x-www-form-urlencoded'
         req = urllib.request.Request(self.base + path, data=payload, method=method, headers=hdr)
-        with self.opener.open(req, timeout=45) as response:
+        if max_bytes is not None and (type(max_bytes) is not int or not 0 < max_bytes <= 1048576):
+            raise ValueError('invalid bounded API response size')
+        if not isinstance(timeout, (int, float)) or isinstance(timeout, bool) or not 0 < timeout <= 45:
+            raise ValueError('invalid API socket timeout')
+        with self.opener.open(req, timeout=timeout) as response:
             self.last_url = response.geturl()
             self.last_status = response.status
             self.last_headers = dict(response.headers)
-            body = response.read()
+            body = response.read() if max_bytes is None else response.read(max_bytes + 1)
+            if max_bytes is not None and len(body) > max_bytes:
+                raise ValueError('bounded API response exceeded')
         if raw:
             return body
         return json.loads(body) if body else None

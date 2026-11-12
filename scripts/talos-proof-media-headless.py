@@ -252,7 +252,7 @@ class MemoryWatch:
 
 
 def decode(source, ffmpeg, private_root, *, size=FIXTURE_BYTES, digest=FIXTURE_SHA256,
-           observe=None, cancel=None, seconds=MAX_SECONDS):
+           observe=None, cancel=None, seconds=MAX_SECONDS, pump=None):
     """Stream bytes straight to ONE owned child; no input file or other process.
 
     observe(progress, alive, hash_verified) is a trusted bounded integration
@@ -305,11 +305,14 @@ def decode(source, ffmpeg, private_root, *, size=FIXTURE_BYTES, digest=FIXTURE_S
             path = run / (label + '-' + uuid.uuid4().hex + '.raw')
             fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
             logs.append(os.fdopen(fd, 'wb'))
-        # Start before producer thread: preexec resource limits run single-threaded.
-        process = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        # Never preexec_fn: callers may already have threads. A fresh isolated
+        # Python exec applies limits then replaces itself with the exact decoder.
+        launcher = Path(__file__).with_name('talos-proof-media-headless-exec.py')
+        process = subprocess.Popen([sys.executable, '-I', '-S', str(launcher), *argv],
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, cwd=home,
                                    env={'HOME': str(home), 'TMPDIR': str(home), 'LANG': 'C', 'LC_ALL': 'C'},
-                                   close_fds=True, start_new_session=True, preexec_fn=_limits)
+                                   close_fds=True, start_new_session=True)
         for stream, label in ((process.stdout, 0), (process.stderr, 1)):
             os.set_blocking(stream.fileno(), False)
             selector.register(stream, selectors.EVENT_READ, label)
@@ -323,6 +326,8 @@ def decode(source, ffmpeg, private_root, *, size=FIXTURE_BYTES, digest=FIXTURE_S
             require(time.monotonic() < deadline, 'decoder wall-time exceeded')
             require(cancel is None or not cancel.is_set(), 'decode cancelled')
             memory.check(process)
+            if pump:
+                pump(process, parser.last, verified)
             for key, _ in selector.select(timeout=0.05):
                 if key.data == 2:
                     if not pending:
