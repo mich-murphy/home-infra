@@ -4,6 +4,13 @@
 > Docker remains authoritative and unchanged. A passing static CI job is not a
 > functional, recovery, capacity or production-readiness verdict. Current live
 > acceptance and outstanding corrections are in [the delivery record](talos-proof-delivery.md).
+>
+> **2026-11-12: VM120 is stopped.** The guard reported sustained host swap IO and
+> confirmed QEMU exit at07:18:58UTC. No subsequent diagnostic receipt was issued
+> or run. Leave the VM off; explicit new authorization through the
+> [guarded lifecycle procedure](talos-proof-host-lifecycle.md) is required before
+> further live work. Do not reset the baseline, relax thresholds or use direct
+> `qm start`. Historical evidence below is not a current running-state claim.
 
 ## Bounded live evidence so far
 

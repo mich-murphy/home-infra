@@ -1,5 +1,25 @@
 # Talos proof platform
 
+## Current state — 2026-11-12: stopped by guard
+
+At07:18:58UTC the resource guard reported `sustained host swap IO`; its stop
+handler confirmed the original proof QEMU exited. A later parent admission GET
+received a connection reset. Read-only host inspection found no VM120 PID file
+and the guard failed with `exit-code`. No new diagnostic receipt or invocation
+occurred; VM120 remains off. No restart, baseline reset or threshold change was
+attempted. A new guarded-start window requires explicit authorization via the
+[existing lifecycle procedure](talos-proof-host-lifecycle.md), with fresh unchanged
+checks—not direct `qm start`.
+
+The deployed lifecycle/guard/unit hashes match the frozen repository. Original
+swap baseline24KiB is retained; historical28KiB differs from the later6328KiB
+observation after the stop. That later host MemAvailable5390.094MiB is not startup
+authority. Last logged successful guard sample was2595MiB available/swap4652KiB;
+the guard's raw swap-page increments were not logged. The responsible workload,
+post-stop guest API/storage integrity and recovery remain unestablished.
+[Sanitized evidence](evidence/talos-acceptance/guard-stop-before-diagnostic-634f727438df495397f768820517280c.json)
+preserves private capture hashes. The verified checkpoints below are historical.
+
 ## Verified checkpoint — 2026-11-11
 
 VM120 is a new, isolated proof guest. Authenticated Talos1.14.5, etcd, kubelet and

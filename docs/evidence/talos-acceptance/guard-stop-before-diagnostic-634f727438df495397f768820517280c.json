@@ -1,0 +1,58 @@
+{
+  "observed_utc": "2026-11-12T07:51:05.108519+00:00",
+  "scope": "read-only admission failure and retained guard-stop evidence; no restart or diagnostic authority",
+  "candidate_run_id": "b4508daa-f573-41d9-82e6-2d7ce60ef798",
+  "candidate_receipt_issued": false,
+  "candidate_invocations": 0,
+  "candidate_canonical_events": 0,
+  "canonical_files_unchanged": 111,
+  "canonical_json_records": 102,
+  "canonical_private_logs": 9,
+  "effective_pending_runs": 0,
+  "initial_kubernetes_observation": "connection reset by peer; no fresh node/namespace/storage/memory acceptance",
+  "guard_failure_utc": "2026-11-12T07:18:58.243605+00:00",
+  "guard_reported_failure": "sustained host swap IO",
+  "stop_confirmed_utc": "2026-11-12T07:18:58.453797+00:00",
+  "guard_stop_message": "STOP confirmed: original proof QEMU exited",
+  "deployed_guard_lifecycle_unit_match_frozen_repository": true,
+  "configured_check": "swap IO page counter increments on three successive samples; nominal five-second sample interval",
+  "raw_swap_io_page_counts_retained": false,
+  "last_successfully_logged_sample": {
+    "event": "sample",
+    "time": 1794467933.219953,
+    "available_mib": 2595,
+    "swap_used_kib": 4652,
+    "psi_delta_percent": {
+      "some": 3.999610467567257e-05,
+      "full": 1.9998052337836285e-05
+    }
+  },
+  "later_readonly_host_observation": {
+    "pidfile_present": false,
+    "pid": null,
+    "pid_alive": false,
+    "guard": {
+      "Result": "exit-code",
+      "ActiveState": "failed",
+      "SubState": "failed"
+    },
+    "host_available_mib": 5390.09375,
+    "swap_used_kib": 6328
+  },
+  "original_swap_baseline_kib": 24,
+  "previous_historical_swap_used_kib": 28,
+  "vm_uuid_matches": true,
+  "vm_memory_mib": 3072,
+  "left_stopped": true,
+  "restart_or_resume_attempts": 0,
+  "threshold_or_baseline_changes": 0,
+  "underlying_workload_causing_swap_io": "not established",
+  "current_guest_API_storage_or_app_integrity": "not verified after guard stop",
+  "last_application_shutdown_evidence": "diagnostic43 failure/release27607487, before this stop; subsequent authorized work offline",
+  "private_capture": "diagnostics/parent-diagnostic-admission-5fda2c8fe31b4248bf8a007802e9450e",
+  "private_manifest_sha256": "8a89562087ed58c2a8a9434bfce8437ba09ce96a518fc593b7cdf95a100c155b",
+  "guard_journal_sha256": "0411b2712a47da0fba58cf8a2c788019c3351637aa8d1b6be731f8ea8ec4840d",
+  "next_live_requirement": "explicit new guarded-start authorization and fresh unchanged lifecycle/resource/isolation checks; no direct qm start",
+  "procedure_url": "https://github.com/mich-murphy/home-infra/blob/feat/talos-live-proof/docs/talos-proof-host-lifecycle.md",
+  "native_acceptance": false
+}
