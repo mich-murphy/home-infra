@@ -37,6 +37,71 @@ function hashCheck(string $root, string $relative, string $expected, string $gat
         ['source_root'=>$root,'source_relative'=>substr($relative,0,256),
          'expected_sha256'=>$expected,'actual_sha256'=>$actual === false ? 'unavailable' : $actual]);
 }
+/** Only the receipt-bound read-only /proof ConfigMap metadata key is projected.
+ * Kubernetes AtomicWriter: key -> ..data/key; ..data -> ..timestamp directory.
+ * No path arguments, ordinary-file fallback, or source/PVC symlink exception.
+ */
+function projectedMetadata(): string {
+    $mount = '/proof';
+    $key = 'packaged-metadata.json';
+    $expected = '86a6fd499c4bc438efc6cc0e4b87b11b69c8c21b111de29c6f2fce3d73bde32c';
+    $limit = 8192;
+    $context = ['source_root'=>'/proof','source_relative'=>$key,
+        'expected_sha256'=>$expected,'actual_sha256'=>'unavailable'];
+    $inspect = static function(string $path, int $type) use ($context): array {
+        clearstatcache(true, $path);
+        $s = @lstat($path);
+        need(is_array($s), 'projected metadata path unavailable', $context);
+        need(($s['mode'] & 0170000) === $type, 'projected metadata type invalid', $context);
+        return array_intersect_key($s, array_flip(['dev','ino','mode','nlink','size','mtime','ctime']));
+    };
+    $snapshot = static function() use ($mount,$key,$inspect,$context,$limit): array {
+        $state = [];
+        // Includes mount and all ancestors; none may itself be a symlink.
+        for ($part = $mount; ; $part = dirname($part)) {
+            $state[$part] = $inspect($part, 0040000);
+            if ($part === '/') { break; }
+        }
+        $entry = $mount.'/'.$key; $data = $mount.'/..data';
+        $state[$entry] = $inspect($entry, 0120000);
+        $state[$data] = $inspect($data, 0120000);
+        $entryLink = @readlink($entry); $dataLink = @readlink($data);
+        need($entryLink === '..data/'.$key, 'projected metadata entry link invalid', $context);
+        need(is_string($dataLink) && strlen($dataLink) <= 128
+            && preg_match('/^\.\.[0-9]{4}_[0-9]{2}_[0-9]{2}_[0-9]{2}_[0-9]{2}_[0-9]{2}\.[0-9]+$/D', $dataLink) === 1,
+            'projected metadata data link invalid', $context);
+        $directory = $mount.'/'.$dataLink;
+        $target = $directory.'/'.$key;
+        $state[$directory] = $inspect($directory, 0040000);
+        $state[$target] = $inspect($target, 0100000);
+        need($state[$target]['nlink'] === 1 && $state[$target]['size'] > 0 && $state[$target]['size'] <= $limit,
+            'projected metadata target bounds invalid', $context);
+        need(realpath($entry) === $target, 'projected metadata target resolution invalid', $context);
+        return ['state'=>$state,'entry_link'=>$entryLink,'data_link'=>$dataLink,'target'=>$target];
+    };
+    $before = $snapshot();
+    $stream = @fopen($before['target'], 'rb');
+    need(is_resource($stream), 'projected metadata read unavailable', $context);
+    try {
+        $descriptor = static function() use ($stream): array {
+            $s = fstat($stream);
+            need(is_array($s), 'projected metadata descriptor unavailable');
+            return array_intersect_key($s, array_flip(['dev','ino','mode','nlink','size','mtime','ctime']));
+        };
+        need($descriptor() === $before['state'][$before['target']] && $snapshot() === $before,
+            'projected metadata identity changed', $context);
+        $bytes = @stream_get_contents($stream, $limit + 1);
+        need(is_string($bytes), 'projected metadata read unavailable', $context);
+        need(strlen($bytes) === $before['state'][$before['target']]['size'] && strlen($bytes) <= $limit,
+            'projected metadata read bounds invalid', $context);
+        need($descriptor() === $before['state'][$before['target']] && $snapshot() === $before,
+            'projected metadata identity changed', $context);
+    } finally { fclose($stream); }
+    $actual = hash('sha256', $bytes);
+    need(hash_equals($expected, $actual), 'reviewed packaged metadata drift',
+        array_replace($context, ['actual_sha256'=>$actual]));
+    return $bytes;
+}
 function exclusive(string $path, array $value): void {
     $stream = fopen($path, 'x');
     need($stream !== false, 'exclusive private journal creation failed');
@@ -57,8 +122,7 @@ function cgroups(): array {
 }
 function parity(string $root): void {
     // Exact approved public artifact bridge; original Git index is untouched.
-    hashCheck('/proof','packaged-metadata.json','86a6fd499c4bc438efc6cc0e4b87b11b69c8c21b111de29c6f2fce3d73bde32c','reviewed packaged metadata drift');
-    $bridge=json_decode(file_get_contents('/proof/packaged-metadata.json'),true,512,JSON_THROW_ON_ERROR);
+    $bridge=json_decode(projectedMetadata(),true,512,JSON_THROW_ON_ERROR);
     need(PHP_OS_FAMILY === 'Linux' && php_uname('m') === 'x86_64', 'reviewed packaged metadata platform mismatch');
     $hashes = json_decode(file_get_contents('/proof/core-hashes.json'), true, 512, JSON_THROW_ON_ERROR);
     need(count($hashes) >= 20, 'incomplete reviewed core source index');

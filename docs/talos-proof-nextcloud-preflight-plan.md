@@ -279,3 +279,72 @@ terminating-plus-replacement Pods, terminal/unknown/Pending/unready/restarted/OO
 backends, the healthy two-Running-Pod positive, drifted-resource helper raw capture
 and guarded retirement, and unknown-owner/live-UID retirement rejection. These are
 synthetic offline fixtures, not live acceptance or a private historical replay.
+
+## Projected metadata reader — offline correction after diagnostic43
+
+Evidence-only commit `27607487` retains the one diagnostic43 failure and confirmed
+stop separately from this source correction. The payload reported fixed gate
+`reviewed packaged metadata drift`, expected bridge SHA25686a6…de32c and actual
+hash unavailable for `/proof/packaged-metadata.json`. **Live file type was not
+captured; the actual runtime reason for unavailable remains unknown.** This new
+GateFailure does not recover the original run's RuntimeException cause. Neither
+failure authorizes a retry or any further runtime operation.
+
+Official Kubernetes research (repository search before fetching source):
+- [AtomicWriter, Kubernetes v1.35.0, lines39–57](https://github.com/kubernetes/kubernetes/blob/v1.35.0/pkg/volume/util/atomic_writer.go#L39-L57)
+  documents visible-file symlinks, hidden timestamp directories and atomic data-link
+  replacement. [Lines458–481](https://github.com/kubernetes/kubernetes/blob/v1.35.0/pkg/volume/util/atomic_writer.go#L458-L481)
+  show the visible `key -> ..data/key` links. This is an upstream layout reference,
+  **not evidence of the failed live mount's layout**.
+- The original ordinary-source `hashCheck()` requires `!is_link($path)`; real
+  workstation PHP reproduces its rejection of a normal projected ConfigMap key.
+
+`projectedMetadata()` is a separate no-path-arguments reader for **only** the
+fixed `/proof/packaged-metadata.json` key. Existing receipt/document validation
+still binds the exact read-only ConfigMap mount and helper scope. The reader
+requires the exact relative key link, relative single-component AtomicWriter
+numeric timestamp data link, real non-link mount/ancestors/timestamp directory,
+and single-link regular target inside that mount. Absolute/escaping/nested or
+alternate key links, extra target symlinks, hardlinks, special files and ordinary
+file fallback reject. It caps metadata at8192bytes, opens the regular target,
+checks descriptor/path identities and complete projection snapshots before and
+after the bounded read, and requires the same exact bridge SHA25686a6…de32c.
+The JSON parser consumes those already-hashed bytes, not a second path read.
+Fixed private gates distinguish unavailable path, wrong type, unavailable read,
+bounds, changed identity and hash mismatch without emitting contents/environment.
+The read-only mount and immutable AtomicWriter timestamp files remain deployment
+prerequisites; this is not a general hostile writable-filesystem reader.
+
+Image and HTML/PVC `hashCheck()` and ancestor-link checks remain unchanged and
+strict. Original source indexes, bridge bytes/hash, image override semantics,
+PHASES, Job scope/resources,192MiB helper limit and832MiB gate remain unchanged.
+Only the PHP reader and its tests/documentation change in this correction; new
+source/document hashes must be independently reviewed for any future authority.
+
+Mandatory regression entry point:
+`TALOS_PROOF_TEST_PHP=/absolute/locked-Nix-PHP/bin/php python3 tests/talos-proof-nextcloud-projection_test.py`.
+Missing/nonabsolute/non-Nix tools fail explicitly; no optional skips or automatic
+tool discovery/build/network. Parent owns flake/devShell/CI/fullgate wiring.
+The15 real-PHP filesystem tests run `php -n` with fresh private0700 HOME/temp,
+0600 fixture files, minimal environment, disabled process/network functions and
+5second per-process timeout. Only extracted production guard declarations run;
+the literal mount is relocated solely in the test copy, with no production
+path override. Deterministic namespaced I/O seams perform real filesystem swaps
+at open/read boundaries; they are not callbacks in production. Coverage includes
+normal projection, missing/escaping/alternate/special/corrupt/oversized targets,
+ancestor links, hardlinks, same-target link replacement, target inode swaps,
+read failure, and unchanged strict ordinary source/PVC symlink rejection.
+No Nextcloud application, image, PVC or proof-state copy is executed or created.
+
+This correction is **not a grant, live validation or native acceptance**. Diagnostic43
+scope is RELEASED and its failed result remains failed. Parent review and a
+separate NEW diagnostic authorization are required before any further runtime work.
+
+Fresh focused validation:15 mandatory real-PHP filesystem tests passed using the
+parent-wired project-lock PHP8.5.7 executable (`php -n`, not earlier8.5.12 and not
+proof-image execution). Related compiler15 + recovery18 + supervisor40 +
+initializer35 + data42 + WOPI14 + workflows20 also pass: **199 tests total, no
+skips**. Full-payload syntax lint with the same locked PHP8.5.7 and fresh private
+HOME passed; `git diff --check` passed. Parent owns the full static gate; no new
+runtime, SSH, credential read, proof-data mutation, image or PHP application
+execution occurred during this source correction.
