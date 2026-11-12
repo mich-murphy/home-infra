@@ -231,15 +231,18 @@ class PreflightTests(unittest.TestCase):
             elif fault=='uid':self.backend_pods['postgres']['metadata']['uid']='replacement'
             else:self.backend_pods['postgres']['status']['containerStatuses'][0]['containerID']='replacement'
             self.i.backend_exec_binding=bound
-            args=('-n',m.s.NS,'exec','postgres-pod','-c',bound['spec']['containers'][0]['name'],'--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/memory.current')
+            args=('-n',m.s.NS,'exec','postgres-pod','-c',bound['spec']['containers'][0]['name'],'--request-timeout=5s','--','/usr/bin/timeout','--kill-after=1s','2','/bin/cat','/sys/fs/cgroup/memory.current')
             with self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=self.backend_kube):
                 with self.assertRaises(RuntimeError):self.i.call(*args)
             self.assertFalse(any('exec' in a for a in self.trace))
 
     def test_backend_exact_exec_allowlist_and_post_identity_check(self):
         self.backend_fixture();bound=copy.deepcopy(self.backend_pods['postgres']);self.i.backend_exec_binding=bound
-        args=('-n',m.s.NS,'exec','postgres-pod','-c',bound['spec']['containers'][0]['name'],'--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/memory.current')
+        args=('-n',m.s.NS,'exec','postgres-pod','-c',bound['spec']['containers'][0]['name'],'--request-timeout=5s','--','/usr/bin/timeout','--kill-after=1s','2','/bin/cat','/sys/fs/cgroup/memory.current')
         bad=[args+('-i',),args[:-1]+('/etc/passwd',),args[:-2]+('sh','/sys/fs/cgroup/memory.current'),args[:4]+('-c','other')+args[6:],args[:3]+('deployment/postgres',)+args[4:]]
+        bad.extend([tuple(x for x in args if x!='--kill-after=1s'),
+                    tuple('--kill-after=0s' if x=='--kill-after=1s' else x for x in args),
+                    tuple('--kill-after=30s' if x=='--kill-after=1s' else x for x in args)])
         with patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=self.backend_kube):
             for command in bad:
                 with self.assertRaises(RuntimeError):self.i.call(*command)
@@ -351,7 +354,7 @@ class PreflightTests(unittest.TestCase):
                 pod['status']['initContainerStatuses']=[dict(name='unexpected-init',restartCount=1,lastState={'terminated':{'exitCode':1}})]
             if fault=='missing-status':pod['status']['containerStatuses']=[]
             self.i.backend_exec_binding=copy.deepcopy(pod)
-            args=('-n',m.s.NS,'exec','postgres-pod','-c',c['name'],'--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/memory.current')
+            args=('-n',m.s.NS,'exec','postgres-pod','-c',c['name'],'--request-timeout=5s','--','/usr/bin/timeout','--kill-after=1s','2','/bin/cat','/sys/fs/cgroup/memory.current')
             with (self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=self.backend_kube)):
                 if fault!='resources':
                     with self.assertRaises(RuntimeError):self.i.call(*args)
@@ -374,7 +377,7 @@ class PreflightTests(unittest.TestCase):
                 result=self.backend_kube(*a,data=data)
                 if when=='post' and 'exec' in a:drift()
                 return result
-            args=('-n',m.s.NS,'exec','postgres-pod','-c',self.backend_pods['postgres']['spec']['containers'][0]['name'],'--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/memory.current')
+            args=('-n',m.s.NS,'exec','postgres-pod','-c',self.backend_pods['postgres']['spec']['containers'][0]['name'],'--request-timeout=5s','--','/usr/bin/timeout','--kill-after=1s','2','/bin/cat','/sys/fs/cgroup/memory.current')
             with self.subTest(when=when),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=kube):
                 with self.assertRaises(RuntimeError):self.i.call(*args)
             self.assertEqual(sum('exec' in a for a in self.trace),int(when=='post'))

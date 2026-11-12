@@ -25,7 +25,7 @@ ARTIFACTS=('docs/evidence/talos-data/nextcloud-cron-source-review-97384394-9c9c-
            'docs/evidence/talos-data/nextcloud-public-image-parity-412faf37-f124-44b2-b52a-418ad71f9cd0.json')
 
 
-BACKEND_PROFILE='backend-cgroup-v2-absolute-tools-execution-envelope-v2'
+BACKEND_PROFILE='backend-cgroup-v2-absolute-tools-execution-envelope-kill-after-v3'
 CGROUP_FILES=('memory.current','memory.peak','memory.events','memory.stat')
 
 
@@ -373,7 +373,7 @@ class Preflight(s.Supervisor):
                 try:
                     for key in CGROUP_FILES:
                         def read(key=key):
-                            raw=self.call('-n',s.NS,'exec',meta['name'],'-c',container,'--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/'+key)
+                            raw=self.call('-n',s.NS,'exec',meta['name'],'-c',container,'--request-timeout=5s','--','/usr/bin/timeout','--kill-after=1s','2','/bin/cat','/sys/fs/cgroup/'+key)
                             metrics[key]=raw
                         attempt(key,read)
                 finally: self.backend_exec_binding=None
@@ -510,7 +510,7 @@ class Preflight(s.Supervisor):
                 bound=getattr(self,'backend_exec_binding',None)
                 if (not bound or data is not None or args not in tuple(
                     ('-n',s.NS,'exec',bound['metadata']['name'],'-c',bound['spec']['containers'][0]['name'],
-                     '--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/'+f) for f in CGROUP_FILES)):
+                     '--request-timeout=5s','--','/usr/bin/timeout','--kill-after=1s','2','/bin/cat','/sys/fs/cgroup/'+f) for f in CGROUP_FILES)):
                     raise RuntimeError('exact recorded backend cgroup command required')
                 statuses=bound.get('status',{}).get('containerStatuses',[])
                 if (bound.get('status',{}).get('phase')!='Running' or len(statuses)!=1

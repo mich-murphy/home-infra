@@ -362,7 +362,7 @@ continuous zero events, and the original RuntimeException cause are **unknown**;
 this correction cannot reconstruct them and has not read historical private state.
 
 A NEW diagnostic receipt must additionally bind
-`backend_forensics_profile: backend-cgroup-v2-absolute-tools-execution-envelope-v2`.
+`backend_forensics_profile: backend-cgroup-v2-absolute-tools-execution-envelope-kill-after-v3`.
 Missing/other profiles fail local authorization before API use; old receipts are
 not reusable. Source5/artifact4/document bindings still apply. Release authority,
 main PHASES, PHP payload (including projected reader), supervisor and lifecycle
@@ -381,15 +381,23 @@ claim to capture unobserved lifetimes between samples.
 For each identity-confirmed owned backend, attempt explicit-container current logs
 and previous logs when restartCount or lastState makes them applicable. For each
 owned Running container, serially issue exactly four commands, one fixed path per
-command: `/usr/bin/timeout 2 /bin/cat /sys/fs/cgroup/memory.current`, then `memory.peak`,
+command: `/usr/bin/timeout --kill-after=1s 2 /bin/cat /sys/fs/cgroup/memory.current`, then `memory.peak`,
 `memory.events`, and `memory.stat`. Each uses namespace, recorded Pod name,
 explicit container, `--request-timeout=5s`, and no stdin/TTY/shell. The command
 allowlist rejects other paths/flags/programs; no shell input, environment dump,
 credential lookup or generic exec is authorized. Missing image tools, inaccessible
 cgroup paths, failed requests or malformed outputs are gaps, never synthetic zero.
-The two-second in-container timeout bounds each reader; existing shared transport
-limits and lease/target checks remain intact. Tool availability and image cgroup
-layout remain unmeasured live prerequisites, not assumed passing evidence.
+The fixed GNU timeout requests TERM after two seconds and KILL escalation one
+second later. Missing/disabled/extended kill-after options are rejected. This is
+not a guaranteed three-second completion/reaping deadline (for example, a kernel
+uninterruptible task can outlive a signal); client timeout likewise does not prove
+remote completion. Any timeout/nonzero/unknown outcome remains a gap and prevents
+clean, even after independently guarded shutdown attempts. Shared transport limits
+and lease/target checks remain intact. The v2 plain-TERM command is superseded,
+not retroactively claimed bounded. Anonymous pinned-image metadata in
+`docs/evidence/talos-data/86cc9cff-c5cc-41e2-99a2-f748d2846016-anonymous-image-metadata.md`
+establishes tool/loader paths and GNU coreutils9.7-3 metadata, not live ABI,
+cgroup layout, runtime permissions or execution. No grant follows from that report.
 
 Exec pre/post checks bind namespace/Pod UID, node name/receipt node UID,
 containerID/restart/state and RS→retained Deployment UID. Raw successful exec
