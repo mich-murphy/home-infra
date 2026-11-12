@@ -20,7 +20,7 @@ m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 class PreflightTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
-        self.state=Path(self.temp.name).resolve();self.state.chmod(0o700)
+        self.state=Path(self.temp.name).resolve()/str(uuid.uuid4());self.state.mkdir(mode=0o700)
         for p in (patch.object(m.s.life,'CANONICAL_DATA_STATE',self.state),
                   patch.object(subprocess,'run',side_effect=AssertionError('OFFLINE runtime forbidden')),
                   patch.object(subprocess,'Popen',side_effect=AssertionError('OFFLINE runtime forbidden'))):
@@ -55,10 +55,15 @@ class PreflightTests(unittest.TestCase):
         self.i.scope='release-preflight';self.origin_fixture();self.write()
 
     def write(self):
+        if not self.path.exists():
+            fd=os.open(self.path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600);os.close(fd)
         self.path.write_text(json.dumps(self.r));self.path.chmod(0o600)
 
     def artifact(self,name,d):
-        p=self.state/name;p.write_text(json.dumps(d));p.chmod(0o600);return str(p),m.digest(p.read_bytes())
+        p=self.state/name
+        fd=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+        with os.fdopen(fd,'w') as f:f.write(json.dumps(d))
+        return str(p),m.digest(p.read_bytes())
 
     def origin_fixture(self):
         self.old_php='<?php /* ORIGINAL private payload, not new code */'
@@ -68,7 +73,7 @@ class PreflightTests(unittest.TestCase):
         old={**copy.deepcopy(self.r),'action':'run','phases':list(m.s.cron.PHASES),'synthetic_age':True,
              'issued':time.time()-5000,'expires':time.time()-1000,'reviewed_source_sha256':old_sources}
         old.pop('authorization_id')
-        self.r['origin_receipt_path'],self.r['origin_receipt_sha256']=self.artifact('issued-old',old)
+        self.r['origin_receipt_path'],self.r['origin_receipt_sha256']=self.artifact(str(uuid.uuid4()),old)
         self.r['origin_source_sha256']=old_sources
         job=m.s.cron.job('preflight',self.run);self.name=job['metadata']['name'];self.uid=str(uuid.uuid4())
         self.r['preflight_job_uid']=self.uid
@@ -87,7 +92,7 @@ class PreflightTests(unittest.TestCase):
         for e in history:
             p=self.i.save(e);self.r['origin_journal_sha256'][p.name]=m.digest(p.read_bytes())
         stopped=dict(at=time.time()-500,namespace=dict(metadata=dict(uid=self.r['namespace_uid'])),nodes=[dict(metadata=dict(uid=self.r['node_uid']))],pods={'items':[]},controllers={'items':[copy.deepcopy(self.cache[k]) for k in self.r['object_uids'] if k.startswith(('deployment/','cronjob/'))]})
-        self.r['origin_stop_snapshot_path'],self.r['origin_stop_snapshot_sha256']=self.artifact('old-stop',stopped)
+        self.r['origin_stop_snapshot_path'],self.r['origin_stop_snapshot_sha256']=self.artifact(str(uuid.uuid4()),stopped)
         uid=str(uuid.uuid4());self.r['payload_configmap_uid']=uid
         cm=dict(kind='ConfigMap',metadata=dict(name='nextcloud-cron-payload-'+self.run,namespace=m.s.NS,uid=uid),data={'native.php':self.old_php})
         self.cache['configmap/'+cm['metadata']['name']]=cm
@@ -173,8 +178,125 @@ class PreflightTests(unittest.TestCase):
         self.i.run=str(uuid.uuid4());self.i.scope='diagnose-preflight';self.r.update(run_id=self.i.run,action='diagnose-preflight',phases=['diagnose-preflight'],authorization_id=str(uuid.uuid4()))
         for key in list(self.r):
             if key.startswith('origin_') or key in ('preflight_job_uid','payload_configmap_uid'):self.r.pop(key)
+        self.r['backend_forensics_profile']=m.BACKEND_PROFILE
         self.write();self.r['document_sha256']=self.i.document_hashes();self.write()
         return self.r
+
+    def backend_fixture(self):
+        self.diagnostic_fixture();self.trace=[];self.backend_pods={};self.rs={}
+        for name in ('postgres','redis'):
+            spec=copy.deepcopy(self.i.approved(name)['spec']['template']['spec']);spec['nodeName']='talos-proof'
+            rsname=name+'-rs'
+            self.rs[rsname]=dict(metadata=dict(name=rsname,namespace=m.s.NS,uid=rsname+'-uid',ownerReferences=[dict(kind='Deployment',name=name,uid=self.r['object_uids']['deployment/'+name],controller=True)]))
+            self.backend_pods[name]=dict(metadata=dict(name=name+'-pod',namespace=m.s.NS,uid=name+'-uid',labels={'app.kubernetes.io/name':name},ownerReferences=[dict(kind='ReplicaSet',name=rsname,uid=rsname+'-uid',controller=True)]),spec=spec,status=dict(phase='Running',containerStatuses=[dict(name=spec['containers'][0]['name'],containerID='containerd://'+name,ready=True,restartCount=0,lastState={},state={'running':{}})]))
+        self.metrics={'memory.current':'1024\n','memory.peak':'2048\n','memory.events':'low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n','memory.stat':'anon 1024\nfile 0\n'}
+
+    def backend_kube(self,*args,data=None):
+        self.trace.append(args)
+        if args[:3]==('get','namespace',m.s.NS): return json.dumps(self.cache['namespace/'+m.s.NS])
+        if args[:2]==('get','nodes'):return json.dumps({'items':[{'metadata':{'name':'talos-proof','uid':self.r['node_uid']}}]})
+        if 'replicaset' in args:return json.dumps(self.rs[args[4]])
+        if 'pod' in args and 'get' in args:return json.dumps(next(p for p in self.backend_pods.values() if p['metadata']['name']==args[4]))
+        if 'pods' in args:return json.dumps({'items':list(self.backend_pods.values())})
+        if 'exec' in args:return self.metrics[args[-1].split('/')[-1]]
+        if 'logs' in args:return 'private backend log'
+        if 'patch' in args:return '{}'
+        if 'wait' in args:return '{}'
+        if 'deployments,statefulsets,daemonsets,cronjobs,jobs' in args:return json.dumps({'items':[]})
+        raise AssertionError(args)
+
+    def test_backend_actual_capture_current_and_previous_and_strict_envelope(self):
+        for fault in (None,'restart','resources','terminating','duplicate'):
+            self.backend_fixture()
+            p=self.backend_pods['postgres']
+            if fault=='restart':p['status']['containerStatuses'][0].update(restartCount=1,lastState={'terminated':{'reason':'OOMKilled'}})
+            if fault=='resources':p['spec']['containers'][0]['resources']['limits']['memory']='999Mi'
+            if fault=='terminating':p['metadata']['deletionTimestamp']='now'
+            if fault=='duplicate':
+                other=copy.deepcopy(p);other['metadata'].update(name='postgres-replacement',uid='replacement');self.backend_pods['extra']=other
+            with self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=self.backend_kube):
+                if fault is None:self.i.backend_forensics('postgres')
+                else:
+                    with self.assertRaises(RuntimeError):self.i.backend_forensics('postgres')
+            logs=[a for a in self.trace if 'logs' in a];execs=[a for a in self.trace if 'exec' in a]
+            self.assertEqual(any('--previous' in a for a in logs),fault=='restart')
+            self.assertEqual(len(execs),8 if fault=='duplicate' else 4)
+            self.assertTrue(logs)
+
+    def test_backend_actual_identity_drift_refuses_exec(self):
+        for fault in ('node','owner','uid','container'):
+            self.backend_fixture();bound=copy.deepcopy(self.backend_pods['postgres'])
+            if fault=='node':self.backend_pods['postgres']['spec']['nodeName']='other'
+            elif fault=='owner':self.rs['postgres-rs']['metadata']['ownerReferences'][0]['uid']='unknown'
+            elif fault=='uid':self.backend_pods['postgres']['metadata']['uid']='replacement'
+            else:self.backend_pods['postgres']['status']['containerStatuses'][0]['containerID']='replacement'
+            self.i.backend_exec_binding=bound
+            args=('-n',m.s.NS,'exec','postgres-pod','-c',bound['spec']['containers'][0]['name'],'--request-timeout=5s','--','timeout','2','cat','/sys/fs/cgroup/memory.current')
+            with self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=self.backend_kube):
+                with self.assertRaises(RuntimeError):self.i.call(*args)
+            self.assertFalse(any('exec' in a for a in self.trace))
+
+    def test_backend_exact_exec_allowlist_and_post_identity_check(self):
+        self.backend_fixture();bound=copy.deepcopy(self.backend_pods['postgres']);self.i.backend_exec_binding=bound
+        args=('-n',m.s.NS,'exec','postgres-pod','-c',bound['spec']['containers'][0]['name'],'--request-timeout=5s','--','timeout','2','cat','/sys/fs/cgroup/memory.current')
+        bad=[args+('-i',),args[:-1]+('/etc/passwd',),args[:-2]+('sh','/sys/fs/cgroup/memory.current'),args[:4]+('-c','other')+args[6:],args[:3]+('deployment/postgres',)+args[4:]]
+        with patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=self.backend_kube):
+            for command in bad:
+                with self.assertRaises(RuntimeError):self.i.call(*command)
+        self.assertEqual(self.trace,[])
+        def kube(*a,data=None):
+            result=self.backend_kube(*a,data=data)
+            if 'exec' in a:self.backend_pods['postgres']['metadata']['uid']='changed-after-read'
+            return result
+        with patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=kube):
+            with self.assertRaises(RuntimeError):self.i.call(*args)
+
+    def test_backend_metrics_missing_malformed_and_oom_never_zero(self):
+        self.backend_fixture();m.Preflight.backend_metrics(self.metrics,'postgres')
+        for key,value in (('memory.current',''),('memory.current','0'),('memory.peak','999999999999'),('memory.events','oom 0\noom_kill 0'),('memory.stat','anon -1\nfile 0'),('memory.stat','anon 1\nanon 2\nfile 0'),('memory.events',self.metrics['memory.events'].replace('oom 0','oom 1')),('memory.events',self.metrics['memory.events'].replace('max 0','max 1'))):
+            with self.subTest(key=key,value=value),self.assertRaises(RuntimeError):m.Preflight.backend_metrics({**self.metrics,key:value},'postgres')
+        with self.assertRaises(RuntimeError):m.Preflight.backend_metrics({},'redis')
+
+    def test_backend_capture_failure_independent_stop_and_helper_retirement(self):
+        self.backend_fixture();name='nc-preflight-'+self.i.run
+        self.i.save(dict(event='phase-created',run_id=self.i.run,name=name,uid='helper-uid'))
+        def kube(*a,data=None):
+            if 'exec' in a and a[3]=='postgres-pod':raise RuntimeError('capture failed')
+            return self.backend_kube(*a,data=data)
+        with (patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=kube),
+              patch.object(self.i,'forensics',return_value=({'items':[]},{},[])),patch.object(self.i,'delete_own_job') as retire,
+              patch.object(self.i,'require_stopped'),patch.object(self.i,'stopped_world')):
+            with self.assertRaisesRegex(RuntimeError,'unconfirmed'):self.i.stop()
+        retire.assert_called_once_with(name)
+        for backend in ('postgres','redis'):
+            patch_index=next(j for j,a in enumerate(self.trace) if 'patch' in a and a[4]==backend)
+            self.assertTrue(any('logs' in a and a[3]==backend+'-pod' for a in self.trace[:patch_index]))
+        self.assertTrue(any('exec' in a and a[3]=='redis-pod' for a in self.trace))
+        self.assertFalse(any(e.get('event')=='clean' for e in m.s.life.native_cron_events(self.state)))
+
+    def test_backend_missing_logs_and_counter_output_remain_capture_gaps(self):
+        for fault in ('logs','counter','unknown-owner','vanished-lifetime'):
+            self.backend_fixture()
+            if fault=='counter':self.metrics['memory.events']='oom not-a-number'
+            if fault=='unknown-owner':self.rs['postgres-rs']['metadata']['ownerReferences'][0]['uid']='unknown'
+            if fault=='vanished-lifetime':
+                old=copy.deepcopy(self.backend_pods['postgres']);old['metadata'].update(name='old-postgres',uid='old-uid')
+                self.i.save(dict(event='backend-observed-pod',run_id=self.i.run,backend='postgres',pod=old))
+            def kube(*a,data=None):
+                if fault=='logs' and 'logs' in a:raise RuntimeError('logs unavailable')
+                return self.backend_kube(*a,data=data)
+            with self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=kube):
+                with self.assertRaises(RuntimeError):self.i.backend_forensics('postgres')
+            if fault=='unknown-owner':self.assertFalse(any('exec' in a for a in self.trace))
+            events=[e for e in m.s.life.native_cron_events(self.state) if e.get('run_id')==self.i.run]
+            self.assertTrue(any(e.get('event')=='backend-capture-gap' for e in events))
+            self.assertTrue(any(e.get('event')=='backend-capture-pod' for e in events))
+            self.assertFalse(any(e.get('event')=='clean' for e in events))
+
+    def test_backend_profile_missing_rejects_before_api(self):
+        self.diagnostic_fixture();self.r.pop('backend_forensics_profile');self.write()
+        with patch.object(m.s.life,'kube',side_effect=AssertionError('no API')):
+            with self.assertRaisesRegex(RuntimeError,'exact separate'):self.i.authorize(start=True)
 
     def test_release_complete_memory_multiplicity_and_nonvacuous_snapshot(self):
         self.i.release_provenance(self.r)
@@ -280,7 +402,8 @@ class PreflightTests(unittest.TestCase):
                 if 'wait' in args:return '{}'
                 raise AssertionError(args)
             with self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=kube):
-                if fault in (None,'drift'):self.i.stop()
+                if fault in (None,'drift'):
+                    with self.assertRaisesRegex(RuntimeError,'unconfirmed'):self.i.stop()
                 else:
                     with self.assertRaisesRegex(RuntimeError,'unconfirmed'):self.i.stop()
             self.assertIn(self.i.run,self.i.pending())

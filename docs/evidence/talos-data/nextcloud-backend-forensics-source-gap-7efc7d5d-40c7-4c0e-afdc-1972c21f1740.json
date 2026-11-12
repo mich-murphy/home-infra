@@ -1,0 +1,37 @@
+{
+  "kind": "offline-source-gap-note",
+  "scope": "diagnostic-only-backend-forensics",
+  "authority": false,
+  "native_acceptance": false,
+  "historical_basis": "Parent-provided transfer; no private historical state accessed",
+  "historical_gap": {
+    "diagnostic": "43",
+    "capture_files_parent_count": 4515,
+    "logs_requests_parent_count": 2,
+    "logs_subject": "own PHP helper only",
+    "exec_requests_parent_count": 0,
+    "backend_current_previous_logs": "not captured",
+    "backend_cgroup_counters": "not captured",
+    "backend_oom_absence": "unknown",
+    "original_runtime_exception": "unknown"
+  },
+  "immutable_references": [
+    "27607487",
+    "docs/evidence/talos-acceptance/nextcloud-diagnostic-failure-review-b47846fac38c4b8a899f090b6c0a66fc.json"
+  ],
+  "new_receipt_profile": "backend-cgroup-v2-timeout-cat-four-files-serial-v1",
+  "limits_mib": {
+    "postgres": 384,
+    "redis": 64,
+    "cli": 192,
+    "reserve": 192,
+    "total": 832
+  },
+  "limitations": [
+    "Finite sequential samples, not continuous observation",
+    "Reader overhead is charged inside backend cgroups",
+    "Image timeout/cat availability and live cgroup paths unmeasured",
+    "No retrospective backend OOM0 or full-forensic claim",
+    "No new live authority; parent review/fullgate required"
+  ]
+}

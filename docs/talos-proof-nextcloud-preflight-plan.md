@@ -145,7 +145,8 @@ UID/GID33, no token/init/sidecar, backoff0 and180second deadline remain. Fixture
 intent JSON is removed from its ConfigMap. The public compiler/main PHASES and
 supervisor actions are **not widened**. Only this separate guarded entry point
 can authorize its exact documents; non-Job/declaration/Secret changes, alternate
-Jobs, arbitrary patches/deletes, exec and main phases reject.
+Jobs, arbitrary patches/deletes, generic exec and main phases reject. The sole
+backend cgroup-reader exception is specified below.
 
 Reuse fresh dual832 admission, native identities/envelopes, all retained UIDs,
 six policies and global proof barriers before starting only PG384/Redis64 and
@@ -348,3 +349,72 @@ skips**. Full-payload syntax lint with the same locked PHP8.5.7 and fresh privat
 HOME passed; `git diff --check` passed. Parent owns the full static gate; no new
 runtime, SSH, credential read, proof-data mutation, image or PHP application
 execution occurred during this source correction.
+
+
+## Diagnostic-only backend forensics — offline source correction
+
+Historical source gap: parent reports that diagnostic43's4515 capture files
+contain only two logs requests (both for its own PHP helper) and zero execs.
+The old stop retained raw backend Pod state but did not request backend current/
+previous logs or cgroup counters before scale-to-zero. Evidence27607487 and parent
+review b47846fac38c4b8a899f090b6c0a66fc remain immutable. Backend OOM absence,
+continuous zero events, and the original RuntimeException cause are **unknown**;
+this correction cannot reconstruct them and has not read historical private state.
+
+A NEW diagnostic receipt must additionally bind
+`backend_forensics_profile: backend-cgroup-v2-timeout-cat-four-files-serial-v1`.
+Missing/other profiles fail local authorization before API use; old receipts are
+not reusable. Source5/artifact4/document bindings still apply. Release authority,
+main PHASES, PHP payload (including projected reader), supervisor and lifecycle
+are unchanged. No grant or diagnostic retry is issued by this source change.
+
+Before EACH backend's UID-tested zero-replica patch, retain private raw namespace
+Pod lists and each relevant Pod's complete metadata/spec/status (UID, containerID,
+restartCount and lastState included). Resolve ReplicaSet ownership to the retained
+Deployment UID, rather than trusting labels or RS name prefixes. Include known
+lifetimes observed during admission, duplicates, terminating Pods and replacements;
+missing lifetimes/cardinality changes fail acceptance. Refresh and retain the final
+Pod list to expose replacement races. This is finite sampling, not a watch or a
+claim to capture unobserved lifetimes between samples.
+
+For each identity-confirmed owned backend, attempt explicit-container current logs
+and previous logs when restartCount or lastState makes them applicable. For each
+owned Running container, serially issue exactly four commands, one fixed path per
+command: `timeout 2 cat /sys/fs/cgroup/memory.current`, then `memory.peak`,
+`memory.events`, and `memory.stat`. Each uses namespace, recorded Pod name,
+explicit container, `--request-timeout=5s`, and no stdin/TTY/shell. The command
+allowlist rejects other paths/flags/programs; no shell input, environment dump,
+credential lookup or generic exec is authorized. Missing image tools, inaccessible
+cgroup paths, failed requests or malformed outputs are gaps, never synthetic zero.
+The two-second in-container timeout bounds each reader; existing shared transport
+limits and lease/target checks remain intact. Tool availability and image cgroup
+layout remain unmeasured live prerequisites, not assumed passing evidence.
+
+Exec pre/post checks bind namespace/Pod UID, node name/receipt node UID,
+containerID/restart/state and RS→retained Deployment UID. Raw successful exec
+output is saved privately before post-check interpretation, so post-read drift
+still leaves the sample but fails acceptance. No shared guard bypass is used.
+Memory current/peak must be positive integers within the unchanged backend limit;
+events/stat require strict unique nonnegative integer fields. Missing counters,
+OOM/oom_kill, max/high events, restarts/lastState or malformed output fail. Reads
+are sequential: no peak>=current assertion or continuous-zero inference follows.
+
+Resource drift does not prevent capturing an identity-confirmed owned Pod, but
+fails acceptance. Capture and stop attempts are independent per backend: a PG
+capture/control failure cannot suppress Redis capture/stop or legitimate helper
+capture/retirement. Identity-only known-controller stop may proceed for safety;
+unknown Pods are never deleted. Any capture/ownership/control uncertainty retains
+PENDING and prevents clean even if later absence checks pass. Helper capture before
+UID retirement and full namespace/target guards remain. No retry loop is added.
+
+The small reader processes run serially inside the already charged backend
+cgroups, consume sampling CPU/memory and can themselves affect sampled peaks.
+No helper resources, tuning or budget relaxation: PG384 + Redis64 + CLI192 +
+reserve192 =832MiB remains fixed. This is diagnostic sampling, **not** capacity,
+full forensics, native acceptance, or retrospective backend OOM0 evidence.
+
+Fresh offline validation: recovery25 actual-method tests and all15 mandatory real
+PHP projection tests pass with project-lock PHP8.5.7 (`php -n`). The PHP code and
+projection tests are unchanged. No cluster/runtime/SSH/proof-state/credential/
+receipt access, image execution, CI or push occurred. Parent owns fullgate,
+independent review and any separate new authority.

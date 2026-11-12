@@ -25,6 +25,10 @@ ARTIFACTS=('docs/evidence/talos-data/nextcloud-cron-source-review-97384394-9c9c-
            'docs/evidence/talos-data/nextcloud-public-image-parity-412faf37-f124-44b2-b52a-418ad71f9cd0.json')
 
 
+BACKEND_PROFILE='backend-cgroup-v2-timeout-cat-four-files-serial-v1'
+CGROUP_FILES=('memory.current','memory.peak','memory.events','memory.stat')
+
+
 def digest(raw): return hashlib.sha256(raw).hexdigest()
 
 
@@ -52,6 +56,7 @@ class Preflight(s.Supervisor):
         required=dict(action=self.scope,phases=[self.scope],group='nextcloud',stage='cron',run_id=self.run,
             state_dir=str(self.state),namespace=s.NS,budget_mib=832,synthetic_age=False,cleanup_authorized=True,
             selected_controllers=['cronjob/nextcloud-cron','deployment/postgres','deployment/redis'])
+        if self.scope=='diagnose-preflight': required['backend_forensics_profile']=BACKEND_PROFILE
         if any(r.get(k)!=v for k,v in required.items()): raise RuntimeError('exact separate preflight receipt required')
         if (not canonical(r.get('authorization_id')) or r['authorization_id']==self.run
             or type(r.get('issued')) not in (int,float) or not math.isfinite(r['issued']) or not 0<r['issued']<=time.time()
@@ -224,6 +229,7 @@ class Preflight(s.Supervisor):
                     or parent[0].get('controller') is not True
                     or parent[0].get('uid')!=r['object_uids']['deployment/'+app]):
                     raise RuntimeError('backend Pod deployment ownership mismatch')
+                self.save(dict(event='backend-observed-pod',run_id=self.run,backend=app,pod=pod))
                 counts[app]+=1
                 self.envelope(pod['spec'],self.approved(app)['spec']['template']['spec'],actual_pod=True)
                 # Charge every observed Pod, including duplicates; no Deployment-count shortcut.
@@ -246,6 +252,117 @@ class Preflight(s.Supervisor):
         super().admission()
         barriers()
 
+    def backend_identity(self,pod):
+        """Ownership only; never require a healthy resource envelope for capture."""
+        r=self.target();meta=pod['metadata'];name=meta.get('labels',{}).get('app.kubernetes.io/name')
+        if name not in ('postgres','redis'): raise RuntimeError('backend name required')
+        nodes=self.obj('get','nodes')['items']
+        if (len(nodes)!=1 or nodes[0]['metadata'].get('uid')!=r['node_uid']
+            or pod.get('spec',{}).get('nodeName')!=nodes[0]['metadata'].get('name')):
+            raise RuntimeError('backend node drift')
+        def identity(p):
+            m=p.get('metadata',{});owners=m.get('ownerReferences',[])
+            if (m.get('namespace')!=s.NS or not m.get('uid') or not m.get('name')
+                or len(owners)!=1 or owners[0].get('kind')!='ReplicaSet'
+                or owners[0].get('controller') is not True):
+                raise RuntimeError('backend Pod identity/owner gap')
+            rs=self.obj('-n',s.NS,'get','replicaset',owners[0]['name']);rm=rs.get('metadata',{});parents=rm.get('ownerReferences',[])
+            if (rm.get('namespace')!=s.NS or rm.get('uid')!=owners[0].get('uid') or len(parents)!=1
+                or any(parents[0].get(k)!=v for k,v in dict(kind='Deployment',name=name,uid=r['object_uids']['deployment/'+name],controller=True).items())):
+                raise RuntimeError('backend retained Deployment ownership gap')
+            return (m['name'],m['namespace'],m['uid'],owners,p.get('spec',{}).get('nodeName'),
+                    [(c.get('name'),c.get('containerID'),c.get('restartCount'),c.get('state')) for c in p.get('status',{}).get('containerStatuses',[])])
+        expected=identity(pod)
+        live=self.obj('-n',s.NS,'get','pod',meta['name'])
+        if identity(live)!=expected: raise RuntimeError('backend Pod/container identity drift')
+        return live
+
+    @staticmethod
+    def backend_metrics(metrics,name):
+        if set(metrics)!=set(CGROUP_FILES): raise RuntimeError('backend cgroup gap')
+        limit={'postgres':384,'redis':64}[name]*1048576
+        for key in ('memory.current','memory.peak'):
+            if not re.fullmatch(r'[1-9][0-9]*\n?',metrics[key]) or int(metrics[key])>limit:
+                raise RuntimeError('backend byte measurement/limit failure')
+        parsed={}
+        for key,required in (('memory.events',{'oom','oom_kill','max','high','low'}),('memory.stat',{'anon','file'})):
+            values={}
+            for line in metrics[key].splitlines():
+                match=re.fullmatch(r'([a-z][a-z0-9_]*)[ \t]+(0|[1-9][0-9]*)',line)
+                if not match or match[1] in values: raise RuntimeError('malformed backend counter')
+                values[match[1]]=int(match[2])
+            if not required<=values.keys(): raise RuntimeError('missing backend counter')
+            parsed[key]=values
+        if any(parsed['memory.events'][key] for key in ('oom','oom_kill','max','high')):
+            raise RuntimeError('backend OOM/limit event')
+
+    def backend_forensics(self,name):
+        gaps=[]
+        def attempt(label,fn):
+            try: return fn()
+            except Exception as e:
+                gaps.append(label)
+                self.save(dict(event='backend-capture-gap',run_id=self.run,backend=name,operation=label,
+                    error_type=type(e).__name__,stdout=getattr(e,'stdout',None),stderr=getattr(e,'stderr',None)))
+        pods=self.obj('-n',s.NS,'get','pods')
+        self.save(dict(event='backend-raw-pods',run_id=self.run,backend=name,pods=pods))
+        relevant=[];seen=set()
+        candidates=list(pods['items'])
+        candidates.extend(e['pod'] for e in s.life.native_cron_events(self.state)
+            if e.get('run_id')==self.run and e.get('event')=='backend-observed-pod' and e.get('backend')==name)
+        for pod in candidates:
+            meta=pod.get('metadata',{});owners=meta.get('ownerReferences',[])
+            app=meta.get('labels',{}).get('app.kubernetes.io/name')
+            owned=False
+            for owner in owners:
+                if owner.get('kind')!='ReplicaSet': continue
+                rs=attempt('discover-owner',lambda:self.obj('-n',s.NS,'get','replicaset',owner['name']))
+                if rs is not None:
+                    owned=owned or any(p.get('kind')=='Deployment' and p.get('name')==name
+                        for p in rs.get('metadata',{}).get('ownerReferences',[]))
+            if (app==name or owned) and meta.get('uid') not in seen:
+                seen.add(meta.get('uid'));relevant.append(pod)
+        if len(relevant)!=1: gaps.append('backend-cardinality')
+        for pod in relevant:
+            self.save(dict(event='backend-capture-pod',run_id=self.run,backend=name,pod=pod))
+            if attempt('identity',lambda:self.backend_identity(pod)) is None: continue
+            meta=pod['metadata'];containers=pod.get('spec',{}).get('containers',[])
+            statuses=pod.get('status',{}).get('containerStatuses',[])
+            attempt('envelope',lambda:self.envelope(pod['spec'],self.approved(name)['spec']['template']['spec'],actual_pod=True))
+            if (len(containers)!=1 or len(statuses)!=1 or not statuses[0].get('containerID')
+                or statuses[0].get('name')!=containers[0].get('name')):
+                gaps.append('container-status');continue
+            c=statuses[0];container=c['name']
+            if (meta.get('deletionTimestamp') is not None or pod.get('status',{}).get('phase')!='Running'
+                or c.get('ready') is not True or set(c.get('state',{}))!={'running'}
+                or type(c.get('restartCount')) is not int or c['restartCount']!=0 or c.get('lastState',{})!={}):
+                gaps.append('backend-lifetime-state')
+            for previous in (False,True):
+                if previous and not (c.get('restartCount') or c.get('lastState')): continue
+                def logs(previous=previous):
+                    self.backend_identity(pod)
+                    raw=self.call('-n',s.NS,'logs',meta['name'],'-c',container,*(['--previous'] if previous else []),'--request-timeout=5s')
+                    self.save(dict(event='backend-private-log',run_id=self.run,backend=name,pod_uid=meta['uid'],container=container,previous=previous,log=raw))
+                    self.backend_identity(pod)
+                attempt('previous-log' if previous else 'current-log',logs)
+            metrics={}
+            if pod.get('status',{}).get('phase')=='Running' and set(c.get('state',{}))=={'running'}:
+                self.backend_exec_binding=pod
+                try:
+                    for key in CGROUP_FILES:
+                        def read(key=key):
+                            raw=self.call('-n',s.NS,'exec',meta['name'],'-c',container,'--request-timeout=5s','--','timeout','2','cat','/sys/fs/cgroup/'+key)
+                            metrics[key]=raw
+                        attempt(key,read)
+                finally: self.backend_exec_binding=None
+            attempt('metrics',lambda:self.backend_metrics(metrics,name))
+        refreshed=attempt('final-pod-snapshot',lambda:self.obj('-n',s.NS,'get','pods'))
+        if refreshed is not None:
+            self.save(dict(event='backend-final-pods',run_id=self.run,backend=name,pods=refreshed))
+            if {p.get('metadata',{}).get('uid') for p in refreshed['items']}!={p.get('metadata',{}).get('uid') for p in pods['items']}:
+                gaps.append('changed-pod-lifetimes')
+        if gaps: raise RuntimeError('backend capture/acceptance gaps: '+','.join(gaps))
+
     def stop(self):
         # Diagnostic only: each guarded cleanup gets one independent attempt.
         if self.scope!='diagnose-preflight': raise RuntimeError('diagnostic stop only')
@@ -265,6 +382,7 @@ class Preflight(s.Supervisor):
                 if not uid: raise RuntimeError('backend UID binding required')
                 self.call('-n',s.NS,'patch','deployment',name,'--type=json','-p',json.dumps([
                     dict(op='test',path='/metadata/uid',value=uid),dict(op='replace',path='/spec/replicas',value=0)]))
+            attempt(name+'-capture',lambda name=name:self.backend_forensics(name))
             attempt(name,backend)
         records=[e for e in s.life.native_cron_events(self.state) if e.get('run_id')==self.run and e.get('event')=='phase-created']
         def helper():
@@ -355,9 +473,25 @@ class Preflight(s.Supervisor):
         if self.scope=='release-preflight':
             if mutations or verb!='get': raise RuntimeError('release is read-only; no app/helper command')
         else:
-            if mutations-{'patch','create','delete'}: raise RuntimeError('diagnostic forbids this mutation')
+            if mutations-{'patch','create','delete','exec'}: raise RuntimeError('diagnostic forbids this mutation')
             if not mutations and verb not in ('get','logs','wait'):
                 raise RuntimeError('diagnostic command not allowed')
+            if 'exec' in args:
+                bound=getattr(self,'backend_exec_binding',None)
+                if (not bound or data is not None or args not in tuple(
+                    ('-n',s.NS,'exec',bound['metadata']['name'],'-c',bound['spec']['containers'][0]['name'],
+                     '--request-timeout=5s','--','timeout','2','cat','/sys/fs/cgroup/'+f) for f in CGROUP_FILES)):
+                    raise RuntimeError('exact recorded backend cgroup command required')
+                statuses=bound.get('status',{}).get('containerStatuses',[])
+                if (bound.get('status',{}).get('phase')!='Running' or len(statuses)!=1
+                    or not statuses[0].get('containerID') or set(statuses[0].get('state',{}))!={'running'}):
+                    raise RuntimeError('recorded Running backend container required')
+                self.backend_identity(bound)
+                result=super().call(*args,data=data)
+                self.save(dict(event='backend-cgroup',run_id=self.run,pod_uid=bound['metadata']['uid'],
+                    container=statuses[0]['name'],file=args[-1],raw=result))
+                self.backend_identity(bound)
+                return result
             if 'patch' in args:
                 r=self.authorize();name=args[4] if len(args)>4 else ''
                 if name not in ('postgres','redis') or args[:4]!=('-n',s.NS,'patch','deployment') or args[5:7]!=('--type=json','-p') or len(args)!=8:
