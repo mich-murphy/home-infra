@@ -277,8 +277,15 @@ try {
         case 'install-or-verify': $result=installOrVerify($run); break;
         case 'fixture': $result=fixture($journal); break;
         case 'before': $result=beforeObservation($journal); break;
-        case 'cron':
+        case 'cron-precheck':
+            // Internal child only; never a public phase, Job or grant scope.
+            need(getenv('PROOF_PHASE') === 'cron', 'internal cron precheck only');
             nativeContext(); due(cleanupRow());
+            $result=['native_daily_due_precheck'=>true]; break;
+        case 'cron':
+            // Keep this parent free of Nextcloud core. Wait for one heavy child
+            // to exit before starting the next, all within the same cgroup.
+            nativeCommand(['php',__FILE__,'cron-precheck',$run],$journal.'/cron-precheck.log');
             nativeCommand(['php','-f','/var/www/html/cron.php','--',CLEANUP_CLASS],$journal.'/cron.log');
             $result=['native_cron_exit_zero'=>true,'private_native_log'=>file_get_contents($journal.'/cron.log')]; break;
         case 'assert-restore':

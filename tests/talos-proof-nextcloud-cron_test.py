@@ -114,6 +114,44 @@ class NativeCron(unittest.TestCase):
         self.assertIn('out-of-scope token eligible',php)
         self.assertIn("case 'before'",php)
 
+    def test_cron_wrapper_precheck_is_sequential_and_parent_never_bootstraps_core(self):
+        php=(ROOT/'scripts/talos-proof-nextcloud-cron.php').read_text()
+        body=php.split("case 'cron':",1)[1].split("case 'assert-restore':",1)[0]
+        precheck="nativeCommand(['php',__FILE__,'cron-precheck',$run],$journal.'/cron-precheck.log');"
+        native="nativeCommand(['php','-f','/var/www/html/cron.php','--',CLEANUP_CLASS],$journal.'/cron.log');"
+        self.assertLess(body.index(precheck),body.index(native))
+        self.assertLess(body.index(native),body.index("'native_cron_exit_zero'=>true"))
+        self.assertEqual(body.count('nativeCommand('),2)
+        for forbidden in ('nativeContext(', 'cleanupRow(', 'due(', 'require', 'include', 'proc_open(', 'try', 'catch'):
+            self.assertNotIn(forbidden,body)
+        child=php.split("case 'cron-precheck':",1)[1].split("case 'cron':",1)[0]
+        self.assertIn("need(getenv('PROOF_PHASE') === 'cron', 'internal cron precheck only')",child)
+        self.assertIn('nativeContext(); due(cleanupRow());',child)
+
+    def test_internal_precheck_failure_cannot_reach_second_native_command(self):
+        php=(ROOT/'scripts/talos-proof-nextcloud-cron.php').read_text()
+        command=php.split('function nativeCommand(',1)[1].split('function installOrVerify(',1)[0]
+        self.assertIn("fopen($log,'x')",command)
+        self.assertIn('chmod($log,0600)',command)
+        self.assertIn('is_resource($p) && proc_close($p)===0',command)
+        self.assertIn("need(is_resource($p) && proc_close($p)===0, 'native process failed; preserve partial state')",command)
+        self.assertIn('fflush($f) && fsync($f)',command)
+        self.assertNotIn('catch',command)
+        # Synchronous proc_close + throwing need + no parent catch between the
+        # two statements means a failed precheck cannot launch native cron.
+        need=php.split('function need(',1)[1].split('function exclusive(',1)[0]
+        self.assertIn('throw new RuntimeException($gate)',need)
+        self.assertIn("'status'=>'BLOCKED_OR_FAILED'",php)
+        self.assertIn('exit(1)',php)
+
+    def test_internal_precheck_has_no_public_job_phase_or_receipt_admission(self):
+        self.assertEqual(cron.PHASES,('preflight','install-or-verify','fixture','before','cron','assert-restore'))
+        with self.assertRaises(ValueError):cron.job('cron-precheck',str(uuid.uuid4()))
+        bundle=cron.compile_bundle()
+        phases=[job['spec']['template']['spec']['containers'][0]['env'][0]['value'] for job in bundle['jobs']]
+        self.assertEqual(phases,list(cron.PHASES))
+        self.assertNotIn('cron-precheck',phases)
+
     def test_completed_current_previous_logs_and_raw_laststate_saved_before_deletion(self):
         with tempfile.TemporaryDirectory() as temp:
             os.chmod(temp,0o700)

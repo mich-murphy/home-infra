@@ -35,7 +35,8 @@ class SupervisorTests(unittest.TestCase):
 
     def test_no_api_before_exact_unexpired_receipt(self):
         for changes in [dict(stage='web'),dict(group='immich'),dict(expires=0),dict(run_id=str(uuid.uuid4())),
-                        dict(phases=['cron']),dict(budget_mib=640),dict(endpoint='production'),dict(context=''),
+                        dict(phases=['cron']),dict(phases=[*m.cron.PHASES,'cron-precheck']),
+                        dict(budget_mib=640),dict(endpoint='production'),dict(context=''),
                         dict(cleanup_authorized=False),dict(synthetic_age=False)]:
             self.write(changes)
             with patch.object(m.life,'lease',side_effect=AssertionError('API before lease')),self.assertRaises(RuntimeError):

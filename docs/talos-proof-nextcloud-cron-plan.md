@@ -614,3 +614,57 @@ No credential/backend/native install/cron action, retry or functional/capacity
 acceptance occurred. Budgets/limits/ini remain unchanged;192MiB is still a
 bounded trial constraint, not Nextcloud capacity assurance. Parent-owned root
 docs/gates/integrity review and all retained binding/history remain untouched.
+
+
+## Sequential heavy PHP children in cron phase — OFFLINE checkpoint
+
+The cron phase previously loaded full Nextcloud core in its wrapper and kept
+that runtime alive while launching another full PHP cron runtime. Both were
+inside the same192MiB cgroup, but that was needless heavy-runtime overlap, not
+one single PHP process. The corrected process model is a **lightweight PHP
+parent plus one heavy child at a time**, sequentially:
+
+1. Parent `cron` case invokes this same payload as internal `cron-precheck`,
+   writing a fresh exclusive0600 `$journal/cron-precheck.log`.
+2. Only that child performs `nativeContext(); due(cleanupRow())`; the strict
+   >86400seconds daily due/unreserved predicate is unchanged. Parent waits via
+   synchronous `proc_close`; nonzero exit throws and prevents the next command.
+3. After successful child completion/private-log fsync, parent launches actual
+   `php -f /var/www/html/cron.php -- CLEANUP_CLASS` using the existing private
+   exclusive `cron.log`. No parent core bootstrap occurs in the cron case.
+
+`cron-precheck` is internal dispatch only and requires inherited PROOF_PHASE
+`cron`. It is **not** added to public PHASES, compiled Jobs, supervisor actions or
+receipt phases. This environment check is not independent authorization:
+manual/direct payload invocation remains forbidden. The unchanged supervisor
+still requires a new parent-known run UUID and blocks replay; future phase logs
+are exclusive in that new run's private journal. No old run/log/history was
+modified or a new live run journal created by this offline correction.
+
+All children inherit the same existing pod cgroup. Actual kernel
+current/peak/events/stat reads remain unchanged and encompass child processes;
+no fake observations, extra container or budget exemption exists. The parent
+itself is still PHP and consumes memory: this is **not a single-PHP-process
+claim**. The lightweight parent plus rsync/native-install sequence is otherwise
+unchanged. No force, last_run manipulation, global/default TTL alteration,
+retry, ini/resource/gate change or weakening of physical candidate deletion,
+control survival or native scheduling assertions occurred.192MiB and832MiB
+remain fixed. Supplied official Nextcloud35 documentation context is128MB
+minimum/512MB recommended per process and PHP memory_limit512MB recommended;
+that is not an actual measurement, and this bounded trial is not capacity
+assurance.
+
+Offline contract tests pin precheck-before-cron ordering, absence of parent
+bootstrap, synchronous throwing failure propagation before the second command,
+private exclusive logging and rejection of public precheck phase admission.
+Compiler11 + supervisor40 + initializer35 + data42 = **128 passing tests**.
+`nix shell nixpkgs#php` workstation PHP8.5.12 reports no syntax errors: syntax
+only, not pinned-image/native runtime validation. `git diff --check` passed.
+Upstream core/config hash indexes and manifests were not changed.
+
+Updated native PHP SHA256: `9da32b07324986684c54bc16f934d5745f52bb5f7d6f47a23da7cc32107e0b8e`.
+The supervisor's policy/cgroup admission checks are unchanged. Parent must use
+the updated payload hash when reviewing/issuing a separate new native grant.
+No runtime query, grant, application execution, install/cron result, functional
+PASS, capacity/durability or production-readiness claim follows. Parent-owned
+root docs/gates/integrity review and released policy/binding history are intact.
