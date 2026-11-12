@@ -92,6 +92,10 @@
             *) exit 2 ;;
           esac
         '';
+      # Real PHP filesystem/projection regressions; not proof-image execution.
+      talos-proof-php-tools = pkgs.writeShellScriptBin "talos-proof-php-env" ''
+        printf '%s\n' '${pkgs.php85}/bin/php'
+      '';
       portainer-drift-tools = pkgs.yq-go;
       shellcheck = pkgs.shellcheck;
       terraform-ci = terraformCiFor pkgs;
@@ -129,6 +133,7 @@
           self.packages.${system}.kubernetes-proof-tools
           self.packages.${system}.nodejs
           self.packages.${system}.talos-proof-rpc-tools
+          self.packages.${system}.talos-proof-php-tools
           self.packages.${system}.shellcheck
         ];
       };

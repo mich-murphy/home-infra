@@ -3,14 +3,15 @@
 set -euo pipefail
 umask 077
 cd "$(dirname "$0")/.."
-for tool in kubectl python3 node kubeconform shellcheck talos-proof-rpc-env; do
+for tool in kubectl python3 node kubeconform shellcheck talos-proof-rpc-env talos-proof-php-env; do
   command -v "$tool" >/dev/null || { echo "Missing tool: $tool" >&2; exit 1; }
 done
-# Real, bounded workstation-only loopback fixtures. No optional silent skips in
-# the full gate; these tools are pinned by flake.lock, not app-runtime evidence.
+# Real, bounded workstation-only RPC loopback and PHP filesystem regressions.
+# No optional silent skips; tools are flake.lock-pinned, not app-runtime evidence.
 TALOS_PROOF_TEST_OTP=$(talos-proof-rpc-env otp)
 TALOS_PROOF_TEST_ELIXIR=$(talos-proof-rpc-env elixir)
-export TALOS_PROOF_TEST_OTP TALOS_PROOF_TEST_ELIXIR
+TALOS_PROOF_TEST_PHP=$(talos-proof-php-env)
+export TALOS_PROOF_TEST_OTP TALOS_PROOF_TEST_ELIXIR TALOS_PROOF_TEST_PHP
 python3 tests/kubernetes-proof_test.py
 python3 kubernetes/bootstrap/test_safety.py
 for suite in tests/talos-proof-*_test.py; do

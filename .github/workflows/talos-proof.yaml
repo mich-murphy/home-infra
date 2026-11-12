@@ -44,7 +44,7 @@ jobs:
         uses: cachix/install-nix-action@91f6a0f59e94dfb2cfed0f4000f36a68ead1d20c # v31
       - name: Validate isolated manifests and safety gates
         run: >-
-          nix shell .#kubectl .#kubeconform .#shellcheck .#kubernetes-proof-tools .#nodejs .#talos-proof-rpc-tools
+          nix shell .#kubectl .#kubeconform .#shellcheck .#kubernetes-proof-tools .#nodejs .#talos-proof-rpc-tools .#talos-proof-php-tools
           --command bash scripts/check-talos-proof.sh
       - name: Validate freshly rendered Talos configuration
         run: |
