@@ -25,7 +25,7 @@ ARTIFACTS=('docs/evidence/talos-data/nextcloud-cron-source-review-97384394-9c9c-
            'docs/evidence/talos-data/nextcloud-public-image-parity-412faf37-f124-44b2-b52a-418ad71f9cd0.json')
 
 
-BACKEND_PROFILE='backend-cgroup-v2-timeout-cat-four-files-serial-v1'
+BACKEND_PROFILE='backend-cgroup-v2-absolute-tools-execution-envelope-v2'
 CGROUP_FILES=('memory.current','memory.peak','memory.events','memory.stat')
 
 
@@ -271,11 +271,22 @@ class Preflight(s.Supervisor):
                 or any(parents[0].get(k)!=v for k,v in dict(kind='Deployment',name=name,uid=r['object_uids']['deployment/'+name],controller=True).items())):
                 raise RuntimeError('backend retained Deployment ownership gap')
             return (m['name'],m['namespace'],m['uid'],owners,p.get('spec',{}).get('nodeName'),
-                    [(c.get('name'),c.get('containerID'),c.get('restartCount'),c.get('state')) for c in p.get('status',{}).get('containerStatuses',[])])
+                    [(c.get('name'),c.get('containerID'),c.get('restartCount'),c.get('state')) for c in (p.get('status',{}).get('containerStatuses',[])+p.get('status',{}).get('initContainerStatuses',[]))])
         expected=identity(pod)
         live=self.obj('-n',s.NS,'get','pod',meta['name'])
         if identity(live)!=expected: raise RuntimeError('backend Pod/container identity drift')
         return live
+
+    def backend_execution_envelope(self,pod):
+        # Only resources may drift for capture; every other execution-relevant
+        # field (image/env/PATH/mounts/security/command/extra containers) is frozen.
+        name=pod['metadata'].get('labels',{}).get('app.kubernetes.io/name')
+        if name not in ('postgres','redis'): raise RuntimeError('backend execution identity required')
+        actual=copy.deepcopy(pod['spec']);approved=copy.deepcopy(self.approved(name)['spec']['template']['spec'])
+        for spec in (actual,approved):
+            spec.pop('resources',None)
+            for c in spec.get('containers',[])+spec.get('initContainers',[]): c.pop('resources',None)
+        self.envelope(actual,approved,actual_pod=True)
 
     @staticmethod
     def backend_metrics(metrics,name):
@@ -329,29 +340,40 @@ class Preflight(s.Supervisor):
             meta=pod['metadata'];containers=pod.get('spec',{}).get('containers',[])
             statuses=pod.get('status',{}).get('containerStatuses',[])
             attempt('envelope',lambda:self.envelope(pod['spec'],self.approved(name)['spec']['template']['spec'],actual_pod=True))
-            if (len(containers)!=1 or len(statuses)!=1 or not statuses[0].get('containerID')
-                or statuses[0].get('name')!=containers[0].get('name')):
-                gaps.append('container-status');continue
-            c=statuses[0];container=c['name']
-            if (meta.get('deletionTimestamp') is not None or pod.get('status',{}).get('phase')!='Running'
-                or c.get('ready') is not True or set(c.get('state',{}))!={'running'}
-                or type(c.get('restartCount')) is not int or c['restartCount']!=0 or c.get('lastState',{})!={}):
-                gaps.append('backend-lifetime-state')
-            for previous in (False,True):
-                if previous and not (c.get('restartCount') or c.get('lastState')): continue
-                def logs(previous=previous):
-                    self.backend_identity(pod)
-                    raw=self.call('-n',s.NS,'logs',meta['name'],'-c',container,*(['--previous'] if previous else []),'--request-timeout=5s')
-                    self.save(dict(event='backend-private-log',run_id=self.run,backend=name,pod_uid=meta['uid'],container=container,previous=previous,log=raw))
-                    self.backend_identity(pod)
-                attempt('previous-log' if previous else 'current-log',logs)
+            all_containers=containers+pod.get('spec',{}).get('initContainers',[])
+            all_statuses=statuses+pod.get('status',{}).get('initContainerStatuses',[])
+            if (len(containers)!=1 or len(statuses)!=1
+                or {c.get('name') for c in all_containers}!={c.get('name') for c in all_statuses}):
+                gaps.append('container-status')
+            for declared in all_containers:
+                container=declared.get('name')
+                if not isinstance(container,str) or not re.fullmatch(r'[a-z0-9][a-z0-9-]*',container):
+                    gaps.append('container-name');continue
+                found=[c for c in all_statuses if c.get('name')==container]
+                status=found[0] if len(found)==1 else {}
+                if (not status.get('containerID') or type(status.get('restartCount')) is not int):
+                    gaps.append('container-status')
+                if (meta.get('deletionTimestamp') is not None or pod.get('status',{}).get('phase')!='Running'
+                    or status.get('ready') is not True or set(status.get('state',{}))!={'running'}
+                    or status.get('restartCount')!=0 or status.get('lastState',{})!={}):
+                    gaps.append('backend-lifetime-state')
+                for previous in (False,True):
+                    if previous and not (status.get('restartCount') or status.get('lastState')): continue
+                    def logs(previous=previous,container=container):
+                        self.backend_identity(pod)
+                        raw=self.call('-n',s.NS,'logs',meta['name'],'-c',container,*(['--previous'] if previous else []),'--request-timeout=5s')
+                        self.save(dict(event='backend-private-log',run_id=self.run,backend=name,pod_uid=meta['uid'],container=container,previous=previous,log=raw))
+                        self.backend_identity(pod)
+                    attempt('previous-log' if previous else 'current-log',logs)
+            c=statuses[0] if len(statuses)==1 else {}
+            container=c.get('name')
             metrics={}
             if pod.get('status',{}).get('phase')=='Running' and set(c.get('state',{}))=={'running'}:
                 self.backend_exec_binding=pod
                 try:
                     for key in CGROUP_FILES:
                         def read(key=key):
-                            raw=self.call('-n',s.NS,'exec',meta['name'],'-c',container,'--request-timeout=5s','--','timeout','2','cat','/sys/fs/cgroup/'+key)
+                            raw=self.call('-n',s.NS,'exec',meta['name'],'-c',container,'--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/'+key)
                             metrics[key]=raw
                         attempt(key,read)
                 finally: self.backend_exec_binding=None
@@ -372,20 +394,26 @@ class Preflight(s.Supervisor):
             try: fn()
             except Exception as e:
                 failures.append(label)
-                self.save(dict(event='diagnostic-cleanup-failed',run_id=self.run,operation=label,
-                    error_type=type(e).__name__,private_message=str(e)[:1024]))
-        self.save(dict(event='stop-intent',run_id=self.run))
+                self.cleanup_uncertainty=list(failures)
+                try:
+                    self.save(dict(event='diagnostic-cleanup-failed',run_id=self.run,operation=label,
+                        error_type=type(e).__name__,private_message=str(e)[:1024]))
+                except Exception:
+                    failures.append(label+'-journal')
+                    self.cleanup_uncertainty=list(failures)
+        attempt('stop-intent',lambda:self.save(dict(event='stop-intent',run_id=self.run)))
         attempt('stop-pods',lambda:self.save(dict(event='stop-pods',run_id=self.run,pods=self.obj('-n',s.NS,'get','pods'))))
+        for name in ('postgres','redis'):
+            attempt(name+'-capture',lambda name=name:self.backend_forensics(name))
         for name in ('postgres','redis'):
             def backend(name=name):
                 r=self.target();uid=r['object_uids'].get('deployment/'+name)
                 if not uid: raise RuntimeError('backend UID binding required')
                 self.call('-n',s.NS,'patch','deployment',name,'--type=json','-p',json.dumps([
                     dict(op='test',path='/metadata/uid',value=uid),dict(op='replace',path='/spec/replicas',value=0)]))
-            attempt(name+'-capture',lambda name=name:self.backend_forensics(name))
             attempt(name,backend)
-        records=[e for e in s.life.native_cron_events(self.state) if e.get('run_id')==self.run and e.get('event')=='phase-created']
         def helper():
+            records=[e for e in s.life.native_cron_events(self.state) if e.get('run_id')==self.run and e.get('event')=='phase-created']
             if not records: return
             name='nc-preflight-'+self.run
             if len(records)!=1 or records[0].get('name')!=name or not records[0].get('uid'):
@@ -402,7 +430,9 @@ class Preflight(s.Supervisor):
         attempt('stopped-controllers',self.require_stopped)
         attempt('global-absence',self.stopped_world)
         if failures:
-            self.save(dict(event='stop-unconfirmed',run_id=self.run,failures=failures))
+            self.cleanup_uncertainty=list(failures)
+            try: self.save(dict(event='stop-unconfirmed',run_id=self.run,failures=failures))
+            except Exception: pass  # Existing pending stays; never report confirmation.
             raise RuntimeError('diagnostic cleanup unconfirmed: '+','.join(failures))
 
     def identities(self):
@@ -480,17 +510,21 @@ class Preflight(s.Supervisor):
                 bound=getattr(self,'backend_exec_binding',None)
                 if (not bound or data is not None or args not in tuple(
                     ('-n',s.NS,'exec',bound['metadata']['name'],'-c',bound['spec']['containers'][0]['name'],
-                     '--request-timeout=5s','--','timeout','2','cat','/sys/fs/cgroup/'+f) for f in CGROUP_FILES)):
+                     '--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/'+f) for f in CGROUP_FILES)):
                     raise RuntimeError('exact recorded backend cgroup command required')
                 statuses=bound.get('status',{}).get('containerStatuses',[])
                 if (bound.get('status',{}).get('phase')!='Running' or len(statuses)!=1
+                    or statuses[0].get('name')!=bound['spec']['containers'][0]['name']
                     or not statuses[0].get('containerID') or set(statuses[0].get('state',{}))!={'running'}):
                     raise RuntimeError('recorded Running backend container required')
-                self.backend_identity(bound)
+                self.backend_execution_envelope(bound)
+                live=self.backend_identity(bound)
+                self.backend_execution_envelope(live)
                 result=super().call(*args,data=data)
                 self.save(dict(event='backend-cgroup',run_id=self.run,pod_uid=bound['metadata']['uid'],
                     container=statuses[0]['name'],file=args[-1],raw=result))
-                self.backend_identity(bound)
+                live=self.backend_identity(bound)
+                self.backend_execution_envelope(live)
                 return result
             if 'patch' in args:
                 r=self.authorize();name=args[4] if len(args)>4 else ''

@@ -362,13 +362,14 @@ continuous zero events, and the original RuntimeException cause are **unknown**;
 this correction cannot reconstruct them and has not read historical private state.
 
 A NEW diagnostic receipt must additionally bind
-`backend_forensics_profile: backend-cgroup-v2-timeout-cat-four-files-serial-v1`.
+`backend_forensics_profile: backend-cgroup-v2-absolute-tools-execution-envelope-v2`.
 Missing/other profiles fail local authorization before API use; old receipts are
 not reusable. Source5/artifact4/document bindings still apply. Release authority,
 main PHASES, PHP payload (including projected reader), supervisor and lifecycle
 are unchanged. No grant or diagnostic retry is issued by this source change.
 
-Before EACH backend's UID-tested zero-replica patch, retain private raw namespace
+Before ANY backend's UID-tested zero-replica patch, independently capture BOTH
+backends. Retain private raw namespace
 Pod lists and each relevant Pod's complete metadata/spec/status (UID, containerID,
 restartCount and lastState included). Resolve ReplicaSet ownership to the retained
 Deployment UID, rather than trusting labels or RS name prefixes. Include known
@@ -380,7 +381,7 @@ claim to capture unobserved lifetimes between samples.
 For each identity-confirmed owned backend, attempt explicit-container current logs
 and previous logs when restartCount or lastState makes them applicable. For each
 owned Running container, serially issue exactly four commands, one fixed path per
-command: `timeout 2 cat /sys/fs/cgroup/memory.current`, then `memory.peak`,
+command: `/usr/bin/timeout 2 /bin/cat /sys/fs/cgroup/memory.current`, then `memory.peak`,
 `memory.events`, and `memory.stat`. Each uses namespace, recorded Pod name,
 explicit container, `--request-timeout=5s`, and no stdin/TTY/shell. The command
 allowlist rejects other paths/flags/programs; no shell input, environment dump,
@@ -413,8 +414,54 @@ No helper resources, tuning or budget relaxation: PG384 + Redis64 + CLI192 +
 reserve192 =832MiB remains fixed. This is diagnostic sampling, **not** capacity,
 full forensics, native acceptance, or retrospective backend OOM0 evidence.
 
-Fresh offline validation: recovery25 actual-method tests and all15 mandatory real
+Fresh offline validation: recovery29 actual-method tests and all15 mandatory real
 PHP projection tests pass with project-lock PHP8.5.7 (`php -n`). The PHP code and
 projection tests are unchanged. No cluster/runtime/SSH/proof-state/credential/
 receipt access, image execution, CI or push occurred. Parent owns fullgate,
 independent review and any separate new authority.
+
+
+### Parent HOLD follow-up (736f7de1 review) — still offline, no grant
+
+Both backend captures now finish their independent attempts before the first
+replica patch. Thus intentional PostgreSQL disappearance after its stop cannot
+pollute Redis's final capture snapshot. Before those patches, changed namespace
+Pod lifetimes still fail; duplicate/terminal/terminating/replacement backend
+lifetimes remain raw evidence and fail acceptance. This is not a relaxation of
+backend cardinality or ownership.
+
+Stop-intent and error-report journal writes are fallible auxiliary operations:
+failures accumulate in memory, preserve existing PENDING, and prevent confirmation,
+but cannot suppress independently authorized backend UID stops or known helper
+capture/retirement. A final journal-write failure cannot turn failure into clean.
+If helper raw evidence cannot be saved, helper retirement remains blocked; the
+independent backend stop attempts still run. No journal or authority bypass is
+introduced. Unreadable identity/authority still refuses the affected operation.
+
+Identity-confirmed Pods with extra containers/init containers or missing statuses
+now attempt current logs for every declared valid container name; previous logs
+are attempted wherever that container's restart/lastState makes them applicable.
+Envelope/cardinality/status drift remains failure, not a reason to discard these
+read-only log attempts. Unknown owners/UIDs still prohibit capture commands.
+
+Exec is stricter than log capture. Before and after each exec, compare the full
+non-resource Pod execution envelope with the reviewed backend template, including
+image, env/PATH, commands, volumes/mounts, security context and container topology.
+Only resource fields are removed for this execution-context comparison; the
+separate complete resource envelope still fails diagnostic acceptance on drift.
+The live pre/post Pod spec must pass too, not only its original captured copy.
+Only the reviewed single Running backend container can execute the fixed reader.
+Use absolute `/usr/bin/timeout` and `/bin/cat`; PATH lookup is no longer permitted.
+The new v2 receipt profile rejects earlier v1 authority. **Availability of these
+absolute tool paths in both pinned images remains unmeasured/unverified: HOLD**.
+Missing tools must yield explicit gaps and guarded stop, not fallback commands.
+
+Fault-injected actual-stop regressions cover initial stop-intent write failure,
+backend capture failure plus failure-handler journal error, and all-write failure;
+PG/Redis UID patch attempts remain independent, while legitimate helper capture
+and retirement proceed only when its own evidence remains durably capturable.
+Actual-call-guard regressions reject image/PATH/volume/security/extra-container
+execution drift, retain extra/init/missing-status current logs, and retain
+applicable init previous logs. Resource-only drift still samples then fails.
+All29 recovery tests pass offline. PHP/shared Supervisor/lifecycle and parent
+files remain unchanged; no runtime query, image inspection or authority exists.

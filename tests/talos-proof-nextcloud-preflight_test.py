@@ -231,14 +231,14 @@ class PreflightTests(unittest.TestCase):
             elif fault=='uid':self.backend_pods['postgres']['metadata']['uid']='replacement'
             else:self.backend_pods['postgres']['status']['containerStatuses'][0]['containerID']='replacement'
             self.i.backend_exec_binding=bound
-            args=('-n',m.s.NS,'exec','postgres-pod','-c',bound['spec']['containers'][0]['name'],'--request-timeout=5s','--','timeout','2','cat','/sys/fs/cgroup/memory.current')
+            args=('-n',m.s.NS,'exec','postgres-pod','-c',bound['spec']['containers'][0]['name'],'--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/memory.current')
             with self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=self.backend_kube):
                 with self.assertRaises(RuntimeError):self.i.call(*args)
             self.assertFalse(any('exec' in a for a in self.trace))
 
     def test_backend_exact_exec_allowlist_and_post_identity_check(self):
         self.backend_fixture();bound=copy.deepcopy(self.backend_pods['postgres']);self.i.backend_exec_binding=bound
-        args=('-n',m.s.NS,'exec','postgres-pod','-c',bound['spec']['containers'][0]['name'],'--request-timeout=5s','--','timeout','2','cat','/sys/fs/cgroup/memory.current')
+        args=('-n',m.s.NS,'exec','postgres-pod','-c',bound['spec']['containers'][0]['name'],'--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/memory.current')
         bad=[args+('-i',),args[:-1]+('/etc/passwd',),args[:-2]+('sh','/sys/fs/cgroup/memory.current'),args[:4]+('-c','other')+args[6:],args[:3]+('deployment/postgres',)+args[4:]]
         with patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=self.backend_kube):
             for command in bad:
@@ -292,6 +292,94 @@ class PreflightTests(unittest.TestCase):
             self.assertTrue(any(e.get('event')=='backend-capture-gap' for e in events))
             self.assertTrue(any(e.get('event')=='backend-capture-pod' for e in events))
             self.assertFalse(any(e.get('event')=='clean' for e in events))
+
+    def test_stop_captures_both_before_patches_then_intentional_pg_absence(self):
+        self.backend_fixture()
+        def kube(*a,data=None):
+            result=self.backend_kube(*a,data=data)
+            if 'patch' in a and a[4]=='postgres':self.backend_pods.pop('postgres')
+            return result
+        with (patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=kube),
+              patch.object(self.i,'require_stopped'),patch.object(self.i,'stopped_world')):
+            self.i.stop()
+        first_patch=next(j for j,a in enumerate(self.trace) if 'patch' in a)
+        for name in ('postgres','redis'):
+            self.assertEqual(sum('exec' in a and a[3]==name+'-pod' for a in self.trace[:first_patch]),4)
+        self.assertNotIn('postgres',self.backend_pods)
+        self.assertFalse(getattr(self.i,'cleanup_uncertainty',[]))
+
+    def test_stop_auxiliary_journal_failures_do_not_suppress_owned_cleanup(self):
+        for fault in ('stop-intent','failure-handler','all-writes'):
+            self.backend_fixture();name='nc-preflight-'+self.i.run
+            self.i.save(dict(event='pending',run_id=self.i.run,scope='diagnose-preflight'))
+            self.i.save(dict(event='phase-created',run_id=self.i.run,name=name,uid='helper-uid'))
+            helper=dict(metadata=dict(name='helper-pod',namespace=m.s.NS,uid='helper-pod-uid',ownerReferences=[dict(kind='Job',name=name,uid='helper-uid')]),
+                spec=dict(containers=[dict(name='cli')]),status=dict(containerStatuses=[dict(name='cli',restartCount=0)]))
+            original_save=self.i.save;retired=[];helper_reads=[]
+            def save(value):
+                if fault=='all-writes' or value['event']==('stop-intent' if fault=='stop-intent' else 'diagnostic-cleanup-failed'):
+                    raise OSError('journal unavailable')
+                return original_save(value)
+            def kube(*a,data=None):
+                if 'exec' in a and a[3]=='postgres-pod' and fault=='failure-handler':raise RuntimeError('capture failure')
+                if '-l' in a:
+                    helper_reads.append(a);return json.dumps({'items':[helper]})
+                if 'job' in a and 'get' in a:return json.dumps({'metadata':{'uid':'helper-uid'}})
+                if a[:2]==('delete','--raw'):retired.append(a);return '{}'
+                if 'jobs' in a:return json.dumps({'items':[]})
+                return self.backend_kube(*a,data=data)
+            with (self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=kube),
+                  patch.object(self.i,'save',side_effect=save),patch.object(self.i,'require_stopped'),patch.object(self.i,'stopped_world')):
+                with self.assertRaisesRegex(RuntimeError,'unconfirmed'):self.i.stop()
+            self.assertEqual([a[4] for a in self.trace if 'patch' in a],['postgres','redis'])
+            self.assertTrue(helper_reads)
+            self.assertEqual(bool(retired),fault!='all-writes')
+            self.assertIn(self.i.run,self.i.pending())
+            self.assertTrue(self.i.cleanup_uncertainty)
+
+    def test_exec_execution_drift_refused_but_all_known_container_logs_attempted(self):
+        for fault in ('image','PATH','volume','security','extra','init','missing-status','resources'):
+            self.backend_fixture();pod=self.backend_pods['postgres'];c=pod['spec']['containers'][0]
+            if fault=='image':c['image']='unreviewed:image'
+            if fault=='PATH':c.setdefault('env',[]).append(dict(name='PATH',value='/hostile'))
+            if fault=='volume':pod['spec'].setdefault('volumes',[]).append(dict(name='unreviewed',emptyDir={}))
+            if fault=='security':c['securityContext']={'privileged':True}
+            if fault=='resources':c['resources']['limits']['memory']='999Mi'
+            if fault=='extra':pod['spec']['containers'].append(dict(name='unexpected',image='unreviewed:image'))
+            if fault=='init':
+                pod['spec']['initContainers']=[dict(name='unexpected-init',image='unreviewed:image')]
+                pod['status']['initContainerStatuses']=[dict(name='unexpected-init',restartCount=1,lastState={'terminated':{'exitCode':1}})]
+            if fault=='missing-status':pod['status']['containerStatuses']=[]
+            self.i.backend_exec_binding=copy.deepcopy(pod)
+            args=('-n',m.s.NS,'exec','postgres-pod','-c',c['name'],'--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/memory.current')
+            with (self.subTest(fault=fault),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=self.backend_kube)):
+                if fault!='resources':
+                    with self.assertRaises(RuntimeError):self.i.call(*args)
+                    self.assertFalse(any('exec' in a for a in self.trace))
+                with self.assertRaises(RuntimeError):self.i.backend_forensics('postgres')
+            logs=[a for a in self.trace if 'logs' in a]
+            self.assertTrue(any(a[5]==c['name'] for a in logs))
+            if fault in ('extra','init'):
+                extra='unexpected' if fault=='extra' else 'unexpected-init'
+                self.assertTrue(any(a[5]==extra for a in logs))
+                self.assertEqual(any(a[5]==extra and '--previous' in a for a in logs),fault=='init')
+            self.assertEqual(sum('exec' in a for a in self.trace),4 if fault=='resources' else 0)
+
+    def test_exec_live_execution_envelope_drift_pre_and_post_read(self):
+        for when in ('pre','post'):
+            self.backend_fixture();self.i.backend_exec_binding=copy.deepcopy(self.backend_pods['postgres'])
+            def drift():self.backend_pods['postgres']['spec']['containers'][0].setdefault('env',[]).append(dict(name='PATH',value='/changed'))
+            if when=='pre':drift()
+            def kube(*a,data=None):
+                result=self.backend_kube(*a,data=data)
+                if when=='post' and 'exec' in a:drift()
+                return result
+            args=('-n',m.s.NS,'exec','postgres-pod','-c',self.backend_pods['postgres']['spec']['containers'][0]['name'],'--request-timeout=5s','--','/usr/bin/timeout','2','/bin/cat','/sys/fs/cgroup/memory.current')
+            with self.subTest(when=when),patch.object(self.i,'authorize',return_value=self.r),patch.object(m.s.life,'kube',side_effect=kube):
+                with self.assertRaises(RuntimeError):self.i.call(*args)
+            self.assertEqual(sum('exec' in a for a in self.trace),int(when=='post'))
+            events=[e for e in m.s.life.native_cron_events(self.state) if e.get('run_id')==self.i.run]
+            self.assertEqual(any(e.get('event')=='backend-cgroup' for e in events),when=='post')
 
     def test_backend_profile_missing_rejects_before_api(self):
         self.diagnostic_fixture();self.r.pop('backend_forensics_profile');self.write()
@@ -372,7 +460,7 @@ class PreflightTests(unittest.TestCase):
         self.i.save(dict(event='phase-created',run_id=self.i.run,name=name,uid='helper-owned'))
         self.i.save(dict(event='pending',run_id=self.i.run,scope='diagnose-preflight'))
         for fault in ('postgres','redis','capture','retire','drift','owner','uid',None):
-            operations=[];self.i.jobs={};self.i.helper_cleanup_attempted=set()
+            operations=[];self.i.jobs={};self.i.helper_cleanup_attempted=set();self.i.cleanup_uncertainty=[]
             if fault=='drift':self.i.save(dict(event='diagnostic-failed',run_id=self.i.run,error_type='RuntimeException'))
             def kube(*args,data=None):
                 if 'patch' in args:

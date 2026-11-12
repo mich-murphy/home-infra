@@ -19,7 +19,7 @@
     "27607487",
     "docs/evidence/talos-acceptance/nextcloud-diagnostic-failure-review-b47846fac38c4b8a899f090b6c0a66fc.json"
   ],
-  "new_receipt_profile": "backend-cgroup-v2-timeout-cat-four-files-serial-v1",
+  "new_receipt_profile": "backend-cgroup-v2-absolute-tools-execution-envelope-v2",
   "limits_mib": {
     "postgres": 384,
     "redis": 64,
@@ -33,5 +33,16 @@
     "Image timeout/cat availability and live cgroup paths unmeasured",
     "No retrospective backend OOM0 or full-forensic claim",
     "No new live authority; parent review/fullgate required"
+  ],
+  "parent_review_status": "HOLD; no grant; absolute image-tool availability unverified",
+  "fixed_tool_paths": [
+    "/usr/bin/timeout",
+    "/bin/cat"
+  ],
+  "followup_scope": [
+    "Both independent captures before any replica patch",
+    "Journal errors cannot suppress independent authorized cleanup",
+    "All known-owned declared regular/init container logs attempted",
+    "Exec requires reviewed non-resource envelope before and after"
   ]
 }
