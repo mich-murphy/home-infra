@@ -36,7 +36,7 @@ class NativeCron(unittest.TestCase):
             cron.main()
 
     def test_lifecycle_old_acceptance_cannot_activate_or_generate_credentials(self):
-        for action in ('activate', 'run', 'test'):
+        for action in ('apply', 'activate', 'deactivate', 'run', 'test'):
             with self.subTest(action=action), patch.object(sys, 'argv', ['data', action, '--group', 'nextcloud', '--stage', 'cron', '--state', '/nonexistent']), patch.object(life, 'credentials', side_effect=AssertionError('credential mutation')), patch.object(life, 'kube', side_effect=AssertionError('API access')), self.assertRaisesRegex(RuntimeError, 'BLOCKED'):
                 life.main()
 

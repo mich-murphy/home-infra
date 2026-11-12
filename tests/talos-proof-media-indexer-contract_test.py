@@ -257,4 +257,12 @@ class ContractTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    # These are socket/thread-only fixtures (no child processes). Preserve thread
+    # stacks and terminate this owned test process if shutdown ever stalls; a
+    # previous aggregate-gate timeout had no stack and is not a proven root cause.
+    import faulthandler
+    faulthandler.dump_traceback_later(60, exit=True)
+    try:
+        unittest.main()
+    finally:
+        faulthandler.cancel_dump_traceback_later()

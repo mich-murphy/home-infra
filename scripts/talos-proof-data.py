@@ -385,10 +385,12 @@ def _main():
     p.add_argument('--stage', help='explicit heavy-group component stage approved in lease')
     p.add_argument('--state', required=True, help='outside-git private directory, mode0700')
     a = p.parse_args()
-    if a.group == 'nextcloud' and a.stage == 'cron' and a.action in ('activate', 'run', 'test'):
-        # Stop before credentials(), API reads or mutation. The former lastcron-only
-        # path is not the native retention proof and must not earn acceptance.
-        raise RuntimeError('Native cron integration BLOCKED; see docs/talos-proof-nextcloud-cron-plan.md')
+    if a.group == 'nextcloud' and a.stage == 'cron' and a.action not in ('prepare', 'verify'):
+        # Stop before credentials(), API reads or mutation. Initialization/native
+        # receipts share stage selectors, but authorize ONLY their dedicated runner.
+        # Legacy apply would overwrite retained objects/Secrets; deactivate lacks
+        # their UID-bound cleanup contract. Use the initializer/supervisor instead.
+        raise RuntimeError('Legacy cron operation BLOCKED; use the scoped initializer/supervisor in docs/talos-proof-nextcloud-cron-plan.md')
     os.umask(0o077)
     state = shared_data_state(a.state)
     _OPERATION_FD[0] = operation_lock(state)
