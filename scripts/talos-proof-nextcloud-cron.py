@@ -5,6 +5,7 @@ Compilation is NOT admission. Live integration deliberately fails closed until t
 serial-helper supervisor and restore window have parent-reviewed implementation.
 """
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,8 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE = 'nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2'
+PACKAGED_METADATA = ROOT/'docs/evidence/talos-data/nextcloud-packaged-metadata-bridge-49e437a1-23fe-491f-92e9-541137daaa6a.json'
+PACKAGED_METADATA_SHA256 = '86a6fd499c4bc438efc6cc0e4b87b11b69c8c21b111de29c6f2fce3d73bde32c'
 CLASS = r'OC\Authentication\Token\TokenCleanupJob'
 PHASES = ('preflight', 'install-or-verify', 'fixture', 'before', 'cron', 'assert-restore')
 GATE = ('Native cron live integration blocked: no reviewed serial-helper supervisor '
@@ -65,11 +68,29 @@ def job(phase, run_id):
                 'app.kubernetes.io/part-of':'talos-proof'}), spec=spec)))
 
 
+def packaged_metadata():
+    raw=PACKAGED_METADATA.read_bytes()
+    if hashlib.sha256(raw).hexdigest()!=PACKAGED_METADATA_SHA256:
+        raise RuntimeError('reviewed packaged metadata drift')
+    bridge=json.loads(raw)
+    if bridge['image']!=IMAGE or bridge['platform']!={'os':'linux','architecture':'amd64'} or set(bridge['overrides'])!={'version.php'}:
+        raise RuntimeError('exact image/platform/single metadata override required')
+    for name,sha in bridge['evidence_sha256'].items():
+        if hashlib.sha256((ROOT/name).read_bytes()).hexdigest()!=sha:
+            raise RuntimeError('packaged metadata evidence/source index drift')
+    return bridge
+
+
 def payload_sources():
     source = json.loads((ROOT / 'docs/evidence/talos-data/nextcloud-cron-source-review-97384394-9c9c-47d4-8d17-50e63b9b62fd.json').read_text())
     # Docker build input is not necessarily present in the image. Do not invent
     # in-image parity for Dockerfiles/configuration fragments; core only here.
-    return {s['path']: s['sha256'] for s in source['sources'] if not s['path'].startswith('docker/')}
+    bridge=packaged_metadata();override=bridge['overrides']['version.php']
+    hashes={s['path']: s['sha256'] for s in source['sources'] if not s['path'].startswith('docker/')}
+    if hashes.get('version.php')!=override['git_sha256']:
+        raise RuntimeError('original version.php source hash drift')
+    hashes['version.php']=override['packaged_sha256']
+    return hashes
 
 
 def compile_bundle(run_id=None):
@@ -79,6 +100,7 @@ def compile_bundle(run_id=None):
                 budget_mib=dict(postgres=384, redis=64, serial_cli=192, reserve=192, total=832),
                 payload=dict(apiVersion='v1', kind='ConfigMap', metadata=dict(namespace='proof-nextcloud',
                     name='nextcloud-cron-payload-' + run_id), data={'native.php':native,
+                    'packaged-metadata.json':PACKAGED_METADATA.read_text(),
                     'core-hashes.json':json.dumps(payload_sources(), sort_keys=True),
                     'docker-hashes.json':json.dumps({s['path']:s['sha256'] for s in json.loads((ROOT/'docs/evidence/talos-data/nextcloud-cron-docker-config-source.json').read_text())['sources']}),
                     'intent.json':json.dumps(intent(run_id))}),

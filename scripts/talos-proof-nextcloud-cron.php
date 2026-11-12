@@ -8,8 +8,34 @@ umask(0077);
 const CLEANUP_CLASS = 'OC\\Authentication\\Token\\TokenCleanupJob';
 // Only the receipt-bound serial supervisor may supply this payload.
 
-function need(bool $condition, string $gate): void {
-    if (!$condition) { throw new RuntimeException($gate); }
+final class GateFailure extends RuntimeException {
+    public function __construct(string $gate, public readonly array $context = []) { parent::__construct($gate); }
+}
+function need(bool $condition, string $gate, array $context = []): void {
+    if (!$condition) { throw new GateFailure($gate, $context); }
+}
+function privateError(Throwable $error): array {
+    // No environment dump, trace/args or opaque token values. This record is
+    // private captured output only; the supervisor's public error stays fixed.
+    $message = $error->getMessage();
+    foreach (['POSTGRES_PASSWORD','NEXTCLOUD_ADMIN_PASSWORD','REDIS_HOST_PASSWORD'] as $name) {
+        $secret = getenv($name);
+        if (is_string($secret) && $secret !== '') { $message = str_replace($secret, '[redacted]', $message); }
+    }
+    $message = preg_replace('/[A-Za-z0-9+\/_=\-]{24,}/', '[opaque-redacted]', $message);
+    $message = preg_replace('/[^\x20-\x7e]/', '?', $message);
+    return ['message'=>substr($message,0,1024),
+        'source_file'=>substr(basename($error->getFile()),0,128), 'source_line'=>$error->getLine(),
+        'context'=>$error instanceof GateFailure ? $error->context : []];
+}
+function hashCheck(string $root, string $relative, string $expected, string $gate): void {
+    need(!str_contains($relative, '..') && $relative !== '' && $relative[0] !== '/', 'invalid source index');
+    need((bool)preg_match('/^[0-9a-f]{64}$/D',$expected), 'invalid expected source hash');
+    $path = $root . '/' . $relative;
+    $actual = is_file($path) && !is_link($path) ? @hash_file('sha256',$path) : false;
+    need(is_string($actual) && hash_equals($expected,$actual), $gate,
+        ['source_root'=>$root,'source_relative'=>substr($relative,0,256),
+         'expected_sha256'=>$expected,'actual_sha256'=>$actual === false ? 'unavailable' : $actual]);
 }
 function exclusive(string $path, array $value): void {
     $stream = fopen($path, 'x');
@@ -30,15 +56,22 @@ function cgroups(): array {
     return $result;
 }
 function parity(string $root): void {
+    // Exact approved public artifact bridge; original Git index is untouched.
+    hashCheck('/proof','packaged-metadata.json','86a6fd499c4bc438efc6cc0e4b87b11b69c8c21b111de29c6f2fce3d73bde32c','reviewed packaged metadata drift');
+    $bridge=json_decode(file_get_contents('/proof/packaged-metadata.json'),true,512,JSON_THROW_ON_ERROR);
+    need(PHP_OS_FAMILY === 'Linux' && php_uname('m') === 'x86_64', 'reviewed packaged metadata platform mismatch');
     $hashes = json_decode(file_get_contents('/proof/core-hashes.json'), true, 512, JSON_THROW_ON_ERROR);
     need(count($hashes) >= 20, 'incomplete reviewed core source index');
+    need(($hashes['version.php'] ?? null) === $bridge['overrides']['version.php']['packaged_sha256'], 'packaged version metadata hash binding mismatch');
     foreach ($hashes as $relative => $hash) {
         need(!str_contains($relative, '..') && $relative[0] !== '/', 'invalid source index');
         $path = $root . '/' . $relative;
         for ($part = $path; $part !== $root; $part = dirname($part)) {
-            need(!is_link($part), 'symlink in reviewed source path');
+            need(!is_link($part), 'symlink in reviewed source path',
+                ['source_root'=>$root,'source_relative'=>substr($relative,0,256),
+                 'expected_sha256'=>$hash,'actual_sha256'=>'unavailable']);
         }
-        need(is_file($path) && hash_equals($hash, hash_file('sha256', $path)), 'actual core source parity mismatch');
+        hashCheck($root,$relative,$hash,'actual core source parity mismatch');
     }
 }
 function rows(string $table, array $columns): array {
@@ -74,7 +107,7 @@ function nativeContext(): array {
     parity('/var/www/html');
     $hashes=json_decode(file_get_contents('/proof/docker-hashes.json'),true,512,JSON_THROW_ON_ERROR);
     foreach ($hashes as $path=>$hash) {
-        need(!is_link('/var/www/html/'.$path) && hash_file('sha256','/var/www/html/'.$path)===$hash, 'retained Docker config mismatch');
+        hashCheck('/var/www/html',$path,$hash,'retained Docker config mismatch');
     }
     $allowed=array_map('basename',array_keys($hashes));
     $allowed=array_merge($allowed,['config.php','config.sample.php','.htaccess']);
@@ -227,14 +260,14 @@ function inventory(string $root): array {
     }
     return ['entries'=>$count, 'empty'=>count(array_diff(scandir($root),['.','..']))===0];
 }
-function preflight(): array {
+function preflight(bool $emptyOnly = false): array {
     parity('/usr/src/nextcloud');
     $docker = json_decode(file_get_contents('/proof/docker-hashes.json'),true,512,JSON_THROW_ON_ERROR);
     foreach ($docker as $path=>$hash) {
-        need(!is_link('/usr/src/nextcloud/'.$path) && hash_file('sha256','/usr/src/nextcloud/'.$path)===$hash,
-            'packaged Docker config parity mismatch');
+        hashCheck('/usr/src/nextcloud',$path,$hash,'packaged Docker config parity mismatch');
     }
     $volume = inventory('/var/www/html');
+    if ($emptyOnly) { need($volume['empty'], 'diagnostic requires empty HTML; no retained core bootstrap'); }
     $db = new PDO('pgsql:host=postgres;dbname=nextcloud;connect_timeout=3','nextcloud',getenv('POSTGRES_PASSWORD'),
         [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
     $db->exec('SET default_transaction_read_only = on');
@@ -249,9 +282,12 @@ function preflight(): array {
 function nativeCommand(array $args, string $log): void {
     $f = fopen($log,'x'); need($f!==false && chmod($log,0600), 'private native log creation failed');
     try {
-        $p = proc_open($args,[0=>['file','/dev/null','r'],1=>$f,2=>$f],$pipes,'/var/www/html');
-        need(is_resource($p) && proc_close($p)===0, 'native process failed; preserve partial state');
-        need(fflush($f) && fsync($f), 'native log fsync failed');
+        $p = @proc_open($args,[0=>['file','/dev/null','r'],1=>$f,2=>$f],$pipes,'/var/www/html');
+        $started = is_resource($p); $exit = $started ? proc_close($p) : null;
+        $context = ['private_child_log'=>substr($log,0,256),'exit_code'=>$exit];
+        // Durably retain even a failing child's log BEFORE throwing, no argv.
+        need(fflush($f) && fsync($f), 'native log fsync failed', $context);
+        need($started && $exit===0, 'native process failed; preserve partial state', $context);
     } finally { fclose($f); }
 }
 function installOrVerify(string $run): array {
@@ -274,6 +310,9 @@ try {
     $journal = '/var/www/html/.proof-cron-'.$run;
     switch ($phase) {
         case 'preflight': $result=preflight(); break;
+        case 'diagnose-preflight':
+            need(getenv('PROOF_PHASE') === 'diagnose-preflight', 'diagnostic scope only');
+            $result=preflight(true); break;
         case 'install-or-verify': $result=installOrVerify($run); break;
         case 'fixture': $result=fixture($journal); break;
         case 'before': $result=beforeObservation($journal); break;
@@ -298,6 +337,6 @@ try {
     }
     echo json_encode(['phase'=>$phase,'result'=>$result,'cgroups'=>cgroups()],JSON_THROW_ON_ERROR).PHP_EOL;
 } catch (Throwable $e) {
-    echo json_encode(['status'=>'BLOCKED_OR_FAILED','error_type'=>get_class($e),'cgroups'=>cgroups()]).PHP_EOL;
+    echo json_encode(['status'=>'BLOCKED_OR_FAILED','phase'=>substr($phase ?? '',0,64),'error_type'=>get_class($e),'private_error'=>privateError($e),'cgroups'=>cgroups()]).PHP_EOL;
     exit(1);
 }
