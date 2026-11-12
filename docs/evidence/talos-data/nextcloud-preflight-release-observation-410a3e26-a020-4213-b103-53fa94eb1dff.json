@@ -1,0 +1,123 @@
+{
+  "observed_utc": "2026-11-12T05:21:47.486658+00:00",
+  "scope": "GET-only failed-preflight pending release; NOT diagnosis or native acceptance",
+  "reviewed_implementation_commit": "73d77e51",
+  "run_id": "33d6df9f-c2a8-459f-8eef-bc5fc3bfbdc1",
+  "authorization_id": "356c45a4-6ce8-4710-829d-aaa457996cdc",
+  "invocation_count": 1,
+  "exit_code": 0,
+  "retry_count": 0,
+  "target": {
+    "context": "admin@talos-proof",
+    "endpoint": "https://127.0.0.1:64120",
+    "node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+    "namespace": "proof-nextcloud",
+    "namespace_uid": "52497afe-f428-4b0e-aa52-cc92e9f2bf6a"
+  },
+  "private_capture": "diagnostics/release-preflight-live-7e449d70-c06b-47bb-800c-a05c3addc93f",
+  "private_capture_manifest_sha256": "ece958a3570223e8cfb3661aaeebbe65121ae671760aaf2d60e6d083a6e23f86",
+  "capture_permissions": "0700 directories/executable GET-only capture wrapper; 0600 data files",
+  "canonical_files_before": 81,
+  "canonical_files_changed": 0,
+  "canonical_files_after": 84,
+  "original_history_event_count": 12,
+  "original_receipts_and_other_existing_lease_files_unchanged": true,
+  "reviewed_sources_unchanged": true,
+  "new_local_events": [
+    {
+      "authorization_id": "356c45a4-6ce8-4710-829d-aaa457996cdc",
+      "event": "preflight-release-observation",
+      "file": "118d73e3-789e-44f8-81a1-a0d6adca1370.json",
+      "native_acceptance": false,
+      "run_id": "33d6df9f-c2a8-459f-8eef-bc5fc3bfbdc1",
+      "scope": null,
+      "stopped": true
+    },
+    {
+      "authorization_id": "356c45a4-6ce8-4710-829d-aaa457996cdc",
+      "event": "clean",
+      "file": "18aa537b-302a-41da-8a64-faccd91f4469.json",
+      "native_acceptance": null,
+      "run_id": "33d6df9f-c2a8-459f-8eef-bc5fc3bfbdc1",
+      "scope": "release-preflight",
+      "stopped": null
+    },
+    {
+      "authorization_id": "356c45a4-6ce8-4710-829d-aaa457996cdc",
+      "event": "preflight-authorized",
+      "file": "c5a3ac16-4043-4ea0-bd64-9cb5080f7a26.json",
+      "native_acceptance": null,
+      "run_id": "33d6df9f-c2a8-459f-8eef-bc5fc3bfbdc1",
+      "scope": "release-preflight",
+      "stopped": null
+    }
+  ],
+  "new_clean_count": 1,
+  "original_pending_event_retained": true,
+  "original_pending_event_count": 1,
+  "effective_pending": false,
+  "all_native_cron_pending_runs": 0,
+  "readback_capture": {
+    "kubectl_invocations": 323,
+    "all_exit_zero": true,
+    "operations": "GET and local kubeconfig current-context/view only",
+    "raw_readbacks_public": false,
+    "invocation_stderr_bytes": 0,
+    "raw_kubectl_stderr_bytes": 0
+  },
+  "retained_object_uids": {
+    "configmap/nextcloud-apache-proof": "66536af3-566b-4c49-98b4-2a32b24257da",
+    "pvc/nextcloud-data": "a8243a0f-baab-4fb3-a1d4-441274a27efc",
+    "pvc/redis-data": "169af8e3-4a76-4821-83b6-e6f19815f48f",
+    "pvc/postgres-data": "f8d5b400-5256-4565-942e-633c7dd4546e",
+    "service/postgres": "b3d7ce25-1b83-4f9c-b843-0c9af25b2707",
+    "deployment/nextcloud": "8f625c5f-8836-4d9e-9177-59f022847ee5",
+    "deployment/postgres": "13c28e8e-92c1-4f44-b441-ebaa73271a8c",
+    "service/redis": "393015eb-5586-4e7e-8ae5-c9dda65f4869",
+    "cronjob/nextcloud-cron": "4f38af51-147c-4c51-a25d-f70249c63d66",
+    "service/nextcloud": "027a9663-acf8-4ad3-b26f-1d43d0e4c174",
+    "deployment/redis": "66e0bc57-bfb3-469d-8e4f-3629df4f16f9",
+    "secret/proof-credentials": "81144bf1-7ec2-42e3-90ba-564d787eed4f",
+    "pv/pvc-a8243a0f-baab-4fb3-a1d4-441274a27efc": "a763daa6-9882-4664-897a-3cbdb32fcba2",
+    "pv/pvc-f8d5b400-5256-4565-942e-633c7dd4546e": "d80233d3-2793-4ba1-aa90-867636231807",
+    "pv/pvc-169af8e3-4a76-4821-83b6-e6f19815f48f": "4a2d31be-8af9-4a08-b27d-d7d489b312ad"
+  },
+  "network_policy_uids": {
+    "default-deny": "530fb1e1-444f-402a-a3ee-285c820741ca",
+    "dns": "eb34a8a2-f7a7-406c-af42-a21ea0fb7eea",
+    "nextcloud-to-postgres-egress": "26afbe42-bacb-41b3-953c-4eb8340c6c63",
+    "nextcloud-to-postgres-ingress": "5fb49249-d2ff-4540-93d3-80398f975c96",
+    "nextcloud-to-redis-egress": "d64a6d32-d7c3-4270-ada8-99472608e0ef",
+    "nextcloud-to-redis-ingress": "7c7c45b8-42ce-4111-9870-db83fba246e8"
+  },
+  "verified_barriers": {
+    "retained_uid_name_namespace_checks": 15,
+    "network_policy_uid_and_full_spec_checks": 6,
+    "native_pod_templates_images_resources_and_storage_bindings": true,
+    "original_payload_configmap_uid_and_original_php_hash": true,
+    "global_proof_pod_job_daemonset_absence_checks": 2,
+    "global_proof_controllers_stopped_and_schedules_suspended": true,
+    "proof_controllers_in_final_snapshot": 27
+  },
+  "receipt_retirement": {
+    "active_path_absent": true,
+    "exact_bytes_archived_before_active_unlink": true,
+    "archive_o_excl_0600_fsync": true,
+    "issued_copy_unchanged": true,
+    "receipt_sha256": "c5fc63a8433e03d4d37f36c81f8eefc010cdc8b72481abec07beef2955f6ba51",
+    "archive_basename": "archived-nextcloud-release-preflight-356c45a4-6ce8-4710-829d-aaa457996cdc-889a6089-b2c2-4216-84f5-082f0b63e234.json"
+  },
+  "historical_failure_gate": "unknown",
+  "native_acceptance": false,
+  "diagnosis_authorized_or_run": false,
+  "kubernetes_mutations": 0,
+  "backend_or_helper_activation": false,
+  "pod_exec_or_application_commands": false,
+  "vm_restart": false,
+  "limitations": [
+    "No historical RuntimeException cause recovery.",
+    "No HTML, DB, Redis, parity, emptiness, install, cron, functionality or durability acceptance.",
+    "No diagnostic grant or automatic next phase.",
+    "Parent owns independent acceptance and root gates."
+  ]
+}
