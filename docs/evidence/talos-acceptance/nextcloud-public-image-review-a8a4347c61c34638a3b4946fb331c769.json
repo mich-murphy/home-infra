@@ -1,0 +1,30 @@
+{
+  "observed_utc": "2026-11-12T04:17:33.021284+00:00",
+  "inspection_evidence": "docs/evidence/talos-data/nextcloud-public-image-parity-412faf37-f124-44b2-b52a-418ad71f9cd0.json",
+  "scope": "independent public artifact integrity/version review; NOT old-runtime-error recovery",
+  "index_digest": "sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+  "manifest_digest": "sha256:3139d734aa878e9da89b610112734056c0df55279dd6a4578573c0803c293ef3",
+  "config_digest": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+  "verified_compressed_layers": 22,
+  "independently_verified_uncompressed_diff_ids": 22,
+  "version_php_bytes": 446,
+  "version_php_sha256": "91f47176c67a94f3e33e4fcee8f272cfc72210614b25906fa228cc27c72b07ea",
+  "git_version_php_sha256": "0c5e1bfe12870e43d2a9965063d97dd261a351e96d6d81f854b29857ceac5e25",
+  "version_tuple": [
+    35,
+    0,
+    2,
+    2
+  ],
+  "metadata_differences_preserved": "git to stable channel; populated release build; empty edition and formatting/declaration differences. No blanket equivalence claim.",
+  "historical_RuntimeException_gate_recovered": false,
+  "scratch_placement_correction": {
+    "original_path": "/Users/mm/dev/home-infra-talos-proof/.nextcloud-public-image-parity-538e84f7-bfa5-4be9-920c-5f3fd4b19da7",
+    "new_path": "/Users/mm/.local/state/home-infra/talos-proof/public-nextcloud-image-review-5e515f5b2d444d68b126b4c6258b7f8e/source-artifacts",
+    "reason": "Private artifacts were mistakenly placed in ignored worktree; parent brief failed to restate outside-Git placement explicitly. Atomically relocated without overwrites.",
+    "tracked_original_files": 0,
+    "files_preserved": 64,
+    "file_bytes_modes_inodes_and_directory_inode_unchanged": true,
+    "source_artifact_contents_modified": false
+  }
+}
