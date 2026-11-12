@@ -40,6 +40,25 @@ host maintenance/downtime, rollback and post-boot verification. It is NOT applie
 or a proven historical cause. Exact causal attribution and resolution remain pending;
 no application work proceeds merely because a startup window is approved.
 
+## Maintenance planning approval — no execution approval
+
+User approved **planning** the coordinated KHO mitigation window. Parent is sole
+writer/collector; no new worker or runtime lease. Read-only capture
+`diagnostics/host-maintenance-plan-f055d402-4bfb-4a8c-b730-1ec2b7869c0f` confirms
+systemd-boot257.13, two configured managed ESPs, `/etc/kernel/cmdline` with no KHO
+override; no refresh/edit was run. VM101 order1/up60, VM102 order2, bothonboot1;
+111/120 remain off. The60-second delay is not NAS readiness. Proxmox's enabled,
+mounted backup-only NFS storage depends on101 too. Sole swap is lz4 zram, not disk;
+guard activity does not establish disk thrashing. Initial unsupported task-query
+flag failed and is retained; corrected active query returned0, not future clearance.
+Plan now specifies90-minute allowance, console/rollback gates, proposed temporary
+102onboot0 and backup-storage disable/clean-unmount, graceful102→101shutdown,
+NAS/export readiness before102recovery, and exact restoration of temporary settings.
+These production changes are **proposed only** and require explicit execution
+approval, selected window/timezone and independent console/operator. Guest NFS/
+Docker startup interlocks must be verified before execution; no implicit service
+hold or forced shutdown. VM120 remains off. Root cause remains unresolved.
+
 ## Scope and checkout
 - Dedicated worktree `/Users/mm/dev/home-infra-talos-proof`, branch `feat/talos-live-proof`, base `8de8c051` (`origin/main`), managed with `gh stack`.
 - Draft PR **https://github.com/mich-murphy/home-infra/pull/2005**. Push with `gh stack submit --auto`; CI watch uses `gh run watch <id> --interval 60 --exit-status`, one watcher per session.

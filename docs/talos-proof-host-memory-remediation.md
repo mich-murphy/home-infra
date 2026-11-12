@@ -1,6 +1,11 @@
 # Host swap stop: investigation and proposed maintenance
 
-**Status: investigation incomplete; mitigation proposed, NOT applied. VM120 stays off.**
+**Status: maintenance planning approved; execution NOT authorized or applied.
+Investigation remains incomplete. VM120 stays off.**
+
+The user's “yes” approved planning a coordinated maintenance window, as asked.
+It did not select a start time or authorize boot changes, guest shutdown or reboot.
+Execution requires approval of the bounded scope below and confirmed console access.
 
 The user requires the underlying cause to be identified and resolved before further
 proof work. A restart, a quieter current snapshot, or a relaxed guard is not resolution.
@@ -32,6 +37,10 @@ This plan does not authorize production changes, a host reboot, or VM120 startup
 5. Later process/cgroup observations place most current swapped residency in
    VM102's QEMU process. **A swapped victim is not necessarily the allocation
    that initiated reclaim.** No production guest or application was modified.
+6. Follow-up planning verified the sole swap device is **RAM-backed zram**, lz4,
+   priority100, approximately3.73GiB. No disk swap is configured. The guard's
+   swap-page counters remain a valid policy trigger, but are **not evidence of
+   physical-disk thrashing**. No zram, swappiness or swap-baseline change is proposed.
 
 ## What is not established
 
@@ -83,6 +92,126 @@ startup order, data-safety checks, rollback and acceptable outage. Before execut
   boot, storage or passthrough behavior, stop and use the approved rollback;
   rollback itself may require another production outage.
 
+## Concrete window plan — awaiting time and execution approval
+
+### Verified planning facts
+
+Read-only capture: `diagnostics/host-maintenance-plan-f055d402-4bfb-4a8c-b730-1ec2b7869c0f`.
+
+- Active EFI entry and `bootctl status` identify **systemd-boot257.13-1~deb13u1**,
+  `/EFI/systemd/systemd-bootx64.efi`; Secure Boot is disabled. There are two
+  configured managed ESP UUIDs. Their present contents/health have not yet been
+  independently checked; configuration count is not a synchronization guarantee.
+- The appropriate command-line file is **`/etc/kernel/cmdline`**. Its original
+  bytes/hash were captured privately. It currently contains two tokens and no
+  `kho=` argument. The supported propagation operation is
+  **`proxmox-boot-tool refresh`**, not `update-grub`. Neither was run.
+- VM101: onboot1, order1, up60, no guest agent. VM102: onboot1, order2, guest
+  agent enabled. Both are running; VM111 andVM120 are stopped. A configured
+  60-second delay does not establish NAS/export readiness.
+- Docker uses TrueNAS NFS exports according to the maintained storage role.
+  Proxmox also has a mounted NFSv4 backup-only storage at
+  `/mnt/pve/truenas-backups`, enabled by default (no explicit disable property).
+  NAS shutdown therefore affects both Docker and the host's backup client.
+- Backup job remains02:30 **Australia/Melbourne**, enabled/repeat-missed, with
+  exclusions9001,9003,120 unchanged. At this date02:30AEDT corresponds to15:30UTC
+  on the preceding UTC date. Recompute the offset for the actual window date.
+- The corrected read-only active-task query returned zero tasks. The initial
+  unsupported `--running` query failed and is preserved. Neither observation is
+  a future execution-time clearance.
+
+### Proposed authorization envelope
+
+Reserve **90 minutes**, with rollback time included; this is a planning allowance,
+not a guaranteed outage duration or permission to force shutdown. Select a window
+well away from02:30 local backups and confirm no running/pending backup, scrub,
+replication, migration or other conflicting maintenance immediately beforehand.
+The operator must confirm working BMC/physical console access independent of these
+VMs and the production outage notice. Do not collect console credentials in Git.
+
+Execution approval must explicitly cover:
+
+1. Adding only `kho=off` to the host's existing kernel command line and refreshing
+   both configured ESPs, retaining kernel7.0.14-17-pve for the comparison. If boot
+   selection would change kernel version, stop for review rather than silently
+   pinning/upgrading or testing two changes together.
+2. Temporarily setting **VM102 onboot=0**, then restoring its original value1
+   after NAS readiness and controlled Docker recovery. VM101's startup settings
+   stay unchanged; VM111 andVM120 remain off. This extra temporary change prevents
+   the existing automatic60-second sequence from racing NAS readiness.
+3. Temporarily disabling only **`truenas-backups`** storage activation and cleanly
+   unmounting its host NFS mount before NAS shutdown, then restoring the exact
+   original storage configuration and mount after NAS recovery. This is a scoped
+   host-storage configuration/mount exception, not data deletion or export change.
+   No forced/lazy unmount; if busy or reacquired, abort and investigate. Preserve
+   the backup job, retention, server/export/options and VM120 exclusion unchanged.
+4. Graceful shutdown of **Docker102, then TrueNAS101**, one host reboot, and
+   controlled recovery in the opposite dependency order. TrueNAS has no guest
+   agent: use its supported graceful shutdown/ACPI path and verify it actually
+   stops. No force-stop, reset, power cut or automatic timeout escalation.
+5. Restoring the saved boot configuration and temporary settings if rollback is
+   required; a second production reboot is allowed only if explicitly included
+   in the approved window. No proof-VM start is part of this authorization.
+
+### Execution sequence after approval — not performed
+
+1. **Go/no-go:** confirm date/time, named operator, outage and console availability;
+   refresh task/backup state, production health, NAS pool/export health and client
+   inventory. Starting102 may automatically start Docker: the operator must first
+   verify the guest's current NFS/automount and Docker startup interlocks prevent
+   writes to bare local mountpoint directories. Repository declarations alone are
+   insufficient. If that gate cannot be established, stop planning execution and
+   obtain a separately reviewed guest-side service-hold strategy; no such service
+   change is implicitly authorized here. Preserve original boot/VM102/storage configuration bytes and hashes
+   outside Git. Verify managed ESP state, retained kernel/initrd and recovery path.
+   If any baseline is unhealthy or a required check is unavailable, do not start.
+2. **Prepare reversibly:** set VM102's temporary no-autostart state. Stage only
+   `kho=off`, refresh managed ESPs and verify the generated entries on both. Compare
+   all other options and boot selection against the saved baseline. On refresh
+   failure or partial synchronization, restore/reconcile before any reboot.
+3. **Drain clients:** gracefully stop Docker102 and verify stopped, with its NFS
+   clients quiesced. Quiesce any other NAS clients through the operator. With no
+   active backup/storage users, disable only the host backup storage activation
+   and cleanly unmount its NFS mount. If shutdown or unmount fails, do not force
+   it and do not stop NAS; restore the safe pre-window state or pause for review.
+4. **Stop NAS, then reboot:** gracefully stop101, verify stopped, then perform the
+   approved host reboot. Do not use kexec, KHO finalization, disk wipes, pool
+   imports with force, or automatic reboot retries.
+5. **Restore dependencies:** via console verify the same kernel plus `kho=off`,
+   host boot/storage/network/passthrough health and no unexpected VM startup.
+   VM101 may start automatically with its unchanged onboot1: verify NAS pool and
+   actual export readiness, not merely VM running state. VM102 must still be off.
+   Restore the host backup-storage original activation setting and verify its
+   mount/source; then start102, check the expected NFS sources before accepting
+   application recovery, and restore its original onboot1 after successful recovery.
+6. **Verify and close:** check the approved production services, expected
+   maintenance-related restarts, backup accessibility and exclusions. Capture new
+   boot/KHO/CMA/reclaim/swap/PSI observations with VM120 still off. Apply the
+   acceptance gates below. No Nextcloud or other proof activation follows automatically.
+
+### Rollback and abort
+
+- Before reboot: restore exact saved command-line bytes and refresh/verify both
+  ESPs. Restore temporary storage/onboot state only in a dependency-safe sequence.
+- If the host fails to boot: use the confirmed console/recovery route. A one-boot
+  removal of `kho=off` is possible only if the boot-entry editor is available and
+  verified beforehand; otherwise use the approved recovery medium/procedure.
+  Do not assume an SSH connection will be available.
+- **Selecting an older kernel alone does not undo this parameter:** refresh
+  propagates the command line to managed entries. Restore the saved persistent
+  command line and refresh, or perform a verified one-boot option edit.
+- If the host boots but production recovery fails, keep Docker off until its
+  storage dependencies are safe; preserve diagnostics and use the approved
+  rollback. Do not mount empty local directories as substitutes for NFS, recreate
+  credentials/data, or force a guest through a failed shutdown to meet the90-minute
+  allowance.
+- If timing, recovery access, synchronization or health is uncertain, abort or
+  escalate. Do not convert the maintenance plan into permission for unrelated fixes.
+
+**Outstanding human inputs:** preferred window with timezone, outage acceptance,
+working independent console/operator, and explicit approval of the complete
+execution envelope above (including temporary VM102/storage settings and rollback).
+
 ## Verification and acceptance gates
 
 1. **Mitigation installed:** independently verify the new boot ID, running kernel,
@@ -115,6 +244,10 @@ startup order, data-safety checks, rollback and acceptable outage. Before execut
 
 ## Sources
 
+- Proxmox bootloader identification and systemd-boot command-line propagation:
+  https://pve.proxmox.com/wiki/Host%5FBootloader
+- Maintained local dependencies: [host policy](proxmox-host.md) and
+  [Docker NFS declarations](../ansible/roles/docker-host/defaults/main.yaml).
 - Proxmox primary discussion, exact signature and `kho=off` mitigation:
   https://lore.proxmox.com/pve-devel/20260714124456.347992-1-d.csapak@proxmox.com/t/
 - Linux7.0 KHO scratch-region allocation semantics:
