@@ -1,0 +1,131 @@
+{
+  "observed_utc": "2026-11-13T02:28:20.483764+00:00",
+  "scope": "read-only platform follow-up; zero additional starts; authorized guard containment on failed verification gate",
+  "source_head": "754a6476be7a026f1b1b8f931dc647094e3cfb35",
+  "final_vm_state": "STOPPED",
+  "containment_reason": "retained Flux GitRepository spec.suspend absent/false; required suspension barrier failed",
+  "flux_resource_observations": [
+    {
+      "kind": "GitRepository",
+      "namespace": "proof-operations-system",
+      "name": "proof-fixture",
+      "uid": "4c958422-cbea-4e72-97f1-d2cb9ed29916",
+      "suspend": false
+    }
+  ],
+  "no_flux_controller_or_unexpected_application_pod_observed": true,
+  "no_reconciliation_or_resource_mutation_performed": true,
+  "remaining_flux_inspection_gap": "Kustomization and later Flux resource GETs were not reached after fail-closed suspension refusal; API now off",
+  "exact_inventory_checks_before_flux_refusal": {
+    "passed": true,
+    "pods": 9,
+    "daemonsets": {
+      "cilium": 1,
+      "cilium-envoy": 1
+    },
+    "deployments": {
+      "cilium-operator": 1,
+      "coredns": 2,
+      "local-path-provisioner": 1
+    },
+    "node_owned_static_pods": 3,
+    "owner_uid_chains": true,
+    "nonempty_ready_running_container_statuses": true,
+    "all_other_controllers_zero_and_schedules_suspended": true,
+    "pvc_pv_capacities": [
+      "4Gi",
+      "4Gi",
+      "1Gi"
+    ],
+    "exact_hostname_only_affinity": true
+  },
+  "predicate_correction": "Original namespace/prefix and substring predicates were broader than exact verification; new explicit assertions passed before Flux refusal; original files/results preserved",
+  "mount_verification": {
+    "fixed_proc_mountinfo_read": "NotFound; preserved",
+    "read_only_talos_status_alternative": "active MountStatus XFS /dev/sdb1 -> /var/mnt/proof; VolumeStatus ready partition1 parent/dev/sdb; BlockDevice major8 minor17",
+    "expected_mount_and_separate_device_verified": true,
+    "data_integrity_verified": false
+  },
+  "memory_observation": {
+    "success": true,
+    "time": 1794536750.818999,
+    "observation_seconds": 300.01099726199936,
+    "samples": 31,
+    "minimum_host_available_mib": 2731,
+    "swap_used_kib_range": [
+      0,
+      0
+    ],
+    "pswpin_delta": 0,
+    "pswpout_delta": 0,
+    "initial_memory_pair": {
+      "observed_at": 1794536442.377341,
+      "talos_observed_at": 1794536441.942626,
+      "talos_available_mib": 1370.6015625,
+      "kubelet_memory_time": "2026-11-13T02:20:40Z",
+      "kubelet_available_mib": 660.9296875,
+      "dual_min_mib": 660.9296875,
+      "fresh_120s": true
+    },
+    "final_memory_pair": {
+      "observed_at": 1794536750.818308,
+      "talos_observed_at": 1794536750.2681348,
+      "talos_available_mib": 1363.703125,
+      "kubelet_memory_time": "2026-11-13T02:25:50Z",
+      "kubelet_available_mib": 669.2734375,
+      "dual_min_mib": 669.2734375,
+      "fresh_120s": true
+    },
+    "application_grant": false
+  },
+  "component_point_working_set_mib": [
+    {
+      "pod": "coredns-6cb54fb45c-64sbv",
+      "working_set_mib": 50.6484375
+    },
+    {
+      "pod": "cilium-8thlg",
+      "working_set_mib": 481.71875
+    },
+    {
+      "pod": "coredns-6cb54fb45c-5bkgn",
+      "working_set_mib": 47.0078125
+    },
+    {
+      "pod": "kube-controller-manager-talos-proof",
+      "working_set_mib": 131.0546875
+    },
+    {
+      "pod": "cilium-envoy-bmrfr",
+      "working_set_mib": 97.1171875
+    },
+    {
+      "pod": "kube-scheduler-talos-proof",
+      "working_set_mib": 66.48828125
+    },
+    {
+      "pod": "kube-apiserver-talos-proof",
+      "working_set_mib": 431.76953125
+    },
+    {
+      "pod": "local-path-provisioner-d849dd656-6nwrq",
+      "working_set_mib": 60.8125
+    },
+    {
+      "pod": "cilium-operator-6756f849f6-sfnr9",
+      "working_set_mib": 155.7734375
+    }
+  ],
+  "component_limit": "kubelet point samples and raw state/restarts retained; not peaks, leak diagnosis, historical swap attribution or additive exact host accounting",
+  "admission": {
+    "required_mib": 832,
+    "final_dual_min_mib": 669.2734375,
+    "admissible": false,
+    "application_grant": false
+  },
+  "original185files_manifest_and_public_evidence_unchanged": true,
+  "owned_tunnels_closed": true,
+  "no_additional_starts": true,
+  "private_capture": "/Users/mm/.local/state/home-infra/talos-proof/diagnostics/guarded-platform-recovery-201099d8-0301-4c6b-8b14-512b51cf5d05",
+  "acceptance": "parent pending; VMoff; no capacity/native/application acceptance"
+}

@@ -1,15 +1,23 @@
 # Service-by-service proof readiness
 
-Current status: 2026-11-13. **VM120 remains stopped; no production cutover is approved.**
+Current status: 2026-11-13. **VM120 is OFF after verification-triggered containment.
+No application or production cutover is approved.**
 Approved host maintenance completed on kernel7.0.14-24-pve with`kho=off`;
 KHO output/CMA-free restriction removed and36production containers recovered.
 [Maintenance evidence](evidence/talos-acceptance/kho-maintenance-completed-f7a723ea8a0d4640a2e586022501ce5a.json)
-is not proof-workload or capacity acceptance. No proof startup/grant occurred.
-The guard reported sustained host swap IO at07:18:58UTC and confirmed QEMU exit.
-A later read-only admission failed before any new receipt or diagnostic invocation.
-The user has now authorized one fresh guarded-start recovery and read-only platform
-verification, keeping applications stopped. Pre-start checks and execution remain
-pending; no diagnostic/native application grant follows from that authority.
+is not proof-workload or capacity acceptance. The prior guard stop and failed
+read-only admission remain retained. User then approved a separate single guarded
+start and read-only verification with applications stopped. Fresh6062MiB admission
+passed; wrapper exited0 and independent exact-process/guard/watchdog checks passed.
+Native stopped-world, node identity and retained storage bindings subsequently passed;
+Talos verified separate XFS device8:17 mounted at`/var/mnt/proof`. Fresh conservative
+memory669.27MiB is below the832MiB Nextcloud diagnostic gate; no application started.
+A later verifier wrongly required every Flux object to have`suspend:true`, encountered
+an unsuspended GitRepository with no Flux controllers running, and stopped VM120 via
+the existing guard. Parent and independent review confirmed this verifier overreach;
+it was NOT a new host-swap failure. One start was consumed; no automatic retry.
+[Parent correction and acceptance limits](evidence/talos-acceptance/guarded-platform-parent-review-8954422ca5934f0d9fda169a62f7a71d.json)
+retain the failure and uncollected Flux state. Data integrity and capacity remain unproved.
 The [KHO maintenance outcome](talos-proof-host-memory-remediation.md) verifies the
 mitigation, not sole incident attribution or a representative soak. Historical
 passes below remain evidence of their named windows, not current running state or

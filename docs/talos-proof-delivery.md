@@ -1,6 +1,49 @@
 # Talos isolated proof delivery — coordinator brief
 
-## Active continuation — guarded platform recovery (2026-11-13)
+## Current disposition — 2026-11-13: VM120 OFF; CI repaired, app admission blocked
+
+The one authorized guarded start succeeded and preserved node/storage identities;
+applications/helpers remained stopped. Initial120s and additional300s observations
+had zero host swap/page-I/O delta. Talos verified active XFS`/dev/sdb1` at
+`/var/mnt/proof`, separate device8:17. No file/database integrity acceptance.
+
+**VM120 was subsequently administratively stopped through its guard because the
+executor added an overbroad Flux predicate. This was NOT a host resource-guard
+failure.** It required`suspend:true` on every Flux custom resource, beyond the
+approved inspection contract. The retained GitRepository's field was absent,
+exactly as the operations generator/cleanup leaves it; no Flux controller or app
+Pod was observed. Source-fetch intent without a controller is not active reconciliation.
+Executor acknowledged the error in private`correction-summary.json` SHA
+`0df3396bbcbe2c8a3fc3351405785aa7a821bbb7ec6d6d8508dd004ce104051f`.
+Independent read-only reviewera1e79b1a confirmed; parent reviewed actual cleanup code.
+The failed predicate, original interpretation and stop remain preserved, not rewritten.
+
+Last fresh paired guest observation: Talos1363.70MiB / kubelet669.27MiB;
+**conservative669.27 < required832MiB**. No Nextcloud diagnostic/app grant. These
+are now historical observations with VMoff, not current admission. Kustomization
+and later Flux inventory were not collected after the mistaken refusal; do not
+infer their current state. Future verification needs complete inventory followed
+by kind-specific evaluation, not the archived blanket predicate. Native CronJob
+suspension and absent app/helper/controller barriers remain unchanged.
+
+Parent accepted bounded observed startup/identity/storage-metadata/absence/production
+continuity facts, not a continued-running endpoint, complete Flux inspection, workload
+capacity, sole historical cause or application acceptance. One start consumed; no
+restart/repair/tuning/activation queued. All runtime ownership released. Parent
+rehashed43/185/207manifest-covered files and directly checked raw node/controller/
+ownerUID/PV/mount/device/final-off captures. Parent correction controls interpretation:
+[review](evidence/talos-acceptance/guarded-platform-parent-review-8954422ca5934f0d9fda169a62f7a71d.json),
+[initial result](evidence/talos-acceptance/guarded-platform-recovery-e941dfb9-dd97-4dbc-a9f5-11a5ecfe8d65.json),
+[retained addendum](evidence/talos-acceptance/guarded-platform-recovery-addendum-6e99e19d-7e0b-4875-8b77-2f392107046b.json).
+
+CI image repair7c258787 passed full522/443offline gate and all seven watched CI
+runs at754a6476 (both Talos triggers + five other workflows). Old failures and
+old-image live evidence remain historical. Current Wallabag/SAB Git pins were NOT
+applied. Next useful work is an evidence-backed guest-capacity plan and corrected
+read-only verification before any separately authorized new start/application slice;
+no smaller reserve, pressure trick or unreviewed resource change to force admission.
+
+## Continuation execution history — guarded platform recovery (2026-11-13)
 
 User approved CI investigation, a fresh guarded VM120 start and read-only platform
 verification, explicitly keeping applications stopped; requested gpt-6.1-sol workers
@@ -72,7 +115,59 @@ and independently rehashed/count-checked private log
 SHA`896e251a68346ac7c5c9c82b01bf7e5e5943faa1b685314c221c7051e14ad71e`.
 Worker captured clean source/diff before/after. Subsequent parent edits are brief/
 readiness docs only. Separate workflow generation/actionlint awaits CI. Static repair
-accepted; live recovery still pending preflight review. Existing failed CI retained.
+accepted; existing failed CI retained. New CI at754a6476 is now green: Talos PR
+43348830643 and push43348823234 independently watched success; Nix43348830746,
+Actions43348830653,Docker43348830685,Terraform43348830651,Ansible43348830656 also
+watched success. Parent independently checked live run metadata and rehashed private
+summary`diagnostics/ci-watch-23b6e5a9-b3a7-415e-aba0-7c96f0d34cb5/summary.json`
+SHA`a20813e729e5a7fde8311e2d616370d0e136b6c3622f8f9d924eeeef94ef4276`.
+PR checkoutf5bc3759 has intended maina2c549e7 and feature754a6476 parents; all repaired
+manifest/Compose blobs match. CI worker completed/released; no live authority.
+
+Fresh recovery preflight completed in private
+`diagnostics/guarded-platform-recovery-201099d8-0301-4c6b-8b14-512b51cf5d05`.
+Parent rehashed43manifest-covered files, checked all6deployed source hashes/profile/
+KHO/off gates. Host6027–6146MiB versus4992required; swap/page/PSI deltas0; original24KiB
+baseline retained; production36metadata unchanged. Current101/102PID/startticks
+captured for this window; no claim of PID continuity since maintenance (that baseline
+lacked these fields). Preflight requested privateb47846review was absent because the
+parent supplied the wrong location: exact artifact exists under tracked
+`docs/evidence/talos-acceptance/nextcloud-diagnostic-failure-review-b47846fac38c4b8a899f090b6c0a66fc.json`.
+Parent read it; missing-path observation preserved. Final preflightJSON correctly
+records754a6476, correcting worker prose7c258787; intervening changes were docs only.
+
+Parent issued exact single-start authorizationd6479f34-b075-41e6-904d-5dc11bafcf96,
+expiring for startup2026-11-13T02:36:18.520648Z, in that private capture. Executor0915
+may refresh gates, invoke existing supervised start once, establish owned management
+forwards, perform selected GET/read-only metadata and120s passive observation, compare
+production metadata, and use existing guard stop only for fail-closed containment.
+No retry/app activation/reconciliation/production changes. Capture both successful
+and failed outcomes; timeout is unknown. Subsequent start/verification acceptance
+is pending, not inferred from this grant. Parent owns docs/final acceptance.
+Parent subsequently observed one actual wrapper invocation, exit0, fresh6062MiB
+admission and independent same-process validation: QEMU23124/startticks484997/
+scopeinode13500, guard23177 active/running/watchdog15s, startup receipt complete;
+observed host4695MiB available/swap0. Original receipts archived before wrapper
+replacement. Parent sent acknowledgement/continued bounded verification instruction;
+no app grant. Initial recovery then completed: sole expected Ready node; initial/final
+native stopped-world barriers; three retained Nextcloud bindings; production101/102
+PID/startticks/config and36container projections unchanged against this preflight;
+111canonical unchanged; owned tunnel closed.25host samples/120.009s: min2926MiB,
+swap0, page deltas0/0, sampledPSI delta rates0. Evidence leaf
+`guarded-platform-recovery-e941dfb9-dd97-4dbc-a9f5-11a5ecfe8d65.json`; parent rehashed
+185files and independently checked exact9platformPod inventory/cardinality/ownerUID
+chains and4Gi/4Gi/1Gi capacities with hostname-only PVaffinity in raw captures.
+
+**Acceptance gap/correction:** initial private validator used prefix/namespace and
+substring-affinity predicates, weaker than its prose. Actual data passes parent exact
+review, but worker was directed to use exact follow-up assertions and retain original
+results. Talos proc/mount metadata was omitted; kubelet available686.32→687.68MiB
+is below832MiB diagnostic admission. Parent explicitly reassigned bounded read-only
+follow-up: exactTalos memory/mount metadata, paired dual-min, component stats, one
+optional fixed300s passive window and fresh strict final barriers. ZERO further
+starts/application actions; no cache pressure/tuning/GC. Preserve initial manifest/
+evidence; add separate append-only follow-up. Platform acceptance remains pending
+these missing checks; no application grant or capacity claim.
 
 ## Prior checkpoint — 2026-11-13 maintenance completed
 
@@ -189,7 +284,7 @@ Docker startup interlocks must be verified before execution; no implicit service
 hold or forced shutdown. VM120 remains off. Root cause remains unresolved.
 
 ## Scope and checkout
-- Dedicated worktree `/Users/mm/dev/home-infra-talos-proof`, branch `feat/talos-live-proof`, base `8de8c051` (`origin/main`), managed with `gh stack`.
+- Dedicated worktree `/Users/mm/dev/home-infra-talos-proof`, branch `feat/talos-live-proof`, original task base `8de8c051`; reviewed current main`a2c549e7` integrated in21d9464a for source parity. Managed with `gh stack`.
 - Draft PR **https://github.com/mich-murphy/home-infra/pull/2005**. Push with `gh stack submit --auto`; CI watch uses `gh run watch <id> --interval 60 --exit-status`, one watcher per session.
 - Original `/Users/mm/dev/home-infra` has extensive pre-existing changes: never modify/stage/reset it. Historical `origin/feature/talos-kubernetes` is reference only; its Docker/GPU/network cutover is forbidden.
 - Deliver maintainable declarative replicas and resource-safe, staged live functional/isolation/recovery evidence. **No migration approval or full-concurrency claim.**
@@ -197,7 +292,7 @@ hold or forced shutdown. VM120 remains off. Root cause remains unresolved.
 - Fresh synthetic data/credentials; private material outside Git, directories0700/files0600, never stdout.
 - Explicit new-VM membership safeguard: existing02:30 `backup-truenas-daily` all-guests job would include120 and write proof data to production NAS. Parent changed ONLY its exclusion list9001,9003→9001,9003,120; compared complete before/after objects, all other fields/existing-guest membership unchanged. No backup triggered. Receipt `docs/evidence/talos-acceptance/proof-backup-exclusion.json`; this limited existing-job configuration exception is disclosed, not hidden as 'no Proxmox changes'.
 
-## Ownership and current leases (updated after 7ac9f65c transfer release)
+## Historical ownership and release ledger (current disposition above controls)
 Parent owns this brief, integration, root app Kustomization, CI/static gates, `talos/`, main platform/operator docs and final acceptance. Shared worktree: explicit-path commits only; do not edit active worker files.
 
 Workers use `openai/gpt-6.1-sol`. Resumes requesting200turns still encounter a hard30turn/five-turn-warning cutoff: inspect actual state, preserve safe checkpoint, resume explicitly. Maximum3 active workers is the coordination target; stopped workers retain file ownership until reassigned.
@@ -252,7 +347,7 @@ Workers use `openai/gpt-6.1-sol`. Resumes requesting200turns still encounter a h
 | `49ae7710-2963-401` | `kubernetes/operations/`, operations scripts/tests/doc/evidence | COMPLETE3848e4cf: real Flux drift/path rollback/RBAC passed and released.4cdf5c48 adds CRD Established sequencing/private failure receipts/local retention safety;19 offline tests. New sequencing not live retested. |
 | `3f2f0609-5c07-48a` | new host-isolation files only | COMPLETE/RELEASED090a97e5: actual node TCP rejection passed on second/final unit start. First loader failure preserved, no starts remain. Parent independently rehashed raw receipt and reparsed all5policy snapshots/counters/controls. Child UDP/IPv6 remains disabled/unproved; original lifecycle/enforcement unchanged. |
 
-**NO active live grant; VM120 STOPPED after guard failure.** Parent fresh admission stopped at its first Kubernetes GET; no receipt was created, no diagnostic invoked,111canonicalfiles unchanged/no pending. Guard journal reports sustainedhostswapIO at07:18:58.243605UTC and confirmed QEMUexit at07:18:58.453797UTC. Read-only host status: PIDfileabsent/guardfailed, available5390.094MiB/swap6328KiB; originalbaseline24KiB preserved, historical28KiB distinct. Lastsuccessfulguard sample2595MiB/swap4652KiB; failing swap-page counts unlogged, no responsible-workload attribution. Deployedguard/lifecycle/unit hashes match frozen repository; VMUUID/3072MiB configuration retained. Leaveoff; explicit new guarded-start authorization required. No start/reset/threshold change attempted. Parent source review and all4515capturefiles confirm43recorded2logrequests,bothPHPhelper,zeroexec; PG/Redis rawPodstate exists but current/previous logs and cgroup counters were not captured before shutdown. Do not extend helperOOM0 to backends. 0d8 completed narrow diagnostic-only capture in736f7de1+e0a056fa; parent reviewed the followups and522/443 fullgate passed. Anonymous metadata now establishes both fixed reader paths and loader in both pinned images:6061a960, parent63-artifact/20-layer reviewbd429134. No live ABI/cgroup access/timing claim. Parent took over the focused command change: v3 profile requires `/usr/bin/timeout --kill-after=1s 2 /bin/cat ...`; missing/disabled/extended escalation options rejected, TERM→KILL is not guaranteed completion/reaping. Full522/443 gate passed again at `/tmp/talos-proof-static-08108df4-fe28-433d-a26b-e99fc4b96a59.log`. Executor4fa is preparing offline only. Historical gap remains; no new grant/runtime retry. Diagnostic43c01d48 ran exactlyonce and FAILED at `reviewed packaged metadata drift`, expected86a6fd49…/actualunavailable. No HTML inventory/SQL/Redis checks, install/fixture/aging/cron/web/CODE or main rerun. Helper exit1/restarts0/capturedOOM0/kill0; capture preceded UID retirement, both backend stop patches succeeded, global absence/stopped controllers/suspensions confirmed. Onefailed-result+clean,84oldcanonicalfilesunchanged/exactreceiptarchivedbeforeremoval/issuedcopyunchanged (27607487). Current unavailable-hash cause and original RuntimeException cause remain unobserved. Source1c15551b fixes ordinary-source guard rejecting normal ConfigMap projections via a fixed confined8192-byte reader; parses verified bytes, source/PVC link prohibition unchanged. Fifteen actualPHP8.5.7 regressions plus184related tests passed, not live acceptance. Parentwired locked `talos-proof-php-tools`/mandatorygate/CI; integrated511Python/42suites and443resources passed without skips. Parent independently rehashed4515capturefiles+111canonicalfiles, reparsed actualROPod/exit1/restart0/97316864Bpeak/OOM0/failed-result+clean, verified84oldfilesunchanged/issued-active-snapshot-archive exactequality/activeabsence/no pending (`nextcloud-diagnostic-failure-review-b47846fac38c4b8a899f090b6c0a66fc.json`). Historical artifact review, not fresh runtime observation or native acceptance. Parent independently rehashed980 GET-release capture files+81canonical originals, verified receipt retirement and onepending/oneclean, then freshly observed exact ReadyNode/namespace/allproof+storagehelper absence/controllers0/suspensions: dual-min1173.171875MiB, host2638.457MiB/guardACTIVE/VMUUID3072/swap28KiB(original24 retained). Separate NEWauthorizationd99fded6 binds5sources/4artifacts/transitive review/exact documents; observations alone were not authority. GET-only release356c45a4 completedcb79c944:15UIDs/6policies/originalPHP/absence verified, exactly3local events includingoneclean; no Kubernetes mutation/activation/native acceptance. Original pending event and all failed evidence remain unchanged.
+**Historical pre-maintenance checkpoint: NO active live grant; VM120 STOPPED after guard failure.** Parent fresh admission stopped at its first Kubernetes GET; no receipt was created, no diagnostic invoked,111canonicalfiles unchanged/no pending. Guard journal reports sustainedhostswapIO at07:18:58.243605UTC and confirmed QEMUexit at07:18:58.453797UTC. Read-only host status: PIDfileabsent/guardfailed, available5390.094MiB/swap6328KiB; originalbaseline24KiB preserved, historical28KiB distinct. Lastsuccessfulguard sample2595MiB/swap4652KiB; failing swap-page counts unlogged, no responsible-workload attribution. Deployedguard/lifecycle/unit hashes match frozen repository; VMUUID/3072MiB configuration retained. Leaveoff; explicit new guarded-start authorization required. No start/reset/threshold change attempted. Parent source review and all4515capturefiles confirm43recorded2logrequests,bothPHPhelper,zeroexec; PG/Redis rawPodstate exists but current/previous logs and cgroup counters were not captured before shutdown. Do not extend helperOOM0 to backends. 0d8 completed narrow diagnostic-only capture in736f7de1+e0a056fa; parent reviewed the followups and522/443 fullgate passed. Anonymous metadata now establishes both fixed reader paths and loader in both pinned images:6061a960, parent63-artifact/20-layer reviewbd429134. No live ABI/cgroup access/timing claim. Parent took over the focused command change: v3 profile requires `/usr/bin/timeout --kill-after=1s 2 /bin/cat ...`; missing/disabled/extended escalation options rejected, TERM→KILL is not guaranteed completion/reaping. Full522/443 gate passed again at `/tmp/talos-proof-static-08108df4-fe28-433d-a26b-e99fc4b96a59.log`. Executor4fa is preparing offline only. Historical gap remains; no new grant/runtime retry. Diagnostic43c01d48 ran exactlyonce and FAILED at `reviewed packaged metadata drift`, expected86a6fd49…/actualunavailable. No HTML inventory/SQL/Redis checks, install/fixture/aging/cron/web/CODE or main rerun. Helper exit1/restarts0/capturedOOM0/kill0; capture preceded UID retirement, both backend stop patches succeeded, global absence/stopped controllers/suspensions confirmed. Onefailed-result+clean,84oldcanonicalfilesunchanged/exactreceiptarchivedbeforeremoval/issuedcopyunchanged (27607487). Current unavailable-hash cause and original RuntimeException cause remain unobserved. Source1c15551b fixes ordinary-source guard rejecting normal ConfigMap projections via a fixed confined8192-byte reader; parses verified bytes, source/PVC link prohibition unchanged. Fifteen actualPHP8.5.7 regressions plus184related tests passed, not live acceptance. Parentwired locked `talos-proof-php-tools`/mandatorygate/CI; integrated511Python/42suites and443resources passed without skips. Parent independently rehashed4515capturefiles+111canonicalfiles, reparsed actualROPod/exit1/restart0/97316864Bpeak/OOM0/failed-result+clean, verified84oldfilesunchanged/issued-active-snapshot-archive exactequality/activeabsence/no pending (`nextcloud-diagnostic-failure-review-b47846fac38c4b8a899f090b6c0a66fc.json`). Historical artifact review, not fresh runtime observation or native acceptance. Parent independently rehashed980 GET-release capture files+81canonical originals, verified receipt retirement and onepending/oneclean, then freshly observed exact ReadyNode/namespace/allproof+storagehelper absence/controllers0/suspensions: dual-min1173.171875MiB, host2638.457MiB/guardACTIVE/VMUUID3072/swap28KiB(original24 retained). Separate NEWauthorizationd99fded6 binds5sources/4artifacts/transitive review/exact documents; observations alone were not authority. GET-only release356c45a4 completedcb79c944:15UIDs/6policies/originalPHP/absence verified, exactly3local events includingoneclean; no Kubernetes mutation/activation/native acceptance. Original pending event and all failed evidence remain unchanged.
 
 Historical native33d6df9f invocation074094b6 failed at read-only preflight: payload ran/RuntimeException, exact gate/message lost; no install/fixture/before/cron/assert/cleanup phase. Maincurrent/peak94810112B/oom0/kill0, no capacity claim. Helper captured/UID-retired, backends stopped, retained identities/51oldfiles unchanged; receipt archived/released. Parent independently rehashed51old+30new files and reparsed actual read-only preflight Pod/exit1/log/receipt authority (`nextcloud-native-failure-review-320eb83b065948108cf7672f6157a58b.json`). Backend startup may have written PG/Redis volumes; no renewed emptiness claim from that failed run. Pre-windowdual-min1158.546MiB/host1948MiB is historical, not authority. The subsequent GET-only release did not erase failure or authorize diagnosis automatically. Public exact-image inspection found34/35matching files: onlyversion.php differs between git and packaged stable/build metadata. Parent independently verifiedindex/manifest/config/22compressedlayers/all22DiffIDs/version (`nextcloud-public-image-review-a8a4347c61c34638a3b4946fb331c769.json`); historical runtime gate is still unrecovered. Runtime artifact pin must be exact and original source hashes retained. The reviewed process model keeps lightweight parent+one heavy PHP child, same192MiB cgroup—not one process/capacity acceptance. Bindingb808f115 completed/released:3Bound originalPVCs, native empty/read-only XFS8:17 checks, helperpeak3973120B/exit0/oom0/oom_kill0, helperretired;51journals/15UIDs/receipt independently reviewed in `nextcloud-binding-release-review-45b09a7595b54a5c9dcb8198abf93279.json`. Automatic-provisioner lifetime log/cgroup gap retained. Parent additionally created only4already-declared namespace backend policies, preserving7existingUID/specs/default-deny/DNS; no host/production policy change (`nextcloud-network-prerequisites-07bf73a7-dc8f-4001-91f8-490365dad0cc.json`). Original initialization34a6bc9c ran once and released before binding: all11 authorized declarations created/stopped, 3PVCsPending/no volume assignments, no binding intent/Job. Parent independently rehashed36 journals, checked11 retained UIDs/Secret identity, issued/final receipt equality0600/active-path absence, no proof/helper Pods or Nextcloud PV refs (`nextcloud-initialization-release-review-f2bce029f368495cb195c5c3066ea56a.json`). The pre-window1150.91MiB dual-min/host1811MiB are historical observations, not renewed authority. Original pending event remains immutable; the separately authorized successful binding appended one clean event. No delete/recreate/retry. Actual352MiB binding envelope retains conservative832MiB admission. Pinchflat49eae0a3 was refused before mutation/activation by equivalent CPU1/1000m spelling;2082 fixes canonical comparison, fbbd requires both fresh memory readings without legacy fallback. NEW77f1f267 window then admitted704=384main+128fixture+192reserve, ran ONE activation/exercise and stopped at missing RPC structured output. Both receipts archived/revoked; no retry/restart/recovery. Parent independently rehashed214oldfiles, retained STOP, checked original/revoked authority fields, all proof/helper pods absent, deployments/statefulsets/daemonsets/jobs stopped and schedules suspended. Fresh observation1176kubelet/1162Talos minimum1162, host1877/guardACTIVE/swap28KiB(original24unchanged). `post-rss384-release-review-c875839b84df40d3ad7853f03ee8ad92.json`. Stopped384provider profile remains; base256 cannot undercharge it. STOP remains blocking until explicit review/run-history binding; no acknowledgement issued. Following the operator's continuation clarification, ordinary review/preflight/implementation work proceeds autonomously; only genuine authority gaps require operator action. Parent chose the declared new nextcloud-data name (not an adopted alias), independently reviewed11 document hashes, and created only an empty0700 canonical journal directory after confirming no UUID journals in the untouched legacy directory. No credential generation/copy or state migration. Binding did not automatically promote authority: parent independently reviewed artifacts and issued the separate native receipt above. That native run subsequently failed preflight as recorded above; native acceptance remains absent.
 

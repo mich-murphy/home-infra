@@ -117,6 +117,28 @@ window, not a record that they have run:
 harmless monitor restart. Never use it while a platform/application lease is active.
 A failed cold-start admission leaves the VM stopped; do not bypass it with qm.
 
+## Read-only recovery follow-up — 2026-11-13
+
+One separately authorized guarded start succeeded after KHO host maintenance;
+existing profile/baseline/guard thresholds were unchanged. Node/storage identities,
+application absence and bounded host observations passed. A later private verifier
+introduced a blanket `spec.suspend:true` assertion for every Flux custom resource
+and administratively stopped VM120 through the existing guard. That predicate was
+not the approved inspection contract. No host resource-guard failure occurred.
+
+Do not reuse that blanket predicate: collect complete authorized inventory, then
+interpret each supported kind. Native CronJobs require suspension because their
+controller is running. Retained Flux Kustomization apply intent needs its own
+suspension check; GitRepository fetch intent is inert with its controllers absent,
+but is not durably suspended. The existing operations cleanup suspends Kustomization
+and deletes Flux controller Deployments, leaving GitRepository without`suspend`.
+Unsupported fields on other CRD kinds are not a universal safety invariant.
+
+Original failure/stop evidence remains intact. Kustomization/later Flux inspection
+was not reached; do not infer current state from cleanup source. VM120 stays off,
+with one start consumed/no retry. Last guest dual-min669.27MiB was below832MiB;
+no diagnostic/app authority. See [parent review and correction](evidence/talos-acceptance/guarded-platform-parent-review-8954422ca5934f0d9fda169a62f7a71d.json).
+
 ## Offline regression / outstanding proof
 
 `PYTHONDONTWRITEBYTECODE=1 python3 tests/talos-proof-host_test.py` performs only

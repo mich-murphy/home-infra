@@ -1,0 +1,61 @@
+{
+  "reviewed_utc": "2026-11-13T02:37:00.005123+00:00",
+  "source_head": "754a6476be7a026f1b1b8f931dc647094e3cfb35",
+  "reviewed_worker_artifacts": {
+    "guarded-platform-recovery-e941dfb9-dd97-4dbc-a9f5-11a5ecfe8d65.json": "173ae86791f0f27e085de1c08b5bec4e0747f7d78ce45ae419bee9baca64755d",
+    "guarded-platform-recovery-addendum-6e99e19d-7e0b-4875-8b77-2f392107046b.json": "983de807b26de5df49ec37ce8990f491e7e0b7d1ba751929d6502ffa1e1e1bf8"
+  },
+  "private_manifest_files_independently_rehashed": {
+    "capture-manifest.json": 43,
+    "recovery-final-manifest.json": 185,
+    "followup-final-manifest.json": 207
+  },
+  "correction_sha256": "0df3396bbcbe2c8a3fc3351405785aa7a821bbb7ec6d6d8508dd004ce104051f",
+  "current_vm120_state": "STOPPED",
+  "start_invocations": 1,
+  "additional_starts": 0,
+  "stop_classification": "authorized proof-only administrative containment caused by an overbroad verifier predicate; NOT a host resource-guard failure",
+  "parent_correction": "Requiring spec.suspend=true on every Flux custom resource was not the approved inspection contract. Do not reuse this blanket predicate. Executor acknowledged error; independent read-only reviewer agreed. Original failure and stop records remain unchanged.",
+  "gitrepository_observed": {
+    "namespace": "proof-operations-system",
+    "name": "proof-fixture",
+    "uid": "4c958422-cbea-4e72-97f1-d2cb9ed29916",
+    "suspend_field": "absent",
+    "source_commit": "5d9a9926106f76346950af20e8afc0ef346ac548",
+    "flux_controller_or_app_pods_observed": false
+  },
+  "source_review": "scripts/talos-proof-operations-flux.py renders GitRepository without suspension; cleanup suspends only Kustomization then deletes source/kustomize controller Deployments. Retained source is inert with those controllers absent, not durably suspended.",
+  "uncollected": "Current Kustomization and later Flux resource state; inspection stopped at the false blanket predicate. Do not infer current state from historic cleanup.",
+  "accepted_bounded_evidence": [
+    "one guarded start with original thresholds/baseline and matching incarnation",
+    "sole expected Ready node and exact9platformPod inventory/ownerUID chains",
+    "native application controllers0, CronJobs suspended, zero application/helper Pods including terminal/terminating",
+    "three original Nextcloud PVC/PV UID/capacity/path/Retain bindings and exact hostname affinity",
+    "read-only Talos activeXFS/dev/sdb1 mount at/var/mnt/proof; separateblockdevice8:17",
+    "production101/102PID/startticks/config and36container projections unchanged during recovery window",
+    "111canonical files unchanged",
+    "120s and separate300s host windows with zero swap use/pageIO delta",
+    "owned tunnels closed and exact VMoff confirmation after containment"
+  ],
+  "mount_limit": "No file/database integrity or restore acceptance. Fixed /proc/mountinfo read failed NotFound; typed Talos resource observations supplied mount/device metadata.",
+  "guest_memory": {
+    "observed_at": 1794536750.818308,
+    "talos_observed_at": 1794536750.2681348,
+    "talos_available_mib": 1363.703125,
+    "kubelet_memory_time": "2026-11-13T02:25:50Z",
+    "kubelet_available_mib": 669.2734375,
+    "dual_min_mib": 669.2734375,
+    "fresh_120s": true
+  },
+  "diagnostic_admission": {
+    "required_mib": 832,
+    "last_observed_dual_min_mib": 669.2734375,
+    "admissible": false,
+    "currently_fresh_with_vm_off": false,
+    "application_grant": false
+  },
+  "host_limits": "Kernel+khooff mitigation and bounded idle observations do not prove original sole cause or representative capacity/soak.",
+  "quality": "522Python tests/42suites and443resources full offline gate passed; both TalosCI triggers and5other workflows passed at754a6476. Prior failures retained.",
+  "acceptance": "CI repair and bounded observed recovery facts accepted; end-to-end continued-running platform acceptance incomplete, Flux inspection gap and guest admission blocker remain; VMoff/no automatic retry/no app activation.",
+  "ownership": "parent owns final acceptance; executor released all runtime ownership; independent reviewer read-only completed"
+}

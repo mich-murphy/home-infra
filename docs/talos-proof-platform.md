@@ -1,6 +1,22 @@
 # Talos proof platform
 
-## Current checkpoint — 2026-11-13 host mitigation completed; proof off
+## Current checkpoint — guarded recovery observed, verifier-triggered stop
+
+After a separately authorized single start, VM120 preserved its exact node UID,
+retained Nextcloud bindings and stopped application state. Talos verified active
+XFS`/dev/sdb1`→`/var/mnt/proof`, device8:17.120s and separate300s observations had
+zero host swap/page-I/O delta; this is not capacity or data-integrity acceptance.
+Last paired guest memory minimum669.27MiB was below832MiB diagnostic admission.
+
+**VM120 is now OFF.** An overbroad private verifier demanded suspension on every
+Flux custom resource and invoked the authorized guard-stop path when a retained
+GitRepository lacked that field. Operations cleanup intentionally leaves the source
+object while deleting Flux controllers; none were observed running. This was a
+verifier error, NOT another host swap/guard failure. Current Kustomization/later
+Flux inventory remains uncollected. No retry, app activation or configuration repair.
+See [parent-reviewed outcome/correction](evidence/talos-acceptance/guarded-platform-parent-review-8954422ca5934f0d9fda169a62f7a71d.json).
+
+## Prior checkpoint — 2026-11-13 host mitigation completed; proof off
 
 Explicitly approved production maintenance completed one host reboot onto
 7.0.14-24-pve with`kho=off`. KHO output is absent and CmaTotal/CmaFree are0.

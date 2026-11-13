@@ -8,10 +8,14 @@
 > functional, recovery, capacity or production-readiness verdict. Current live
 > acceptance and outstanding corrections are in [the delivery record](talos-proof-delivery.md).
 >
-> **2026-11-13: VM120 remains stopped.** The prior day's guard stop is retained.
-> Approved host mitigation installed kernel7.0.14-24-pve with`kho=off`; production
-> recovered, but no proof startup or diagnostic receipt/invocation occurred.
-> See [maintenance outcome and limits](talos-proof-host-memory-remediation.md).
+> **2026-11-13: VM120 is stopped after verification-triggered containment.**
+> Host mitigation installed kernel7.0.14-24-pve with`kho=off`; production recovered.
+> One later authorized guarded start verified node/storage identities and no app Pods,
+> but an overbroad Flux suspension predicate caused an administrative proof stop.
+> This was a verifier error, not another host swap failure. Last guest dual-min
+>669.27MiB was below the832MiB diagnostic gate; no application was activated.
+> See [parent-reviewed recovery/correction](evidence/talos-acceptance/guarded-platform-parent-review-8954422ca5934f0d9fda169a62f7a71d.json)
+> and [maintenance outcome and limits](talos-proof-host-memory-remediation.md).
 > Leave the proof VM off; explicit new authorization through the
 > [guarded lifecycle procedure](talos-proof-host-lifecycle.md) is required before
 > further live work. Do not reset the baseline, relax thresholds or use direct
