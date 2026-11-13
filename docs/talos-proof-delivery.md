@@ -1,6 +1,50 @@
 # Talos isolated proof delivery — coordinator brief
 
-## Current checkpoint — 2026-11-13 maintenance completed
+## Active continuation — guarded platform recovery (2026-11-13)
+
+User approved CI investigation, a fresh guarded VM120 start and read-only platform
+verification, explicitly keeping applications stopped; requested gpt-6.1-sol workers
+at medium effort. This supersedes the earlier no-start hold only for this bounded
+recovery. No diagnostic/native application grant, etcd reset, data repair, production
+mutation, VM resize, guard change/bypass or automatic restart after refusal/stop.
+
+Reconciled checkout: `cd003a97302b98d578a76938fc9433e0e5bdcfea`, branch
+`feat/talos-live-proof`, clean before this brief update; PR2005 same head/open/main.
+Latest Talos43345591546 failed the image contract; Nix/Actions/Docker/Terraform/
+Ansible all succeeded. Historical maintenance and failure evidence remains retained.
+
+Parent owns this brief, runtime authority/execution, integration and acceptance.
+Prior executor4fa8130e, reviewerf08abd79 and lifecycle owner0bd982bd were verified
+completed through live status; lifecycle owner explicitly released live scope.
+No old worker resumed. Current assignments (read-only until explicitly extended):
+- `c079ef29-df6a-46c`: CI checkout/image-contract diagnosis, no code/pin changes.
+- `0915fefa-9bed-490`: offline guarded-start and read-only verification review;
+  no SSH/API/runtime actions. Lifecycle review explicitly reassigned after release.
+Both requested `openai/gpt-6.1-sol`, medium thinking,12-turn bounds. Actual tool activity
+verified startup. CI worker completed diagnosis; lifecycle reviewer hit its turn limit
+after reporting safe stale-incarnation handling and was explicitly resumed for8turns.
+No runtime work or repository edits were performed by either worker at this checkpoint.
+Available subagent tools support status/progress/resume/steering; session peer
+communication is unavailable. No missing capability is being silently emulated.
+
+Acceptance pending: explain/fix CI without hiding source drift; fresh4992MiB host
+admission through existing guard; verified guard/isolation/node/API/storage identity;
+applications/controllers stopped and CronJobs suspended; passive host/node observation
+without pressure tricks. Stop/refusal means leave VMoff. No application activation
+from a successful recovery. Parent will review exact live plan before execution;
+ordinary failures remain internal unless authority or a genuine blocker is missing.
+
+CI finding accepted after parent independently checked main's exact five commits and
+four changed paths: PR synthetic merges use base`a2c549e7`, bringing newer Compose
+MariaDB/WallabagRedis/SABnzbd while proof pins remain old. Current main is still that
+base. Preserve merge-ref testing/current-Compose parity. Parent will integrate that
+reviewed base, then explicitly assign only affected declarative proof pins for static
+alignment; no live apply or acceptance transfer from old image evidence. No test
+weakening/head-only checkout/frozen-digest allowlist. Former data ownerc31 and media
+owner0e6 were verified completed; affected pin ownership may now be explicitly
+reassigned. Optional broader test/workflow hardening is not part of this repair.
+
+## Prior checkpoint — 2026-11-13 maintenance completed
 
 User explicitly approved execution with delayed on-site BMC recovery, selected the
 newest installed kernel, and approved temporary Docker service/socket startup holds.
