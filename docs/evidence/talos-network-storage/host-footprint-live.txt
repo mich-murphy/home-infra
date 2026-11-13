@@ -1,0 +1,14 @@
+Wed 11 Nov 2026 12:48:25 UTC
+               total        used        free      shared  buff/cache   available
+Mem:           31834       29363        1460          19        1477        2471
+Swap:           3820           0        3820
+MemAvailable:    2530968 kB
+SwapTotal:       3911844 kB
+SwapFree:        3911820 kB
+some avg10=0.00 avg60=0.00 avg300=0.00 total=12463550
+full avg10=0.00 avg60=0.00 avg300=0.00 total=12445742
+c                               4    3221225472
+c_min                           4    1043159040
+c_max                           4    3221225472
+size                            4    3014875344
+status: running

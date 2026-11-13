@@ -1,0 +1,37 @@
+{
+  "scope": "offline local temporary fixture only; no cluster/API or lease used",
+  "actual_observation_time": "2026-11-11T14:13:35.398932+00:00",
+  "actual_saved_observation_sha256": "d425f4599cb9d78526ab1e493e7d2aa04a613f458ed7249ff09cc1afca607af3",
+  "independent_reload_hash_verified": true,
+  "fresh_actual_observation_copy_retained_byte_identical": true,
+  "synthetic_age": "only prune fixture observation timestamp changed to now minus40days; not a historical retention duration demonstration",
+  "dry_run": {
+    "mode": "dry-run",
+    "retain_days": 30,
+    "validated": 2,
+    "retained": 1,
+    "eligible": 1,
+    "pruned": 0,
+    "observation_sha256": [
+      "d425f4599cb9d78526ab1e493e7d2aa04a613f458ed7249ff09cc1afca607af3",
+      "a26f0d32755e7dadc15bbac7144fab5613dc5350258d00604e6311f26b6427d8"
+    ]
+  },
+  "explicit_apply": {
+    "mode": "apply",
+    "retain_days": 30,
+    "validated": 2,
+    "retained": 1,
+    "eligible": 1,
+    "pruned": 1,
+    "observation_sha256": [
+      "d425f4599cb9d78526ab1e493e7d2aa04a613f458ed7249ff09cc1afca607af3",
+      "a26f0d32755e7dadc15bbac7144fab5613dc5350258d00604e6311f26b6427d8"
+    ]
+  },
+  "unmarked_synthetic_archive_untouched": true,
+  "original_private_history_untouched": true,
+  "production_retention_slo_or_pager_claim": false,
+  "bootstrap_sequencing_live_tested": false,
+  "offline_unit_tests": 19
+}

@@ -1,0 +1,57 @@
+gateway-gatewayclasses-1.6.1.yaml verified
+gateway-gateways-1.6.1.yaml verified
+gateway-httproutes-1.6.1.yaml verified
+gateway-referencegrants-1.6.1.yaml verified
+gateway-grpcroutes-1.6.1.yaml verified
+gateway-backendtlspolicies-1.6.1.yaml verified
+gateway-tlsroutes-1.6.1.yaml verified
+cilium-1.20.4.tgz verified
+customresourcedefinition.apiextensions.k8s.io/backendtlspolicies.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/gatewayclasses.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/gateways.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/grpcroutes.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/httproutes.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/referencegrants.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/tlsroutes.gateway.networking.k8s.io serverside-applied
+Release "cilium" has been upgraded. Happy Helming!
+NAME: cilium
+LAST DEPLOYED: Wed Nov 11 23:46:22 2026
+NAMESPACE: kube-system
+STATUS: deployed
+REVISION: 3
+TEST SUITE: None
+NOTES:
+You have successfully installed Cilium.
+
+Your release version is 1.20.4.
+
+For any further help, visit https://docs.cilium.io/en/v1.20/gettinghelp
+customresourcedefinition.apiextensions.k8s.io/ciliumnetworkpolicies.cilium.io condition met
+customresourcedefinition.apiextensions.k8s.io/ciliumnetworkpolicies.cilium.io condition met
+customresourcedefinition.apiextensions.k8s.io/ciliumclusterwidenetworkpolicies.cilium.io condition met
+customresourcedefinition.apiextensions.k8s.io/ciliumclusterwidenetworkpolicies.cilium.io condition met
+customresourcedefinition.apiextensions.k8s.io/ciliumgatewayclassconfigs.cilium.io condition met
+customresourcedefinition.apiextensions.k8s.io/ciliumgatewayclassconfigs.cilium.io condition met
+daemon set "cilium" successfully rolled out
+daemon set "cilium-envoy" successfully rolled out
+node/talos-proof untainted
+namespace/local-path-storage unchanged
+namespace/proof-gateway unchanged
+namespace/proof-validation unchanged
+storageclass.storage.k8s.io/proof-local unchanged
+serviceaccount/local-path-provisioner-service-account unchanged
+role.rbac.authorization.k8s.io/local-path-provisioner-role unchanged
+clusterrole.rbac.authorization.k8s.io/local-path-provisioner-role unchanged
+rolebinding.rbac.authorization.k8s.io/local-path-provisioner-bind unchanged
+clusterrolebinding.rbac.authorization.k8s.io/local-path-provisioner-bind unchanged
+configmap/local-path-config configured
+deployment.apps/local-path-provisioner unchanged
+ciliumclusterwidenetworkpolicy.cilium.io/talos-proof-boundaries unchanged
+ciliumnetworkpolicy.cilium.io/storage-controller-boundary unchanged
+ciliumnetworkpolicy.cilium.io/validation-to-proof unchanged
+ciliumgatewayclassconfig.cilium.io/proof-nodeport unchanged
+gateway.gateway.networking.k8s.io/proof configured
+gatewayclass.gateway.networking.k8s.io/proof-cilium unchanged
+Waiting for deployment "local-path-provisioner" rollout to finish: 0 of 1 updated replicas are available...
+deployment "local-path-provisioner" successfully rolled out
+Platform applied. Create proof-gateway/proof-tls using bootstrap/tls.sh before HTTPS validation.

@@ -1,0 +1,244 @@
+# Suspended nonempty proof-only helper preview.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: recyclarr-dns-and-validation
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: recyclarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: recyclarr
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: []
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: recyclarr-to-radarr
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: recyclarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: recyclarr
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: radarr
+    ports:
+    - protocol: TCP
+      port: 7878
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: recyclarr-to-sonarr
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: recyclarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: recyclarr
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: sonarr
+    ports:
+    - protocol: TCP
+      port: 8989
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: recyclarr-config
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: recyclarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: proof-local
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: recyclarr
+  namespace: proof-media-pipeline
+  labels: &id001
+    app.kubernetes.io/name: recyclarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  schedule: 0 4 * * *
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 180
+      template:
+        metadata:
+          labels: *id001
+        spec:
+          automountServiceAccountToken: false
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          containers:
+          - name: recyclarr
+            image: ghcr.io/recyclarr/recyclarr:8.7.3@sha256:9c6c74d52cfc6f740a5a3624aa83867e171bb70b90453ddb7a4048b8c80445f9
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: TZ
+              value: Etc/UTC
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+              runAsNonRoot: true
+              runAsUser: 1000
+              runAsGroup: 1000
+              readOnlyRootFilesystem: true
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                cpu: 1000m
+                memory: 192Mi
+            volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: false
+            - name: tmp
+              mountPath: /tmp
+            - name: offline
+              mountPath: /proof-fixtures
+              readOnly: true
+            - name: offline
+              mountPath: /config/settings.yml
+              subPath: settings.yml
+              readOnly: true
+            args:
+            - sync
+            - --preview
+          volumes:
+          - name: config
+            persistentVolumeClaim:
+              claimName: recyclarr-config
+          - name: seed
+            secret:
+              secretName: recyclarr-bootstrap
+              items:
+              - key: seed
+                path: seed
+          - name: tmp
+            emptyDir:
+              sizeLimit: 64Mi
+          - name: offline
+            configMap:
+              name: recyclarr-offline-resources
+              items:
+              - key: settings.yml
+                path: settings.yml
+              - key: metadata.json
+                path: empty-guide/metadata.json
+              - key: templates.json
+                path: empty-templates/templates.json
+              - key: proof-format.json
+                path: radarr/proof-format.json
+          terminationGracePeriodSeconds: 30
+          initContainers:
+          - name: seed-fresh-config
+            image: ghcr.io/recyclarr/recyclarr:8.7.3@sha256:9c6c74d52cfc6f740a5a3624aa83867e171bb70b90453ddb7a4048b8c80445f9
+            command:
+            - /bin/sh
+            - -ec
+            - mkdir -p /config/.; if [ ! -e /config/recyclarr.yml ]; then cp /seed/seed
+              /config/recyclarr.yml; chmod 600 /config/recyclarr.yml; chown 1000:1000
+              /config/recyclarr.yml; fi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+                add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - FOWNER
+              runAsUser: 0
+              runAsGroup: 0
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                cpu: 200m
+                memory: 128Mi
+            volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: seed
+              mountPath: /seed
+              readOnly: true
+          restartPolicy: Never
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: recyclarr-offline-resources
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: recyclarr
+data:
+  settings.yml: "resource_providers:\n- name: proof-empty-guide\n  type: trash-guides\n\
+    \  path: /proof-fixtures/empty-guide\n  replace_default: true\n- name: proof-empty-templates\n\
+    \  type: config-templates\n  path: /proof-fixtures/empty-templates\n  replace_default:\
+    \ true\n- name: proof-local-radarr\n  type: custom-formats\n  service: radarr\n\
+    \  path: /proof-fixtures/radarr\n"
+  metadata.json: '{"json_paths": {"radarr": {"custom_formats": [], "qualities": [],
+    "naming": [], "custom_format_groups": [], "quality_profiles": [], "quality_profile_groups":
+    []}, "sonarr": {"custom_formats": [], "qualities": [], "naming": [], "custom_format_groups":
+    [], "quality_profiles": [], "quality_profile_groups": []}}}'
+  templates.json: '{"radarr": [], "sonarr": []}'
+  proof-format.json: '{"trash_id": "11111111111111111111111111111111", "name": "Proof-Synthetic-Title",
+    "includeCustomFormatWhenRenaming": false, "specifications": [{"name": "Synthetic
+    fixture only", "implementation": "ReleaseTitleSpecification", "negate": false,
+    "required": true, "fields": {"value": "PROOF_FIXTURE"}}]}'

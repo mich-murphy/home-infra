@@ -1,0 +1,39 @@
+{
+  "/v1/movie/900000001": {
+    "tmdbId": 900000001,
+    "imdbId": "tt900000001",
+    "title": "Proof Fixture",
+    "originalTitle": "Proof Fixture",
+    "titleSlug": "proof-fixture-900000001",
+    "overview": "Locally synthetic proof metadata; no upstream account.",
+    "year": 2000,
+    "runtime": 1,
+    "originalLanguage": "en",
+    "genres": [],
+    "keywords": [],
+    "images": [],
+    "alternativeTitles": [],
+    "translations": [],
+    "certifications": [],
+    "credits": {
+      "cast": [],
+      "crew": []
+    },
+    "ratings": [
+      {
+        "count": 1,
+        "value": 1
+      }
+    ],
+    "movieRatings": {
+      "tmdb": {
+        "count": 1,
+        "value": 1
+      }
+    },
+    "inCinema": "2000-01-01T00:00:00Z",
+    "physicalRelease": "2000-01-01T00:00:00Z",
+    "recommendations": [],
+    "status": "released"
+  }
+}

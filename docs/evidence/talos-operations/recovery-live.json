@@ -1,0 +1,19 @@
+{
+  "claims": {
+    "restored": {
+      "uid": "ee8581fb-17b8-4a96-8224-ce45e8d8fbe6",
+      "volume": "pvc-ee8581fb-17b8-4a96-8224-ce45e8d8fbe6"
+    },
+    "source": {
+      "uid": "79f0c85d-a2bc-42a3-88f7-532a56af43b7",
+      "volume": "pvc-79f0c85d-a2bc-42a3-88f7-532a56af43b7"
+    }
+  },
+  "fixture_sha256": "e5dcc67ebbb6bac787c94fdf4d8cc4486eb115b767b6cc68f3151fb2e99c298a",
+  "archive_sha256": "4f81579123d5257a6595ae144ce2c06ccb55367825c490c7c760a6980f5ce634",
+  "off_node": true,
+  "source_pod_deleted_before_restore": true,
+  "retained_pvs": true,
+  "restored_checksum_matches": true,
+  "application_consistency": "static synthetic file only"
+}

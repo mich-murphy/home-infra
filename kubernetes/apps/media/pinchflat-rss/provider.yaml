@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pinchflat
+  namespace: proof-pinchflat
+spec:
+  replicas: 0
+  template:
+    metadata:
+      annotations:
+        talos-proof.home/provider-fixture: pinchflat-rss
+        talos-proof.home/pinchflat-main-memory-mib: '384'
+    spec:
+      containers:
+      - name: pinchflat
+        resources:
+          limits:
+            memory: 384Mi
+        env:
+        # Per queue only, NOT aggregate yt-dlp concurrency. Native queue control
+        # in the verifier serializes index/download stages before acceptance.
+        - name: YT_DLP_WORKER_CONCURRENCY
+          value: '1'
+      - name: rss-fixture
+        image: ghcr.io/linuxserver/tautulli:v2.18.2-ls251@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5
+        command:
+        - python3
+        - /proof-origin/origin.py
+        - --mp4
+        - /proof-input/fixture.mp4
+        - --synthetic-input
+        - --port
+        - '7913'
+        - --seconds
+        - '900'
+        - --evidence-file
+        - /proof-stats/latest.json
+        - --phase-file
+        - /proof-stats/phase
+        env:
+        - name: PYTHONDONTWRITEBYTECODE
+          value: '1'
+        startupProbe:
+          exec:
+            command: [python3, -c, 'import os,time; assert time.time()-os.stat("/proof-stats/latest.json").st_mtime<5']
+          periodSeconds: 2
+          failureThreshold: 30
+        readinessProbe:
+          exec:
+            command: [python3, -c, 'import os,time; assert time.time()-os.stat("/proof-stats/latest.json").st_mtime<5']
+          periodSeconds: 5
+          timeoutSeconds: 2
+        livenessProbe:
+          exec:
+            command: [python3, -c, 'import os,time; assert time.time()-os.stat("/proof-stats/latest.json").st_mtime<5']
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: rss-code
+          mountPath: /proof-origin
+          readOnly: true
+        - name: rss-input
+          mountPath: /proof-input/fixture.mp4
+          subPath: fixture.mp4
+          readOnly: true
+        - name: rss-stats
+          mountPath: /proof-stats
+      volumes:
+      - name: rss-code
+        configMap:
+          name: pinchflat-rss-origin
+      - name: rss-input
+        secret:
+          secretName: pinchflat-rss-input
+      - name: rss-stats
+        emptyDir:
+          sizeLimit: 8Mi

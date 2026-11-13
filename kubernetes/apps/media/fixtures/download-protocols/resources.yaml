@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: download-protocols
+  labels:
+    app.kubernetes.io/name: download-protocols
+spec:
+  replicas: 0
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: download-protocols
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: download-protocols
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 5
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: fixture
+          # Same immutable Python-capable image as the existing Tautulli app.
+          image: ghcr.io/linuxserver/tautulli:v2.18.2-ls251@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5
+          imagePullPolicy: IfNotPresent
+          command: [python3, -B, /fixture/server.py]
+          args:
+            - serve
+            - --bind
+            - 0.0.0.0
+            - --advertise-ip
+            - $(POD_IP)
+            - --announce
+            - http://download-protocols:8080/announce
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          ports:
+            - {name: tracker, containerPort: 8080, protocol: TCP}
+            - {name: peer, containerPort: 6881, protocol: TCP}
+            - {name: nntp, containerPort: 8119, protocol: TCP}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: {cpu: 10m, memory: 24Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          readinessProbe:
+            tcpSocket: {port: tracker}
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket: {port: tracker}
+            periodSeconds: 30
+            timeoutSeconds: 3
+          volumeMounts:
+            - {name: code, mountPath: /fixture, readOnly: true}
+      volumes:
+        - name: code
+          configMap:
+            name: download-protocols-code
+            defaultMode: 0444
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: download-protocols
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: download-protocols
+  ports:
+    - {name: tracker, port: 8080, targetPort: tracker, protocol: TCP}
+    - {name: peer, port: 6881, targetPort: peer, protocol: TCP}
+    - {name: nntp, port: 8119, targetPort: nntp, protocol: TCP}
+---
+# Same-namespace only. A caller must deliberately adapt selectors for cross-namespace use.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: download-protocols-isolation
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: download-protocols
+  policyTypes: [Ingress, Egress]
+  egress: []
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: qbittorrent
+      ports:
+        - {port: 8080, protocol: TCP}
+        - {port: 6881, protocol: TCP}
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: sabnzbd
+      ports:
+        - {port: 8119, protocol: TCP}
+    - from:
+        - podSelector:
+            matchLabels:
+              talos-proof.media/download-protocol-client: 'true'
+      ports:
+        - {port: 8080, protocol: TCP}

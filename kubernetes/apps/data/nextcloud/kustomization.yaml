@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: proof-nextcloud
+resources:
+- namespace.yaml
+- networkpolicy.yaml
+- postgres.yaml
+- redis.yaml
+- nextcloud.yaml
+- collabora.yaml
+- cronjob.yaml
+- wopi-fixture.yaml
+- httproute.yaml
+- gateway-policy.yaml
+labels:
+- pairs:
+    app.kubernetes.io/part-of: talos-proof
+  includeSelectors: false
+
+configMapGenerator:
+- name: wopi-fixture-source
+  files:
+  - wopi.py=fixture/wopi.py
+generatorOptions:
+  disableNameSuffixHash: true

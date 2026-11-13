@@ -1,0 +1,23 @@
+{
+  "captured_utc": "2026-11-12T00:14:13.609051+00:00",
+  "baseline": "docs/evidence/talos-inventory/before-containers.json",
+  "baseline_captured_utc": "2026-11-11T12:03:33.731655+00:00",
+  "fields": [
+    "id",
+    "name",
+    "image",
+    "image_id",
+    "created",
+    "started",
+    "status",
+    "restart_count",
+    "health"
+  ],
+  "canonicalization": "rows sorted by id; JSON sorted keys, comma/colon separators, UTF-8",
+  "baseline_count": 36,
+  "current_count": 36,
+  "baseline_projection_sha256": "ce5b1dc8e405cf40d9997f2bd7ab7f8e0e45c6410ca861d143cb543fe0797f8a",
+  "current_projection_sha256": "ce5b1dc8e405cf40d9997f2bd7ab7f8e0e45c6410ca861d143cb543fe0797f8a",
+  "changes": [],
+  "scope": "Read-only checkpoint after released RSS384 RPC work; not final migration acceptance or a claim ordinary application data never changes. No Env, health logs, application data or mutable Docker calls."
+}

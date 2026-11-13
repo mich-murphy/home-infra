@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wallabag-extractor-fixture
+data:
+  extractor-fixture.php: "<?php\n// PROOF ONLY: no Internet/private-subnet allowlist\
+    \ widening. The namespace-local\n// fixture FQDN alone may use its private Service\
+    \ IP. All other Graby SSRF checks\n// remain intact; Cilium also restricts egress\
+    \ to the fixture pods on TCP8080.\n$path='/var/www/wallabag/vendor/j0k3r/httplug-ssrf-plugin/src/Url.php';\n\
+    $source=file_get_contents($path);\nif (hash('sha256',$source)!=='3825c3bed62f0bd07e6e81e543b0b4ad5907161af32f5fe7291d86719bcd9d09')\
+    \ {\n    fwrite(STDERR,\"Unexpected pinned extractor source; refusing fixture\
+    \ adaptation\\n\"); exit(1);\n}\n$old='$blacklistedIps = $options->getList(Options::LIST_BLACKLIST,\
+    \ Options::TYPE_IP);';\n$new='$blacklistedIps = $host === \\'fixture.proof-wallabag.svc.cluster.local\\\
+    ' ? [] : $options->getList(Options::LIST_BLACKLIST, Options::TYPE_IP);';\nif (substr_count($source,$old)!==1)\
+    \ { exit(1); }\nif (file_put_contents($path,str_replace($old,$new,$source))===false)\
+    \ { exit(1); }\n"

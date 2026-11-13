@@ -1,0 +1,192 @@
+{
+  "source": "Kubelet stats/summary, after fixture scale0 and deletion",
+  "nodeMemory": {
+    "time": "2026-11-11T12:50:53Z",
+    "availableBytes": 810610688,
+    "usageBytes": 2172067840,
+    "workingSetBytes": 1689219072,
+    "rssBytes": 1167482880,
+    "pageFaults": 2409829,
+    "majorPageFaults": 8700,
+    "psi": {
+      "full": {
+        "total": 177082,
+        "avg10": 0,
+        "avg60": 0,
+        "avg300": 0
+      },
+      "some": {
+        "total": 242958,
+        "avg10": 0,
+        "avg60": 0,
+        "avg300": 0
+      }
+    }
+  },
+  "platformPods": [
+    {
+      "namespace": "kube-system",
+      "name": "cilium-8thlg",
+      "memory": {
+        "time": "2026-11-11T12:50:49Z",
+        "usageBytes": 416456704,
+        "workingSetBytes": 342601728,
+        "rssBytes": 155078656,
+        "pageFaults": 271349,
+        "majorPageFaults": 282,
+        "psi": {
+          "full": {
+            "total": 2051,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 3293,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      }
+    },
+    {
+      "namespace": "kube-system",
+      "name": "cilium-operator-6756f849f6-sfnr9",
+      "memory": {
+        "time": "2026-11-11T12:50:45Z",
+        "availableBytes": 142786560,
+        "usageBytes": 118919168,
+        "workingSetBytes": 58540032,
+        "rssBytes": 42319872,
+        "pageFaults": 20179,
+        "majorPageFaults": 96,
+        "psi": {
+          "full": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      }
+    },
+    {
+      "namespace": "kube-system",
+      "name": "cilium-envoy-bmrfr",
+      "memory": {
+        "time": "2026-11-11T12:50:39Z",
+        "availableBytes": 178429952,
+        "usageBytes": 65069056,
+        "workingSetBytes": 22896640,
+        "rssBytes": 13541376,
+        "pageFaults": 6958,
+        "majorPageFaults": 104,
+        "psi": {
+          "full": {
+            "total": 925,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 925,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      }
+    },
+    {
+      "namespace": "local-path-storage",
+      "name": "local-path-provisioner-d849dd656-6nwrq",
+      "memory": {
+        "time": "2026-11-11T12:50:40Z",
+        "availableBytes": 76550144,
+        "usageBytes": 54444032,
+        "workingSetBytes": 24113152,
+        "rssBytes": 9965568,
+        "pageFaults": 6145,
+        "majorPageFaults": 38,
+        "psi": {
+          "full": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 0,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      }
+    }
+  ],
+  "platformWorkingSetBytes": 448151552,
+  "currentPods": [
+    {
+      "namespace": "kube-system",
+      "name": "cilium-8thlg",
+      "phase": "Running",
+      "restarts": 0
+    },
+    {
+      "namespace": "kube-system",
+      "name": "cilium-envoy-bmrfr",
+      "phase": "Running",
+      "restarts": 0
+    },
+    {
+      "namespace": "kube-system",
+      "name": "cilium-operator-6756f849f6-sfnr9",
+      "phase": "Running",
+      "restarts": 0
+    },
+    {
+      "namespace": "kube-system",
+      "name": "coredns-6cb54fb45c-5bkgn",
+      "phase": "Running",
+      "restarts": 0
+    },
+    {
+      "namespace": "kube-system",
+      "name": "coredns-6cb54fb45c-64sbv",
+      "phase": "Running",
+      "restarts": 0
+    },
+    {
+      "namespace": "kube-system",
+      "name": "kube-apiserver-talos-proof",
+      "phase": "Running",
+      "restarts": 0
+    },
+    {
+      "namespace": "kube-system",
+      "name": "kube-controller-manager-talos-proof",
+      "phase": "Running",
+      "restarts": 0
+    },
+    {
+      "namespace": "kube-system",
+      "name": "kube-scheduler-talos-proof",
+      "phase": "Running",
+      "restarts": 0
+    },
+    {
+      "namespace": "local-path-storage",
+      "name": "local-path-provisioner-d849dd656-6nwrq",
+      "phase": "Running",
+      "restarts": 0
+    }
+  ]
+}

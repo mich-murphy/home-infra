@@ -9,6 +9,16 @@ Compose runs application services, with Portainer GitOps as their intended contr
 The remaining improvement plan, current operational blockers and next-session
 resume instructions are in [the roadmap handover](docs/homelab-roadmap-handover.md).
 
+## Isolated Kubernetes proof
+
+A separate Talos proof profile is being validated without replacing or modifying
+Docker services. See the [operator guide](docs/talos-proof.md),
+[live inventory](docs/talos-proof-inventory.md), and
+[current evidence and acceptance record](docs/talos-proof-delivery.md).
+The resource-bounded profile tests service groups sequentially; it is **not yet
+approved for production migration**. Do not use the historical Kubernetes branch's
+cutover procedure to create this proof.
+
 ## Hardware
 
 32GB ECC RAM is installed of the 64GB the board is designed for, which is what
@@ -56,7 +66,10 @@ infrastructure; retiring a workload does not rewire the router or host network.
 .
 ├── terraform/       # Proxmox VM provisioning
 ├── ansible/         # Host, bootstrap-stack, and RouterOS configuration
-├── docker/          # Bootstrap and Portainer-owned Compose definitions
+├── docker/          # Bootstrap and Portainer-owned Compose definitions (unchanged)
+├── talos/           # Isolated proof machine patches; private identity generated outside Git
+├── kubernetes/      # Proof platform, isolated apps and operational validation
+├── infrastructure/proxmox-proof/ # Dedicated proof VM only; not production Terraform
 ├── network/         # Shared non-secret VLAN, subnet, and address inventory
 ├── docs/            # Documentation
 └── flake.nix        # Nix dev shell
@@ -102,7 +115,8 @@ Terraform state is secret-bearing. It is local and git-ignored; run Terraform in
 | docker-host | 102 | Docker Compose services |
 | unifi-controller | 111 | Cold UniFi OS Server infrastructure |
 
-`terraform/main.tf` is authoritative for each VM's CPU, memory and disk.
+`terraform/main.tf` is authoritative for these production VMs' CPU, memory and disk.
+The isolated Talos proof VM is separately guarded under `infrastructure/proxmox-proof/`.
 
 Cloud-init template (`cloud_init.tftpl`) bootstraps the management user, installs qemu-guest-agent, and joins Tailscale.
 Terraform renders it in memory and uploads it as a root-only Proxmox snippet (`source_raw`); no vendor-data file is written locally. Outside the guests, the Tailscale auth key it carries lives only in 1Password, the Terraform state (as a sensitive value) and the snippet; see [Cached Tailscale auth keys](docs/proxmox-templates.md#cached-tailscale-auth-keys) for the guests' copies.

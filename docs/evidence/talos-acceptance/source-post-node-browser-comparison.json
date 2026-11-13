@@ -1,0 +1,22 @@
+{
+  "captured_utc": "2026-11-11T19:17:29.765705+00:00",
+  "baseline": "docs/evidence/talos-inventory/before-containers.json",
+  "baseline_captured_utc": "2026-11-11T12:03:33.731655+00:00",
+  "fields": [
+    "id",
+    "name",
+    "image",
+    "image_id",
+    "created",
+    "started",
+    "status",
+    "restart_count",
+    "health"
+  ],
+  "baseline_count": 36,
+  "current_count": 36,
+  "baseline_projection_sha256": "95aa19eff96c5ff46e2ec46d9fc3fbdc542be78f5527ec644585125507daf0c5",
+  "current_projection_sha256": "95aa19eff96c5ff46e2ec46d9fc3fbdc542be78f5527ec644585125507daf0c5",
+  "changes": [],
+  "scope": "Read-only metadata checkpoint after node isolation/native-browser work; not final and not a claim ordinary application data never changes. No Env, health log output or application data read."
+}

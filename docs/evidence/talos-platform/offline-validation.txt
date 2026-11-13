@@ -1,0 +1,1 @@
+/Users/mm/.local/state/home-infra/talos-proof/config/controlplane.yaml is valid for metal mode

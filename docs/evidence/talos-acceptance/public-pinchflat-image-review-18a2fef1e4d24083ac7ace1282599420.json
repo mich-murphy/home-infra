@@ -1,0 +1,90 @@
+{
+  "reviewed_utc": "2026-11-11T22:36:36.738229+00:00",
+  "image_index_sha256": "4e975edf58f0861a5cbfe8fc6aac4851ff5a02dfc3f05ffeea4982e3084a5a4a",
+  "linux_amd64_manifest": "sha256:bda3091e59af351e5e928930c680a6ebe2cde728949e36c11000b9827ee2ed51",
+  "config": "sha256:73c09865113935331f04f1f9ff4733e7b0ee785fe9d3613b0745a98d4899de53",
+  "parent_recomputed_root_manifest_config_and_all_compressed_layers": true,
+  "layers": [
+    {
+      "digest": "sha256:254e724d77862dc53abbd3bf0e27f9d2f64293909cdd3d0aad6a8fe5a6680659",
+      "bytes": 28227642
+    },
+    {
+      "digest": "sha256:a26f2283b56d2e53097af025a9303a97d3016ab1d0bee2b43ea5307edec08490",
+      "bytes": 49537448
+    },
+    {
+      "digest": "sha256:a260c584d2a96d72f5ea2b88d6ac9867b022063728dee17ca41ecc2d4a57e1f6",
+      "bytes": 49448290
+    },
+    {
+      "digest": "sha256:76ede08a120c8fa06e4617c4d30b98be59d0afd468737c83b076aa63c58fd4b0",
+      "bytes": 113497872
+    },
+    {
+      "digest": "sha256:a2e682a982535765fd88a50a6ec84b36c27feae2f2005da8e831cff91165b778",
+      "bytes": 93
+    },
+    {
+      "digest": "sha256:ef3a9633a4cb0c50088313b60189a43ce5cb714caf3c5bc67a9ef5101cba840f",
+      "bytes": 2950487
+    },
+    {
+      "digest": "sha256:986f6224579bd236eeef3b9fe68b646c1c81340219020d9c1e4150f2cff8ec10",
+      "bytes": 22777757
+    }
+  ],
+  "files": {
+    "/app/erts-15.2.2/bin/erl_call": {
+      "layer": 7,
+      "type": "regular",
+      "mode": "0o755",
+      "uid": 0,
+      "gid": 0,
+      "size": 109464,
+      "sha256": "73c690ffdc8151a4e01f825ca7c4eb5912245aa17808890438004ce90b658669",
+      "elf": {
+        "class": 64,
+        "endian": "little",
+        "e_type": 3,
+        "machine": 62
+      },
+      "ancestors": {}
+    },
+    "/app/releases/start_erl.data": {
+      "layer": 7,
+      "type": "regular",
+      "mode": "0o644",
+      "uid": 0,
+      "gid": 0,
+      "size": 15,
+      "sha256": "4dde3f31446b90d2c539b81b2dc289f957d719ba1b93ce8aea2596ce37be9326",
+      "version_metadata": "15.2.2 2025.6.6",
+      "ancestors": {}
+    },
+    "/usr/local/bin/yt-dlp": {
+      "layer": 6,
+      "type": "regular",
+      "mode": "0o777",
+      "uid": 0,
+      "gid": 0,
+      "size": 3093972,
+      "sha256": "11aae6b9d391bce3633d62929f0526e1efd431e9892db09b0c4573b31ba76038",
+      "ancestors": {}
+    }
+  },
+  "worker_uncompressed_diff_ids": [
+    "sha256:6c4c763d22d0c5f9b2c5901dfa667fbbc4713cee6869336b8fd5022185071f1c",
+    "sha256:c450072fc33948d785ea61b1dc979e230fe38ffa98d8903e132d10fdc98b91d6",
+    "sha256:dc36a6f36df8ab0a3f20d66b5afffa19e8e95a2e877b7b5aad713a1e0619d948",
+    "sha256:17edf8bd659d00bad52d6458f54a1915070d2ea1e642864f552fb34943107407",
+    "sha256:23e24dc5cd629df67b4a2ab361921a8c468ec56be143a54d7ff84efe374bcf4e",
+    "sha256:290dac8cc9d06f9f0abf04df82387f5646b9235c6a4f0855088d6ce61d428bd8",
+    "sha256:5a37ab6742f82e3a39fbc44f5f37168124867b42dd1a68408f2cda43cc308671"
+  ],
+  "worker_whiteouts": [],
+  "worker_rejected_paths": [],
+  "private_inspection_metadata_sha256": "be00a79a679270254cfbd101148e6fa6dde5582499165438dc4c7d04e8f2da8d",
+  "access": "Anonymous public registry; no existing Docker/GitHub credentials or proof runtime used.",
+  "limits": "Public image bytes/defaults only. No execution, actual PID1/node/cookie/loader/RPC/runtime downloader version, provider download or resource acceptance. Never replace a mismatching runtime binary to obtain a pass."
+}

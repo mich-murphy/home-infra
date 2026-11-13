@@ -1,0 +1,49 @@
+{
+  "scope": "Private API container state/lastState capture before lifecycle/suite destructive operations. No raw termination messages or logs published. Zero observed restarted containers; previous-log capture not applicable, not a retrospective historical diagnosis.",
+  "observations": [
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "b44f6d94982fab510f2208cec19a861da703b78c57827083194fe73973a03eb8"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "5d69e4f825229c100553ad58c5d7ccab25b5efd3ad13dfb65ff9880f55d3d716"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "1c575a53fa6f5d8a04d41ddb4bbbe0af251bd8e1357b991726887993ab6ba374"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "332ba8b514de89d974db32d86660288b5e08daf18c4904edbe9089566a3e87fd"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "d67ba4106a1fb6154fc983b15ecef98551adeefdbf66e12e73c14fe3d2b22269"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "5cefab8a194343bff81dae1fe7d89359a900c49cd0b1916a160121c5dba53e57"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "667da903b3260124b637326bf68e6aabdcb658a31f8f65ff15187bd3aedfe50d"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "541a03c43f021c29b23c7151a46e814d1a73e143c8b488b6db5cfcb0dfd98ca2"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "fbfad96002fc28d75f025f5b4ac7c4e0e438ea595dac4208f1b4c23edd488922"
+    },
+    {
+      "phase": "before mutation",
+      "sha256": "2c72f69c3f4c34d32a8e487191059a69cb97842d6b1ad795b97f9e10a1f21f08"
+    },
+    {
+      "phase": "before mutation",
+      "sha256": "602af0604ca661117309b5b24fb544cd1fa0a07a49dfa7c984953dbaa6eebad4"
+    }
+  ]
+}

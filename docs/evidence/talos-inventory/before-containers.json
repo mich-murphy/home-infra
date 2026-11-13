@@ -1,0 +1,1259 @@
+{
+  "captured_utc": "2026-11-11T12:03:33.731655+00:00",
+  "containers": [
+    {
+      "id": "d39927050db0dd7b88c665dc7bd95c9680af33ac13744b2459e4aab557560d11",
+      "name": "/kometa",
+      "image": "kometateam/kometa:nightly@sha256:c89cd9404aaf13ec5174ee2ddeafcf02887ea53593c1bfc4ef9e9c04a75ddbfe",
+      "image_id": "sha256:40d6dd961ecbd75e18635213ddb04e73e8678cf78f828efc01d0a5fcd36924fe",
+      "created": "2026-11-11T12:01:42.064767283Z",
+      "started": "2026-11-11T12:01:42.506644856Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": null,
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "kometa-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/kometa-data/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 1073741824,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "kometa",
+      "compose_files": "/data/compose/33/8de8c05161e69be4d13d8bd5ce9919e308e9fb5e/docker/plex/compose.yml"
+    },
+    {
+      "id": "c1eb14328613dc96924ca1a758892511c27b624c1bdc331d30bff52b9b36baa1",
+      "name": "/lidarr",
+      "image": "ghcr.io/linuxserver/lidarr:3.1.6.5079-ls48@sha256:a91ef0642c15c9bd7c4260fee98fa99972c61601e37c8a96411d6a9cf0e9ad40",
+      "image_id": "sha256:264333502478464c62b851430e03b27d11068f732fefb5dfb2030154fb14e131",
+      "created": "2026-11-11T12:01:26.676710978Z",
+      "started": "2026-11-11T12:01:30.277879986Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "lidarr-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/lidarr-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/data",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/data",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/music",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/music",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "lidarr",
+      "compose_files": "/data/compose/16/8de8c05161e69be4d13d8bd5ce9919e308e9fb5e/docker/arrs/compose.yml"
+    },
+    {
+      "id": "e9fe824fbcb110ae755166e2226e61f3711ccee279675690c223dabe26437f60",
+      "name": "/nextcloud-cron",
+      "image": "nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+      "image_id": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+      "created": "2026-11-10T12:51:41.984368363Z",
+      "started": "2026-11-10T12:51:58.437801979Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": null,
+      "mounts": [
+        {
+          "Destination": "/var/www/html",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "nextcloud-html",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/nextcloud-html/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/var/www/html/data",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/nextcloud/nextcloud-data",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "nextcloud-backend",
+      "networks": [
+        "nextcloud-backend",
+        "nextcloud-egress"
+      ],
+      "compose_service": "nextcloud-cron",
+      "compose_files": "/data/compose/37/ed7a9cd60ddc3fdc3086790b24b9540c1f80c4c0/docker/nextcloud/compose.yml"
+    },
+    {
+      "id": "f691f199b3e21925025490268803370a9b8b1962b5fa5a1e3ea91059b28f3a89",
+      "name": "/nextcloud",
+      "image": "nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+      "image_id": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+      "created": "2026-11-10T12:51:40.717448751Z",
+      "started": "2026-11-10T12:51:52.783704442Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/var/www/html",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "nextcloud-html",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/nextcloud-html/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/var/www/html/data",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/nextcloud/nextcloud-data",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "nextcloud-backend",
+      "networks": [
+        "nextcloud-backend",
+        "proxy"
+      ],
+      "compose_service": "nextcloud",
+      "compose_files": "/data/compose/37/ed7a9cd60ddc3fdc3086790b24b9540c1f80c4c0/docker/nextcloud/compose.yml"
+    },
+    {
+      "id": "edc6a1769acbc9e9c68873464042474f8c8e3bb0582f1d6acb9957314c2fe599",
+      "name": "/miniflux",
+      "image": "miniflux/miniflux:2.3.5@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9",
+      "image_id": "sha256:fd622fa7310da7f0c2c5cd627a2fd38f23e8250b28eaf8698f6353215fe1b686",
+      "created": "2026-11-10T12:51:22.326123414Z",
+      "started": "2026-11-10T12:51:23.111056554Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [],
+      "memory_limit": 0,
+      "network_mode": "miniflux-backend",
+      "networks": [
+        "miniflux-backend",
+        "proxy"
+      ],
+      "compose_service": "miniflux",
+      "compose_files": "/data/compose/27/ed7a9cd60ddc3fdc3086790b24b9540c1f80c4c0/docker/miniflux/compose.yml"
+    },
+    {
+      "id": "6e8cbdc851cb87e76e9400d64743c87f35aa72c3e4ae7073c632cfa765da01fd",
+      "name": "/radarr",
+      "image": "ghcr.io/linuxserver/radarr:6.4.4.10685-ls326@sha256:51a9ac2a9eb47afc833541e5fd6c11b86eb9f810694c22fa2429e3078e9194b2",
+      "image_id": "sha256:4b074edfbc1b5928636cc57a9f18827f441e812b4a1ddd05cfae22ca1e1dcb01",
+      "created": "2026-11-09T13:26:25.676200935Z",
+      "started": "2026-11-09T13:26:29.257622106Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "radarr-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/radarr-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/data",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/data",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "radarr",
+      "compose_files": "/data/compose/16/4af7cbfa7ce7d1a3acffb1e3fc5500ba11978e1e/docker/arrs/compose.yml"
+    },
+    {
+      "id": "e2eabe1d064abc5d60409af18fed0bbb3ded0706451224ded30bbeb1550b88f6",
+      "name": "/immich",
+      "image": "ghcr.io/immich-app/immich-server:v3.3.6@sha256:e1981983b1c13f6024b57d72e7ecae3342eed1581201ab09fb248932d86c593a",
+      "image_id": "sha256:fb0c7c1a1b2a553c1c60e4bbb3d999d3d1483c9a223807e0856cd42d30b9cbea",
+      "created": "2026-11-09T13:16:39.655443862Z",
+      "started": "2026-11-09T13:16:40.586957508Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/data",
+          "Driver": "local",
+          "Mode": "",
+          "Name": "f5b26395d8a0b6f3b4990b4265bc25719a38ce0a9ac47933e6069118641cd954",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/f5b26395d8a0b6f3b4990b4265bc25719a38ce0a9ac47933e6069118641cd954/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/etc/localtime",
+          "Mode": "ro",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/etc/localtime",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/usr/src/app/upload",
+          "Mode": "rw",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/mnt/photos",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "immich-backend",
+      "networks": [
+        "immich-backend",
+        "proxy"
+      ],
+      "compose_service": "immich-server",
+      "compose_files": "/data/compose/8/17439a0d6c70d7f40f73751ac4f06c5b242450d3/docker/immich/compose.yml"
+    },
+    {
+      "id": "40f10c767fd922230444edcd11d8e04384435b7c20f2f119b48d7ccd627435de",
+      "name": "/immich-ml",
+      "image": "ghcr.io/immich-app/immich-machine-learning:v3.3.6@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2",
+      "image_id": "sha256:52479c9b30bd5870f5e61ac383075b9e22a0eadff80ecc690f7de7c9d952b1c7",
+      "created": "2026-11-09T13:16:39.655219485Z",
+      "started": "2026-11-09T13:16:40.085117341Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/cache",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "immich-ml-cache",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/immich-ml-cache/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "immich-backend",
+      "networks": [
+        "immich-backend",
+        "immich-ml-egress"
+      ],
+      "compose_service": "immich-ml",
+      "compose_files": "/data/compose/8/17439a0d6c70d7f40f73751ac4f06c5b242450d3/docker/immich/compose.yml"
+    },
+    {
+      "id": "c041fc9954605df2fd6fc212b24444a8bdfc4ed1f71f904a4a23eecd2183a2ea",
+      "name": "/tautulli",
+      "image": "ghcr.io/linuxserver/tautulli:v2.18.2-ls251@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+      "image_id": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+      "created": "2026-11-09T13:11:37.564785231Z",
+      "started": "2026-11-09T13:11:41.422803559Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "tautulli-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/tautulli-data/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "tautulli",
+      "compose_files": "/data/compose/33/7e38723c15d0da00d462387900aae69cd33487b3/docker/plex/compose.yml"
+    },
+    {
+      "id": "c85b6f0b9b09c39cb613ecd49de8546f7350f37e7a9e0ab5d2751260e700758c",
+      "name": "/sabnzbd",
+      "image": "ghcr.io/linuxserver/sabnzbd:5.1.3-ls280@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+      "image_id": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+      "created": "2026-11-09T13:11:17.363705916Z",
+      "started": "2026-11-09T13:11:21.180996114Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "sabnzbd-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/sabnzbd-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/data/usenet",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/data/usenet",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "sabnzbd",
+      "compose_files": "/data/compose/3/48830bda369b7d9ac11f3c2819882717c66b3eff/docker/downloads/compose.yml"
+    },
+    {
+      "id": "26bb3a9bbaec96f84348246a0efe5ea096a4e35ccb352acd4e48bc35cf3c80a5",
+      "name": "/nextcloud-office",
+      "image": "collabora/code:26.04.6.1.1@sha256:95f29f1c0a1778999125f53f058d968fe0afb37c95e32ebfb9f3444140faebd2",
+      "image_id": "sha256:1c7d52e1015357baa73d4924510c05b767cbc0040a91d80881f4590c8610aa91",
+      "created": "2026-11-08T11:27:00.683850039Z",
+      "started": "2026-11-08T11:27:01.434226178Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [],
+      "memory_limit": 0,
+      "network_mode": "nextcloud-backend",
+      "networks": [
+        "nextcloud-backend",
+        "proxy"
+      ],
+      "compose_service": "nextcloud-office",
+      "compose_files": "/data/compose/37/86d946e919f6a510119eb879cb39bbfa01b77c3a/docker/nextcloud/compose.yml"
+    },
+    {
+      "id": "e64398dc6ec0145f9d3d8854e59dbac1c3dd3634f476fa75cdf7497c8c3134ea",
+      "name": "/nextcloud-redis",
+      "image": "redis:8.10.3@sha256:1f88291b4c57bdf249f02eb085a8669889b2d2954e91d4de5118a5da6b78dd53",
+      "image_id": "sha256:978293674c6b207a799aa6003064828846a7771cd521603c41e9a4c7f28ec4dc",
+      "created": "2026-11-08T11:27:00.683626659Z",
+      "started": "2026-11-08T11:27:01.43069805Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/data",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "nextcloud-cache",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/nextcloud-cache/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "nextcloud-backend",
+      "networks": [
+        "nextcloud-backend"
+      ],
+      "compose_service": "nextcloud-redis",
+      "compose_files": "/data/compose/37/86d946e919f6a510119eb879cb39bbfa01b77c3a/docker/nextcloud/compose.yml"
+    },
+    {
+      "id": "7281c09580462694fcfe636c7ddc7584eeee76bef13ecb5f7bcb034a721d770c",
+      "name": "/wallabag-redis",
+      "image": "redis:8.10.3-alpine@sha256:71885d8cc6e42f2bc0aa2eb853bfc4be200b5108a46ac50e117ae1df0531fb80",
+      "image_id": "sha256:d8642290c6a46f22d8ba0de16c5006b66a63b13412e5b8624912aaeecbc7f525",
+      "created": "2026-11-08T11:26:19.45896663Z",
+      "started": "2026-11-08T11:26:19.730769777Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [],
+      "memory_limit": 0,
+      "network_mode": "wallabag-backend",
+      "networks": [
+        "wallabag-backend"
+      ],
+      "compose_service": "redis",
+      "compose_files": "/data/compose/12/86d946e919f6a510119eb879cb39bbfa01b77c3a/docker/wallabag/compose.yml"
+    },
+    {
+      "id": "0309b9e7d01c9170f621335087aff72ea2ca4fdd0cd7e3f35d9474a748240bd0",
+      "name": "/sonarr",
+      "image": "ghcr.io/linuxserver/sonarr:4.0.20.3014-ls329@sha256:44b06045a98bc1f237b9ffefc4b28dab64cb29305e4a2a94875ae93b5224e4cc",
+      "image_id": "sha256:0c43ea3c808ca131e5d23695e40907de0149851716395a764cd0d1787c936ba7",
+      "created": "2026-11-07T12:16:25.420856569Z",
+      "started": "2026-11-07T12:16:28.951479646Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "sonarr-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/sonarr-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/data",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/data",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "sonarr",
+      "compose_files": "/data/compose/16/03ff189f3986bff02fb2c37cc1d59e38d8da1600/docker/arrs/compose.yml"
+    },
+    {
+      "id": "63105138684a9f716f4ca48cfcfb508941f6d43eb1b2bf6ae2ab29407152d405",
+      "name": "/nextcloud-postgres",
+      "image": "postgres:18.6@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+      "image_id": "sha256:8bca9649e52d948114ccc8164b55b7ab26b64e729893e420114bb5c87bf7c7cc",
+      "created": "2026-11-07T11:16:32.719717834Z",
+      "started": "2026-11-07T11:16:32.960552672Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/var/lib/postgresql",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "nextcloud-db",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/nextcloud-db/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "nextcloud-backend",
+      "networks": [
+        "nextcloud-backend"
+      ],
+      "compose_service": "nextcloud-postgres",
+      "compose_files": "/data/compose/37/e7b574b3c69aae16c2f88cc57088761f9aa94898/docker/nextcloud/compose.yml"
+    },
+    {
+      "id": "ff23c78016d7e94d3eabad4e3d288c27cf8a45405402e86de1f6c62ba5ed3d09",
+      "name": "/miniflux-db",
+      "image": "postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+      "image_id": "sha256:8bca9649e52d948114ccc8164b55b7ab26b64e729893e420114bb5c87bf7c7cc",
+      "created": "2026-11-07T11:16:19.964636191Z",
+      "started": "2026-11-07T11:16:20.201861403Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/var/lib/postgresql",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "miniflux-db",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/miniflux-db/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "miniflux-backend",
+      "networks": [
+        "miniflux-backend"
+      ],
+      "compose_service": "miniflux-db",
+      "compose_files": "/data/compose/27/e7b574b3c69aae16c2f88cc57088761f9aa94898/docker/miniflux/compose.yml"
+    },
+    {
+      "id": "5fc1b9a107a8e7798c2452341e0071ad898f55b817309532ebf80595bbd4ad6c",
+      "name": "/couchdb",
+      "image": "couchdb:3.5.3@sha256:907eab5b7e55ab7cfd241d39b90b2a335ea40bef82acee5a37388c08bf201dda",
+      "image_id": "sha256:5d03dcfbdfdcfae9aa374ece6d2099383a52e1c892b91b18c8c2b01ff33dd034",
+      "created": "2026-11-05T12:41:26.520685411Z",
+      "started": "2026-11-05T12:41:28.064967845Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/opt/couchdb/data",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "couchdb-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/couchdb-data/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "couchdb",
+      "compose_files": "/data/compose/34/3e2c4f897b625b88e869c64d552bdf27dee08a4f/docker/couchdb/compose.yml"
+    },
+    {
+      "id": "c4186b89a568713f4cb8bb945035583801f1c7314d15f8f62ec033295cbd0193",
+      "name": "/wallabag",
+      "image": "wallabag/wallabag:2.6.15.1@sha256:2e9d9fbbba6feee060109351d1235386fa4ac495f98c82d94a250d56feaeaeeb",
+      "image_id": "sha256:59be8425089e9930dbe20bc644cf902ceeeb66cd3d849e9587dc25b9aac2f0a2",
+      "created": "2026-10-31T10:36:21.225592687Z",
+      "started": "2026-10-31T10:36:22.306780761Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/var/www/wallabag/web/assets/images",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "wallabag-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/wallabag-data/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy",
+        "wallabag-backend"
+      ],
+      "compose_service": "wallabag",
+      "compose_files": "/data/compose/12/08e3b8ff48f931ba6fb159b63005066aecd8f159/docker/wallabag/compose.yml"
+    },
+    {
+      "id": "9ebeb9c0c99fc3aa0df4460ac4a0bf14d52ad38f4c690b5929abc4ab4f20d364",
+      "name": "/wallabag-mariadb",
+      "image": "mariadb:13.0.2@sha256:f4054da26e3a9dd6c8b5cc97363e544408b15c0fb369d7359c25dc04826eb6e1",
+      "image_id": "sha256:10731763b027649b7cbcbcf76e8c35a0f4f4240475473839e122ea5f19de29a1",
+      "created": "2026-10-28T10:46:19.511869885Z",
+      "started": "2026-10-28T10:46:19.862667628Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/var/lib/mysql",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "wallabag-db",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/wallabag-db/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "wallabag-backend",
+      "networks": [
+        "wallabag-backend"
+      ],
+      "compose_service": "db",
+      "compose_files": "/data/compose/12/83e39ae4a00d1dcf9f989e6dac11985b69e24c23/docker/wallabag/compose.yml"
+    },
+    {
+      "id": "ff2c07f166645145a9116e0bad0640d894821a22ea271986e79e19001d067b57",
+      "name": "/seerr",
+      "image": "ghcr.io/seerr-team/seerr:v3.5.1@sha256:d8fab675b55ad293ded98fd71efcfd46054cbad9746534ae1cc4794a88c0b3be",
+      "image_id": "sha256:61f6fa0cf472caa95736d00fa624aea848f687b2ac899c2370a509de93e8abba",
+      "created": "2026-10-27T10:02:20.2534678Z",
+      "started": "2026-10-27T10:02:20.822939313Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/app/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "seerr-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/seerr-data/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "seerr",
+      "compose_files": "/data/compose/33/a273f1405e0ed7d247b11e77a528c8255c054c68/docker/plex/compose.yml"
+    },
+    {
+      "id": "a1f7348e488cfadf562e11f7f8a4c8fa692b83a77df9e5512efe7d2acc3e63ab",
+      "name": "/jellyfin",
+      "image": "jellyfin/jellyfin:12.4@sha256:fea863d0cd9ec445985d9c75fc6ed64e38a1d2766cf0c250a33d553f4fc1b771",
+      "image_id": "sha256:995797bf87597b4247190e0034827f7887b34e75a4f603374591eab4f44172cb",
+      "created": "2026-10-27T01:31:14.142700865Z",
+      "started": "2026-10-27T01:32:48.606145449Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/cache",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "jellyfin-cache",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/jellyfin-cache/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "jellyfin-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/jellyfin-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/data/media",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": false,
+          "Source": "/mnt/data/media",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/data/music",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": false,
+          "Source": "/mnt/music",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "jellyfin",
+      "compose_files": "/data/compose/9/8d8b0ef2804d94033225df8659609fd5ca815637/docker/jellyfin/compose.yml"
+    },
+    {
+      "id": "68105d4ba7cdedecab3f3fb20e3365f976f3a32c987bb86f1ae95cda9b4713a2",
+      "name": "/jellyplex-watched",
+      "image": "luigi311/jellyplex-watched:main@sha256:e3b33047846cee76f906eb2cb316f9b6f04d3b78fdf3317d826d83c09db97a47",
+      "image_id": "sha256:4e875186a553158498e9d68487703991aa0512c8255f7262e62ea1d8185fe7ec",
+      "created": "2026-10-27T01:14:15.680346252Z",
+      "started": "2026-10-27T01:34:02.388327015Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": null,
+      "mounts": [
+        {
+          "Destination": "/data",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "jellyplex-watched-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/jellyplex-watched-data/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "jellyplex-watched",
+      "compose_files": "/home/mm/docker/jellyplex-watched/compose.yml"
+    },
+    {
+      "id": "e319c1f779ae4271d36229184725ddf0ad7c9c52dc260123b3b61aba121b1a11",
+      "name": "/pocket-id",
+      "image": "ghcr.io/pocket-id/pocket-id:v2.19.1@sha256:f085157f0b6ea4b2e8aa5ecfd99eada0d83a4960f3a3dcfd46014097d0ef7ab5",
+      "image_id": "sha256:018fa74af2636c0940bbef537beb048532d4a50d837d9b250404a3fcb210500f",
+      "created": "2026-10-27T01:12:14.193767895Z",
+      "started": "2026-10-27T01:12:14.569428629Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/app/data",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "pocketid-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/pocketid-data/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "pocket-id",
+      "compose_files": "/srv/init/compose.yml"
+    },
+    {
+      "id": "38566f55d8d947542133617c88cbff0dcdf17a23d74bda6614387328fb17705e",
+      "name": "/traefik",
+      "image": "traefik:v3.7.16@sha256:1336e85aaed293bd63d005086e0dd013b04078b26aaeb1c18b26a2f928af7e65",
+      "image_id": "sha256:3733df53e74cd0df7d1b839168e30d2bd7f5e77dd6214ef3d8056ee1f21392b7",
+      "created": "2026-10-27T01:12:13.79753247Z",
+      "started": "2026-10-27T01:12:14.421809706Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/letsencrypt",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "traefik-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/traefik-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/traefik-dynamic.yml",
+          "Mode": "ro",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/srv/init/traefik-dynamic.yml",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/traefik.yml",
+          "Mode": "ro",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/srv/init/traefik.yml",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "docker-socket-proxy",
+      "networks": [
+        "docker-socket-proxy",
+        "proxy"
+      ],
+      "compose_service": "traefik",
+      "compose_files": "/srv/init/compose.yml"
+    },
+    {
+      "id": "eecaf1a8e46e55bf6ddfc3633e674244c7c9cbd1ff9ab93218c64fb9953a6eca",
+      "name": "/plex",
+      "image": "plexinc/pms-docker:1.43.5.11079-b3b13e506@sha256:6d778d41daae68f89115aa87a44ae14a96b23e71a2093da173b5a9aac4091336",
+      "image_id": "sha256:54297791dce6edfce6eea8e74e1350f312b4a92af511a97a3a94c41e264e769e",
+      "created": "2026-10-27T00:57:47.491424954Z",
+      "started": "2026-10-27T00:57:56.481062809Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "plex-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/plex-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/transcode",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "plex-transcode",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/plex-transcode/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/data/media",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": false,
+          "Source": "/mnt/data/media",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/data/music",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": false,
+          "Source": "/mnt/music",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "plex",
+      "compose_files": "/data/compose/33/84142c167d00ed7f5c26ee160a871d447980a614/docker/plex/compose.yml"
+    },
+    {
+      "id": "782dff20c32b82b51669190a81cc97c222df1027aa1c8fca144f55c9ced78cfc",
+      "name": "/beszel",
+      "image": "henrygd/beszel:0.21.1@sha256:8514a69d9bbbcb74f371a3205561ee231fc0289739cea64e8131f341d695b770",
+      "image_id": "sha256:3906c5c0e19bf611f160a8ffb0a2637c80f8e2491af180be0e83939f666bd60d",
+      "created": "2026-10-27T00:56:39.450869212Z",
+      "started": "2026-10-27T00:56:39.698791169Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/beszel_data",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "beszel-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/beszel-data/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "beszel",
+      "compose_files": "/data/compose/4/84142c167d00ed7f5c26ee160a871d447980a614/docker/beszel/compose.yml"
+    },
+    {
+      "id": "11b898249fab9daeb07021da74eb76451f4532720ea879a3c284ab4c9af5b8c2",
+      "name": "/qbittorrent",
+      "image": "lscr.io/linuxserver/qbittorrent:5.3.0_v2.1.2-ls485@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+      "image_id": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+      "created": "2026-10-27T00:56:24.932198362Z",
+      "started": "2026-10-27T00:56:35.314896239Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "qbittorrent-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/qbittorrent-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/data/torrents",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/data/torrents",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 1073741824,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "qbittorrent",
+      "compose_files": "/data/compose/3/84142c167d00ed7f5c26ee160a871d447980a614/docker/downloads/compose.yml"
+    },
+    {
+      "id": "4db21e0aaf5fffb64e2c589c76c0e4c6e0af040a67f07f620690f0bdae3f6986",
+      "name": "/portainer",
+      "image": "portainer/portainer-ee:lts@sha256:0cd22f754ac52fcfceb362d5ce8f47ee23a5f6427484db17ebfaa4c8a00f7718",
+      "image_id": "sha256:398e92fbba00c8ec4e0dfe6eab403027d27bae95d86196fb0f88b284dab7025d",
+      "created": "2026-10-26T11:26:54.651578691Z",
+      "started": "2026-10-26T22:50:56.807279491Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": null,
+      "mounts": [
+        {
+          "Destination": "/data",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "portainer-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/portainer-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/var/run",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/run",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "portainer",
+      "compose_files": "/srv/init/compose.yml"
+    },
+    {
+      "id": "c08adf67c51423f5ef0765c4206cb4fa5f012dd87cfb903a241fe4ccb01b35b2",
+      "name": "/docker-socket-proxy",
+      "image": "ghcr.io/tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459",
+      "image_id": "sha256:a14e639cf2a202e87bb83f21ff041885098f295dbbbb18e2f3a8f078f90dfdcc",
+      "created": "2026-10-26T11:26:54.651569048Z",
+      "started": "2026-10-26T22:50:56.623482064Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/host-run",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/run",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "docker-socket-proxy",
+      "networks": [
+        "docker-socket-proxy"
+      ],
+      "compose_service": "docker-socket-proxy",
+      "compose_files": "/srv/init/compose.yml"
+    },
+    {
+      "id": "dc5c541ac88041c8285b60419fa7bf97f344aeaf4df4845e5a88d946b1ef4283",
+      "name": "/prowlarr",
+      "image": "ghcr.io/linuxserver/prowlarr:2.6.5.5623-ls165@sha256:b3b00047ed20f6ce2b16780145cb6a0acb51c9e28ea6aa6f5dcd33c7034f1797",
+      "image_id": "sha256:0a339d838e29651e2919e2a1b80be1100080b5ee8b1522ed11b5619230d1d432",
+      "created": "2026-10-26T08:57:05.937074126Z",
+      "started": "2026-10-26T22:50:56.592879505Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "prowlarr-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/prowlarr-data/_data",
+          "Type": "volume"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "prowlarr",
+      "compose_files": "/data/compose/16/429bb4cfbb9399410d5dd238c4bcc0f75292a95d/docker/arrs/compose.yml"
+    },
+    {
+      "id": "e8f330d0f51c58f0f75bdb011abe6712e15c55877f5ff337203540fcc31d3762",
+      "name": "/audiobookshelf",
+      "image": "ghcr.io/advplyr/audiobookshelf:2.37.2@sha256:b897c33f05972fb1bf484f7487bc878fa91ec8691335c1db6e2929c3a7658efa",
+      "image_id": "sha256:428769644edafa69beffc66ea45e4e1458a0f2b52e77e914d46068ca4b9fe53b",
+      "created": "2026-10-26T08:56:21.834586248Z",
+      "started": "2026-10-26T22:50:56.586839047Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "audiobookshelf-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/audiobookshelf-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/metadata",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "audiobookshelf-metadata",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/audiobookshelf-metadata/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/data/audiobooks",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/audiobooks",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "audiobookshelf",
+      "compose_files": "/data/compose/2/429bb4cfbb9399410d5dd238c4bcc0f75292a95d/docker/audiobookshelf/compose.yml"
+    },
+    {
+      "id": "13f03ff7966d7a77eb8d31bb890cebd4524d351e56b0cd10568dea6c15e85ada",
+      "name": "/recyclarr",
+      "image": "ghcr.io/recyclarr/recyclarr:8.7.3@sha256:9c6c74d52cfc6f740a5a3624aa83867e171bb70b90453ddb7a4048b8c80445f9",
+      "image_id": "sha256:e01acf089048efe5b315858054563e724f080240864a0fa6b35f63ac08e876ff",
+      "created": "2026-10-13T12:04:27.662840551Z",
+      "started": "2026-10-26T22:50:56.435118227Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": null,
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "recyclarr-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/recyclarr-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/config/custom-formats",
+          "Mode": "ro",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/srv/portainer/portainer-compose-unpacker/stacks/recyclarr/home-infra/docker/recyclarr/custom-formats",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/config/recyclarr.yml",
+          "Mode": "ro",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/srv/portainer/portainer-compose-unpacker/stacks/recyclarr/home-infra/docker/recyclarr/recyclarr.yml",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/config/settings.yml",
+          "Mode": "ro",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/srv/portainer/portainer-compose-unpacker/stacks/recyclarr/home-infra/docker/recyclarr/settings.yml",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "recyclarr",
+      "compose_files": "/srv/portainer/portainer-compose-unpacker/stacks/recyclarr/home-infra/docker/recyclarr/compose.yml"
+    },
+    {
+      "id": "f9a32abb9d77c2d860804082a5e94a6f41191f7342aa9acb60c50f660e4003ee",
+      "name": "/pinchflat",
+      "image": "ghcr.io/kieraneglin/pinchflat:v2025.6.6@sha256:4e975edf58f0861a5cbfe8fc6aac4851ff5a02dfc3f05ffeea4982e3084a5a4a",
+      "image_id": "sha256:73c09865113935331f04f1f9ff4733e7b0ee785fe9d3613b0745a98d4899de53",
+      "created": "2026-09-13T12:39:15.311467857Z",
+      "started": "2026-10-26T22:50:57.785972351Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/config",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "pinchflat-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/pinchflat-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/downloads",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/data/media/youtube",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "pinchflat",
+      "compose_files": "/data/compose/7/661802375ce0ad5e09951b6c39d26678b0bc9651/docker/pinchflat/compose.yml"
+    },
+    {
+      "id": "38647f9e167392613e5576f5d9b3929dc2ee56299643e1fc28241c24bbcf33fc",
+      "name": "/qbitwebui",
+      "image": "ghcr.io/mkbula/qbitwebui:2.44.2@sha256:75907e7013dedbc87226b9c095ac00b64d4eea814fd5550ccbde114d3f216b22",
+      "image_id": "sha256:86027d8080a77ae8025763f386a02f4ba16d724954053683e91d916077385843",
+      "created": "2026-09-13T12:38:47.845803463Z",
+      "started": "2026-10-26T22:50:57.800070934Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/data",
+          "Driver": "local",
+          "Mode": "rw",
+          "Name": "qbitwebui-data",
+          "Propagation": "",
+          "RW": true,
+          "Source": "/var/lib/docker/volumes/qbitwebui-data/_data",
+          "Type": "volume"
+        },
+        {
+          "Destination": "/data/torrents",
+          "Mode": "",
+          "Propagation": "rslave",
+          "RW": true,
+          "Source": "/mnt/data/torrents",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "proxy",
+      "networks": [
+        "proxy"
+      ],
+      "compose_service": "qbitwebui",
+      "compose_files": "/data/compose/3/661802375ce0ad5e09951b6c39d26678b0bc9651/docker/downloads/compose.yml"
+    },
+    {
+      "id": "75f770d45570d51f82faf03b601dc8f53e3e445a9c05071a0b08f66464fbd6a1",
+      "name": "/immich-redis",
+      "image": "docker.io/valkey/valkey:9.0.1@sha256:546304417feac0874c3dd576e0952c6bb8f06bb4093ea0c9ca303c73cf458f63",
+      "image_id": "sha256:8c78a9d757ed2b3c05956ce9337aad063df88a5ba371dd5418b4f66cfb5b1b4d",
+      "created": "2026-06-11T01:46:57.002251507Z",
+      "started": "2026-10-26T22:50:56.725490068Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [],
+      "memory_limit": 0,
+      "network_mode": "immich-backend",
+      "networks": [
+        "immich-backend"
+      ],
+      "compose_service": "redis",
+      "compose_files": "/data/compose/8/bacfab5ce876bf2054021ec502673e0616efc468/docker/immich/compose.yml"
+    },
+    {
+      "id": "105db2fe48b84c0c87c4d3e832fe9c016e3be5ae6f62b4b6406d703146c5a94a",
+      "name": "/immich-postgres",
+      "image": "ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23",
+      "image_id": "sha256:178719aeb38df6f0ce8edc1d8320008379fcf04eb3444e76419cc98d9861e331",
+      "created": "2026-06-10T11:18:27.492421741Z",
+      "started": "2026-10-26T22:50:56.429941512Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy",
+      "mounts": [
+        {
+          "Destination": "/var/lib/postgresql/data",
+          "Mode": "rw",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/var/lib/immich-postgres",
+          "Type": "bind"
+        }
+      ],
+      "memory_limit": 0,
+      "network_mode": "immich-backend",
+      "networks": [
+        "immich-backend"
+      ],
+      "compose_service": "database",
+      "compose_files": "/data/compose/8/8975f03490dead80c87282a20aa24d356db12624/docker/immich/compose.yml"
+    }
+  ]
+}

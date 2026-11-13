@@ -1,0 +1,187 @@
+Host lifecycle live acceptance — sanitized; no full configs/logs/credentials
+Source base commit: 22b938b4675c81ad41aa6966351905ee0999c405
+Dirty owned-source content SHA256: 66ced4a7e2ce4922cce7b4d302761c579de9c108c9a790dcf5e4360c21b3ae81
+Algorithm: sorted pathname + NUL + binary SHA256(file bytes); infrastructure/proxmox-proof immediate files + tests/talos-proof-host_test.py
+Offline:34tests PASS; shellcheck PASS; bash syntax PASS; git diff --check PASS.
+
+Commands (root on Proxmox, explicit coordinator outage lease):
+APPROVE_PROOF_SUPERVISOR_INSTALL=120 bash install-supervisor.sh
+python3 host_lifecycle.py enroll --approve-uuid 555e8603-58e6-4fb6-a190-378a3f11c257
+APPROVE_PROOF_LIFECYCLE_TEST=555e8603-58e6-4fb6-a190-378a3f11c257 python3 lifecycle-proof.py checkpoint
+qm stop 120 --timeout 15; only afterward retire verified legacy guard3962384 via pidfd
+Same authorized harness prefix + cold-start / checkpoint / kill-guard / cold-start / checkpoint / hang-guard / cold-start
+systemctl show talos-proof-guard.service -p ActiveState -p MainPID -p Result -p WatchdogUSec
+kubectl --kubeconfig "$STATE/config/kubeconfig" get --raw=/readyz
+kubectl --kubeconfig "$STATE/config/kubeconfig" wait --for=condition=Ready node/talos-proof --timeout=120s
+kubectl rollout status daemonset/cilium-envoy and deployment/coredns in kube-system, explicit private kubeconfig
+TLS read-only check: fetch only proof-tls tls.crt into private temporary file; ssl.create_default_context(cafile=...), connect127.0.0.1:18443, server_hostname fixture.proof.invalid, GET /.
+
+Initial cold attempts1/2 failed at unnecessary systemctl reset-failed; removed command. Both failures stopped original QEMU. Attempt3 succeeded; initial10s counter observation too early, later API GET confirmed48packets. Subsequent harness waits up to90s ordinary traffic.
+Total cold attempts5 of approved6. No further outage planned.
+
+BEFORE:
+2026-11-11T12:59:19Z
+EXISTING
+08c65bda66e9e5b929136b8008a6909ae5bf4d3ad8f9c6c300f7c7a3b41b2f28  /etc/pve/qemu-server/101.conf
+2d8e0ccc81fb167953b37a295e643a536b0dae4169ed9c34b51303a8755474af  /etc/pve/qemu-server/102.conf
+   2176 Fri Oct  9 15:47:30 2026 kvm
+   2657 Fri Oct  9 15:48:31 2026 kvm
+PROOF
+pid: 3960434
+qmpstatus: running
+status: running
+cgroup_inode=51375
+3962384 python3 -u /root/.local/state/home-infra/talos-proof/resource-guard.py
+RESOURCE
+MemAvailable:    2535972 kB
+SwapTotal:       3911844 kB
+SwapFree:        3911820 kB
+some avg10=0.00 avg60=0.00 avg300=0.00 total=12464847
+full avg10=0.00 avg60=0.00 avg300=0.00 total=12447038
+   52431 28311734 TALOS_PROOF_120  all  --  *      *       0.0.0.0/0            0.0.0.0/0            cgroup qemu.slice/120.scope
+       0        0 TALOS_PROOF_120  all  --  *      *       ::/0                 ::/0                 cgroup qemu.slice/120.scope
+
+SIGKILL:
+2026-11-11T13:05:08Z
+MainPID=3970945
+Result=success
+ActiveState=active
+      48    12441 TALOS_PROOF_120  all  --  *      *       0.0.0.0/0            0.0.0.0/0            cgroup qemu.slice/120.scope
+Chain TALOS_PROOF_120 (1 references)
+    pkts      bytes target     prot opt in     out     source               destination         
+      43    11797 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+       0        0 REJECT     all  --  *      *       0.0.0.0/0            0.0.0.0/8            reject-with icmp-port-unreachable
+       0        0 REJECT     all  --  *      *       0.0.0.0/0            10.0.0.0/8           reject-with icmp-port-unreachable
+       0        0 REJECT     all  --  *      *       0.0.0.0/0            100.64.0.0/10        reject-with icmp-port-unreachable
+       0        0 REJECT     all  --  *      *       0.0.0.0/0            127.0.0.0/8          reject-with icmp-port-unreachable
+cgroup_inode=54270
+MemAvailable:    2244560 kB
+SwapTotal:       3911844 kB
+SwapFree:        3911820 kB
+{"action": "checkpoint", "pid": 3970880, "start_ticks": 288099543, "boot_id": "e9368a37-3d10-4ce3-98e7-951a2579670b", "uuid": "555e8603-58e6-4fb6-a190-378a3f11c257", "cgroup_inode": 54270}
+{"action": "kill-guard", "original_proof_process_exited": true, "guard_result": "signal", "resource": {"monotonic": 2881068.570555498, "available_mib": 4461, "swap_used_kib": 24, "swap_io_pages": 9, "psi_totals": {"some": 12579119, "full": 12561308}}}
+READY: proof incarnation verified; initial sample safe
+talos-proof-guard.service: Main process exited, code=killed, status=9/KILL
+STOP confirmed: original proof QEMU exited
+talos-proof-guard.service: Failed with result 'signal'.
+status: stopped
+
+COLD4:
+ADMISSION {"monotonic": 2881095.758666768, "available_mib": 4800, "swap_used_kib": 24, "swap_io_pages": 9, "psi_totals": {"some": 12579119, "full": 12561308}}
+{"action": "cold-start", "old_scope_inode": 54270, "new_scope_inode": 55942, "pid": 3971685, "jump_packets_before": {"iptables": 0, "ip6tables": 0}, "jump_packets_after": {"iptables": 15, "ip6tables": 0}, "resource": {"monotonic": 2881111.246637692, "available_mib": 3479, "swap_used_kib": 24, "swap_io_pages": 9, "psi_totals": {"some": 12579119, "full": 12561308}}, "counter_rebind_demonstrated": true}
+
+WATCHDOG:
+{"action": "checkpoint", "pid": 3971685, "start_ticks": 288109630, "boot_id": "e9368a37-3d10-4ce3-98e7-951a2579670b", "uuid": "555e8603-58e6-4fb6-a190-378a3f11c257", "cgroup_inode": 55942}
+{"action": "hang-guard", "original_proof_process_exited": true, "guard_result": "watchdog", "resource": {"monotonic": 2881157.895473834, "available_mib": 4835, "swap_used_kib": 24, "swap_io_pages": 9, "psi_totals": {"some": 12651750, "full": 12633934}}}
+talos-proof-guard.service: Main process exited, code=killed, status=9/KILL
+STOP confirmed: original proof QEMU exited
+talos-proof-guard.service: Failed with result 'signal'.
+READY: proof incarnation verified; initial sample safe
+talos-proof-guard.service: Sent signal SIGSTOP to main process 3971733 (python3) on client request.
+talos-proof-guard.service: Watchdog timeout (limit 15s)!
+talos-proof-guard.service: Main process exited, code=killed, status=6/ABRT
+STOP confirmed: original proof QEMU exited
+talos-proof-guard.service: Failed with result 'watchdog'.
+status: stopped
+
+FINAL_BOOT:
+{"action": "cold-start", "old_scope_inode": 55942, "new_scope_inode": 57081, "pid": 3972278, "jump_packets_before": {"iptables": 0, "ip6tables": 0}, "jump_packets_after": {"iptables": 15, "ip6tables": 0}, "resource": {"monotonic": 2881191.534650101, "available_mib": 3619, "swap_used_kib": 24, "swap_io_pages": 9, "psi_totals": {"some": 12651750, "full": 12633934}}, "counter_rebind_demonstrated": true}
+WatchdogUSec=15s
+MainPID=3972326
+Result=success
+ActiveState=active
+SubState=running
+memory: 2560
+08c65bda66e9e5b929136b8008a6909ae5bf4d3ad8f9c6c300f7c7a3b41b2f28  /etc/pve/qemu-server/101.conf
+2d8e0ccc81fb167953b37a295e643a536b0dae4169ed9c34b51303a8755474af  /etc/pve/qemu-server/102.conf
+   2176 Fri Oct  9 15:47:30 2026 kvm
+   2657 Fri Oct  9 15:48:31 2026 kvm
+
+FINAL_HOST:
+2026-11-11T13:10:05Z
+UNIT
+WatchdogUSec=15s
+MainPID=3972326
+Result=success
+ActiveState=active
+SubState=running
+PROOF
+pid: 3972278
+qmpstatus: running
+status: running
+cores: 2
+cpu: x86-64-v2-AES
+memory: 2560
+cgroup_inode=57081
+VmHWM:	 2588312 kB
+VmRSS:	 2588312 kB
+RESOURCE
+MemAvailable:    2223940 kB
+SwapTotal:       3911844 kB
+SwapFree:        3911820 kB
+some avg10=0.00 avg60=0.01 avg300=0.00 total=12770215
+full avg10=0.00 avg60=0.01 avg300=0.00 total=12752392
+EXISTING
+08c65bda66e9e5b929136b8008a6909ae5bf4d3ad8f9c6c300f7c7a3b41b2f28  /etc/pve/qemu-server/101.conf
+2d8e0ccc81fb167953b37a295e643a536b0dae4169ed9c34b51303a8755474af  /etc/pve/qemu-server/102.conf
+   2176 Fri Oct  9 15:47:30 2026 kvm
+   2657 Fri Oct  9 15:48:31 2026 kvm
+FILTERS
+     401   358759 TALOS_PROOF_120  all  --  *      *       0.0.0.0/0            0.0.0.0/0            cgroup qemu.slice/120.scope
+       0        0 TALOS_PROOF_120  all  --  *      *       ::/0                 ::/0                 cgroup qemu.slice/120.scope
+RECEIPT_MODES
+root 600 /root/.local/state/home-infra/talos-proof/identity.json
+root 600 /root/.local/state/home-infra/talos-proof/incarnation.json
+root 600 /root/.local/state/home-infra/talos-proof/startup.json
+DEPLOYED_HASHES
+ef58d97d423d1e283b2917a0b2e024420c6786b58fb232c1dad2941e11e2f4c5  /root/.local/state/home-infra/talos-proof/host_lifecycle.py
+e25f5a487ad3cf2f4adbec8bf6691b9d09d920666ea134e3b71d3f60a084bd80  /root/.local/state/home-infra/talos-proof/resource-guard.py
+81675b61ca2867a41e942d54fa9980c4aa37e9472981bbc9ab469eb5a4de8f94  /root/.local/state/home-infra/talos-proof/isolation.sh
+2422c60ee961fb28022557675c80b731d1e42c5a8bb2bb80ecd7ec3fe1a916d2  /root/.local/state/home-infra/talos-proof/start.sh
+283c28b1cd91e8817f9e7eb0788caa48ce046a8320d6cf915cdd7c973302ad05  /root/.local/state/home-infra/talos-proof/lifecycle-proof.py
+4356b049202efc7599a896693fe79dee59c259cc092ac9467a7c4bfed06c8c09  /etc/systemd/system/talos-proof-guard.service
+6f8385db4a571adde9e4f90ed32b4298ad3d57c82872f47d847aee503390a7c0  /etc/systemd/system/talos-proof-start.service
+EVENTS
+2026-11-12T00:00:57+11:00 proxmox python3[3969703]: STOP confirmed: original proof QEMU exited
+2026-11-12T00:00:57+11:00 proxmox systemd[1]: talos-proof-start.service: Main process exited, code=exited, status=1/FAILURE
+2026-11-12T00:00:57+11:00 proxmox systemd[1]: talos-proof-start.service: Failed with result 'exit-code'.
+2026-11-12T00:03:31+11:00 proxmox python3[3970607]: STOP confirmed: original proof QEMU exited
+2026-11-12T00:03:31+11:00 proxmox python3[3970607]: Proof lifecycle failed: RuntimeError: command systemctl reset-failed failed, exit=1
+2026-11-12T00:03:31+11:00 proxmox systemd[1]: talos-proof-start.service: Main process exited, code=exited, status=1/FAILURE
+2026-11-12T00:03:31+11:00 proxmox systemd[1]: talos-proof-start.service: Failed with result 'exit-code'.
+2026-11-12T00:03:56+11:00 proxmox python3[3970945]: READY: proof incarnation verified; initial sample safe
+2026-11-12T00:03:57+11:00 proxmox python3[3970858]: VM120 resumed only after isolation and supervised guard READY acknowledgement
+2026-11-12T00:05:08+11:00 proxmox systemd[1]: talos-proof-guard.service: Main process exited, code=killed, status=9/KILL
+2026-11-12T00:05:08+11:00 proxmox python3[3971462]: STOP confirmed: original proof QEMU exited
+2026-11-12T00:05:08+11:00 proxmox systemd[1]: talos-proof-guard.service: Failed with result 'signal'.
+2026-11-12T00:05:37+11:00 proxmox python3[3971733]: READY: proof incarnation verified; initial sample safe
+2026-11-12T00:05:37+11:00 proxmox python3[3971653]: VM120 resumed only after isolation and supervised guard READY acknowledgement
+2026-11-12T00:06:37+11:00 proxmox systemd[1]: talos-proof-guard.service: Watchdog timeout (limit 15s)!
+2026-11-12T00:06:37+11:00 proxmox systemd[1]: talos-proof-guard.service: Main process exited, code=killed, status=6/ABRT
+2026-11-12T00:06:37+11:00 proxmox python3[3972099]: STOP confirmed: original proof QEMU exited
+2026-11-12T00:06:37+11:00 proxmox systemd[1]: talos-proof-guard.service: Failed with result 'watchdog'.
+2026-11-12T00:06:57+11:00 proxmox python3[3972326]: READY: proof incarnation verified; initial sample safe
+2026-11-12T00:06:58+11:00 proxmox python3[3972238]: VM120 resumed only after isolation and supervised guard READY acknowledgement
+
+FINAL_CLUSTER:
+API ok
+NAME          UID                                    READY   KUBELET
+talos-proof   4845bfd5-3bdb-453d-8503-83b43edb7a1e   True    v1.36.5
+NAME                                  PHASE     READY
+cilium-8thlg                          Running   true
+cilium-envoy-bmrfr                    Running   true
+cilium-operator-6756f849f6-sfnr9      Running   true
+coredns-6cb54fb45c-5bkgn              Running   true
+coredns-6cb54fb45c-64sbv              Running   true
+kube-apiserver-talos-proof            Running   true
+kube-controller-manager-talos-proof   Running   true
+kube-scheduler-talos-proof            Running   true
+NS    NAME   REPLICAS
+NODE            TOTAL   USED   FREE   SHARED   BUFFERS   CACHE   AVAILABLE
+172.31.250.10   2384    1068   88     112      0         1226    1083
+
+TLS: TLSv1.3, trusted cert DER sha256=59a77080fb140a1eaaf42a143b69326005533d38cf909443164b5dadff728fe1; HTTP/1.1 503 Service Unavailable (fixture0; not functional app acceptance).
+TLS Secret UID=f2072ebe-43f2-4a4a-ae19-4b813912cc7a created2026-11-11T12:44:31Z.
+Bound fixture PVC UID=12e57f52-b69a-4fb7-8f58-3452832a6cad; PV=pvc-12e57f52-b69a-4fb7-8f58-3452832a6cad. No content checksum taken.
+Remaining unproved: host reboot, live missing-receipt/wrapper-death injections, IPv6/DNS/private reachability, application data/recovery/capacity.
+No host reboot, other guest operation, host tuning, app activation or production network/storage changes performed.

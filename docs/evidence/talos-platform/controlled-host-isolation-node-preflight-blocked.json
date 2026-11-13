@@ -1,0 +1,120 @@
+{
+  "kind": "controlled-host-isolation-preflight",
+  "schema": 1,
+  "status": "blocked-by-conditional-resource-budget",
+  "isolation_acceptance": false,
+  "execution_scope": "authorized read-only preflight and no-socket tool measurement only",
+  "trials_used": 0,
+  "trials_authorized_maximum": 2,
+  "deployment_performed": false,
+  "unit_started": false,
+  "listener_started": false,
+  "instrumentation_installed": false,
+  "actual_node_connections": 0,
+  "source_freeze": {
+    "reviewed_commit": "c9e19152",
+    "working_source_diff_from_reviewed_commit": "empty for all three helper paths",
+    "sha256": {
+      "infrastructure/proxmox-proof/collect-isolation.py": "0db4ceda68774120930ca0113ec24141f602116766422d6d434a05729ef8eb48",
+      "infrastructure/proxmox-proof/verify-isolation.py": "181a25120da865c669a20f67820f0d5613a360f4774cc1a4137125acf657572b",
+      "infrastructure/proxmox-proof/run-node-isolation.py": "98cda3443f01f8255b9cc73b63e2f2ffee2690f03a4279b8c3e164aee9a157fe"
+    }
+  },
+  "preflight_checks_completed": {
+    "coordination_receipt_valid_at_check": true,
+    "expected_node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+    "node_ready": true,
+    "all_active_proof_pods_zero_and_controllers_dormant": true,
+    "cilium_host_network_ready": true,
+    "cilium_pod": "cilium-8thlg",
+    "cilium_uid": "cb4238eb-33f8-43b8-b9cb-8ac030a3d7b9",
+    "guard_active": true,
+    "enrolled_configuration_valid": true,
+    "captured_qemu_incarnation_matches": true,
+    "qemu_pid": 3987981,
+    "qemu_start_ticks": 288449562,
+    "cgroup_inode": 61718,
+    "private_address_assigned": "10.77.1.100/24 on vmbr0",
+    "host_ephemeral_port_range": [32768, 60999],
+    "active_proxmox_tasks_at_check": [],
+    "active_backup_process_matches_at_check": 0,
+    "listener_ports_in_candidate_range_25000_28999": [],
+    "specific_endpoint_reserved_or_bound": false
+  },
+  "resource_samples": {
+    "host_floor_mib": 1792,
+    "before": {
+      "monotonic": 2896605.569926398,
+      "available_mib": 1991,
+      "swap_used_kib": 28,
+      "swap_io_pages": 10,
+      "psi_totals_us": {"some": 13845505, "full": 13824866}
+    },
+    "postcheck": {
+      "monotonic": 2896756.455334165,
+      "available_mib": 1983,
+      "swap_used_kib": 28,
+      "swap_io_pages": 10,
+      "psi_totals_us": {"some": 13846063, "full": 13825424}
+    },
+    "historical_baseline": {
+      "original_swap_kib": 24,
+      "original_swap_io_pages": 9,
+      "historical_growth_kib": 4,
+      "historical_growth_pages": 1,
+      "enrollment_or_baseline_reset_performed": false,
+      "note": "Historical growth remains disclosed and below the existing guard threshold. There was no trial and no new swap/IO growth in the recorded preflight interval. PSI totals are interval metadata, not a continuous-soak claim."
+    }
+  },
+  "no_socket_perl_measurement": {
+    "limits": {"address_space_kib": 12288, "cpu_seconds": 1, "file_descriptors": 16},
+    "command_scope": "existing Cilium host-network container; load IO::Socket::INET and read own /proc/self/status only",
+    "socket_created": false,
+    "vm_peak_kib": 10616,
+    "vm_size_kib": 10616,
+    "vm_hwm_kib": 7940,
+    "vm_rss_kib": 7940,
+    "fits_proposed_interpreter_limit": true
+  },
+  "transport_measurement": {
+    "transport": "Tailscale SSH through root@proxmox",
+    "per_session_worker": {"comm": "tailscaled", "be_child_ssh": true, "rss_kib": 20720, "pss_kib": 12332, "private_kib": 3952},
+    "remote_shell": {"comm": "bash", "rss_kib": 2528, "pss_kib": 952, "private_kib": 632},
+    "session_and_shell": {"rss_kib": 23248, "pss_kib": 13284, "private_kib": 4584},
+    "existing_global_daemon_excluded": {"rss_kib": 48064, "pss_kib": 39676, "private_kib": 31296},
+    "native_control_helper": {
+      "command": "systemctl show talos-proof-guard.service --property=ActiveState,Result,ExecMainStatus",
+      "measurement": "/usr/bin/time MaxRSS",
+      "max_rss_kib": 6804,
+      "observed_guard_state": "active/success/ExecMainStatus0"
+    },
+    "conservative_session_plus_helper_rss_kib": 30052,
+    "note": "RSS/PSS are not pure incremental physical-memory accounting; shared daemon pages may already be resident. Private-only accounting was not silently substituted for the approved allowance. Helper MaxRSS is conservatively added to the session sample, not asserted as a simultaneous observed trial peak."
+  },
+  "budget_decision": {
+    "approved_aggregate_mib": 64,
+    "approved_root_unit_cap_mib": 32,
+    "conservative_guest_process_allowance_mib": 24,
+    "approved_transport_allowance_mib": 8,
+    "session_pss_alone_mib_approx": 12.973,
+    "session_plus_helper_rss_mib_approx": 29.348,
+    "conservative_caps_plus_transport_mib_approx": 85.348,
+    "possible_revised_conservative_budget_mib_for_parent_review_only": 88,
+    "budget_was_raised": false,
+    "decision": "Stop before deployment/trial. Parent must review accounting or issue a revised budget and fresh execution grant. This arithmetic is a conservative planning envelope, not measured total test peak."
+  },
+  "postcheck": {
+    "guard_active_same_incarnation": true,
+    "guest_pid_start_ticks_and_config_hashes_unchanged": {"101": true, "102": true, "120": true},
+    "test_counter_rules": 0,
+    "listeners_in_candidate_range": [],
+    "original_private_code_hashes_unchanged": {
+      "host_lifecycle.py": "ef58d97d423d1e283b2917a0b2e024420c6786b58fb232c1dad2941e11e2f4c5",
+      "isolation.sh": "81675b61ca2867a41e942d54fa9980c4aa37e9472981bbc9ab469eb5a4de8f94"
+    },
+    "baseline_or_backup_job_writes": false,
+    "fresh_data_archives_touched": false
+  },
+  "release": "Exclusive host window released without a trial; any continuation needs parent review and a new/revised grant.",
+  "remaining_gaps": ["Actual node private TCP rejection under the approved adjacent-counter method", "Live cleanup and practical unit/aggregate resource fit", "Guest DNS/IPv6 and exhaustive isolation remain unproved"]
+}

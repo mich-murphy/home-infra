@@ -1,0 +1,149 @@
+{
+  "observed_utc": "2026-11-12T08:29:02.638673+00:00",
+  "scope": "read-only host root-cause investigation; no remediation or restart",
+  "commit_at_collection": "5b941d1732e8162a15799981cadc26b4572d3d0a",
+  "guard_trigger_established": "three successive increases in host pswpin+pswpout; no minimum delta/PSI prerequisite",
+  "root_cause_resolved": false,
+  "exact_incident_allocation_path": "unestablished; failing counter samples not retained",
+  "kernel": "7.0.14-17-pve",
+  "same_boot_as_incident": true,
+  "kho_compile_default_enabled": true,
+  "selected_kho_cmdline_overrides": [],
+  "kho_finalize": [
+    0
+  ],
+  "nonoverlapping_scratch_region_mib": [
+    296.0,
+    1242.0,
+    1312.0
+  ],
+  "scratch_total_mib": 2850.0,
+  "post_stop_cma_total_kib": 0,
+  "post_stop_cma_free_kib": 1480484,
+  "post_stop_memory_available_kib": 5026740,
+  "configured_pci_passthrough_entry_counts": {
+    "101": {
+      "hostpci_entries": 1
+    },
+    "102": {
+      "hostpci_entries": 1
+    },
+    "120": {
+      "hostpci_entries": 0
+    }
+  },
+  "finding": "confirmed KHO movable-only allocation restriction; credible contributor, not proven sole incident cause",
+  "rrd_window_selected": [
+    {
+      "time": 1794467400,
+      "memavailable": 2326756829.86667,
+      "arcsize": 2850073292,
+      "swapused": 28672,
+      "pressurememorysome": 0,
+      "pressurememoryfull": 0
+    },
+    {
+      "time": 1794467460,
+      "memavailable": 2327911219.2,
+      "arcsize": 2849867088.93333,
+      "swapused": 28672,
+      "pressurememorysome": 0,
+      "pressurememoryfull": 0
+    },
+    {
+      "time": 1794467520,
+      "memavailable": 2481332428.8,
+      "arcsize": 2679394402.26667,
+      "swapused": 28672,
+      "pressurememorysome": 0,
+      "pressurememoryfull": 0
+    },
+    {
+      "time": 1794467580,
+      "memavailable": 2742901964.8,
+      "arcsize": 2398686422.26667,
+      "swapused": 28672,
+      "pressurememorysome": 0,
+      "pressurememoryfull": 0
+    },
+    {
+      "time": 1794467640,
+      "memavailable": 2742548480,
+      "arcsize": 2413975475.73333,
+      "swapused": 60825.6,
+      "pressurememorysome": 0,
+      "pressurememoryfull": 0
+    },
+    {
+      "time": 1794467880,
+      "memavailable": 2711510835.2,
+      "arcsize": 2441310470.53333,
+      "swapused": 699118.933333333,
+      "pressurememorysome": 0,
+      "pressurememoryfull": 0
+    },
+    {
+      "time": 1794467940,
+      "memavailable": 2878934766.93333,
+      "arcsize": 2442651142.13333,
+      "swapused": 2926182.4,
+      "pressurememorysome": 0,
+      "pressurememoryfull": 0
+    },
+    {
+      "time": 1794468000,
+      "memavailable": 5725623159.46667,
+      "arcsize": 2461447068.4,
+      "swapused": 6488064,
+      "pressurememorysome": 0,
+      "pressurememoryfull": 0
+    }
+  ],
+  "rrd_caveat": "minute-resolution consolidated values, not instantaneous samples or exact swap event times",
+  "production_vm_host_charges": "VM101+102 approximately20.41GiB combined and stable near stop",
+  "proof_vm_host_charge": "approximately2.77-2.78GiB and stable near stop",
+  "post_stop_vm_swap_kib": {
+    "101": 132,
+    "102": 6064
+  },
+  "swap_residency_caveat": "victims/residency do not identify initiating allocator",
+  "current_vm_sysctls_observed_not_changed": {
+    "swappiness": "60",
+    "min_free_kbytes": "67584",
+    "watermark_scale_factor": "10",
+    "watermark_boost_factor": "15000",
+    "zone_reclaim_mode": "0",
+    "overcommit_memory": "0",
+    "overcommit_ratio": "50"
+  },
+  "existing_sysstat_atop_at_usual_paths": false,
+  "hourly_cron_observation": "standard run-parts at07:17; directory contained only.placeholder when checked later; not proof of historical contents",
+  "two_readonly_host_snapshots_swap_counters": {
+    "pswpin": 3,
+    "pswpout": 1260,
+    "unchanged_between_captures": true
+  },
+  "quiet_snapshot_caveat": "two read-only host observations while proof off, not a continuous soak or causal proof",
+  "canonical_files_unchanged": 111,
+  "vm120_left_off": true,
+  "production_mutations": 0,
+  "host_reboots": 0,
+  "guard_or_baseline_changes": 0,
+  "new_instrumentation_installed": false,
+  "recommended_maintenance": "separately approve targeted kho=off host boot mitigation with coordinated production downtime and rollback; not yet authorized/applied",
+  "plan": "docs/talos-proof-host-memory-remediation.md",
+  "primary_sources": [
+    "https://lore.proxmox.com/pve-devel/20260714124456.347992-1-d.csapak@proxmox.com/t/",
+    "https://docs.kernel.org/7.0/core-api/kho/index.html",
+    "https://docs.kernel.org/7.0/admin-guide/mm/kho.html"
+  ],
+  "secondary_search_result_not_used": {
+    "url": "https://thomaswildetech.com/blog/2026/10/02/the-85-gb-that-showed-up-as-free/",
+    "fetch_result": "404"
+  },
+  "private_capture": "diagnostics/guard-root-cause-0826b615-0fbf-474b-bf3f-117e4a67ab6d",
+  "manifest_file": "capture-manifest-bf74fafa-2c73-4c99-ab72-534732226449.json",
+  "manifest_sha256": "f83c16e2b78277628752420cd9fd92974f0935a2cf9e61968521163ef96fffd0",
+  "private_artifact_count": 21,
+  "independent_readonly_reviewer": "f08abd79-f0e6-4d1; agrees trigger supported, KHO contributor credible, historical causation unproved"
+}

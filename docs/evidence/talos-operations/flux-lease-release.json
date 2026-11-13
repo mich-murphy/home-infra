@@ -1,0 +1,11 @@
+{
+  "released_at": "2026-11-11T15:08:36.895949+00:00",
+  "group": "operations-flux",
+  "active_lease_removed": true,
+  "archived_unchanged": true,
+  "identity_or_expiry_changed": false,
+  "only_observation_fields_refreshed": true,
+  "refresh_method": "min(kubelet availableBytes / 2^20, Talos MemAvailable MiB)",
+  "remaining_operations_deployments": 0,
+  "remaining_active_operations_or_proof_app_pods": 0
+}

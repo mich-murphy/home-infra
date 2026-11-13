@@ -1,0 +1,7 @@
+{
+  "measured_at": 1794426853.5214632,
+  "kubelet_available_mib": 1258,
+  "talos_available_mib": 1121,
+  "minimum_mib": 1121,
+  "not_an_admission_receipt": true
+}

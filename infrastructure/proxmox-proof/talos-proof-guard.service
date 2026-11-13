@@ -1,0 +1,21 @@
+[Unit]
+Description=Fail-closed resource monitor for the enrolled Talos proof VM120 incarnation
+After=pve-cluster.service
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=root
+UMask=0077
+WorkingDirectory=/root/.local/state/home-infra/talos-proof
+ExecStart=/usr/bin/python3 -u /root/.local/state/home-infra/talos-proof/resource-guard.py
+ExecStopPost=/usr/bin/python3 /root/.local/state/home-infra/talos-proof/host_lifecycle.py stop-post
+WatchdogSec=15s
+TimeoutStartSec=25s
+TimeoutStopSec=25s
+TimeoutAbortSec=5s
+KillMode=control-group
+Restart=no
+StandardOutput=journal
+StandardError=journal
+# Deliberately no [Install]: never enable/autostart this VM after host boot.

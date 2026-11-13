@@ -1,0 +1,447 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+    pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dns-and-validation
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-validation
+    ports:
+    - port: 7878
+      protocol: TCP
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-qbittorrent
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-qbittorrent
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: qbittorrent
+    ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-sabnzbd
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-sabnzbd
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: sabnzbd
+    ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-prowlarr
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-prowlarr
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: prowlarr
+    ports:
+    - protocol: TCP
+      port: 9696
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: from-seerr
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-seerr
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: seerr
+    ports:
+    - protocol: TCP
+      port: 7878
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: from-recyclarr
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-recyclarr
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: recyclarr
+    ports:
+    - protocol: TCP
+      port: 7878
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: config
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: proof-local
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fixture
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: proof-local
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: radarr
+  namespace: proof-radarr
+  labels: &id001
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  selector: *id001
+  ports:
+  - name: http
+    port: 7878
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: proof-radarr
+  labels: &id001
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: *id001
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+      - name: radarr
+        image: ghcr.io/linuxserver/radarr:6.4.4.10685-ls326@sha256:51a9ac2a9eb47afc833541e5fd6c11b86eb9f810694c22fa2429e3078e9194b2
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TZ
+          value: Etc/UTC
+        - name: PUID
+          value: '1000'
+        - name: PGID
+          value: '1000'
+        - name: SSL_CERT_FILE
+          value: /proof-contract-tls/ca.crt
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - SETUID
+            - SETGID
+            - DAC_OVERRIDE
+            - FOWNER
+            - KILL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 1000m
+            memory: 384Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+          readOnly: false
+        - name: fixture
+          mountPath: /data
+          readOnly: false
+        - name: metadata-contract-tls
+          mountPath: /proof-contract-tls
+          readOnly: true
+        ports:
+        - name: http
+          containerPort: 7878
+        startupProbe:
+          tcpSocket:
+            port: http
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 3
+        livenessProbe:
+          tcpSocket:
+            port: http
+          periodSeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 5
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: config
+      - name: fixture
+        persistentVolumeClaim:
+          claimName: fixture
+      - name: seed
+        secret:
+          secretName: bootstrap
+          items:
+          - key: seed
+            path: seed
+      - configMap:
+          name: metadata-contract-code
+        name: metadata-contract-code
+      - name: metadata-contract-key
+        secret:
+          items:
+          - key: api-key
+            path: api-key
+          secretName: bootstrap
+      - name: metadata-contract-tls
+        secret:
+          defaultMode: 292
+          secretName: metadata-contract-tls
+      terminationGracePeriodSeconds: 30
+      initContainers:
+      - args:
+        - --fixtures
+        - /proof-contract/tmdb-contract.json
+        - --key-file
+        - /proof-contract-key/api-key
+        - --certificate
+        - /proof-contract-tls/tls.crt
+        - --private-key
+        - /proof-contract-tls/tls.key
+        - --client
+        - radarr
+        - --skyhook
+        - /proof-contract/skyhook-contract.json
+        command:
+        - python3
+        - -B
+        - /proof-contract/metadata-proxy.py
+        image: ghcr.io/linuxserver/tautulli:v2.18.2-ls251@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5
+        name: metadata-contract
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 24Mi
+        restartPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        startupProbe:
+          exec:
+            command:
+            - python3
+            - -c
+            - import urllib.request; urllib.request.urlopen("http://127.0.0.1:18081/proof-contract-evidence",timeout=2).read()
+          failureThreshold: 15
+          periodSeconds: 2
+        volumeMounts:
+        - mountPath: /proof-contract
+          name: metadata-contract-code
+          readOnly: true
+        - mountPath: /proof-contract-key
+          name: metadata-contract-key
+          readOnly: true
+        - mountPath: /proof-contract-tls
+          name: metadata-contract-tls
+          readOnly: true
+      - name: seed-fresh-config
+        image: ghcr.io/linuxserver/radarr:6.4.4.10685-ls326@sha256:51a9ac2a9eb47afc833541e5fd6c11b86eb9f810694c22fa2429e3078e9194b2
+        command:
+        - /bin/sh
+        - -ec
+        - mkdir -p /config/.; if [ ! -e /config/config.xml ]; then cp /seed/seed /config/config.xml;
+          chmod 600 /config/config.xml; chown 1000:1000 /config/config.xml; fi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+          runAsUser: 0
+          runAsGroup: 0
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: seed
+          mountPath: /seed
+          readOnly: true
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: from-proof-gateway
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: radarr
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-gateway
+    ports:
+    - protocol: TCP
+      port: 7878

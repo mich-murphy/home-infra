@@ -1,0 +1,111 @@
+{
+  "completed_utc": "2026-11-13T01:14:03.105165+00:00",
+  "authorization": "user approved immediate execution, explicitly accepted delayed on-site BMC recovery, then chose newest installed kernel and approved temporary Docker startup holds",
+  "scope": "single production host reboot with dependency-ordered guest recovery; not proof-VM activation",
+  "kernel_before": "7.0.14-17-pve",
+  "kernel_after": "7.0.14-24-pve",
+  "kho_off_effective": true,
+  "new_boot_id_confirmed": true,
+  "kho_debugfs_output_absent": true,
+  "postboot_cma_total_kib": 0,
+  "postboot_cma_free_kib": 0,
+  "variables_changed": [
+    "new kernel",
+    "kho=off"
+  ],
+  "single_variable_causality_proved": false,
+  "original_swap_event_initiating_allocation": "still unestablished",
+  "host_and_nas_pools_healthy": true,
+  "host_and_docker_guest_failed_units": 0,
+  "production": {
+    "time": 1794531586.6278431,
+    "containers": 36,
+    "identity_image_created_mounts_unchanged": true,
+    "running": 36,
+    "healthy": 31,
+    "without_healthcheck": 5,
+    "started_at_changes": 36,
+    "restart_count_changes": 0,
+    "all_sampled_oom_killed_false": true
+  },
+  "five_exact_nfs_exports_verified_before_docker_start": true,
+  "backup_storage_original_properties_and_mount_restored": true,
+  "storage_file_byte_identical": false,
+  "storage_serialization_only_difference": "local.content comma-list serialization order",
+  "storage_content_set_and_all_other_fields_identical": true,
+  "vm_config_sha256_matches_original": {
+    "101": true,
+    "102": true,
+    "111": true,
+    "120": true
+  },
+  "vm102_original_onboot_1_restored": true,
+  "docker_original_service_and_socket_enabled_active_restored": true,
+  "owned_docker_masks_removed": true,
+  "boot_default_unchanged_no_pin_applied": true,
+  "backup_job_and_exclusion_hash_unchanged": true,
+  "swappiness": 60,
+  "host_arc_max_bytes": 3221225472,
+  "swap_device": "existing lz4 zram; priority100",
+  "original_proof_swap_baseline_kib": 24,
+  "swap_baseline_not_reset": true,
+  "running_vms": [
+    101,
+    102
+  ],
+  "stopped_vms": [
+    111,
+    120
+  ],
+  "shutdown_request_to_full_health_observation_minutes": 22.93,
+  "outage_duration_caveat": "upper-bound observation interval, not measured individual-service downtime",
+  "post_recovery_observation": {
+    "duration_seconds": 120.005,
+    "samples": 13,
+    "minimum_host_available_mib": 6215.438,
+    "swap_used_kib_range": [
+      0,
+      0
+    ],
+    "swap_in_pages_delta": 0,
+    "swap_out_pages_delta": 0,
+    "not_soak_capacity_or_no_recurrence_proof": true
+  },
+  "retained_failures": [
+    {
+      "stage": "VM102 graceful shutdown",
+      "result": "qm command exit255 after301.26s; later independently observed stopped without any second request or force",
+      "cause": "host journal records QGA guest-shutdown command timeout; exact guest/agent delay cause unresolved"
+    },
+    {
+      "stage": "NAS postboot authentication",
+      "result": "password retrieval60s timeout and agent signing failure preserved; used already obtained private key directly with strict host checking and authenticated unprivileged reads",
+      "no_credentials_changed": true
+    },
+    {
+      "stage": "NAS unprivileged query",
+      "result": "zpool missing from user PATH; fixed absolute /usr/sbin paths, all read-only checks passed"
+    },
+    {
+      "stage": "NFS readiness",
+      "result": "stat on automount root did not trigger mount; known idle-autofs result retained, explicit directory traversal then verified all five exact exports"
+    },
+    {
+      "stage": "storage restoration audit",
+      "result": "raw hash and naive string comparisons failed; reviewed sole local.content ordering change with exactly same four unique allowed values; all other fields identical"
+    }
+  ],
+  "nas_temporary_private_key_removed": true,
+  "canonical_files_unchanged": 111,
+  "effective_pending_runs": 0,
+  "proof_application_grants_or_invocations": 0,
+  "native_nextcloud_acceptance": false,
+  "private_capture": "diagnostics/host-maintenance-execution-8ecc697f-c493-4cc9-bfc8-f85bdae041dd",
+  "private_manifest": "manifest-0e4a296d-a8e4-4950-9d97-c5083c77eae8.json",
+  "private_manifest_sha256": "51bd4e91c7d9caaceebf8a51c8bbc6e2c1692978ee4e5cf13f2ca887f6d360b8",
+  "private_artifact_count": 301,
+  "host_private_rollback_records": 35,
+  "guest_private_hold_records": 7,
+  "custody_deviation": "local recorder helper editor-created then chmod0600 rather than O_EXCL; contains code only; capture records O_EXCL/fsynced",
+  "ci_limit": "prior Talos run43332534447 failed MariaDB image-contract mismatch; no image/test changes made during maintenance"
+}

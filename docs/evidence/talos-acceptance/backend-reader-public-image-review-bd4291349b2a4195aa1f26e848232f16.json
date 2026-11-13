@@ -1,0 +1,41 @@
+{
+  "observed_utc": "2026-11-12T07:10:31.425724+00:00",
+  "scope": "parent OFFLINE independent public artifact integrity/path review; no runtime calls/image execution/grant",
+  "worker_commit": "6061a960",
+  "evidence_sha256": "16e5a9159bedfee6a8f0a90e84968bb7b3fb0dbf732c46b1637a0df0a532e722",
+  "private_artifacts_rehashed": 63,
+  "images": [
+    {
+      "image": "postgres",
+      "index_sha256": "e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+      "amd64_manifest": "sha256:e923a22ac074261dd73970c57edf659475bf0497cb9456f17d98ed7cdd3ca913",
+      "config": "sha256:8bca9649e52d948114ccc8164b55b7ab26b64e729893e420114bb5c87bf7c7cc",
+      "layers": 13
+    },
+    {
+      "image": "redis",
+      "index_sha256": "1f88291b4c57bdf249f02eb085a8669889b2d2954e91d4de5118a5da6b78dd53",
+      "amd64_manifest": "sha256:e2728231060693472a8efb488dd139a8142a01bd0612ae70429bf5b5be924be1",
+      "config": "sha256:978293674c6b207a799aa6003064828846a7771cd521603c41e9a4c7f28ec4dc",
+      "layers": 7
+    }
+  ],
+  "ordered_layers_and_diffids_reverified": 20,
+  "tool_and_loader_bytes_rehashed_in_both_base_layers": true,
+  "later_layers_no_target_or_ancestor_whiteout_or_replacement": true,
+  "fixed_symlink_ancestors_verified": {
+    "bin": "usr/bin",
+    "lib64": "usr/lib64",
+    "usr/lib64/ld-linux-x86-64.so.2": "../lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"
+  },
+  "gnu_v9_7_source_kill_after_present": true,
+  "parent_prepared_command": "/usr/bin/timeout --kill-after=1s 2 /bin/cat /sys/fs/cgroup/<fixedfile>",
+  "limits_unchanged": true,
+  "native_acceptance": false,
+  "limitations": [
+    "No dynamic-library dependency closure, ABI, live cgroup access, permissions or signal timing tested.",
+    "KILL escalation is not a guaranteed completion/reaping deadline; unknown outcome prevents clean.",
+    "Initial worker helper creation did not use explicit O_EXCL/0600; enclosing directory was0700 and current file modes0600; deviation retained.",
+    "Original missing backend logs/counters and both earlier error causes remain unchanged."
+  ]
+}

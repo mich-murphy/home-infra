@@ -1,0 +1,637 @@
+{
+  "group": "pocket-id",
+  "stage": null,
+  "checks": [
+    "TLS Gateway route selected: pocket-id.proof.invalid",
+    "Pocket-ID OIDC discovery has isolated issuer",
+    "Pocket-ID advertises authorization/token/JWKS endpoints",
+    "Pocket-ID public JWKS returns signing keys",
+    "Virtual WebAuthn registration/login and cryptographically verified OIDC code flow",
+    "Virtual WebAuthn registration/login and cryptographically verified OIDC code flow",
+    "Pocket-ID user and registered passkey survive pod replacement",
+    "Pocket-ID logical export contains database.json",
+    "clean restore uses distinct fresh PVC UID and PV: pocket-id",
+    "Virtual WebAuthn registration/login and cryptographically verified OIDC code flow",
+    "Pocket-ID clean-PVC logical restore preserves user/passkey and signed OIDC flow"
+  ],
+  "limitations": [
+    "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate.",
+    "CDP virtual authenticator proves WebAuthn protocol/cryptography, not human physical-device UX, device recovery or hardware attestation."
+  ],
+  "verified_leaf_sha256": "59a77080fb140a1eaaf42a143b69326005533d38cf909443164b5dadff728fe1",
+  "browser_runs": [
+    {
+      "checks": [
+        "Fresh-cookie passkey authentication resolves persistent proof administrator",
+        "OIDC fresh browser authorization-code callback has matching random state",
+        "OIDC token uses an explicitly supported signing algorithm",
+        "OIDC ID token signature validates against issuer public JWKS",
+        "OIDC ID token issuer/audience/nonce/subject/expiry validated",
+        "OIDC access token returns matching userinfo identity",
+        "OIDC actual previously redeemed code replay denied400 invalid_grant with no tokens",
+        "OIDC fresh browser authorization-code callback has matching random state",
+        "Wrong PKCE verifier differs but has valid43-character syntax",
+        "OIDC fresh real authorization code with wrong S256 PKCE verifier denied400 invalid_grant with no tokens",
+        "OIDC actual unregistered redirect refused on issuer error route without code or callback request",
+        "OIDC token endpoint rejects unknown client credentials"
+      ],
+      "status": "passed",
+      "authenticator": "fresh CDP ctap2 virtual authenticator; no physical/user passkey claim",
+      "chrome_version": "157.0.8103.51",
+      "network_boundary": {
+        "http": "exact issuer origin only",
+        "websocket": "all blocked",
+        "service_workers": "blocked"
+      },
+      "registered_new_credential": false,
+      "authenticator_source_sha256": "752e5f404b1414239679c477e8d58bfc19e70a512745605412ae84dde91ae69c",
+      "credential_ids_sha256": "53b047b8cacba4e9d5be1cd5aca22b7465557c3768ef7052ffb7944bfbf18f45",
+      "user_id": "993f20dc-ca5b-47b7-a36a-d176ff684b2f",
+      "token_exchange_status": 200,
+      "protocol_negatives": {
+        "replay": {
+          "status": 400,
+          "error": "invalid_grant",
+          "tokens_returned": false
+        },
+        "wrong_pkce": {
+          "status": 400,
+          "error": "invalid_grant",
+          "tokens_returned": false
+        },
+        "wrong_redirect": {
+          "status": 200,
+          "path": "/interaction/error",
+          "callback_requests": 0
+        }
+      }
+    },
+    {
+      "checks": [
+        "Fresh-cookie passkey authentication resolves persistent proof administrator",
+        "OIDC fresh browser authorization-code callback has matching random state",
+        "OIDC token uses an explicitly supported signing algorithm",
+        "OIDC ID token signature validates against issuer public JWKS",
+        "OIDC ID token issuer/audience/nonce/subject/expiry validated",
+        "OIDC access token returns matching userinfo identity",
+        "OIDC actual previously redeemed code replay denied400 invalid_grant with no tokens",
+        "OIDC fresh browser authorization-code callback has matching random state",
+        "Wrong PKCE verifier differs but has valid43-character syntax",
+        "OIDC fresh real authorization code with wrong S256 PKCE verifier denied400 invalid_grant with no tokens",
+        "OIDC actual unregistered redirect refused on issuer error route without code or callback request",
+        "OIDC token endpoint rejects unknown client credentials"
+      ],
+      "status": "passed",
+      "authenticator": "fresh CDP ctap2 virtual authenticator; no physical/user passkey claim",
+      "chrome_version": "157.0.8103.51",
+      "network_boundary": {
+        "http": "exact issuer origin only",
+        "websocket": "all blocked",
+        "service_workers": "blocked"
+      },
+      "registered_new_credential": false,
+      "authenticator_source_sha256": "061d8fb11832b48d043029f32d9bb24e0cbcc687637f409d019379ff7214861c",
+      "credential_ids_sha256": "53b047b8cacba4e9d5be1cd5aca22b7465557c3768ef7052ffb7944bfbf18f45",
+      "user_id": "993f20dc-ca5b-47b7-a36a-d176ff684b2f",
+      "token_exchange_status": 200,
+      "protocol_negatives": {
+        "replay": {
+          "status": 400,
+          "error": "invalid_grant",
+          "tokens_returned": false
+        },
+        "wrong_pkce": {
+          "status": 400,
+          "error": "invalid_grant",
+          "tokens_returned": false
+        },
+        "wrong_redirect": {
+          "status": 200,
+          "path": "/interaction/error",
+          "callback_requests": 0
+        }
+      }
+    },
+    {
+      "checks": [
+        "Fresh-cookie passkey authentication resolves persistent proof administrator",
+        "OIDC fresh browser authorization-code callback has matching random state",
+        "OIDC token uses an explicitly supported signing algorithm",
+        "OIDC ID token signature validates against issuer public JWKS",
+        "OIDC ID token issuer/audience/nonce/subject/expiry validated",
+        "OIDC access token returns matching userinfo identity",
+        "OIDC actual previously redeemed code replay denied400 invalid_grant with no tokens",
+        "OIDC fresh browser authorization-code callback has matching random state",
+        "Wrong PKCE verifier differs but has valid43-character syntax",
+        "OIDC fresh real authorization code with wrong S256 PKCE verifier denied400 invalid_grant with no tokens",
+        "OIDC actual unregistered redirect refused on issuer error route without code or callback request",
+        "OIDC token endpoint rejects unknown client credentials"
+      ],
+      "status": "passed",
+      "authenticator": "fresh CDP ctap2 virtual authenticator; no physical/user passkey claim",
+      "chrome_version": "157.0.8103.51",
+      "network_boundary": {
+        "http": "exact issuer origin only",
+        "websocket": "all blocked",
+        "service_workers": "blocked"
+      },
+      "registered_new_credential": false,
+      "authenticator_source_sha256": "f3daad4afe38d1dc460bf4252296c780cdf7527fe6a3a8bafc1e6ce276438ca2",
+      "credential_ids_sha256": "53b047b8cacba4e9d5be1cd5aca22b7465557c3768ef7052ffb7944bfbf18f45",
+      "user_id": "993f20dc-ca5b-47b7-a36a-d176ff684b2f",
+      "token_exchange_status": 200,
+      "protocol_negatives": {
+        "replay": {
+          "status": 400,
+          "error": "invalid_grant",
+          "tokens_returned": false
+        },
+        "wrong_pkce": {
+          "status": 400,
+          "error": "invalid_grant",
+          "tokens_returned": false
+        },
+        "wrong_redirect": {
+          "status": 200,
+          "path": "/interaction/error",
+          "callback_requests": 0
+        }
+      }
+    }
+  ],
+  "memory_observations": [
+    {
+      "app": "pocket-id",
+      "reason": "before replacement",
+      "time": 1794423300.607918,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 104841216
+        },
+        "memory.peak": {
+          "bytes": 108515328
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 16732160,
+          "file": 86253568,
+          "kernel": 1970176,
+          "kernel_stack": 163840,
+          "pagetables": 847872,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 52273152,
+          "file_dirty": 32768,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 0,
+          "active_anon": 16674816,
+          "inactive_file": 4984832,
+          "active_file": 81272832,
+          "unevictable": 0,
+          "slab_reclaimable": 449376,
+          "slab_unreclaimable": 416920,
+          "slab": 866296,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 0,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 0,
+          "pgsteal": 0,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 0,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 0,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 8733,
+          "pgmajfault": 28,
+          "pgrefill": 0,
+          "pgactivate": 0,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "0840e117-61e8-4ecb-8b8c-20496aa20ba0",
+          "containers": [
+            {
+              "name": "pocket-id",
+              "image": "sha256:191ae810480826dbe5c8f26c3d4021ed3f94b6cc1b1e7a54406fed83c0de8a8a",
+              "imageID": "ghcr.io/pocket-id/pocket-id@sha256:3ee23895d6a3adb5dd5de801a4fd31fc31b960e6dfbea9b5200e33cf477695eb",
+              "containerID": "containerd://371fae1ad9f46d9115ff777a3c2dceb7a1a7e253e19e1c3e48f684257195b6c4",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "pocket-id",
+      "reason": "before scale0",
+      "time": 1794423317.8757079,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 20877312
+        },
+        "memory.peak": {
+          "bytes": 30965760
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 16908288,
+          "file": 2158592,
+          "kernel": 1728512,
+          "kernel_stack": 163840,
+          "pagetables": 851968,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 45056,
+          "file_dirty": 28672,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 0,
+          "active_anon": 16838656,
+          "inactive_file": 2158592,
+          "active_file": 4096,
+          "unevictable": 0,
+          "slab_reclaimable": 200080,
+          "slab_unreclaimable": 419680,
+          "slab": 619760,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 0,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 0,
+          "pgsteal": 0,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 0,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 0,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 13830,
+          "pgmajfault": 0,
+          "pgrefill": 0,
+          "pgactivate": 0,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "82551ed6-b83a-4ddf-827c-f81f15b9a9b6",
+          "containers": [
+            {
+              "name": "pocket-id",
+              "image": "sha256:191ae810480826dbe5c8f26c3d4021ed3f94b6cc1b1e7a54406fed83c0de8a8a",
+              "imageID": "ghcr.io/pocket-id/pocket-id@sha256:3ee23895d6a3adb5dd5de801a4fd31fc31b960e6dfbea9b5200e33cf477695eb",
+              "containerID": "containerd://800ef0b58790900d5ee1436fc29746a14c322486aea2747b75badbad9a9e0a9e",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "pocket-id",
+      "reason": "before scale0",
+      "time": 1794423375.102082,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 20709376
+        },
+        "memory.peak": {
+          "bytes": 24473600
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 16617472,
+          "file": 2482176,
+          "kernel": 1712128,
+          "kernel_stack": 180224,
+          "pagetables": 843776,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 28672,
+          "file_dirty": 28672,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 0,
+          "active_anon": 16551936,
+          "inactive_file": 2482176,
+          "active_file": 4096,
+          "unevictable": 0,
+          "slab_reclaimable": 195488,
+          "slab_unreclaimable": 390816,
+          "slab": 586304,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 0,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 0,
+          "pgsteal": 0,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 0,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 0,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 8756,
+          "pgmajfault": 0,
+          "pgrefill": 0,
+          "pgactivate": 0,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "d788fc8f-f6ad-4887-b33e-1ffc739c41ab",
+          "containers": [
+            {
+              "name": "pocket-id",
+              "image": "sha256:191ae810480826dbe5c8f26c3d4021ed3f94b6cc1b1e7a54406fed83c0de8a8a",
+              "imageID": "ghcr.io/pocket-id/pocket-id@sha256:3ee23895d6a3adb5dd5de801a4fd31fc31b960e6dfbea9b5200e33cf477695eb",
+              "containerID": "containerd://550f3abc8f7696eaf54124b3046cb787cec6cda025493a29244fe5c74d4939a6",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "pocket-id",
+      "reason": "suite final observation",
+      "time": 1794423390.3998349,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 12890112
+        },
+        "memory.peak": {
+          "bytes": 16433152
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 11239424,
+          "file": 315392,
+          "kernel": 1466368,
+          "kernel_stack": 163840,
+          "pagetables": 860160,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 28672,
+          "file_dirty": 28672,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 0,
+          "active_anon": 11169792,
+          "inactive_file": 315392,
+          "active_file": 4096,
+          "unevictable": 0,
+          "slab_reclaimable": 120840,
+          "slab_unreclaimable": 232304,
+          "slab": 353144,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 0,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 0,
+          "pgsteal": 0,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 0,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 0,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 7268,
+          "pgmajfault": 0,
+          "pgrefill": 0,
+          "pgactivate": 0,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "0c87b330-26c6-43a0-ac34-0c4adc81ea7d",
+          "containers": [
+            {
+              "name": "pocket-id",
+              "image": "sha256:191ae810480826dbe5c8f26c3d4021ed3f94b6cc1b1e7a54406fed83c0de8a8a",
+              "imageID": "ghcr.io/pocket-id/pocket-id@sha256:3ee23895d6a3adb5dd5de801a4fd31fc31b960e6dfbea9b5200e33cf477695eb",
+              "containerID": "containerd://836b803930547e7fe7efca48e9cb55fad88970f8e8989aa71e0b1e4e32e07ad0",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "forensic_observations": [
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "b44f6d94982fab510f2208cec19a861da703b78c57827083194fe73973a03eb8"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "5d69e4f825229c100553ad58c5d7ccab25b5efd3ad13dfb65ff9880f55d3d716"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "1c575a53fa6f5d8a04d41ddb4bbbe0af251bd8e1357b991726887993ab6ba374"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "332ba8b514de89d974db32d86660288b5e08daf18c4904edbe9089566a3e87fd"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "d67ba4106a1fb6154fc983b15ecef98551adeefdbf66e12e73c14fe3d2b22269"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "5cefab8a194343bff81dae1fe7d89359a900c49cd0b1916a160121c5dba53e57"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "667da903b3260124b637326bf68e6aabdcb658a31f8f65ff15187bd3aedfe50d"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "541a03c43f021c29b23c7151a46e814d1a73e143c8b488b6db5cfcb0dfd98ca2"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "fbfad96002fc28d75f025f5b4ac7c4e0e438ea595dac4208f1b4c23edd488922"
+    }
+  ],
+  "backup_file": "pocket-id-logical-export-2ac8e48c49ae47c9b14d351911f57905.zip",
+  "backup_sha256": "d998837984d57b2573f45f67f615c467c10b83392bf7354f154460bf3ea6d4c4",
+  "database_export_sha256": "ec145e6234caa255a14feedb342fc22b7f67a5c6e4b43385afdde4c0f5ce10a5",
+  "restore_volumes": [
+    {
+      "app": "pocket-id",
+      "source_pvc": "pocket-id-data",
+      "source_uid": "090ae00b-e1ca-4e40-9f2a-2007d9869620",
+      "restored_pvc": "pocket-id-restore-4c0ebace4e8c",
+      "restored_uid": "a17b20a3-9b0d-4c11-953a-0bc5c89f4ec1",
+      "restored_pv": "pvc-a17b20a3-9b0d-4c11-953a-0bc5c89f4ec1"
+    }
+  ],
+  "status": "functional-checks-passed-with-limitations",
+  "workflow_execution": "completed-under-validated-live-lease"
+}

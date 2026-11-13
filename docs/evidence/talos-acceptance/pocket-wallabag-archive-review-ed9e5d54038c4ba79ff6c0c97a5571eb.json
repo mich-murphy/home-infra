@@ -1,0 +1,59 @@
+{
+  "captured_utc": "2026-11-11T20:13:02.441807+00:00",
+  "scope": "Independent parent read-only hash/mode/current PVC/PV/backing-path review; not a new functional replay, fresh image-PVC recovery, XFS remount test or authenticated attestation. Wallabag private archive selected by unique recorded SHA match.",
+  "node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+  "cases": [
+    {
+      "group": "pocket-id",
+      "source_result": "pocket-id-negatives-live-result.json",
+      "archive": "data/pocket-id-logical-export-2ac8e48c49ae47c9b14d351911f57905.zip",
+      "archive_sha256": "d998837984d57b2573f45f67f615c467c10b83392bf7354f154460bf3ea6d4c4",
+      "archive_bytes": 245848,
+      "mode": "0600",
+      "volumes": [
+        {
+          "role": "source",
+          "pvc": "pocket-id-data",
+          "pvc_uid": "090ae00b-e1ca-4e40-9f2a-2007d9869620",
+          "pv": "pvc-090ae00b-e1ca-4e40-9f2a-2007d9869620",
+          "pv_uid": "8194942a-841b-4552-99d6-6e61ca143f81",
+          "node_path": "/var/mnt/proof/pvc-090ae00b-e1ca-4e40-9f2a-2007d9869620_proof-pocket-id_pocket-id-data"
+        },
+        {
+          "role": "restored",
+          "pvc": "pocket-id-restore-4c0ebace4e8c",
+          "pvc_uid": "a17b20a3-9b0d-4c11-953a-0bc5c89f4ec1",
+          "pv": "pvc-a17b20a3-9b0d-4c11-953a-0bc5c89f4ec1",
+          "pv_uid": "9682c054-0d7a-4767-9a39-50e612d366a2",
+          "node_path": "/var/mnt/proof/pvc-a17b20a3-9b0d-4c11-953a-0bc5c89f4ec1_proof-pocket-id_pocket-id-restore-4c0ebace4e8c"
+        }
+      ]
+    },
+    {
+      "group": "wallabag",
+      "source_result": "wallabag-image-queue-live-result.json",
+      "archive": "data/wallabag-mariadb-28a791ffdfda4f41b26bf01d98867362.sql",
+      "archive_sha256": "fcf984dc2b991b12cf4d72b63934e98601279789ab88a18f0d46de6d9853940e",
+      "archive_bytes": 38389,
+      "mode": "0600",
+      "volumes": [
+        {
+          "role": "source",
+          "pvc": "mariadb-data",
+          "pvc_uid": "6e8d81ac-4551-46be-9640-431ddbbd100c",
+          "pv": "pvc-6e8d81ac-4551-46be-9640-431ddbbd100c",
+          "pv_uid": "2190915b-b2f0-41ad-8dd1-f61f44b910a4",
+          "node_path": "/var/mnt/proof/pvc-6e8d81ac-4551-46be-9640-431ddbbd100c_proof-wallabag_mariadb-data"
+        },
+        {
+          "role": "restored",
+          "pvc": "mariadb-restore-ea757412caf5",
+          "pvc_uid": "2fd0b08e-4b96-4088-a819-be8f92f6dcbf",
+          "pv": "pvc-2fd0b08e-4b96-4088-a819-be8f92f6dcbf",
+          "pv_uid": "c34e713a-a751-4852-9422-108055e4ee86",
+          "node_path": "/var/mnt/proof/pvc-2fd0b08e-4b96-4088-a819-be8f92f6dcbf_proof-wallabag_mariadb-restore-ea757412caf5"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "time_utc": "2026-11-11T12:24:48.017179+00:00",
+  "scope": "OFFLINE ONLY; no deploy, source/host changes or live kubeconfig access",
+  "commands": [
+    {
+      "command": "python3 tests/talos-proof-operations_test.py",
+      "result": "PASS 5 tests (includes real loopback HTTP delivery with synthetic measured-shaped input)"
+    },
+    {
+      "command": "kubectl kustomize kubernetes/operations/recovery",
+      "result": "PASS render"
+    },
+    {
+      "command": "python3 scripts/talos-proof-operations-flux.py --revision 0000000000000000000000000000000000000000 --install-yaml /tmp/operations-flux-install.yaml",
+      "result": "PASS render from verified Flux2.10.0 upstream artifact; placeholder commit NOT deployable"
+    }
+  ],
+  "upstream_install_yaml_sha256": "a8c838ccd9be5d30eba9df87cd229b7c4eb80c0049fba1bc3b9840829f267f28",
+  "flux_render_object_count": 23,
+  "flux_deployments": 2,
+  "flux_cluster_role_bindings": 0,
+  "live_monitoring": "NOT RUN",
+  "live_alert_delivery": "NOT RUN",
+  "live_flux_drift_and_rollback": "NOT RUN",
+  "live_clean_pvc_restore": "NOT RUN",
+  "off_node_etcd_snapshot": "NOT RUN",
+  "etcd_restore": "NOT RUN; requires separate disposable control plane"
+}

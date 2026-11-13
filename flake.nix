@@ -73,6 +73,29 @@
       actionlint = pkgs.actionlint;
       ansible-lint = ansibleToolingFor pkgs;
       docker-compose = pkgs.docker-compose;
+      # Reproducible offline validation and proof-cluster tooling. Cluster/chart
+      # versions are pinned separately in talos/ and kubernetes/platform/.
+      kubectl = pkgs.kubectl;
+      kubernetes-helm = pkgs.kubernetes-helm;
+      kubeconform = pkgs.kubeconform;
+      kubernetes-proof-tools = pkgs.python3.withPackages (ps: [ps.pyyaml]);
+      nodejs = pkgs.nodejs;
+      # Locked workstation/CI loopback regression tools, not the proof image's
+      # runtime. Selecting explicit prefixes prevents silently skipped RPC tests.
+      talos-proof-rpc-tools = let
+        beam = pkgs.beam.packages.erlang_27;
+      in
+        pkgs.writeShellScriptBin "talos-proof-rpc-env" ''
+          case "$1" in
+            otp) printf '%s\n' '${beam.erlang}/lib/erlang' ;;
+            elixir) printf '%s\n' '${beam.elixir}/lib/elixir' ;;
+            *) exit 2 ;;
+          esac
+        '';
+      # Real PHP filesystem/projection regressions; not proof-image execution.
+      talos-proof-php-tools = pkgs.writeShellScriptBin "talos-proof-php-env" ''
+        printf '%s\n' '${pkgs.php85}/bin/php'
+      '';
       portainer-drift-tools = pkgs.yq-go;
       shellcheck = pkgs.shellcheck;
       terraform-ci = terraformCiFor pkgs;
@@ -104,6 +127,13 @@
           pkgs.alejandra
           self.packages.${system}.actionlint
           self.packages.${system}.docker-compose
+          self.packages.${system}.kubectl
+          self.packages.${system}.kubernetes-helm
+          self.packages.${system}.kubeconform
+          self.packages.${system}.kubernetes-proof-tools
+          self.packages.${system}.nodejs
+          self.packages.${system}.talos-proof-rpc-tools
+          self.packages.${system}.talos-proof-php-tools
           self.packages.${system}.shellcheck
         ];
       };

@@ -1,0 +1,1741 @@
+[
+  {
+    "time": "2026-11-11T14:13:35.398932+00:00",
+    "memory": {
+      "time": "2026-11-11T14:13:31Z",
+      "availableBytes": 744095744,
+      "usageBytes": 2292150272,
+      "workingSetBytes": 2216329216,
+      "rssBytes": 914583552,
+      "pageFaults": 884345,
+      "majorPageFaults": 2072,
+      "psi": {
+        "full": {
+          "total": 0,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        },
+        "some": {
+          "total": 0,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        }
+      }
+    },
+    "conditions": {
+      "NetworkUnavailable": "False",
+      "MemoryPressure": "False",
+      "DiskPressure": "False",
+      "PIDPressure": "False",
+      "Ready": "True"
+    },
+    "capacity": {
+      "cpu": "2",
+      "ephemeral-storage": "30500Mi",
+      "hugepages-2Mi": "0",
+      "memory": "2891040Ki",
+      "pods": "110"
+    },
+    "allocatable": {
+      "cpu": "1950m",
+      "ephemeral-storage": "28514975697",
+      "hugepages-2Mi": "0",
+      "memory": "2264352Ki",
+      "pods": "110"
+    },
+    "restarts": [
+      {
+        "namespace": "kube-system",
+        "pod": "cilium-8thlg",
+        "containers": [
+          {
+            "name": "cilium-agent",
+            "restartCount": 4
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "cilium-envoy-bmrfr",
+        "containers": [
+          {
+            "name": "cilium-envoy",
+            "restartCount": 4
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "cilium-operator-6756f849f6-sfnr9",
+        "containers": [
+          {
+            "name": "cilium-operator",
+            "restartCount": 4
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "coredns-6cb54fb45c-5bkgn",
+        "containers": [
+          {
+            "name": "coredns",
+            "restartCount": 2
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "coredns-6cb54fb45c-64sbv",
+        "containers": [
+          {
+            "name": "coredns",
+            "restartCount": 2
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "kube-apiserver-talos-proof",
+        "containers": [
+          {
+            "name": "kube-apiserver",
+            "restartCount": 0
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "kube-controller-manager-talos-proof",
+        "containers": [
+          {
+            "name": "kube-controller-manager",
+            "restartCount": 0
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "kube-scheduler-talos-proof",
+        "containers": [
+          {
+            "name": "kube-scheduler",
+            "restartCount": 0
+          }
+        ]
+      },
+      {
+        "namespace": "local-path-storage",
+        "pod": "local-path-provisioner-d849dd656-6nwrq",
+        "containers": [
+          {
+            "name": "local-path-provisioner",
+            "restartCount": 2
+          }
+        ]
+      }
+    ],
+    "filesystem": {
+      "time": "2026-11-11T14:13:31Z",
+      "availableBytes": 25614163968,
+      "capacityBytes": 31981568000,
+      "usedBytes": 6367404032,
+      "inodesFree": 15527669,
+      "inodes": 15648768,
+      "inodesUsed": 121099
+    },
+    "pods": [
+      {
+        "namespace": "kube-system",
+        "name": "kube-scheduler-talos-proof",
+        "memory": {
+          "time": "2026-11-11T14:13:33Z",
+          "usageBytes": 68517888,
+          "workingSetBytes": 68497408,
+          "rssBytes": 18309120,
+          "pageFaults": 8458,
+          "majorPageFaults": 25,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "tmp",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          },
+          {
+            "name": "run",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          }
+        ],
+        "containers": [
+          {
+            "name": "kube-scheduler",
+            "memory": {
+              "time": "2026-11-11T14:13:34Z",
+              "usageBytes": 68517888,
+              "workingSetBytes": 68497408,
+              "rssBytes": 18268160,
+              "pageFaults": 7287,
+              "majorPageFaults": 25,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "kube-controller-manager-talos-proof",
+        "memory": {
+          "time": "2026-11-11T14:13:27Z",
+          "usageBytes": 128499712,
+          "workingSetBytes": 128479232,
+          "rssBytes": 52527104,
+          "pageFaults": 21584,
+          "majorPageFaults": 27,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "run",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          },
+          {
+            "name": "tmp",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          }
+        ],
+        "containers": [
+          {
+            "name": "kube-controller-manager",
+            "memory": {
+              "time": "2026-11-11T14:13:26Z",
+              "usageBytes": 127975424,
+              "workingSetBytes": 127954944,
+              "rssBytes": 52482048,
+              "pageFaults": 20163,
+              "majorPageFaults": 27,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "cilium-operator-6756f849f6-sfnr9",
+        "memory": {
+          "time": "2026-11-11T14:13:26Z",
+          "availableBytes": 37683200,
+          "usageBytes": 163672064,
+          "workingSetBytes": 163643392,
+          "rssBytes": 39444480,
+          "pageFaults": 17336,
+          "majorPageFaults": 38,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "cilium-config-path",
+            "usedBytes": 692224,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25614163968
+          },
+          {
+            "name": "kube-api-access-9xgs8",
+            "usedBytes": 12288,
+            "capacityBytes": 201326592,
+            "availableBytes": 201314304
+          }
+        ],
+        "containers": [
+          {
+            "name": "cilium-operator",
+            "memory": {
+              "time": "2026-11-11T14:13:28Z",
+              "availableBytes": 38465536,
+              "usageBytes": 162889728,
+              "workingSetBytes": 162861056,
+              "rssBytes": 39399424,
+              "pageFaults": 15914,
+              "majorPageFaults": 38,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "kube-apiserver-talos-proof",
+        "memory": {
+          "time": "2026-11-11T14:13:22Z",
+          "usageBytes": 445698048,
+          "workingSetBytes": 437682176,
+          "rssBytes": 345468928,
+          "pageFaults": 102327,
+          "majorPageFaults": 32,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "run",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          },
+          {
+            "name": "tmp",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          }
+        ],
+        "containers": [
+          {
+            "name": "kube-apiserver",
+            "memory": {
+              "time": "2026-11-11T14:13:31Z",
+              "usageBytes": 448622592,
+              "workingSetBytes": 440561664,
+              "rssBytes": 349503488,
+              "pageFaults": 101954,
+              "majorPageFaults": 31,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "cilium-8thlg",
+        "memory": {
+          "time": "2026-11-11T14:13:19Z",
+          "usageBytes": 506572800,
+          "workingSetBytes": 504348672,
+          "rssBytes": 82112512,
+          "pageFaults": 241288,
+          "majorPageFaults": 183,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "tmp",
+            "usedBytes": 3452928,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25614135296
+          },
+          {
+            "name": "clustermesh-secrets",
+            "usedBytes": 0,
+            "capacityBytes": 1858109440,
+            "availableBytes": 1858109440
+          },
+          {
+            "name": "kube-api-access-v6jmq",
+            "usedBytes": 12288,
+            "capacityBytes": 1858109440,
+            "availableBytes": 1858097152
+          }
+        ],
+        "containers": [
+          {
+            "name": "cilium-agent",
+            "memory": {
+              "time": "2026-11-11T14:13:23Z",
+              "availableBytes": 152842240,
+              "usageBytes": 385183744,
+              "workingSetBytes": 384028672,
+              "rssBytes": 82075648,
+              "pageFaults": 228632,
+              "majorPageFaults": 128,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "coredns-6cb54fb45c-5bkgn",
+        "memory": {
+          "time": "2026-11-11T14:13:25Z",
+          "availableBytes": 88027136,
+          "usageBytes": 90267648,
+          "workingSetBytes": 90230784,
+          "rssBytes": 12017664,
+          "pageFaults": 6884,
+          "majorPageFaults": 27,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "config-volume",
+            "usedBytes": 4096,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25614053376
+          },
+          {
+            "name": "kube-api-access-kxkkx",
+            "usedBytes": 12288,
+            "capacityBytes": 178257920,
+            "availableBytes": 178245632
+          }
+        ],
+        "containers": [
+          {
+            "name": "coredns",
+            "memory": {
+              "time": "2026-11-11T14:13:22Z",
+              "availableBytes": 88555520,
+              "usageBytes": 89739264,
+              "workingSetBytes": 89702400,
+              "rssBytes": 11976704,
+              "pageFaults": 5516,
+              "majorPageFaults": 27,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "coredns-6cb54fb45c-64sbv",
+        "memory": {
+          "time": "2026-11-11T14:13:32Z",
+          "availableBytes": 165007360,
+          "usageBytes": 13250560,
+          "workingSetBytes": 13250560,
+          "rssBytes": 12091392,
+          "pageFaults": 6708,
+          "majorPageFaults": 0,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "config-volume",
+            "usedBytes": 4096,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25614135296
+          },
+          {
+            "name": "kube-api-access-xcvmh",
+            "usedBytes": 12288,
+            "capacityBytes": 178257920,
+            "availableBytes": 178245632
+          }
+        ],
+        "containers": [
+          {
+            "name": "coredns",
+            "memory": {
+              "time": "2026-11-11T14:13:28Z",
+              "availableBytes": 165539840,
+              "usageBytes": 12718080,
+              "workingSetBytes": 12718080,
+              "rssBytes": 12050432,
+              "pageFaults": 5490,
+              "majorPageFaults": 0,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "cilium-envoy-bmrfr",
+        "memory": {
+          "time": "2026-11-11T14:13:25Z",
+          "availableBytes": 100958208,
+          "usageBytes": 100483072,
+          "workingSetBytes": 100368384,
+          "rssBytes": 14168064,
+          "pageFaults": 6650,
+          "majorPageFaults": 35,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "envoy-config",
+            "usedBytes": 8192,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25614135296
+          },
+          {
+            "name": "kube-api-access-rxn9n",
+            "usedBytes": 12288,
+            "capacityBytes": 201326592,
+            "availableBytes": 201314304
+          }
+        ],
+        "containers": [
+          {
+            "name": "cilium-envoy",
+            "memory": {
+              "time": "2026-11-11T14:13:23Z",
+              "availableBytes": 101212160,
+              "usageBytes": 100229120,
+              "workingSetBytes": 100114432,
+              "rssBytes": 14131200,
+              "pageFaults": 5379,
+              "majorPageFaults": 35,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "local-path-storage",
+        "name": "local-path-provisioner-d849dd656-6nwrq",
+        "memory": {
+          "time": "2026-11-11T14:13:21Z",
+          "availableBytes": 37810176,
+          "usageBytes": 62873600,
+          "workingSetBytes": 62853120,
+          "rssBytes": 10014720,
+          "pageFaults": 5933,
+          "majorPageFaults": 24,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "config-volume",
+            "usedBytes": 16384,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25613946880
+          },
+          {
+            "name": "kube-api-access-mhd6x",
+            "usedBytes": 12288,
+            "capacityBytes": 100663296,
+            "availableBytes": 100651008
+          }
+        ],
+        "containers": [
+          {
+            "name": "local-path-provisioner",
+            "memory": {
+              "time": "2026-11-11T14:13:29Z",
+              "availableBytes": 38072320,
+              "usageBytes": 62611456,
+              "workingSetBytes": 62590976,
+              "rssBytes": 9973760,
+              "pageFaults": 4702,
+              "majorPageFaults": 24,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "alert_delivery": {
+      "transport": "HTTP loopback only",
+      "received": [
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "kube-system",
+          "pod": "cilium-8thlg",
+          "containers": [
+            {
+              "name": "cilium-agent",
+              "restartCount": 4
+            }
+          ],
+          "container": {
+            "name": "cilium-agent",
+            "restartCount": 4
+          }
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "kube-system",
+          "pod": "cilium-envoy-bmrfr",
+          "containers": [
+            {
+              "name": "cilium-envoy",
+              "restartCount": 4
+            }
+          ],
+          "container": {
+            "name": "cilium-envoy",
+            "restartCount": 4
+          }
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "kube-system",
+          "pod": "cilium-operator-6756f849f6-sfnr9",
+          "containers": [
+            {
+              "name": "cilium-operator",
+              "restartCount": 4
+            }
+          ],
+          "container": {
+            "name": "cilium-operator",
+            "restartCount": 4
+          }
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "kube-system",
+          "pod": "coredns-6cb54fb45c-5bkgn",
+          "containers": [
+            {
+              "name": "coredns",
+              "restartCount": 2
+            }
+          ],
+          "container": {
+            "name": "coredns",
+            "restartCount": 2
+          }
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "kube-system",
+          "pod": "coredns-6cb54fb45c-64sbv",
+          "containers": [
+            {
+              "name": "coredns",
+              "restartCount": 2
+            }
+          ],
+          "container": {
+            "name": "coredns",
+            "restartCount": 2
+          }
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "local-path-storage",
+          "pod": "local-path-provisioner-d849dd656-6nwrq",
+          "containers": [
+            {
+              "name": "local-path-provisioner",
+              "restartCount": 2
+            }
+          ],
+          "container": {
+            "name": "local-path-provisioner",
+            "restartCount": 2
+          }
+        },
+        {
+          "rule": "ProofDeliveryTest",
+          "synthetic": true
+        }
+      ]
+    }
+  },
+  {
+    "time": "2026-11-11T14:16:06.993997+00:00",
+    "memory": {
+      "time": "2026-11-11T14:16:02Z",
+      "availableBytes": 723636224,
+      "usageBytes": 2315526144,
+      "workingSetBytes": 2236788736,
+      "rssBytes": 929689600,
+      "pageFaults": 1092022,
+      "majorPageFaults": 2083,
+      "psi": {
+        "full": {
+          "total": 0,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        },
+        "some": {
+          "total": 0,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        }
+      }
+    },
+    "conditions": {
+      "NetworkUnavailable": "False",
+      "MemoryPressure": "False",
+      "DiskPressure": "False",
+      "PIDPressure": "False",
+      "Ready": "True"
+    },
+    "capacity": {
+      "cpu": "2",
+      "ephemeral-storage": "30500Mi",
+      "hugepages-2Mi": "0",
+      "memory": "2891040Ki",
+      "pods": "110"
+    },
+    "allocatable": {
+      "cpu": "1950m",
+      "ephemeral-storage": "28514975697",
+      "hugepages-2Mi": "0",
+      "memory": "2264352Ki",
+      "pods": "110"
+    },
+    "restarts": [
+      {
+        "namespace": "kube-system",
+        "pod": "cilium-8thlg",
+        "containers": [
+          {
+            "name": "cilium-agent",
+            "restartCount": 4
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "cilium-envoy-bmrfr",
+        "containers": [
+          {
+            "name": "cilium-envoy",
+            "restartCount": 4
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "cilium-operator-6756f849f6-sfnr9",
+        "containers": [
+          {
+            "name": "cilium-operator",
+            "restartCount": 4
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "coredns-6cb54fb45c-5bkgn",
+        "containers": [
+          {
+            "name": "coredns",
+            "restartCount": 2
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "coredns-6cb54fb45c-64sbv",
+        "containers": [
+          {
+            "name": "coredns",
+            "restartCount": 2
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "kube-apiserver-talos-proof",
+        "containers": [
+          {
+            "name": "kube-apiserver",
+            "restartCount": 0
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "kube-controller-manager-talos-proof",
+        "containers": [
+          {
+            "name": "kube-controller-manager",
+            "restartCount": 0
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "pod": "kube-scheduler-talos-proof",
+        "containers": [
+          {
+            "name": "kube-scheduler",
+            "restartCount": 0
+          }
+        ]
+      },
+      {
+        "namespace": "local-path-storage",
+        "pod": "local-path-provisioner-d849dd656-6nwrq",
+        "containers": [
+          {
+            "name": "local-path-provisioner",
+            "restartCount": 2
+          }
+        ]
+      }
+    ],
+    "filesystem": {
+      "time": "2026-11-11T14:16:02Z",
+      "availableBytes": 25613000704,
+      "capacityBytes": 31981568000,
+      "usedBytes": 6368567296,
+      "inodesFree": 15527669,
+      "inodes": 15648768,
+      "inodesUsed": 121099
+    },
+    "pods": [
+      {
+        "namespace": "kube-system",
+        "name": "kube-apiserver-talos-proof",
+        "memory": {
+          "time": "2026-11-11T14:16:04Z",
+          "usageBytes": 457920512,
+          "workingSetBytes": 447860736,
+          "rssBytes": 355606528,
+          "pageFaults": 104872,
+          "majorPageFaults": 32,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "run",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          },
+          {
+            "name": "tmp",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          }
+        ],
+        "containers": [
+          {
+            "name": "kube-apiserver",
+            "memory": {
+              "time": "2026-11-11T14:15:58Z",
+              "usageBytes": 456835072,
+              "workingSetBytes": 446857216,
+              "rssBytes": 355565568,
+              "pageFaults": 103491,
+              "majorPageFaults": 31,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "cilium-8thlg",
+        "memory": {
+          "time": "2026-11-11T14:15:59Z",
+          "usageBytes": 509689856,
+          "workingSetBytes": 507465728,
+          "rssBytes": 85483520,
+          "pageFaults": 245392,
+          "majorPageFaults": 183,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "tmp",
+            "usedBytes": 3452928,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25613000704
+          },
+          {
+            "name": "kube-api-access-v6jmq",
+            "usedBytes": 12288,
+            "capacityBytes": 1858109440,
+            "availableBytes": 1858097152
+          },
+          {
+            "name": "clustermesh-secrets",
+            "usedBytes": 0,
+            "capacityBytes": 1858109440,
+            "availableBytes": 1858109440
+          }
+        ],
+        "containers": [
+          {
+            "name": "cilium-agent",
+            "memory": {
+              "time": "2026-11-11T14:15:57Z",
+              "availableBytes": 149463040,
+              "usageBytes": 388562944,
+              "workingSetBytes": 387407872,
+              "rssBytes": 85442560,
+              "pageFaults": 232734,
+              "majorPageFaults": 128,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "kube-scheduler-talos-proof",
+        "memory": {
+          "time": "2026-11-11T14:15:52Z",
+          "usageBytes": 69840896,
+          "workingSetBytes": 69820416,
+          "rssBytes": 19369984,
+          "pageFaults": 8762,
+          "majorPageFaults": 25,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "tmp",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          },
+          {
+            "name": "run",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          }
+        ],
+        "containers": [
+          {
+            "name": "kube-scheduler",
+            "memory": {
+              "time": "2026-11-11T14:16:05Z",
+              "usageBytes": 69582848,
+              "workingSetBytes": 69562368,
+              "rssBytes": 19333120,
+              "pageFaults": 7592,
+              "majorPageFaults": 25,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "coredns-6cb54fb45c-5bkgn",
+        "memory": {
+          "time": "2026-11-11T14:16:03Z",
+          "availableBytes": 88010752,
+          "usageBytes": 90284032,
+          "workingSetBytes": 90247168,
+          "rssBytes": 12034048,
+          "pageFaults": 6889,
+          "majorPageFaults": 27,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "config-volume",
+            "usedBytes": 4096,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25612697600
+          },
+          {
+            "name": "kube-api-access-kxkkx",
+            "usedBytes": 12288,
+            "capacityBytes": 178257920,
+            "availableBytes": 178245632
+          }
+        ],
+        "containers": [
+          {
+            "name": "coredns",
+            "memory": {
+              "time": "2026-11-11T14:15:49Z",
+              "availableBytes": 88797184,
+              "usageBytes": 89497600,
+              "workingSetBytes": 89460736,
+              "rssBytes": 11993088,
+              "pageFaults": 5521,
+              "majorPageFaults": 27,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "cilium-envoy-bmrfr",
+        "memory": {
+          "time": "2026-11-11T14:15:59Z",
+          "availableBytes": 100950016,
+          "usageBytes": 100491264,
+          "workingSetBytes": 100376576,
+          "rssBytes": 14176256,
+          "pageFaults": 6652,
+          "majorPageFaults": 35,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "envoy-config",
+            "usedBytes": 8192,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25613037568
+          },
+          {
+            "name": "kube-api-access-rxn9n",
+            "usedBytes": 12288,
+            "capacityBytes": 201326592,
+            "availableBytes": 201314304
+          }
+        ],
+        "containers": [
+          {
+            "name": "cilium-envoy",
+            "memory": {
+              "time": "2026-11-11T14:16:06Z",
+              "availableBytes": 101203968,
+              "usageBytes": 100237312,
+              "workingSetBytes": 100122624,
+              "rssBytes": 14139392,
+              "pageFaults": 5381,
+              "majorPageFaults": 35,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "local-path-storage",
+        "name": "local-path-provisioner-d849dd656-6nwrq",
+        "memory": {
+          "time": "2026-11-11T14:16:03Z",
+          "availableBytes": 37183488,
+          "usageBytes": 63500288,
+          "workingSetBytes": 63479808,
+          "rssBytes": 10051584,
+          "pageFaults": 5965,
+          "majorPageFaults": 28,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "config-volume",
+            "usedBytes": 16384,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25612984320
+          },
+          {
+            "name": "kube-api-access-mhd6x",
+            "usedBytes": 12288,
+            "capacityBytes": 100663296,
+            "availableBytes": 100651008
+          }
+        ],
+        "containers": [
+          {
+            "name": "local-path-provisioner",
+            "memory": {
+              "time": "2026-11-11T14:15:50Z",
+              "availableBytes": 37449728,
+              "usageBytes": 63234048,
+              "workingSetBytes": 63213568,
+              "rssBytes": 10006528,
+              "pageFaults": 4733,
+              "majorPageFaults": 28,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "kube-controller-manager-talos-proof",
+        "memory": {
+          "time": "2026-11-11T14:15:54Z",
+          "usageBytes": 128294912,
+          "workingSetBytes": 128274432,
+          "rssBytes": 52584448,
+          "pageFaults": 21609,
+          "majorPageFaults": 27,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "tmp",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          },
+          {
+            "name": "run",
+            "usedBytes": 0,
+            "capacityBytes": 2318696448,
+            "availableBytes": 2318696448
+          }
+        ],
+        "containers": [
+          {
+            "name": "kube-controller-manager",
+            "memory": {
+              "time": "2026-11-11T14:16:02Z",
+              "usageBytes": 127778816,
+              "workingSetBytes": 127758336,
+              "rssBytes": 52543488,
+              "pageFaults": 20190,
+              "majorPageFaults": 27,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "coredns-6cb54fb45c-64sbv",
+        "memory": {
+          "time": "2026-11-11T14:16:04Z",
+          "availableBytes": 165257216,
+          "usageBytes": 13000704,
+          "workingSetBytes": 13000704,
+          "rssBytes": 12103680,
+          "pageFaults": 6713,
+          "majorPageFaults": 0,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "config-volume",
+            "usedBytes": 4096,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25612988416
+          },
+          {
+            "name": "kube-api-access-xcvmh",
+            "usedBytes": 12288,
+            "capacityBytes": 178257920,
+            "availableBytes": 178245632
+          }
+        ],
+        "containers": [
+          {
+            "name": "coredns",
+            "memory": {
+              "time": "2026-11-11T14:16:01Z",
+              "availableBytes": 165527552,
+              "usageBytes": 12730368,
+              "workingSetBytes": 12730368,
+              "rssBytes": 12062720,
+              "pageFaults": 5495,
+              "majorPageFaults": 0,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "namespace": "kube-system",
+        "name": "cilium-operator-6756f849f6-sfnr9",
+        "memory": {
+          "time": "2026-11-11T14:15:56Z",
+          "availableBytes": 38166528,
+          "usageBytes": 163188736,
+          "workingSetBytes": 163160064,
+          "rssBytes": 39481344,
+          "pageFaults": 17347,
+          "majorPageFaults": 38,
+          "psi": {
+            "full": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            },
+            "some": {
+              "total": 0,
+              "avg10": 0,
+              "avg60": 0,
+              "avg300": 0
+            }
+          }
+        },
+        "volumes": [
+          {
+            "name": "cilium-config-path",
+            "usedBytes": 692224,
+            "capacityBytes": 31981568000,
+            "availableBytes": 25612988416
+          },
+          {
+            "name": "kube-api-access-9xgs8",
+            "usedBytes": 12288,
+            "capacityBytes": 201326592,
+            "availableBytes": 201314304
+          }
+        ],
+        "containers": [
+          {
+            "name": "cilium-operator",
+            "memory": {
+              "time": "2026-11-11T14:15:52Z",
+              "availableBytes": 38170624,
+              "usageBytes": 163184640,
+              "workingSetBytes": 163155968,
+              "rssBytes": 39436288,
+              "pageFaults": 15925,
+              "majorPageFaults": 38,
+              "psi": {
+                "full": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                },
+                "some": {
+                  "total": 0,
+                  "avg10": 0,
+                  "avg60": 0,
+                  "avg300": 0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "alert_delivery": {
+      "transport": "HTTP loopback only",
+      "received": [
+        {
+          "rule": "NodeMemoryHeadroomLow",
+          "availableBytes": 723636224,
+          "thresholdBytes": 939524096
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "kube-system",
+          "pod": "cilium-8thlg",
+          "containers": [
+            {
+              "name": "cilium-agent",
+              "restartCount": 4
+            }
+          ],
+          "container": {
+            "name": "cilium-agent",
+            "restartCount": 4
+          }
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "kube-system",
+          "pod": "cilium-envoy-bmrfr",
+          "containers": [
+            {
+              "name": "cilium-envoy",
+              "restartCount": 4
+            }
+          ],
+          "container": {
+            "name": "cilium-envoy",
+            "restartCount": 4
+          }
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "kube-system",
+          "pod": "cilium-operator-6756f849f6-sfnr9",
+          "containers": [
+            {
+              "name": "cilium-operator",
+              "restartCount": 4
+            }
+          ],
+          "container": {
+            "name": "cilium-operator",
+            "restartCount": 4
+          }
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "kube-system",
+          "pod": "coredns-6cb54fb45c-5bkgn",
+          "containers": [
+            {
+              "name": "coredns",
+              "restartCount": 2
+            }
+          ],
+          "container": {
+            "name": "coredns",
+            "restartCount": 2
+          }
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "kube-system",
+          "pod": "coredns-6cb54fb45c-64sbv",
+          "containers": [
+            {
+              "name": "coredns",
+              "restartCount": 2
+            }
+          ],
+          "container": {
+            "name": "coredns",
+            "restartCount": 2
+          }
+        },
+        {
+          "rule": "ContainerRestartObserved",
+          "namespace": "local-path-storage",
+          "pod": "local-path-provisioner-d849dd656-6nwrq",
+          "containers": [
+            {
+              "name": "local-path-provisioner",
+              "restartCount": 2
+            }
+          ],
+          "container": {
+            "name": "local-path-provisioner",
+            "restartCount": 2
+          }
+        }
+      ]
+    }
+  }
+]

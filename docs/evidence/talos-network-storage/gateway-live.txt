@@ -1,0 +1,108 @@
+Wed Nov 11 12:48:25 UTC 2026
+* [DNS] added fixture.proof.invalid:18080:127.0.0.1 to cache
+* Hostname fixture.proof.invalid was found in DNS cache
+* Host fixture.proof.invalid:18080 was resolved.
+* IPv6: (none)
+* IPv4: 127.0.0.1
+*   Trying 127.0.0.1:18080...
+* Established connection to fixture.proof.invalid (127.0.0.1 port 18080) from 127.0.0.1 port 51564 
+  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
+                                 Dload  Upload  Total   Spent   Left   Speed
+  0      0   0      0   0      0      0      0                              0* using HTTP/1.x
+> GET / HTTP/1.1
+> Host: fixture.proof.invalid:18080
+> User-Agent: curl/8.22.0
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< date: Wed, 11 Nov 2026 12:48:25 GMT
+< content-type: text/html
+< accept-ranges: bytes
+< last-modified: Wed, 11 Nov 2026 12:46:46 GMT
+< etag: "6af463b6-21"
+< content-length: 33
+< x-envoy-upstream-service-time: 0
+< server: envoy
+< 
+{ [33 bytes data]
+100     33 100     33   0      0   2041      0                              0100     33 100     33   0      0   2009      0                              0100     33 100     33   0      0   1979      0                              0
+* Connection #0 to host fixture.proof.invalid:18080 left intact
+synthetic-proof-20261111T124646Z
+* [DNS] added fixture.proof.invalid:18443:127.0.0.1 to cache
+* Hostname fixture.proof.invalid was found in DNS cache
+* Host fixture.proof.invalid:18443 was resolved.
+* IPv6: (none)
+* IPv4: 127.0.0.1
+*   Trying 127.0.0.1:18443...
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [1567 bytes data]
+* SSL Trust Anchors:
+*   CAfile: /Users/mm/.local/state/home-infra/talos-proof/config/proof-gateway-ca.crt
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* TLSv1.3 (IN), TLS change cipher, Change cipher spec (1):
+{ [1 bytes data]
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+{ [15 bytes data]
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+{ [801 bytes data]
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+{ [264 bytes data]
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+{ [36 bytes data]
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+} [36 bytes data]
+* SSL connection using TLSv1.3 / TLS_CHACHA20_POLY1305_SHA256 / x25519 / RSASSA-PSS
+* ALPN: server accepted h2
+* Server certificate:
+*   subject: CN=*.proof.invalid
+*   start date: Nov 11 12:44:31 2026 GMT
+*   expire date: Nov 18 12:44:31 2026 GMT
+*   issuer: CN=*.proof.invalid
+*   Certificate level 0: Public key type RSA (2048/112 Bits/secBits), signed using sha256WithRSAEncryption
+*   subjectAltName: "fixture.proof.invalid" matches cert's "*.proof.invalid"
+* OpenSSL verify result: 0
+* SSL certificate verified via OpenSSL.
+* Established connection to fixture.proof.invalid (127.0.0.1 port 18443) from 127.0.0.1 port 51565 
+  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
+                                 Dload  Upload  Total   Spent   Left   Speed
+  0      0   0      0   0      0      0      0                              0* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://fixture.proof.invalid:18443/
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: fixture.proof.invalid:18443]
+* [HTTP/2] [1] [:path: /]
+* [HTTP/2] [1] [user-agent: curl/8.22.0]
+* [HTTP/2] [1] [accept: */*]
+} [5 bytes data]
+> GET / HTTP/2
+> Host: fixture.proof.invalid:18443
+> User-Agent: curl/8.22.0
+> Accept: */*
+> 
+* Request completely sent off
+} [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [214 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [214 bytes data]
+< HTTP/2 200 
+< date: Wed, 11 Nov 2026 12:48:25 GMT
+< content-type: text/html
+< accept-ranges: bytes
+< last-modified: Wed, 11 Nov 2026 12:46:46 GMT
+< etag: "6af463b6-21"
+< content-length: 33
+< x-envoy-upstream-service-time: 0
+< server: envoy
+< 
+{ [33 bytes data]
+100     33 100     33   0      0   1690      0                              0100     33 100     33   0      0   1677      0                              0100     33 100     33   0      0   1664      0                              0
+* Connection #0 to host fixture.proof.invalid:18443 left intact
+synthetic-proof-20261111T124646Z

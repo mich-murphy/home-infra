@@ -1,0 +1,29 @@
+{
+  "time": "2026-11-11T14:17:03.918966+00:00",
+  "node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+  "node_info": {
+    "architecture": "amd64",
+    "containerRuntimeVersion": "containerd://2.3.7",
+    "kernelVersion": "6.18.58-talos",
+    "kubeletVersion": "v1.36.5",
+    "osImage": "Talos (v1.14.5)"
+  },
+  "active_operations_pods": [],
+  "operations_deployments": [],
+  "active_other_proof_pods": [],
+  "retained_claims": [
+    {
+      "name": "restored",
+      "uid": "ee8581fb-17b8-4a96-8224-ce45e8d8fbe6",
+      "volume": "pvc-ee8581fb-17b8-4a96-8224-ce45e8d8fbe6",
+      "phase": "Bound"
+    },
+    {
+      "name": "source",
+      "uid": "79f0c85d-a2bc-42a3-88f7-532a56af43b7",
+      "volume": "pvc-79f0c85d-a2bc-42a3-88f7-532a56af43b7",
+      "phase": "Bound"
+    }
+  ],
+  "flux_source_created": false
+}

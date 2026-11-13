@@ -1,0 +1,14 @@
+# Nextcloud preflight scope acceptance review
+
+Reviewed `14b767a3` offline by independent reader `76c1a180-e186-4df`. **HOLD both release and diagnostic grants.** Original33d6 PENDING and released receipt remain unchanged; no runtime or private state accessed by reviewer.
+
+1. **High: missing global Job/DaemonSet activation barriers.** `scripts/talos-proof-nextcloud-preflight.py:297–303` uses inherited admission (`cron-supervisor.py:287–309`) which checks Pods, Deployments/StatefulSets and CronJobs, not Pod-less Jobs/DaemonSets. Require global barriers before backend activation and again before helper creation; test real validator paths.
+2. **High: serial cleanup suppresses independently legitimate cleanup.** Inherited `stop()` aborts after a failed PostgreSQL patch before attempting Redis/helper retirement (`cron-supervisor.py:113–121,462–473`). Add diagnostic-only independent UID/target/expiry-guarded attempts and accumulate failures; final uncertainty must retain PENDING. Capture-before-deletion and no unknown-UID adoption remain mandatory.
+3. **Medium: incomplete historical proof passes.** `preflight.py:104–132,157–190` accepts a nine-event positive fixture omitting the original three memory observations, and an empty historical controller list. Require original event multiplicities and required retained controller UID/stopped entries; reject sparse/rehashed substitutes. Correctly parent-pinned input hashes are not bypassed, but semantic completeness is not established by hashes alone.
+4. **Medium: declared parent-review identity is not verified.** `cron.py:71–81` checks bridge/evidence hashes but not `parent_review_identity.path/sha256`. Verify that fixed acceptance-record reference transitively before authorization/runtime access. Preserve the four direct artifacts versus transitively verified parent-record distinction.
+
+Scope separation, GET-only release, canonical stable-directory lock, replay rejection, five current-source bindings, original failed Pod/PHP proof, diagnostic empty-HTML guard/read-only SQL/Redis PING, unchanged main PHASES and exact version.php-only bridge were positively reviewed. Those strengths do not close findings or grant authority.
+
+Parent subsequently ran the full gate: **484 Python methods across40 suites, no unittest skips;443 resources/zero invalid/errors/skipped; browser suites, Alejandra and actionlint passed**. Log `/tmp/talos-proof-static-b5ee18db-fff2-44c7-a3b1-cd33235a69a6.log`. The text `STOP skipped: enrolled incarnation is gone` is deliberate lifecycle-test output, not a skipped unittest. Static success does not close these source-review gaps.
+
+Focused offline repair ownership transferred from completed a31 to `c31ceb9d-9304-466`; no runtime/grant/canonical-state authority. Parent retains acceptance. This review remains historical even after corrections.

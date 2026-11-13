@@ -1,0 +1,27 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: qbittorrent
+  namespace: proof-qbittorrent
+  labels:
+    app.kubernetes.io/name: qbittorrent
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  parentRefs:
+  - name: proof
+    namespace: proof-gateway
+  hostnames:
+  - qbittorrent.proof.invalid
+  rules:
+  - filters:
+    - type: URLRewrite
+      urlRewrite:
+        hostname: qbittorrent.proof.invalid
+    - type: RequestHeaderModifier
+      requestHeaderModifier:
+        set:
+        - name: X-Forwarded-Host
+          value: qbittorrent.proof.invalid:18443
+    backendRefs:
+    - name: qbittorrent
+      port: 8080

@@ -1,0 +1,3824 @@
+{
+  "status": "PUBLIC_IMAGE_STRICT_SOURCE_PARITY_MISMATCH_NOT_RUNTIME_PROOF",
+  "image": "docker.io/library/nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+  "platform": "linux/amd64",
+  "index": {
+    "digest": "sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+    "size": 10277,
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "selected_descriptor": {
+      "annotations": {
+        "com.docker.official-images.bashbrew.arch": "amd64",
+        "org.opencontainers.image.base.digest": "sha256:e52b6f940dad1ca063538db88815e56f7d86befded190eeda5f88d5113047504",
+        "org.opencontainers.image.base.name": "php:8.5-apache-trixie",
+        "org.opencontainers.image.created": "2026-11-05T08:43:42Z",
+        "org.opencontainers.image.revision": "7e9e152f77372845195ed28dc65569df74f582ff",
+        "org.opencontainers.image.source": "https://github.com/nextcloud/docker.git#7e9e152f77372845195ed28dc65569df74f582ff:35/apache",
+        "org.opencontainers.image.url": "https://hub.docker.com/_/nextcloud",
+        "org.opencontainers.image.version": "35.0.2-apache"
+      },
+      "digest": "sha256:3139d734aa878e9da89b610112734056c0df55279dd6a4578573c0803c293ef3",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      },
+      "size": 5148
+    }
+  },
+  "manifest": {
+    "digest": "sha256:3139d734aa878e9da89b610112734056c0df55279dd6a4578573c0803c293ef3",
+    "size": 5148,
+    "mediaType": "application/vnd.oci.image.manifest.v1+json"
+  },
+  "config": {
+    "digest": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+    "size": 19860,
+    "architecture": "amd64",
+    "os": "linux",
+    "rootfs_type": "layers"
+  },
+  "layers": [
+    {
+      "order": 0,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:37fb86c2a767b88d500c6872195f88078f64765fe0d2f9cc375cc2efbd4c0a41",
+      "size": 29856132,
+      "diff_id": "sha256:dd57f90311a2567b55ff22eeacff1602fd04ad7566e315957731359eab173b90",
+      "verified_diff_id": "sha256:dd57f90311a2567b55ff22eeacff1602fd04ad7566e315957731359eab173b90",
+      "uncompressed_bytes": 81295360,
+      "tar_members": 3271,
+      "whiteouts": 0,
+      "selected_entries": 2,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:37fb86c2a767b88d500c6872195f88078f64765fe0d2f9cc375cc2efbd4c0a41"
+    },
+    {
+      "order": 1,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:e1af7931d3492b55f556b35ef4e3dc325cfc2e3328b8846b7b71d44729cd02dd",
+      "size": 226,
+      "diff_id": "sha256:ea1e999bd4650d9a616bddeac8f1e742720fa40307b13049b848789292859d45",
+      "verified_diff_id": "sha256:ea1e999bd4650d9a616bddeac8f1e742720fa40307b13049b848789292859d45",
+      "uncompressed_bytes": 3584,
+      "tar_members": 4,
+      "whiteouts": 0,
+      "selected_entries": 0,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:e1af7931d3492b55f556b35ef4e3dc325cfc2e3328b8846b7b71d44729cd02dd"
+    },
+    {
+      "order": 2,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:069aa4a0e623a0f96e99e29a0b4605c47c0b024fbd5af813f1ecdec4ada9418e",
+      "size": 117837990,
+      "diff_id": "sha256:533a25635718d2590da9461a8ed029a1a69dcbc4eee31a6eaca126c6726e620b",
+      "verified_diff_id": "sha256:533a25635718d2590da9461a8ed029a1a69dcbc4eee31a6eaca126c6726e620b",
+      "uncompressed_bytes": 352995328,
+      "tar_members": 8292,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:069aa4a0e623a0f96e99e29a0b4605c47c0b024fbd5af813f1ecdec4ada9418e"
+    },
+    {
+      "order": 3,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:c2df53f4c16864fa5d2ea17916c72bff74001acc532fab9db78c5478f854963a",
+      "size": 224,
+      "diff_id": "sha256:dc93627a87c5f5a3eee7fc7bb7afa2b77b6a9f29deb16a14b9168b4847f5849b",
+      "verified_diff_id": "sha256:dc93627a87c5f5a3eee7fc7bb7afa2b77b6a9f29deb16a14b9168b4847f5849b",
+      "uncompressed_bytes": 5120,
+      "tar_members": 8,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:c2df53f4c16864fa5d2ea17916c72bff74001acc532fab9db78c5478f854963a"
+    },
+    {
+      "order": 4,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:16e21cd5a0d77be7895b645c1c0e7edde36f2a301e800b499b03c810d5ea33d2",
+      "size": 4244037,
+      "diff_id": "sha256:fc46d9efe4346cead39b6507487d8f7d68f86134bf46a9f64a5f1af81761d88b",
+      "verified_diff_id": "sha256:fc46d9efe4346cead39b6507487d8f7d68f86134bf46a9f64a5f1af81761d88b",
+      "uncompressed_bytes": 12258304,
+      "tar_members": 923,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:16e21cd5a0d77be7895b645c1c0e7edde36f2a301e800b499b03c810d5ea33d2"
+    },
+    {
+      "order": 5,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:8f2131b95a45b846663184e6b81dc4c9b932ab9570c8ef2b59d74e0ab76cbefa",
+      "size": 433,
+      "diff_id": "sha256:0456ea3307d1104a50d20c944b2b2b95204aac07e7d8a19377801ce8c152321c",
+      "verified_diff_id": "sha256:0456ea3307d1104a50d20c944b2b2b95204aac07e7d8a19377801ce8c152321c",
+      "uncompressed_bytes": 9728,
+      "tar_members": 17,
+      "whiteouts": 3,
+      "selected_entries": 0,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:8f2131b95a45b846663184e6b81dc4c9b932ab9570c8ef2b59d74e0ab76cbefa"
+    },
+    {
+      "order": 6,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:b8483d994bf7b90f7b8ceb2d53ed999d2f192d2c1e770c5df1173237f1238796",
+      "size": 485,
+      "diff_id": "sha256:997bbdc1137c63b63e9786bbe41a2ffd2a0f2a9c4b19623a4dc4006a87665bb5",
+      "verified_diff_id": "sha256:997bbdc1137c63b63e9786bbe41a2ffd2a0f2a9c4b19623a4dc4006a87665bb5",
+      "uncompressed_bytes": 7680,
+      "tar_members": 12,
+      "whiteouts": 0,
+      "selected_entries": 0,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:b8483d994bf7b90f7b8ceb2d53ed999d2f192d2c1e770c5df1173237f1238796"
+    },
+    {
+      "order": 7,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:0c62cbaa6d4c92bbcd0c7d24e012938230e77f655e58933310b2fc5dd6867d73",
+      "size": 14721555,
+      "diff_id": "sha256:75d843974880e2acbf94215274ca013928c0fce2f41607fe98b144c989fa0ba1",
+      "verified_diff_id": "sha256:75d843974880e2acbf94215274ca013928c0fce2f41607fe98b144c989fa0ba1",
+      "uncompressed_bytes": 15235584,
+      "tar_members": 55,
+      "whiteouts": 0,
+      "selected_entries": 2,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:0c62cbaa6d4c92bbcd0c7d24e012938230e77f655e58933310b2fc5dd6867d73"
+    },
+    {
+      "order": 8,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:dc3e0450a75398007131de3cc8e0f3b43875d4ca3dc0d3fef96cb32e44a1143f",
+      "size": 489,
+      "diff_id": "sha256:0170ec7fd07fcb59ca9b05f2c7aa1a761b5421a3432242ee33a89617042d43e1",
+      "verified_diff_id": "sha256:0170ec7fd07fcb59ca9b05f2c7aa1a761b5421a3432242ee33a89617042d43e1",
+      "uncompressed_bytes": 4096,
+      "tar_members": 4,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:dc3e0450a75398007131de3cc8e0f3b43875d4ca3dc0d3fef96cb32e44a1143f"
+    },
+    {
+      "order": 9,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:7ee36668eb990f0031ce8dade9a5cbac0e273123518d4e20b3f772a9d99e7e55",
+      "size": 15245817,
+      "diff_id": "sha256:abcd29e1a148121f5f892c0676edebe32573427703e8995ecd6c32bad067f68a",
+      "verified_diff_id": "sha256:abcd29e1a148121f5f892c0676edebe32573427703e8995ecd6c32bad067f68a",
+      "uncompressed_bytes": 71664128,
+      "tar_members": 713,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:7ee36668eb990f0031ce8dade9a5cbac0e273123518d4e20b3f772a9d99e7e55"
+    },
+    {
+      "order": 10,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:bf0c10efe273d5b06e735a0b1d934358d8c0398af113af4debe5dbcff28da02a",
+      "size": 2460,
+      "diff_id": "sha256:d150c0dae232dfe97d24c1786e90733d50007b281a416aa1a97087b8edcb1024",
+      "verified_diff_id": "sha256:d150c0dae232dfe97d24c1786e90733d50007b281a416aa1a97087b8edcb1024",
+      "uncompressed_bytes": 12800,
+      "tar_members": 7,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:bf0c10efe273d5b06e735a0b1d934358d8c0398af113af4debe5dbcff28da02a"
+    },
+    {
+      "order": 11,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:b5483f93036aeb12b20c423dc9935b1787eb397c434c6b2bfd5e9bf879a5b4aa",
+      "size": 245,
+      "diff_id": "sha256:6b57382843d132315cc3b7375941b998b3b50ba3f06c0d1f8b06a9aae1a5cb46",
+      "verified_diff_id": "sha256:6b57382843d132315cc3b7375941b998b3b50ba3f06c0d1f8b06a9aae1a5cb46",
+      "uncompressed_bytes": 4608,
+      "tar_members": 6,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:b5483f93036aeb12b20c423dc9935b1787eb397c434c6b2bfd5e9bf879a5b4aa"
+    },
+    {
+      "order": 12,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:c6f1d2d868e60bb0ebd0dcf4958cd8cbe4aa77c7630f64e20e639076dce8dd73",
+      "size": 890,
+      "diff_id": "sha256:92ea2cb0114f1ba9ff5b3e42a46eb567601fa78b9efd2d2ad6477de8404eb6b8",
+      "verified_diff_id": "sha256:92ea2cb0114f1ba9ff5b3e42a46eb567601fa78b9efd2d2ad6477de8404eb6b8",
+      "uncompressed_bytes": 4608,
+      "tar_members": 4,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:c6f1d2d868e60bb0ebd0dcf4958cd8cbe4aa77c7630f64e20e639076dce8dd73"
+    },
+    {
+      "order": 13,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1",
+      "size": 32,
+      "diff_id": "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "verified_diff_id": "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "uncompressed_bytes": 1024,
+      "tar_members": 0,
+      "whiteouts": 0,
+      "selected_entries": 0,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1"
+    },
+    {
+      "order": 14,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:252fb8da49a3adbe8a53c6073d0a60ce4c14c2a84fefcf7fb94fd411f4ac63b8",
+      "size": 21499930,
+      "diff_id": "sha256:c45f7f139993e091ab37854b7a12d1ee5db0c3267b4b833c78a371ce82c1fd3e",
+      "verified_diff_id": "sha256:c45f7f139993e091ab37854b7a12d1ee5db0c3267b4b833c78a371ce82c1fd3e",
+      "uncompressed_bytes": 56333824,
+      "tar_members": 1326,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:252fb8da49a3adbe8a53c6073d0a60ce4c14c2a84fefcf7fb94fd411f4ac63b8"
+    },
+    {
+      "order": 15,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:f59e46f25e5b865d98c928fb41d2cc7022a13e013b4fb70865713ff6e3cecffd",
+      "size": 36949275,
+      "diff_id": "sha256:f6b4367689efe18bdc6e90a2029891598f9edaed020042ab4adf5630c730df21",
+      "verified_diff_id": "sha256:f6b4367689efe18bdc6e90a2029891598f9edaed020042ab4adf5630c730df21",
+      "uncompressed_bytes": 106883072,
+      "tar_members": 3082,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:f59e46f25e5b865d98c928fb41d2cc7022a13e013b4fb70865713ff6e3cecffd"
+    },
+    {
+      "order": 16,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:eebd73fb268ff3f7baf472afed65be11d28984adab15dfaebeb61802d13b4a10",
+      "size": 803,
+      "diff_id": "sha256:98b131f7fc07c776d989a8a9b80e394fd12f37f9d1d285ff1a8bb66e004b4f92",
+      "verified_diff_id": "sha256:98b131f7fc07c776d989a8a9b80e394fd12f37f9d1d285ff1a8bb66e004b4f92",
+      "uncompressed_bytes": 12800,
+      "tar_members": 19,
+      "whiteouts": 0,
+      "selected_entries": 1,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:eebd73fb268ff3f7baf472afed65be11d28984adab15dfaebeb61802d13b4a10"
+    },
+    {
+      "order": 17,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:4523143cf303fecaaefbc384f19b1e9c4e19c06b91382a6dc558f056c2516a1a",
+      "size": 571,
+      "diff_id": "sha256:8f48d12126a60cacdebccdf2f04470cbe449fa3ef19147584b94423701c8133c",
+      "verified_diff_id": "sha256:8f48d12126a60cacdebccdf2f04470cbe449fa3ef19147584b94423701c8133c",
+      "uncompressed_bytes": 12288,
+      "tar_members": 21,
+      "whiteouts": 0,
+      "selected_entries": 0,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:4523143cf303fecaaefbc384f19b1e9c4e19c06b91382a6dc558f056c2516a1a"
+    },
+    {
+      "order": 18,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:14957a716e20e9ff3f44deeab43ed7838c28eb987e71199ba04b456f02275e71",
+      "size": 399,
+      "diff_id": "sha256:018ba111f1d77af27464dba5d83bd75eefdd89b1bfd770b249b43fdba8143e05",
+      "verified_diff_id": "sha256:018ba111f1d77af27464dba5d83bd75eefdd89b1bfd770b249b43fdba8143e05",
+      "uncompressed_bytes": 7680,
+      "tar_members": 12,
+      "whiteouts": 0,
+      "selected_entries": 0,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:14957a716e20e9ff3f44deeab43ed7838c28eb987e71199ba04b456f02275e71"
+    },
+    {
+      "order": 19,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:e3ffd4460d2fd0bf2b2f98fcbd591bd5deaf6658bff74dc528fd456897477d6c",
+      "size": 276237054,
+      "diff_id": "sha256:0a73c67b70a651d2b53423c5fda212ca292069b95e7c657f675acb2517f9a4dd",
+      "verified_diff_id": "sha256:0a73c67b70a651d2b53423c5fda212ca292069b95e7c657f675acb2517f9a4dd",
+      "uncompressed_bytes": 820502528,
+      "tar_members": 31444,
+      "whiteouts": 0,
+      "selected_entries": 50,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:e3ffd4460d2fd0bf2b2f98fcbd591bd5deaf6658bff74dc528fd456897477d6c"
+    },
+    {
+      "order": 20,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:5a14e2a19b39553ef2421c4fc1393127a79138a13139c0dc5cc09ad35797060a",
+      "size": 4148,
+      "diff_id": "sha256:235d76d2a906ccafd949fed814e7b6b726519b7643a5857d04527d402f1579b6",
+      "verified_diff_id": "sha256:235d76d2a906ccafd949fed814e7b6b726519b7643a5857d04527d402f1579b6",
+      "uncompressed_bytes": 17408,
+      "tar_members": 3,
+      "whiteouts": 0,
+      "selected_entries": 0,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:5a14e2a19b39553ef2421c4fc1393127a79138a13139c0dc5cc09ad35797060a"
+    },
+    {
+      "order": 21,
+      "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+      "digest": "sha256:9abaa7aee57084806833b45f478a9c2c5bf37486127cba8e3f43d293211079b7",
+      "size": 2590,
+      "diff_id": "sha256:06c67ba5e4a87c2b3e51ffb4eba45884f457d085cb1b35e80c1eefd053a6bd6e",
+      "verified_diff_id": "sha256:06c67ba5e4a87c2b3e51ffb4eba45884f457d085cb1b35e80c1eefd053a6bd6e",
+      "uncompressed_bytes": 20480,
+      "tar_members": 14,
+      "whiteouts": 0,
+      "selected_entries": 14,
+      "immutable_public_blob_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:9abaa7aee57084806833b45f478a9c2c5bf37486127cba8e3f43d293211079b7"
+    }
+  ],
+  "source_indexes": [
+    {
+      "path": "docs/evidence/talos-data/nextcloud-cron-source-review-97384394-9c9c-47d4-8d17-50e63b9b62fd.json",
+      "sha256": "d9449bb2556ccde76b1c49a6d620114a5f3dd79e647cc91b0c7f15b16a4df101"
+    },
+    {
+      "path": "docs/evidence/talos-data/nextcloud-cron-docker-config-source.json",
+      "sha256": "34cfd5be9029d13f925a30436dfda1547fe762334c4ab04defcab8335b7a08fe"
+    }
+  ],
+  "comparisons": [
+    {
+      "path": "/usr/src/nextcloud/config/config.sample.php",
+      "group": "core",
+      "expected": {
+        "path": "config/config.sample.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/config/config.sample.php",
+        "sha256": "0ee03e3fe1025db2bdacc22c46a5358549980526e90526fa4d00dcbd5c18d42a",
+        "bytes": 105300,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 105300,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "0ee03e3fe1025db2bdacc22c46a5358549980526e90526fa4d00dcbd5c18d42a",
+        "content_artifact": "file-19-f2bcaa62a91042b386b1855a8327b13f6d466468fad716e8b4cfdfb3d8d456ca.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/core/BackgroundJobs/CleanupLoginFlowV2.php",
+      "group": "core",
+      "expected": {
+        "path": "core/BackgroundJobs/CleanupLoginFlowV2.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/core/BackgroundJobs/CleanupLoginFlowV2.php",
+        "sha256": "c4b6270867bfbfb2e08de527099581fb2719511c6cadd0899fef8b643afdada3",
+        "bytes": 623,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 623,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "c4b6270867bfbfb2e08de527099581fb2719511c6cadd0899fef8b643afdada3",
+        "content_artifact": "file-19-f7d38b6d2906a45c1ac65b4eea1be4bca3dffb9a5542771055c3f93043e79179.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/core/BackgroundJobs",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/core",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/core/Command/Maintenance/Install.php",
+      "group": "core",
+      "expected": {
+        "path": "core/Command/Maintenance/Install.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/core/Command/Maintenance/Install.php",
+        "sha256": "043918e7d0136ebedb7416d5703850742670cff246caeef8cb13c54c9f17aa6c",
+        "bytes": 10534,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 10534,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "043918e7d0136ebedb7416d5703850742670cff246caeef8cb13c54c9f17aa6c",
+        "content_artifact": "file-19-14bfe24c40bdc3fa539f58aa3d3214d5a22dead795004a12d3bd715d0acbe7c8.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/core/Command/Maintenance",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/core/Command",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/core",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/core/Command/Status.php",
+      "group": "core",
+      "expected": {
+        "path": "core/Command/Status.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/core/Command/Status.php",
+        "sha256": "444c897059f4e66692ed9d399badf881564548b47ada94d8183e4aff1da93fca",
+        "bytes": 1978,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 1978,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "444c897059f4e66692ed9d399badf881564548b47ada94d8183e4aff1da93fca",
+        "content_artifact": "file-19-f63e644ccaaed9a5b56e8de68f4af00affa4c23b6273e6f1bba982559b2ec8a3.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/core/Command",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/core",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/core/Service/CronService.php",
+      "group": "core",
+      "expected": {
+        "path": "core/Service/CronService.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/core/Service/CronService.php",
+        "sha256": "51c095bea9a0ba9437be53a99838edb3d7c351b126c201d7b88cc580dbb12ff6",
+        "bytes": 9527,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 9527,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "51c095bea9a0ba9437be53a99838edb3d7c351b126c201d7b88cc580dbb12ff6",
+        "content_artifact": "file-19-5ee373e62d694d32f2d8040eea723f6278488df8a110889309a64262fd485539.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/core/Service",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/core",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/core/register_command.php",
+      "group": "core",
+      "expected": {
+        "path": "core/register_command.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/core/register_command.php",
+        "sha256": "41afab050747354b94d0f0fe7aa3a0de97cd062f2b11f56f7227eb14a18e0f76",
+        "bytes": 14106,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 14106,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "41afab050747354b94d0f0fe7aa3a0de97cd062f2b11f56f7227eb14a18e0f76",
+        "content_artifact": "file-19-47784e014756e64fa233e6e78d2a3fa04f8f3354b803b675c511f27f21230e80.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/core",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/cron.php",
+      "group": "core",
+      "expected": {
+        "path": "cron.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/cron.php",
+        "sha256": "75e7d2c6e9d6817503cf2d8b22a8d2e81070fe2a356779a0d7b510dafd83c4ff",
+        "bytes": 1913,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 1913,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "75e7d2c6e9d6817503cf2d8b22a8d2e81070fe2a356779a0d7b510dafd83c4ff",
+        "content_artifact": "file-19-13b3f298de0486ac15684509c89a4e4157a8871ab014d01cba82f3791bdf0ee5.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/base.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/base.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/base.php",
+        "sha256": "2225732960bd3d09a12d5bd618a754cbe426f26c94b1e351d66803499d17bc6d",
+        "bytes": 232,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 232,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "2225732960bd3d09a12d5bd618a754cbe426f26c94b1e351d66803499d17bc6d",
+        "content_artifact": "file-19-9e01d89ec190727750af995f82495cbbc288ba200401f4ec7cad879e6da0d8fa.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Authentication/Token/IProvider.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Authentication/Token/IProvider.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/IProvider.php",
+        "sha256": "873284c91009e7634ef07a75193f0f878a15606cfa6ce968dd3f4d5d61346eff",
+        "bytes": 4409,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 4409,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "873284c91009e7634ef07a75193f0f878a15606cfa6ce968dd3f4d5d61346eff",
+        "content_artifact": "file-19-17d41f6d5685ebbd6adf019da46a369afa46dcbfdb5141bd0300a84494c2c249.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication/Token",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Authentication/Token/IToken.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Authentication/Token/IToken.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/IToken.php",
+        "sha256": "28f656dc9eca4670f0a4f1ea8bd4f752622672d9f4e90ac3fc04a2b863f6c72b",
+        "bytes": 417,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 417,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "28f656dc9eca4670f0a4f1ea8bd4f752622672d9f4e90ac3fc04a2b863f6c72b",
+        "content_artifact": "file-19-648017135b734dd9d0fca9e15197bc7befb855a53891f36ef6ee77007a92b6ba.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication/Token",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Authentication/Token/Manager.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Authentication/Token/Manager.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/Manager.php",
+        "sha256": "df5575e634df02f5fd56cea00265d26fb5063077eda8dc785d8906c86dcbaf8e",
+        "bytes": 7152,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 7152,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "df5575e634df02f5fd56cea00265d26fb5063077eda8dc785d8906c86dcbaf8e",
+        "content_artifact": "file-19-f75c9033e3b7ec6d6bb0d6357607b7d71600f5aa9df91d8fe5633189e42c0a7c.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication/Token",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Authentication/Token/PublicKeyToken.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Authentication/Token/PublicKeyToken.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/PublicKeyToken.php",
+        "sha256": "ad5c66072e11f97f06c05f3979ba3fe2d6f34b26aad3cc2fdc92858163eeec36",
+        "bytes": 5254,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 5254,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "ad5c66072e11f97f06c05f3979ba3fe2d6f34b26aad3cc2fdc92858163eeec36",
+        "content_artifact": "file-19-839b33abec1dedfa96d1f005079362a26bda5e6eb202c1b251d7a3fbff9ca8e0.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication/Token",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Authentication/Token/PublicKeyTokenMapper.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Authentication/Token/PublicKeyTokenMapper.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/PublicKeyTokenMapper.php",
+        "sha256": "f02c3b9488a9bb4725c8ade4c485f5b939834b000b3e454e20d45d1969408ec9",
+        "bytes": 8901,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 8901,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "f02c3b9488a9bb4725c8ade4c485f5b939834b000b3e454e20d45d1969408ec9",
+        "content_artifact": "file-19-10dc6073e2ef7e788312839504edf26bfe044d7fa59a314623027d46799740ce.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication/Token",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Authentication/Token/PublicKeyTokenProvider.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Authentication/Token/PublicKeyTokenProvider.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/PublicKeyTokenProvider.php",
+        "sha256": "bc3963797dfb6d5f87298be36eb6450dd8fff36fe58a256530057971dac22aa5",
+        "bytes": 19427,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 19427,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "bc3963797dfb6d5f87298be36eb6450dd8fff36fe58a256530057971dac22aa5",
+        "content_artifact": "file-19-8abef12cb1405c1f9a5424dd3eae4e69ab9dc0f10635cbfde0d8db448327547b.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication/Token",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Authentication/Token/TokenCleanupJob.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Authentication/Token/TokenCleanupJob.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Authentication/Token/TokenCleanupJob.php",
+        "sha256": "8608c002e6aecd41ae2aa3f9a56e576033029c47635bd5dfea6f5a47247d0b5e",
+        "bytes": 657,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 657,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "8608c002e6aecd41ae2aa3f9a56e576033029c47635bd5dfea6f5a47247d0b5e",
+        "content_artifact": "file-19-792d329a04ad73936ca318617d3aa31757a5f767a5c9e52928dfae0464ac7a82.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication/Token",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private/Authentication",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/BackgroundJob/JobList.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/BackgroundJob/JobList.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/BackgroundJob/JobList.php",
+        "sha256": "c05dde00d5dcae9e4e611ddb491a356a013de49a252001bb02a0fd08d49b5903",
+        "bytes": 15549,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 15549,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "c05dde00d5dcae9e4e611ddb491a356a013de49a252001bb02a0fd08d49b5903",
+        "content_artifact": "file-19-efe11fdf8a84ce8d2ee5abec048ca09efafd99f7b551b83ebe80989c734b7786.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/BackgroundJob",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Repair/NC24/AddTokenCleanupJob.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Repair/NC24/AddTokenCleanupJob.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Repair/NC24/AddTokenCleanupJob.php",
+        "sha256": "33e3a7709705eb815c01326cabde58b2c91af82b84a47cf36cc8727e0badbc46",
+        "bytes": 647,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 647,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "33e3a7709705eb815c01326cabde58b2c91af82b84a47cf36cc8727e0badbc46",
+        "content_artifact": "file-19-c0de045cb4d89c74f756755fd24126945e03673798050965f0263a9f2c212ab8.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/Repair/NC24",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private/Repair",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Repair.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Repair.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Repair.php",
+        "sha256": "01d707b9c0df4042ca3622d827f43b62f361b1b030acc727b5df4fc55db606d3",
+        "bytes": 9237,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 9237,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "01d707b9c0df4042ca3622d827f43b62f361b1b030acc727b5df4fc55db606d3",
+        "content_artifact": "file-19-9ba4280df5db494ff1111a8857d3bf4cf12069184fe1e4541a9e5eb816df5ad8.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Setup/PostgreSQL.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Setup/PostgreSQL.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Setup/PostgreSQL.php",
+        "sha256": "48aa3463cbe164f4199a8ddc72a599db703c981eab2d8e189e5bd88517f7ca49",
+        "bytes": 6969,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 6969,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "48aa3463cbe164f4199a8ddc72a599db703c981eab2d8e189e5bd88517f7ca49",
+        "content_artifact": "file-19-283ffa45c190ecb26d5d269b73eec8d01fe623a000befe7d9b04af1b9119c88e.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/Setup",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/Setup.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/Setup.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/Setup.php",
+        "sha256": "f26542cbccc805872ce2f2b86f29c08d90964160b2bd75772d59dfa26dc24355",
+        "bytes": 22252,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 22252,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "f26542cbccc805872ce2f2b86f29c08d90964160b2bd75772d59dfa26dc24355",
+        "content_artifact": "file-19-70593073ab7e3086477fc20c5f942c2d0e335d91b30408f0317cbde90532f474.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/private/User/BackgroundJobs/CleanupLoginTokens.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/private/User/BackgroundJobs/CleanupLoginTokens.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/private/User/BackgroundJobs/CleanupLoginTokens.php",
+        "sha256": "d93418c3fe9d5079928b3e895b85d8b809d37e8681250eb537e4b3d8fa4ab897",
+        "bytes": 1069,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 1069,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "d93418c3fe9d5079928b3e895b85d8b809d37e8681250eb537e4b3d8fa4ab897",
+        "content_artifact": "file-19-84293709080653ac6ee49d9e551687f2e70c1165311084aa0d030f12ea2fa576.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/private/User/BackgroundJobs",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private/User",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/private",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/public/Authentication/Token/IProvider.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/public/Authentication/Token/IProvider.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/public/Authentication/Token/IProvider.php",
+        "sha256": "5922d9fad537286790c655449bc1a212099e5f80adc2acad39bcba207d145629",
+        "bytes": 956,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 956,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "5922d9fad537286790c655449bc1a212099e5f80adc2acad39bcba207d145629",
+        "content_artifact": "file-19-61c6e5fa8793be6aa5714d45b55b8754d1d0d89e2267fa69e1061282e3431762.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/public/Authentication/Token",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/public/Authentication",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/public",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/public/Authentication/Token/IToken.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/public/Authentication/Token/IToken.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/public/Authentication/Token/IToken.php",
+        "sha256": "567441824c22b07a7a3174e8540525852716e972182243681ac5c2a10f2c9c6d",
+        "bytes": 2827,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 2827,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "567441824c22b07a7a3174e8540525852716e972182243681ac5c2a10f2c9c6d",
+        "content_artifact": "file-19-2c6191ecf17be16533308681f5ce6e3b64b8b83ce5424bd63755d4c98ebb2527.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/public/Authentication/Token",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/public/Authentication",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/public",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/lib/public/BackgroundJob/TimedJob.php",
+      "group": "core",
+      "expected": {
+        "path": "lib/public/BackgroundJob/TimedJob.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/lib/public/BackgroundJob/TimedJob.php",
+        "sha256": "ed0737f50481e55a850a4b0483d6a09ed5c656855e0c464987a454cbe5afafe9",
+        "bytes": 2581,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 2581,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "ed0737f50481e55a850a4b0483d6a09ed5c656855e0c464987a454cbe5afafe9",
+        "content_artifact": "file-19-9dae43cf3079af1f68e6ebda6e6203fca0ccb91a0e7838748a2389930d576682.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/lib/public/BackgroundJob",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib/public",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud/lib",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 19
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/version.php",
+      "group": "core",
+      "expected": {
+        "path": "version.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/version.php",
+        "sha256": "0c5e1bfe12870e43d2a9965063d97dd261a351e96d6d81f854b29857ceac5e25",
+        "bytes": 870,
+        "group": "core"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 446,
+        "uid": 65534,
+        "gid": 65534,
+        "layer": 19,
+        "sha256": "91f47176c67a94f3e33e4fcee8f272cfc72210614b25906fa228cc27c72b07ea",
+        "content_artifact": "file-19-d58d7605a86bfcacad0536052b83d07859880540b5d05bc38fcdf1cfc7aba797.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": false,
+      "parity": false
+    },
+    {
+      "path": "/usr/src/nextcloud/config/apache-pretty-urls.config.php",
+      "group": "docker_config",
+      "expected": {
+        "path": "config/apache-pretty-urls.config.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/apache-pretty-urls.config.php",
+        "bytes": 60,
+        "sha256": "9d881cf59f450d5434ac146091b77e9544abf868d8b6c704482c54b9ef0ccf84",
+        "group": "docker_config"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 60,
+        "uid": 0,
+        "gid": 0,
+        "layer": 21,
+        "sha256": "9d881cf59f450d5434ac146091b77e9544abf868d8b6c704482c54b9ef0ccf84",
+        "content_artifact": "file-21-64484a08ba4020c0e7a46c88e6ad64d670043917a0ed2da54b08d3a592188b18.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/config/apcu.config.php",
+      "group": "docker_config",
+      "expected": {
+        "path": "config/apcu.config.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/apcu.config.php",
+        "bytes": 70,
+        "sha256": "d66658b683c7e96513a8fa06aab1dc7df7c69df969d1103db78fdff493b8cb59",
+        "group": "docker_config"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 70,
+        "uid": 0,
+        "gid": 0,
+        "layer": 21,
+        "sha256": "d66658b683c7e96513a8fa06aab1dc7df7c69df969d1103db78fdff493b8cb59",
+        "content_artifact": "file-21-6fbbc53bb932f2b8f4e32c3b46c3b6784ad1efb1e6e45947487f8be5c033a150.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/config/apps.config.php",
+      "group": "docker_config",
+      "expected": {
+        "path": "config/apps.config.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/apps.config.php",
+        "bytes": 377,
+        "sha256": "92817524be6545c000b00ad27fc7cfc57547d3ad2da4de11c56c400b63fb67b8",
+        "group": "docker_config"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 377,
+        "uid": 0,
+        "gid": 0,
+        "layer": 21,
+        "sha256": "92817524be6545c000b00ad27fc7cfc57547d3ad2da4de11c56c400b63fb67b8",
+        "content_artifact": "file-21-af40dea4235911a8a1f70978b4d7e1dfac2244da4ea4e09e9061959dfbfe6adc.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/config/autoconfig.php",
+      "group": "docker_config",
+      "expected": {
+        "path": "config/autoconfig.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/autoconfig.php",
+        "bytes": 2110,
+        "sha256": "7376f55f45bbb574e0040a59c648bb72cec506b16aae3be993990cd16c1c69cd",
+        "group": "docker_config"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 2110,
+        "uid": 0,
+        "gid": 0,
+        "layer": 21,
+        "sha256": "7376f55f45bbb574e0040a59c648bb72cec506b16aae3be993990cd16c1c69cd",
+        "content_artifact": "file-21-94a816d4e5ae041537fbda949662aa052250ae75bc16b14f72ed19c8b03249f5.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/config/redis.config.php",
+      "group": "docker_config",
+      "expected": {
+        "path": "config/redis.config.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/redis.config.php",
+        "bytes": 837,
+        "sha256": "1b2ded11df1786ffb56d8fa1c959051343649c877fad3d18645f52ce39df8230",
+        "group": "docker_config"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 837,
+        "uid": 0,
+        "gid": 0,
+        "layer": 21,
+        "sha256": "1b2ded11df1786ffb56d8fa1c959051343649c877fad3d18645f52ce39df8230",
+        "content_artifact": "file-21-b978135875b8e01dbe7fd061d78f068b9803dbae67cba4b1adb571fb6f780c0f.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/config/reverse-proxy.config.php",
+      "group": "docker_config",
+      "expected": {
+        "path": "config/reverse-proxy.config.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/reverse-proxy.config.php",
+        "bytes": 991,
+        "sha256": "95c4978e717c94c0a0f78197b44e5777a3109cc92d0bed4df762fe142718a4fa",
+        "group": "docker_config"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 991,
+        "uid": 0,
+        "gid": 0,
+        "layer": 21,
+        "sha256": "95c4978e717c94c0a0f78197b44e5777a3109cc92d0bed4df762fe142718a4fa",
+        "content_artifact": "file-21-d926b10d40166eebb3f87701153b81f49421e7ca29d1ccb3086dc6aad3995927.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/config/s3.config.php",
+      "group": "docker_config",
+      "expected": {
+        "path": "config/s3.config.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/s3.config.php",
+        "bytes": 2726,
+        "sha256": "00574a836266628b8c5bd96c7c17f38a917f754d6b4ba205dd04aa484c7f8480",
+        "group": "docker_config"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 2726,
+        "uid": 0,
+        "gid": 0,
+        "layer": 21,
+        "sha256": "00574a836266628b8c5bd96c7c17f38a917f754d6b4ba205dd04aa484c7f8480",
+        "content_artifact": "file-21-9898a6928699d080ea14cd3433654e14b49407aaad749b8265cd7d7d6c45ec33.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/config/smtp.config.php",
+      "group": "docker_config",
+      "expected": {
+        "path": "config/smtp.config.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/smtp.config.php",
+        "bytes": 933,
+        "sha256": "d1e5ce962c7610ecd193b4c1f5d9617576ae96c11eb35eb2d42507362adaf324",
+        "group": "docker_config"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 933,
+        "uid": 0,
+        "gid": 0,
+        "layer": 21,
+        "sha256": "d1e5ce962c7610ecd193b4c1f5d9617576ae96c11eb35eb2d42507362adaf324",
+        "content_artifact": "file-21-85db248e2ec848393aad1e3dddc327115f0f85c33ec0012a670f97f4eee4a4ab.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/config/swift.config.php",
+      "group": "docker_config",
+      "expected": {
+        "path": "config/swift.config.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/swift.config.php",
+        "bytes": 1103,
+        "sha256": "1da0b6258ab486c9eeff33a2f5b75dd9b2429fccceb476e3cc800a8ad05b7240",
+        "group": "docker_config"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 1103,
+        "uid": 0,
+        "gid": 0,
+        "layer": 21,
+        "sha256": "1da0b6258ab486c9eeff33a2f5b75dd9b2429fccceb476e3cc800a8ad05b7240",
+        "content_artifact": "file-21-8a9e524d2979b76d1a1e3fe8d14a97c588e4f56c721fb37dbccb0ffb8f478763.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    },
+    {
+      "path": "/usr/src/nextcloud/config/upgrade-disable-web.config.php",
+      "group": "docker_config",
+      "expected": {
+        "path": "config/upgrade-disable-web.config.php",
+        "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/config/upgrade-disable-web.config.php",
+        "bytes": 60,
+        "sha256": "282e2f702823e7fc4315a58b76644dcafed71ea4faad0c9af4f9a031e8d54ac2",
+        "group": "docker_config"
+      },
+      "actual": {
+        "type": "file",
+        "mode": "0644",
+        "size": 60,
+        "uid": 0,
+        "gid": 0,
+        "layer": 21,
+        "sha256": "282e2f702823e7fc4315a58b76644dcafed71ea4faad0c9af4f9a031e8d54ac2",
+        "content_artifact": "file-21-8d5116d84e87cc39c40334b8cd5a6444086c43f6e24c59769d853b9cc769e796.txt"
+      },
+      "absent": false,
+      "ancestor_checks": [
+        {
+          "path": "/usr/src/nextcloud/config",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src/nextcloud",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 65534,
+            "gid": 65534,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr/src",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        },
+        {
+          "path": "/usr",
+          "metadata": {
+            "type": "directory",
+            "mode": "0755",
+            "size": 0,
+            "uid": 0,
+            "gid": 0,
+            "layer": 21
+          },
+          "is_directory": true
+        }
+      ],
+      "no_symlink_ancestors": true,
+      "hash_match": true,
+      "parity": true
+    }
+  ],
+  "whiteout_events_relevant": [],
+  "config_directory": {
+    "usr/src/nextcloud/config/.htaccess": {
+      "type": "file",
+      "mode": "0644",
+      "size": 665,
+      "uid": 65534,
+      "gid": 65534,
+      "layer": 19
+    },
+    "usr/src/nextcloud/config/CAN_INSTALL": {
+      "type": "file",
+      "mode": "0644",
+      "size": 0,
+      "uid": 65534,
+      "gid": 65534,
+      "layer": 19
+    },
+    "usr/src/nextcloud/config/config.sample.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 105300,
+      "uid": 65534,
+      "gid": 65534,
+      "layer": 19,
+      "sha256": "0ee03e3fe1025db2bdacc22c46a5358549980526e90526fa4d00dcbd5c18d42a",
+      "content_artifact": "file-19-f2bcaa62a91042b386b1855a8327b13f6d466468fad716e8b4cfdfb3d8d456ca.txt"
+    },
+    "usr/src/nextcloud/config/apache-pretty-urls.config.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 60,
+      "uid": 0,
+      "gid": 0,
+      "layer": 21,
+      "sha256": "9d881cf59f450d5434ac146091b77e9544abf868d8b6c704482c54b9ef0ccf84",
+      "content_artifact": "file-21-64484a08ba4020c0e7a46c88e6ad64d670043917a0ed2da54b08d3a592188b18.txt"
+    },
+    "usr/src/nextcloud/config/apcu.config.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 70,
+      "uid": 0,
+      "gid": 0,
+      "layer": 21,
+      "sha256": "d66658b683c7e96513a8fa06aab1dc7df7c69df969d1103db78fdff493b8cb59",
+      "content_artifact": "file-21-6fbbc53bb932f2b8f4e32c3b46c3b6784ad1efb1e6e45947487f8be5c033a150.txt"
+    },
+    "usr/src/nextcloud/config/apps.config.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 377,
+      "uid": 0,
+      "gid": 0,
+      "layer": 21,
+      "sha256": "92817524be6545c000b00ad27fc7cfc57547d3ad2da4de11c56c400b63fb67b8",
+      "content_artifact": "file-21-af40dea4235911a8a1f70978b4d7e1dfac2244da4ea4e09e9061959dfbfe6adc.txt"
+    },
+    "usr/src/nextcloud/config/autoconfig.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 2110,
+      "uid": 0,
+      "gid": 0,
+      "layer": 21,
+      "sha256": "7376f55f45bbb574e0040a59c648bb72cec506b16aae3be993990cd16c1c69cd",
+      "content_artifact": "file-21-94a816d4e5ae041537fbda949662aa052250ae75bc16b14f72ed19c8b03249f5.txt"
+    },
+    "usr/src/nextcloud/config/redis.config.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 837,
+      "uid": 0,
+      "gid": 0,
+      "layer": 21,
+      "sha256": "1b2ded11df1786ffb56d8fa1c959051343649c877fad3d18645f52ce39df8230",
+      "content_artifact": "file-21-b978135875b8e01dbe7fd061d78f068b9803dbae67cba4b1adb571fb6f780c0f.txt"
+    },
+    "usr/src/nextcloud/config/reverse-proxy.config.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 991,
+      "uid": 0,
+      "gid": 0,
+      "layer": 21,
+      "sha256": "95c4978e717c94c0a0f78197b44e5777a3109cc92d0bed4df762fe142718a4fa",
+      "content_artifact": "file-21-d926b10d40166eebb3f87701153b81f49421e7ca29d1ccb3086dc6aad3995927.txt"
+    },
+    "usr/src/nextcloud/config/s3.config.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 2726,
+      "uid": 0,
+      "gid": 0,
+      "layer": 21,
+      "sha256": "00574a836266628b8c5bd96c7c17f38a917f754d6b4ba205dd04aa484c7f8480",
+      "content_artifact": "file-21-9898a6928699d080ea14cd3433654e14b49407aaad749b8265cd7d7d6c45ec33.txt"
+    },
+    "usr/src/nextcloud/config/smtp.config.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 933,
+      "uid": 0,
+      "gid": 0,
+      "layer": 21,
+      "sha256": "d1e5ce962c7610ecd193b4c1f5d9617576ae96c11eb35eb2d42507362adaf324",
+      "content_artifact": "file-21-85db248e2ec848393aad1e3dddc327115f0f85c33ec0012a670f97f4eee4a4ab.txt"
+    },
+    "usr/src/nextcloud/config/swift.config.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 1103,
+      "uid": 0,
+      "gid": 0,
+      "layer": 21,
+      "sha256": "1da0b6258ab486c9eeff33a2f5b75dd9b2429fccceb476e3cc800a8ad05b7240",
+      "content_artifact": "file-21-8a9e524d2979b76d1a1e3fe8d14a97c588e4f56c721fb37dbccb0ffb8f478763.txt"
+    },
+    "usr/src/nextcloud/config/upgrade-disable-web.config.php": {
+      "type": "file",
+      "mode": "0644",
+      "size": 60,
+      "uid": 0,
+      "gid": 0,
+      "layer": 21,
+      "sha256": "282e2f702823e7fc4315a58b76644dcafed71ea4faad0c9af4f9a031e8d54ac2",
+      "content_artifact": "file-21-8d5116d84e87cc39c40334b8cd5a6444086c43f6e24c59769d853b9cc769e796.txt"
+    }
+  },
+  "config_php_absent": true,
+  "counts": {
+    "core": 25,
+    "docker_config": 10,
+    "matching": 34,
+    "core_matching": 24,
+    "docker_config_matching": 10,
+    "missing": 0,
+    "symlink_or_non_directory_ancestors": 0
+  },
+  "scratch_directory": "/Users/mm/dev/home-infra-talos-proof/.nextcloud-public-image-parity-538e84f7-bfa5-4be9-920c-5f3fd4b19da7",
+  "limitations": [
+    "No container, PHP, entrypoint or image binary executed.",
+    "No retained runtime inventory, DB or Redis gates observed.",
+    "Historical 33d6df9f RuntimeException exact gate was not exported and remains unrecoverable. Source consistency is not old-runtime-gate proof."
+  ],
+  "method": {
+    "downloads": "HTTPS anonymous token in memory; explicit no proxy; no Docker/GH/netrc/default credential consultation; cross-origin redirects strip authorization; streamed bounded exclusive 0600 files in fresh 0700 UUID directory",
+    "verification": "SHA256 and size verification of immutable index, selected manifest, config, every compressed layer; full gzip stream diffIDs; ordered OCI overlay projection",
+    "filesystem": "No tar extraction to paths. Reject traversal/absolute member paths. Relevant whiteouts applied to lower-layer state before same-layer entries; non-directory replacements remove descendants; target and all ancestors checked. Selected symlinks/hardlinks not followed and fail regular-file parity; no image paths executed."
+  },
+  "created_at_utc": "2026-11-12T04:07:28.316079+00:00",
+  "evidence_id": "412faf37-f124-44b2-b52a-418ad71f9cd0",
+  "registry_provenance": {
+    "index_url": "https://registry-1.docker.io/v2/library/nextcloud/manifests/sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+    "manifest_url": "https://registry-1.docker.io/v2/library/nextcloud/manifests/sha256:3139d734aa878e9da89b610112734056c0df55279dd6a4578573c0803c293ef3",
+    "config_url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+    "authentication": "Anonymous public pull-scoped token, memory only; no account credentials. No tag resolution used. Digest and size verified independently twice locally; no signature/attestation verification claimed."
+  },
+  "mismatch_review": {
+    "path": "/usr/src/nextcloud/version.php",
+    "classification": "Release version/build metadata differs; no functional application or Docker-config file differences found among the other 34 selected files. Not byte parity or a blanket semantic-equivalence claim.",
+    "expected_public_source": {
+      "path": "version.php",
+      "url": "https://raw.githubusercontent.com/nextcloud/server/ba900af933e61ffa005315b09d6454bfbbcbcc81/version.php",
+      "sha256": "0c5e1bfe12870e43d2a9965063d97dd261a351e96d6d81f854b29857ceac5e25",
+      "bytes": 870,
+      "group": "core"
+    },
+    "actual_public_source": {
+      "url": "https://registry-1.docker.io/v2/library/nextcloud/blobs/sha256:e3ffd4460d2fd0bf2b2f98fcbd591bd5deaf6658bff74dc528fd456897477d6c",
+      "member": "usr/src/nextcloud/version.php",
+      "sha256": "91f47176c67a94f3e33e4fcee8f272cfc72210614b25906fa228cc27c72b07ea",
+      "bytes": 446
+    },
+    "changes": [
+      "Version tuple [35,0,2,2], public version 35.0.2, upgrade-from map, and vendor unchanged.",
+      "Channel git -> stable; build empty -> timestamp plus the same server commit ba900af933e61ffa005315b09d6454bfbbcbcc81; empty OC_Edition added. These metadata values are not byte- or value-equivalent.",
+      "Comments/license header and declare(strict_types=1) removed; array syntax, ordering, whitespace changed. No PHP execution used to assess behavior."
+    ],
+    "unified_diff": "--- immutable-server-commit/version.php\n+++ immutable-image-layer/version.php\n@@ -1,39 +1,21 @@\n-<?php\n-\n-declare(strict_types=1);\n-\n-/**\n- * SPDX-FileCopyrightText: 2016-2024 Nextcloud GmbH and Nextcloud contributors\n- * SPDX-FileCopyrightText: 2016 ownCloud, Inc.\n- * SPDX-License-Identifier: AGPL-3.0-only\n- */\n-// We only can count up. The 4. digit is only for the internal patch level to trigger DB upgrades\n-// between betas, final and RCs. This is _not_ the public version number. Reset minor/patch level\n-// when updating major/minor version number.\n-\n-$OC_Version = [35, 0, 2, 2];\n-\n-// The human-readable string\n+<?php \n+$OC_Version = array(35,0,2,2);\n $OC_VersionString = '35.0.2';\n-\n-$OC_VersionCanBeUpgradedFrom = [\n-\t'nextcloud' => [\n-\t\t'34.0' => true,\n-\t\t'35.0' => true,\n-\t],\n-\t'owncloud' => [\n-\t\t'10.13' => true,\n-\t\t'10.14' => true,\n-\t\t'10.15' => true,\n-\t\t'10.16' => true,\n-\t],\n-];\n-\n-// default Nextcloud channel\n-$OC_Channel = 'git';\n-\n-// The build number\n-$OC_Build = '';\n-\n-// Vendor of this package\n+$OC_Edition = '';\n+$OC_Channel = 'stable';\n+$OC_VersionCanBeUpgradedFrom = array (\n+  'nextcloud' => \n+  array (\n+    '34.0' => true,\n+    '35.0' => true,\n+  ),\n+  'owncloud' => \n+  array (\n+    '10.13' => true,\n+    '10.14' => true,\n+    '10.15' => true,\n+    '10.16' => true,\n+  ),\n+);\n+$OC_Build = '2026-10-15T08:07:55+00:00 ba900af933e61ffa005315b09d6454bfbbcbcc81';\n $vendor = 'nextcloud';\n",
+    "docker_build_source": {
+      "url": "https://raw.githubusercontent.com/nextcloud/docker/7e9e152f77372845195ed28dc65569df74f582ff/35/apache/Dockerfile",
+      "sha256": "405d4bc8deb793246bf8ecea546da0c8a19d9f8337b6dedeb142dd1965e60a9a",
+      "bytes": 6555,
+      "observation": "Public Dockerfile downloads the versioned release tarball, verifies its detached signature at build time, extracts into /usr/src, and COPYs config fragments. This inspection did not independently verify the release signature or provenance of that build."
+    },
+    "historical_limit": "With this exact filesystem and unchanged core index, current parity logic would reject version.php. The historical preflight did not export its exact gate; do not attribute that failure to this finding."
+  },
+  "local_validation": {
+    "second_digest_size_pass": [
+      {
+        "artifact": "index.json",
+        "digest": "sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+        "size": 10277
+      },
+      {
+        "artifact": "manifest.json",
+        "digest": "sha256:3139d734aa878e9da89b610112734056c0df55279dd6a4578573c0803c293ef3",
+        "size": 5148
+      },
+      {
+        "artifact": "config.json",
+        "digest": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+        "size": 19860
+      },
+      {
+        "artifact": "layer-00.tar.gz",
+        "digest": "sha256:37fb86c2a767b88d500c6872195f88078f64765fe0d2f9cc375cc2efbd4c0a41",
+        "size": 29856132
+      },
+      {
+        "artifact": "layer-01.tar.gz",
+        "digest": "sha256:e1af7931d3492b55f556b35ef4e3dc325cfc2e3328b8846b7b71d44729cd02dd",
+        "size": 226
+      },
+      {
+        "artifact": "layer-02.tar.gz",
+        "digest": "sha256:069aa4a0e623a0f96e99e29a0b4605c47c0b024fbd5af813f1ecdec4ada9418e",
+        "size": 117837990
+      },
+      {
+        "artifact": "layer-03.tar.gz",
+        "digest": "sha256:c2df53f4c16864fa5d2ea17916c72bff74001acc532fab9db78c5478f854963a",
+        "size": 224
+      },
+      {
+        "artifact": "layer-04.tar.gz",
+        "digest": "sha256:16e21cd5a0d77be7895b645c1c0e7edde36f2a301e800b499b03c810d5ea33d2",
+        "size": 4244037
+      },
+      {
+        "artifact": "layer-05.tar.gz",
+        "digest": "sha256:8f2131b95a45b846663184e6b81dc4c9b932ab9570c8ef2b59d74e0ab76cbefa",
+        "size": 433
+      },
+      {
+        "artifact": "layer-06.tar.gz",
+        "digest": "sha256:b8483d994bf7b90f7b8ceb2d53ed999d2f192d2c1e770c5df1173237f1238796",
+        "size": 485
+      },
+      {
+        "artifact": "layer-07.tar.gz",
+        "digest": "sha256:0c62cbaa6d4c92bbcd0c7d24e012938230e77f655e58933310b2fc5dd6867d73",
+        "size": 14721555
+      },
+      {
+        "artifact": "layer-08.tar.gz",
+        "digest": "sha256:dc3e0450a75398007131de3cc8e0f3b43875d4ca3dc0d3fef96cb32e44a1143f",
+        "size": 489
+      },
+      {
+        "artifact": "layer-09.tar.gz",
+        "digest": "sha256:7ee36668eb990f0031ce8dade9a5cbac0e273123518d4e20b3f772a9d99e7e55",
+        "size": 15245817
+      },
+      {
+        "artifact": "layer-10.tar.gz",
+        "digest": "sha256:bf0c10efe273d5b06e735a0b1d934358d8c0398af113af4debe5dbcff28da02a",
+        "size": 2460
+      },
+      {
+        "artifact": "layer-11.tar.gz",
+        "digest": "sha256:b5483f93036aeb12b20c423dc9935b1787eb397c434c6b2bfd5e9bf879a5b4aa",
+        "size": 245
+      },
+      {
+        "artifact": "layer-12.tar.gz",
+        "digest": "sha256:c6f1d2d868e60bb0ebd0dcf4958cd8cbe4aa77c7630f64e20e639076dce8dd73",
+        "size": 890
+      },
+      {
+        "artifact": "layer-13.tar.gz",
+        "digest": "sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1",
+        "size": 32
+      },
+      {
+        "artifact": "layer-14.tar.gz",
+        "digest": "sha256:252fb8da49a3adbe8a53c6073d0a60ce4c14c2a84fefcf7fb94fd411f4ac63b8",
+        "size": 21499930
+      },
+      {
+        "artifact": "layer-15.tar.gz",
+        "digest": "sha256:f59e46f25e5b865d98c928fb41d2cc7022a13e013b4fb70865713ff6e3cecffd",
+        "size": 36949275
+      },
+      {
+        "artifact": "layer-16.tar.gz",
+        "digest": "sha256:eebd73fb268ff3f7baf472afed65be11d28984adab15dfaebeb61802d13b4a10",
+        "size": 803
+      },
+      {
+        "artifact": "layer-17.tar.gz",
+        "digest": "sha256:4523143cf303fecaaefbc384f19b1e9c4e19c06b91382a6dc558f056c2516a1a",
+        "size": 571
+      },
+      {
+        "artifact": "layer-18.tar.gz",
+        "digest": "sha256:14957a716e20e9ff3f44deeab43ed7838c28eb987e71199ba04b456f02275e71",
+        "size": 399
+      },
+      {
+        "artifact": "layer-19.tar.gz",
+        "digest": "sha256:e3ffd4460d2fd0bf2b2f98fcbd591bd5deaf6658bff74dc528fd456897477d6c",
+        "size": 276237054
+      },
+      {
+        "artifact": "layer-20.tar.gz",
+        "digest": "sha256:5a14e2a19b39553ef2421c4fc1393127a79138a13139c0dc5cc09ad35797060a",
+        "size": 4148
+      },
+      {
+        "artifact": "layer-21.tar.gz",
+        "digest": "sha256:9abaa7aee57084806833b45f478a9c2c5bf37486127cba8e3f43d293211079b7",
+        "size": 2590
+      }
+    ],
+    "scratch_mode": "0700",
+    "scratch_file_modes": "0600",
+    "inspection_program_sha256": "695ce5cb765181664c723468636bf32471dc9df924d9a10cf43954b1e1a542c1",
+    "retention": "Archives, complete raw manifests/config, selected public file bytes and inspection script retained in scratch; raw config ENV values excluded from evidence. No archives, binaries, tokens or signed CDN URLs included in report."
+  },
+  "absence_checks": {
+    "all_35_expected_files_present": true,
+    "packaged_config_php_absent": true,
+    "scope": "Image /usr/src/nextcloud only. Does not describe mounted /var/www/html or retained state.",
+    "target_symlink_count": 0,
+    "target_hardlink_count": 0,
+    "all_target_ancestors_explicit_directories": true
+  },
+  "boundary_note": "Initial directory-instruction search unintentionally listed AGENTS.md paths outside the requested worktree; no outside file contents were read or changed. Initial broad repository grep returned incidental historical live-evidence snippets; none used for this inspection. All subsequent inspection inputs restricted to public source indexes/code and anonymous registry/public source downloads."
+}

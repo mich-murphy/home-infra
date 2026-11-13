@@ -1,0 +1,68 @@
+{
+  "observed_utc": "2026-11-13T02:14:30.500614+00:00",
+  "scope": "one supervised VM120 recovery and GET-only platform verification; applications remain stopped",
+  "authorization_id": "d6479f34-b075-41e6-904d-5dc11bafcf96",
+  "authorized_source_head": "754a6476be7a026f1b1b8f931dc647094e3cfb35",
+  "final_source_head": "754a6476be7a026f1b1b8f931dc647094e3cfb35",
+  "source_transition_correction": "preflight final source was754a6476; earlier7c258787 prose stale across docs-only transition",
+  "start_invocations": 1,
+  "start_exit": 0,
+  "vm_uuid": "555e8603-58e6-4fb6-a190-378a3f11c257",
+  "incarnation": {
+    "attempt_id": "18be92326011e57e6cf9b8bd1f0ee2e4",
+    "boot_id": "d5a53bba-6ba3-4e2b-9cb0-5233f3feaba4",
+    "cgroup_inode": 13500,
+    "config_sha256": "14248733e1c2e933bf727802d8beea4b3d02c1c6a324678ce3fd24abfcf00ad4",
+    "pid": 23124,
+    "start_ticks": 484997,
+    "uuid": "555e8603-58e6-4fb6-a190-378a3f11c257"
+  },
+  "guard_main_pid": 23177,
+  "guard_active_final": true,
+  "watchdog_seconds": 15,
+  "node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+  "nextcloud_namespace_uid": "52497afe-f428-4b0e-aa52-cc92e9f2bf6a",
+  "stopped_world_initial_and_final": true,
+  "nextcloud_retained_bindings_and_owner_chain_verified": true,
+  "canonical111_unchanged": true,
+  "production101_102_pid_startticks_config_and36containers_unchanged": true,
+  "passive_observation": {
+    "seconds": 120.00870216299973,
+    "sample_count": 25,
+    "minimum_host_available_mib": 2926,
+    "swap_used_kib_range": [
+      0,
+      0
+    ],
+    "pswpin_delta": 0,
+    "pswpout_delta": 0,
+    "maximum_psi_delta_percent": {
+      "some": 0.0,
+      "full": 0.0
+    },
+    "kubelet_memory": {
+      "initial": {
+        "time": "2026-11-13T02:11:19Z",
+        "available_mib": 686.3203125
+      },
+      "final": {
+        "time": "2026-11-13T02:13:29Z",
+        "available_mib": 687.67578125
+      }
+    }
+  },
+  "scope_filter_bindings": "exactly one VM120 scoped OUTPUT jump per family; captured rules and scope inode",
+  "owned_management_tunnel": "closed after verification",
+  "containment_required": false,
+  "talos_proc_metadata_collected": false,
+  "missing_path_correction": "review exists as tracked docs/evidence/talos-acceptance/nextcloud-diagnostic-failure-review-b47846fac38c4b8a899f090b6c0a66fc.json; original wrong-private-path observation retained",
+  "limits": [
+    "Preboot stopped-world based on historical persisted state and parent continuity attestation, not startup prevention",
+    "PVC/PV bindings and paths do NOT verify current mount/device or on-disk/data/database integrity",
+    "Talos proc/mount metadata not collected; no dual-min guest admission claim",
+    "Stopped live Wallabag/SAB image observations retained; new Git pins not reconciled",
+    "Point samples and120s idle observation are not representative capacity/soak or sole-cause attribution",
+    "No application/helper/native diagnostic/Flux activation or application acceptance"
+  ],
+  "private_capture": "/Users/mm/.local/state/home-infra/talos-proof/diagnostics/guarded-platform-recovery-201099d8-0301-4c6b-8b14-512b51cf5d05"
+}

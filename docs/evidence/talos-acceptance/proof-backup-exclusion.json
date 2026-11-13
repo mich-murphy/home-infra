@@ -1,0 +1,13 @@
+{
+  "after_exclude": "9001,9003,120",
+  "all_existing_guest_membership_and_settings_unchanged": true,
+  "before_exclude": "9001,9003",
+  "changed_utc_epoch": 1794408668.9244702,
+  "job_id": "backup-truenas-daily",
+  "no_backup_run_triggered": true,
+  "only_guest_membership_removed": 120,
+  "only_setting_changed": "exclude",
+  "reason": "Exclude only new temporary VM120 from inherited all-guest production NAS backup membership",
+  "schedule": "02:30",
+  "storage": "truenas-backups"
+}

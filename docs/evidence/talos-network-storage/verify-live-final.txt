@@ -1,0 +1,263 @@
+namespace/proof-network-test unchanged
+service/fixture unchanged
+persistentvolumeclaim/fixture unchanged
+deployment.apps/denied-client configured
+deployment.apps/fixture configured
+deployment.apps/client configured
+ciliumnetworkpolicy.cilium.io/fixture-http unchanged
+httproute.gateway.networking.k8s.io/fixture configured
+deployment.apps/fixture scaled
+deployment.apps/denied-client scaled
+deployment.apps/client scaled
+Waiting for deployment "fixture" rollout to finish: 0 of 1 updated replicas are available...
+deployment "fixture" successfully rolled out
+deployment "denied-client" successfully rolled out
+deployment "client" successfully rolled out
+PASS DNS + explicitly allowed cross-namespace HTTP + volume write/read
+deployment.apps/fixture restarted
+Waiting for deployment "fixture" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "fixture" rollout to finish: 1 old replicas are pending termination...
+deployment "fixture" successfully rolled out
+PASS fresh pod oldUID=8c5afe8f-4ea1-49e7-9373-f5360d574b76 newUID=283d878f-a94d-46a2-bd94-c60ca0332cb8 reads same PVC nonce=synthetic-proof-20261111T124930Z (not replicated durability)
+wget: download timed out
+command terminated with exit code 1
+PASS request denied/timed out: http://fixture.proof-network-test.svc.cluster.local:8080/ (correlate Cilium policy evidence; timeout alone is not packet-drop proof)
+wget: download timed out
+command terminated with exit code 1
+PASS request denied/timed out: http://192.168.254.254:8080/ (correlate Cilium policy evidence; timeout alone is not packet-drop proof)
+wget: download timed out
+command terminated with exit code 1
+PASS request denied/timed out: http://198.51.100.1:8080/ (correlate Cilium policy evidence; timeout alone is not packet-drop proof)
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"cilium.io/v2","kind":"CiliumClusterwideNetworkPolicy","metadata":{"annotations":{},"name":"talos-proof-boundaries"},"spec":{"egress":[{"toEndpoints":[{"matchLabels":{"k8s:io.kubernetes.pod.namespace":"kube-system","k8s:k8s-app":"kube-dns"}}],"toPorts":[{"ports":[{"port":"53","protocol":"UDP"},{"port":"53","protocol":"TCP"}]}]}],"egressDeny":[{"toEntities":["world","host","remote-node","kube-apiserver"]}],"enableDefaultDeny":{"egress":true,"ingress":true},"endpointSelector":{"matchLabels":{"io.cilium.k8s.namespace.labels.app.kubernetes.io/part-of":"talos-proof"}}}}
+  creationTimestamp: "2026-11-11T12:41:30Z"
+  generation: 1
+  name: talos-proof-boundaries
+  resourceVersion: "1344"
+  uid: e689d7f5-7ff9-4416-8c80-0df15a9e0c5f
+spec:
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      - port: "53"
+        protocol: TCP
+  egressDeny:
+  - toEntities:
+    - world
+    - host
+    - remote-node
+    - kube-apiserver
+  enableDefaultDeny:
+    egress: true
+    ingress: true
+  endpointSelector:
+    matchLabels:
+      io.cilium.k8s.namespace.labels.app.kubernetes.io/part-of: talos-proof
+status:
+  conditions:
+  - lastTransitionTime: "2026-11-11T12:41:30Z"
+    message: Policy validation succeeded
+    status: "True"
+    type: Valid
+NAME          STATUS   ROLES           AGE   VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE          KERNEL-VERSION          CONTAINER-RUNTIME
+talos-proof   Ready    control-plane   12m   v1.36.5   172.31.250.10   <none>        Talos (v1.14.5)   6.18.58-talos (amd64)   containerd://2.3.7
+NAMESPACE            NAME                                     READY   STATUS        RESTARTS   AGE     IP              NODE          NOMINATED NODE   READINESS GATES
+kube-system          cilium-8thlg                             1/1     Running       0          8m47s   172.31.250.10   talos-proof   <none>           <none>
+kube-system          cilium-envoy-bmrfr                       1/1     Running       0          8m47s   172.31.250.10   talos-proof   <none>           <none>
+kube-system          cilium-operator-6756f849f6-sfnr9         1/1     Running       0          8m47s   172.31.250.10   talos-proof   <none>           <none>
+kube-system          coredns-6cb54fb45c-5bkgn                 1/1     Running       0          28m     10.244.1.43     talos-proof   <none>           <none>
+kube-system          coredns-6cb54fb45c-64sbv                 1/1     Running       0          28m     10.244.1.58     talos-proof   <none>           <none>
+kube-system          kube-apiserver-talos-proof               1/1     Running       0          12m     172.31.250.10   talos-proof   <none>           <none>
+kube-system          kube-controller-manager-talos-proof      1/1     Running       0          12m     172.31.250.10   talos-proof   <none>           <none>
+kube-system          kube-scheduler-talos-proof               1/1     Running       0          12m     172.31.250.10   talos-proof   <none>           <none>
+local-path-storage   local-path-provisioner-d849dd656-6nwrq   1/1     Running       0          8m44s   10.244.1.240    talos-proof   <none>           <none>
+proof-network-test   denied-client-768b84f89b-6khmj           1/1     Running       0          13s     10.244.1.247    talos-proof   <none>           <none>
+proof-network-test   denied-client-768b84f89b-spx9j           1/1     Terminating   0          2m20s   10.244.1.147    talos-proof   <none>           <none>
+proof-network-test   fixture-5486667f65-hqnd8                 1/1     Running       0          11s     10.244.1.108    talos-proof   <none>           <none>
+proof-network-test   fixture-c8cfb546b-5wvdj                  1/1     Terminating   0          13s     10.244.1.220    talos-proof   <none>           <none>
+proof-network-test   fixture-c8cfb546b-qchwr                  1/1     Terminating   0          2m20s   10.244.1.237    talos-proof   <none>           <none>
+proof-validation     client-5886cff4cd-hqwlm                  1/1     Running       0          13s     10.244.1.30     talos-proof   <none>           <none>
+proof-validation     client-5886cff4cd-nxnvt                  1/1     Terminating   0          2m20s   10.244.1.90     talos-proof   <none>           <none>
+NAMESPACE            NAME      STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+proof-network-test   fixture   Bound    pvc-12e57f52-b69a-4fb7-8f58-3452832a6cad   64Mi       RWO            proof-local    <unset>                 3m6s
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                        STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+pvc-12e57f52-b69a-4fb7-8f58-3452832a6cad   64Mi       RWO            Retain           Bound    proof-network-test/fixture   proof-local    <unset>                          2m58s
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"gateway.networking.k8s.io/v1","kind":"Gateway","metadata":{"annotations":{},"name":"proof","namespace":"proof-gateway"},"spec":{"gatewayClassName":"proof-cilium","listeners":[{"allowedRoutes":{"namespaces":{"from":"Selector","selector":{"matchLabels":{"app.kubernetes.io/part-of":"talos-proof"}}}},"hostname":"*.proof.invalid","name":"http","port":80,"protocol":"HTTP"},{"allowedRoutes":{"namespaces":{"from":"Selector","selector":{"matchLabels":{"app.kubernetes.io/part-of":"talos-proof"}}}},"hostname":"*.proof.invalid","name":"https","port":443,"protocol":"HTTPS","tls":{"certificateRefs":[{"name":"proof-tls"}],"mode":"Terminate"}}]}}
+  creationTimestamp: "2026-11-11T12:40:58Z"
+  generation: 1
+  name: proof
+  namespace: proof-gateway
+  resourceVersion: "2022"
+  uid: 008e2c41-5fcc-46de-a721-bf961882763b
+spec:
+  gatewayClassName: proof-cilium
+  listeners:
+  - allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            app.kubernetes.io/part-of: talos-proof
+    hostname: '*.proof.invalid'
+    name: http
+    port: 80
+    protocol: HTTP
+  - allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            app.kubernetes.io/part-of: talos-proof
+    hostname: '*.proof.invalid'
+    name: https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - group: ""
+        kind: Secret
+        name: proof-tls
+      mode: Terminate
+status:
+  addresses:
+  - type: IPAddress
+    value: 172.31.250.10
+  conditions:
+  - lastTransitionTime: "2026-11-11T12:41:18Z"
+    message: Gateway successfully scheduled
+    observedGeneration: 1
+    reason: Accepted
+    status: "True"
+    type: Accepted
+  - lastTransitionTime: "2026-11-11T12:46:36Z"
+    message: Gateway Programmed
+    observedGeneration: 1
+    reason: Programmed
+    status: "True"
+    type: Programmed
+  listeners:
+  - attachedRoutes: 1
+    conditions:
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Resolved Refs
+      observedGeneration: 1
+      reason: ResolvedRefs
+      status: "True"
+      type: ResolvedRefs
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Listener Accepted
+      observedGeneration: 1
+      reason: Accepted
+      status: "True"
+      type: Accepted
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Listener Programmed
+      observedGeneration: 1
+      reason: Programmed
+      status: "True"
+      type: Programmed
+    name: http
+    supportedKinds:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute
+  - attachedRoutes: 1
+    conditions:
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Resolved Refs
+      observedGeneration: 1
+      reason: ResolvedRefs
+      status: "True"
+      type: ResolvedRefs
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Listener Accepted
+      observedGeneration: 1
+      reason: Accepted
+      status: "True"
+      type: Accepted
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Listener Programmed
+      observedGeneration: 1
+      reason: Programmed
+      status: "True"
+      type: Programmed
+    name: https
+    supportedKinds:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"gateway.networking.k8s.io/v1","kind":"HTTPRoute","metadata":{"annotations":{},"name":"fixture","namespace":"proof-network-test"},"spec":{"hostnames":["fixture.proof.invalid"],"parentRefs":[{"name":"proof","namespace":"proof-gateway"}],"rules":[{"backendRefs":[{"name":"fixture","port":8080}]}]}}
+  creationTimestamp: "2026-11-11T12:46:36Z"
+  generation: 1
+  name: fixture
+  namespace: proof-network-test
+  resourceVersion: "2020"
+  uid: 68117a52-a5a1-49d4-af2c-ab1f05cf0d22
+spec:
+  hostnames:
+  - fixture.proof.invalid
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: proof
+    namespace: proof-gateway
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: fixture
+      port: 8080
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+status:
+  parents:
+  - conditions:
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Accepted HTTPRoute
+      observedGeneration: 1
+      reason: Accepted
+      status: "True"
+      type: Accepted
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Service reference is valid
+      observedGeneration: 1
+      reason: ResolvedRefs
+      status: "True"
+      type: ResolvedRefs
+    controllerName: io.cilium/gateway-controller
+    parentRef:
+      group: gateway.networking.k8s.io
+      kind: Gateway
+      name: proof
+      namespace: proof-gateway
+NAME                   TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE     SELECTOR
+cilium-gateway-proof   NodePort   10.98.188.168   <none>        80:30659/TCP,443:30310/TCP   8m25s   <none>
+OK
+deployment.apps/fixture scaled
+deployment.apps/denied-client scaled
+deployment.apps/client scaled

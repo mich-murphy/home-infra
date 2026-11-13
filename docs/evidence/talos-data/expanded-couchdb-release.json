@@ -1,0 +1,7 @@
+{
+  "observed_at": 1794416707.443881,
+  "proof_pods": [],
+  "couchdb_lease_revoked": true,
+  "result": "couchdb-group-1794416681784645000-result.json",
+  "result_sha256": "5ce837e30335a7254c39e48562d5f1c5cb355e294fb2a80d67139a820118c28b"
+}

@@ -1,0 +1,764 @@
+{
+  "observed_at": 1794417046.934967,
+  "miniflux_observations": [
+    {
+      "time": 1794416774.380049,
+      "reason": "before scale0",
+      "pods": [
+        {
+          "uid": "39127581-02e2-4984-b0e4-8f556a4d3416",
+          "containers": [
+            {
+              "name": "miniflux",
+              "image": "sha256:fd622fa7310da7f0c2c5cd627a2fd38f23e8250b28eaf8698f6353215fe1b686",
+              "imageID": "docker.io/miniflux/miniflux@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9",
+              "containerID": "containerd://aa3194af6cdc3a7b898a55391b3cd90891cffba81734e99930356b813401375e",
+              "restartCount": 2,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "time": 1794416872.3881788,
+      "reason": "before scale0",
+      "pods": [
+        {
+          "uid": "f1eee6c5-d168-4cdd-99a6-c137be50b30d",
+          "containers": [
+            {
+              "name": "miniflux",
+              "image": "sha256:fd622fa7310da7f0c2c5cd627a2fd38f23e8250b28eaf8698f6353215fe1b686",
+              "imageID": "docker.io/miniflux/miniflux@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9",
+              "containerID": "containerd://322c0906ff886f31bd287ccbd7e473c3d7d6b8704c2a6cd73ec6f183d4ccb9b7",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "time": 1794416897.479073,
+      "reason": "suite final observation",
+      "pods": [
+        {
+          "uid": "613c2f36-6b34-4cc4-abd3-ad71d3b51490",
+          "containers": [
+            {
+              "name": "miniflux",
+              "image": "sha256:fd622fa7310da7f0c2c5cd627a2fd38f23e8250b28eaf8698f6353215fe1b686",
+              "imageID": "docker.io/miniflux/miniflux@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9",
+              "containerID": "containerd://b7cc666c1f7dd735f24f2d73ed1e5087481990bb88acab4c66598b756f1abcdc",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "pod_events": [
+    {
+      "reason": "Scheduled",
+      "message": "Successfully assigned proof-miniflux/fixture-56598fd6b7-rpccj to talos-proof",
+      "count": null,
+      "firstTimestamp": null,
+      "lastTimestamp": null,
+      "object": {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "name": "fixture-56598fd6b7-rpccj",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37251",
+        "uid": "b566a807-9fd4-44c4-9a51-32263bdde376"
+      }
+    },
+    {
+      "reason": "Pulled",
+      "message": "Container image \"nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2\" already present on machine and can be accessed by the pod",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:05:38Z",
+      "lastTimestamp": "2026-11-11T17:05:38Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{fixture}",
+        "kind": "Pod",
+        "name": "fixture-56598fd6b7-rpccj",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37258",
+        "uid": "b566a807-9fd4-44c4-9a51-32263bdde376"
+      }
+    },
+    {
+      "reason": "Created",
+      "message": "Container created",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:05:38Z",
+      "lastTimestamp": "2026-11-11T17:05:38Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{fixture}",
+        "kind": "Pod",
+        "name": "fixture-56598fd6b7-rpccj",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37258",
+        "uid": "b566a807-9fd4-44c4-9a51-32263bdde376"
+      }
+    },
+    {
+      "reason": "Started",
+      "message": "Container started",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:05:39Z",
+      "lastTimestamp": "2026-11-11T17:05:39Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{fixture}",
+        "kind": "Pod",
+        "name": "fixture-56598fd6b7-rpccj",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37258",
+        "uid": "b566a807-9fd4-44c4-9a51-32263bdde376"
+      }
+    },
+    {
+      "reason": "Unhealthy",
+      "message": "Readiness probe failed: Get \"http://10.244.1.58:8081/feed.xml\": dial tcp 10.244.1.58:8081: connect: connection refused",
+      "count": 2,
+      "firstTimestamp": "2026-11-11T17:05:39Z",
+      "lastTimestamp": "2026-11-11T17:05:39Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{fixture}",
+        "kind": "Pod",
+        "name": "fixture-56598fd6b7-rpccj",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37258",
+        "uid": "b566a807-9fd4-44c4-9a51-32263bdde376"
+      }
+    },
+    {
+      "reason": "Killing",
+      "message": "Stopping container fixture",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:08:18Z",
+      "lastTimestamp": "2026-11-11T17:08:18Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{fixture}",
+        "kind": "Pod",
+        "name": "fixture-56598fd6b7-rpccj",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37258",
+        "uid": "b566a807-9fd4-44c4-9a51-32263bdde376"
+      }
+    },
+    {
+      "reason": "Scheduled",
+      "message": "Successfully assigned proof-miniflux/miniflux-b8c9fc6f8-75cf9 to talos-proof",
+      "count": null,
+      "firstTimestamp": null,
+      "lastTimestamp": null,
+      "object": {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-75cf9",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37722",
+        "uid": "f1eee6c5-d168-4cdd-99a6-c137be50b30d"
+      }
+    },
+    {
+      "reason": "Pulled",
+      "message": "Container image \"miniflux/miniflux:2.3.5@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9\" already present on machine and can be accessed by the pod",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:35Z",
+      "lastTimestamp": "2026-11-11T17:07:35Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-75cf9",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37725",
+        "uid": "f1eee6c5-d168-4cdd-99a6-c137be50b30d"
+      }
+    },
+    {
+      "reason": "Created",
+      "message": "Container created",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:35Z",
+      "lastTimestamp": "2026-11-11T17:07:35Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-75cf9",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37725",
+        "uid": "f1eee6c5-d168-4cdd-99a6-c137be50b30d"
+      }
+    },
+    {
+      "reason": "Started",
+      "message": "Container started",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:35Z",
+      "lastTimestamp": "2026-11-11T17:07:35Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-75cf9",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37725",
+        "uid": "f1eee6c5-d168-4cdd-99a6-c137be50b30d"
+      }
+    },
+    {
+      "reason": "Killing",
+      "message": "Stopping container miniflux",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:52Z",
+      "lastTimestamp": "2026-11-11T17:07:52Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-75cf9",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37725",
+        "uid": "f1eee6c5-d168-4cdd-99a6-c137be50b30d"
+      }
+    },
+    {
+      "reason": "Scheduled",
+      "message": "Successfully assigned proof-miniflux/miniflux-b8c9fc6f8-mmz2n to talos-proof",
+      "count": null,
+      "firstTimestamp": null,
+      "lastTimestamp": null,
+      "object": {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-mmz2n",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37259",
+        "uid": "39127581-02e2-4984-b0e4-8f556a4d3416"
+      }
+    },
+    {
+      "reason": "Pulled",
+      "message": "Container image \"miniflux/miniflux:2.3.5@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9\" already present on machine and can be accessed by the pod",
+      "count": 3,
+      "firstTimestamp": "2026-11-11T17:05:38Z",
+      "lastTimestamp": "2026-11-11T17:05:50Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-mmz2n",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37266",
+        "uid": "39127581-02e2-4984-b0e4-8f556a4d3416"
+      }
+    },
+    {
+      "reason": "Created",
+      "message": "Container created",
+      "count": 3,
+      "firstTimestamp": "2026-11-11T17:05:38Z",
+      "lastTimestamp": "2026-11-11T17:05:50Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-mmz2n",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37266",
+        "uid": "39127581-02e2-4984-b0e4-8f556a4d3416"
+      }
+    },
+    {
+      "reason": "Started",
+      "message": "Container started",
+      "count": 3,
+      "firstTimestamp": "2026-11-11T17:05:38Z",
+      "lastTimestamp": "2026-11-11T17:05:50Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-mmz2n",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37266",
+        "uid": "39127581-02e2-4984-b0e4-8f556a4d3416"
+      }
+    },
+    {
+      "reason": "BackOff",
+      "message": "Back-off restarting failed container miniflux in pod miniflux-b8c9fc6f8-mmz2n_proof-miniflux(39127581-02e2-4984-b0e4-8f556a4d3416)",
+      "count": 2,
+      "firstTimestamp": "2026-11-11T17:05:40Z",
+      "lastTimestamp": "2026-11-11T17:05:47Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-mmz2n",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37266",
+        "uid": "39127581-02e2-4984-b0e4-8f556a4d3416"
+      }
+    },
+    {
+      "reason": "Unhealthy",
+      "message": "Liveness probe failed: HTTP probe failed with statuscode: 503",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:06:07Z",
+      "lastTimestamp": "2026-11-11T17:06:07Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-mmz2n",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37266",
+        "uid": "39127581-02e2-4984-b0e4-8f556a4d3416"
+      }
+    },
+    {
+      "reason": "Unhealthy",
+      "message": "Readiness probe failed: HTTP probe failed with statuscode: 503",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:06:08Z",
+      "lastTimestamp": "2026-11-11T17:06:08Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-mmz2n",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37266",
+        "uid": "39127581-02e2-4984-b0e4-8f556a4d3416"
+      }
+    },
+    {
+      "reason": "Killing",
+      "message": "Stopping container miniflux",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:06:14Z",
+      "lastTimestamp": "2026-11-11T17:06:14Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-mmz2n",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37266",
+        "uid": "39127581-02e2-4984-b0e4-8f556a4d3416"
+      }
+    },
+    {
+      "reason": "Scheduled",
+      "message": "Successfully assigned proof-miniflux/miniflux-b8c9fc6f8-wtgd2 to talos-proof",
+      "count": null,
+      "firstTimestamp": null,
+      "lastTimestamp": null,
+      "object": {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-wtgd2",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37879",
+        "uid": "613c2f36-6b34-4cc4-abd3-ad71d3b51490"
+      }
+    },
+    {
+      "reason": "Pulled",
+      "message": "Container image \"miniflux/miniflux:2.3.5@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9\" already present on machine and can be accessed by the pod",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:08:05Z",
+      "lastTimestamp": "2026-11-11T17:08:05Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-wtgd2",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37882",
+        "uid": "613c2f36-6b34-4cc4-abd3-ad71d3b51490"
+      }
+    },
+    {
+      "reason": "Created",
+      "message": "Container created",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:08:05Z",
+      "lastTimestamp": "2026-11-11T17:08:05Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-wtgd2",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37882",
+        "uid": "613c2f36-6b34-4cc4-abd3-ad71d3b51490"
+      }
+    },
+    {
+      "reason": "Started",
+      "message": "Container started",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:08:05Z",
+      "lastTimestamp": "2026-11-11T17:08:05Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-wtgd2",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37882",
+        "uid": "613c2f36-6b34-4cc4-abd3-ad71d3b51490"
+      }
+    },
+    {
+      "reason": "Killing",
+      "message": "Stopping container miniflux",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:08:18Z",
+      "lastTimestamp": "2026-11-11T17:08:18Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{miniflux}",
+        "kind": "Pod",
+        "name": "miniflux-b8c9fc6f8-wtgd2",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37882",
+        "uid": "613c2f36-6b34-4cc4-abd3-ad71d3b51490"
+      }
+    },
+    {
+      "reason": "Scheduled",
+      "message": "Successfully assigned proof-miniflux/postgres-5869d98d9b-wc9bd to talos-proof",
+      "count": null,
+      "firstTimestamp": null,
+      "lastTimestamp": null,
+      "object": {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "name": "postgres-5869d98d9b-wc9bd",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37268",
+        "uid": "244b7d60-3f8a-4d2b-b5de-b26b19d75810"
+      }
+    },
+    {
+      "reason": "Pulled",
+      "message": "Container image \"postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42\" already present on machine and can be accessed by the pod",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:05:38Z",
+      "lastTimestamp": "2026-11-11T17:05:38Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-5869d98d9b-wc9bd",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37277",
+        "uid": "244b7d60-3f8a-4d2b-b5de-b26b19d75810"
+      }
+    },
+    {
+      "reason": "Created",
+      "message": "Container created",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:05:38Z",
+      "lastTimestamp": "2026-11-11T17:05:38Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-5869d98d9b-wc9bd",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37277",
+        "uid": "244b7d60-3f8a-4d2b-b5de-b26b19d75810"
+      }
+    },
+    {
+      "reason": "Started",
+      "message": "Container started",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:05:38Z",
+      "lastTimestamp": "2026-11-11T17:05:38Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-5869d98d9b-wc9bd",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37277",
+        "uid": "244b7d60-3f8a-4d2b-b5de-b26b19d75810"
+      }
+    },
+    {
+      "reason": "Killing",
+      "message": "Stopping container postgres",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:06:01Z",
+      "lastTimestamp": "2026-11-11T17:06:01Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-5869d98d9b-wc9bd",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37277",
+        "uid": "244b7d60-3f8a-4d2b-b5de-b26b19d75810"
+      }
+    },
+    {
+      "reason": "Scheduled",
+      "message": "Successfully assigned proof-miniflux/postgres-75dc87444f-26xml to talos-proof",
+      "count": null,
+      "firstTimestamp": null,
+      "lastTimestamp": null,
+      "object": {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "name": "postgres-75dc87444f-26xml",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37639",
+        "uid": "ecad5c48-04ea-4f88-b627-c7a25442ae56"
+      }
+    },
+    {
+      "reason": "Pulled",
+      "message": "Container image \"postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42\" already present on machine and can be accessed by the pod",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:23Z",
+      "lastTimestamp": "2026-11-11T17:07:23Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-75dc87444f-26xml",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37675",
+        "uid": "ecad5c48-04ea-4f88-b627-c7a25442ae56"
+      }
+    },
+    {
+      "reason": "Created",
+      "message": "Container created",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:23Z",
+      "lastTimestamp": "2026-11-11T17:07:23Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-75dc87444f-26xml",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37675",
+        "uid": "ecad5c48-04ea-4f88-b627-c7a25442ae56"
+      }
+    },
+    {
+      "reason": "Started",
+      "message": "Container started",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:23Z",
+      "lastTimestamp": "2026-11-11T17:07:23Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-75dc87444f-26xml",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37675",
+        "uid": "ecad5c48-04ea-4f88-b627-c7a25442ae56"
+      }
+    },
+    {
+      "reason": "Killing",
+      "message": "Stopping container postgres",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:53Z",
+      "lastTimestamp": "2026-11-11T17:07:53Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-75dc87444f-26xml",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37675",
+        "uid": "ecad5c48-04ea-4f88-b627-c7a25442ae56"
+      }
+    },
+    {
+      "reason": "Scheduled",
+      "message": "Successfully assigned proof-miniflux/postgres-8578cb8cc9-c7n8d to talos-proof",
+      "count": null,
+      "firstTimestamp": null,
+      "lastTimestamp": null,
+      "object": {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "name": "postgres-8578cb8cc9-c7n8d",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37827",
+        "uid": "c7e092eb-cf8e-4829-b4dc-2a2b04375b7a"
+      }
+    },
+    {
+      "reason": "Pulled",
+      "message": "Container image \"postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42\" already present on machine and can be accessed by the pod",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:54Z",
+      "lastTimestamp": "2026-11-11T17:07:54Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-8578cb8cc9-c7n8d",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37832",
+        "uid": "c7e092eb-cf8e-4829-b4dc-2a2b04375b7a"
+      }
+    },
+    {
+      "reason": "Created",
+      "message": "Container created",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:54Z",
+      "lastTimestamp": "2026-11-11T17:07:54Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-8578cb8cc9-c7n8d",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37832",
+        "uid": "c7e092eb-cf8e-4829-b4dc-2a2b04375b7a"
+      }
+    },
+    {
+      "reason": "Started",
+      "message": "Container started",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:54Z",
+      "lastTimestamp": "2026-11-11T17:07:54Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-8578cb8cc9-c7n8d",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37832",
+        "uid": "c7e092eb-cf8e-4829-b4dc-2a2b04375b7a"
+      }
+    },
+    {
+      "reason": "Killing",
+      "message": "Stopping container postgres",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:08:18Z",
+      "lastTimestamp": "2026-11-11T17:08:18Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-8578cb8cc9-c7n8d",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37832",
+        "uid": "c7e092eb-cf8e-4829-b4dc-2a2b04375b7a"
+      }
+    },
+    {
+      "reason": "Scheduled",
+      "message": "Successfully assigned proof-miniflux/postgres-8578cb8cc9-vcghd to talos-proof",
+      "count": null,
+      "firstTimestamp": null,
+      "lastTimestamp": null,
+      "object": {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "name": "postgres-8578cb8cc9-vcghd",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37408",
+        "uid": "45b5075e-4bec-4da0-93a4-c8c60d61db53"
+      }
+    },
+    {
+      "reason": "Pulled",
+      "message": "Container image \"postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42\" already present on machine and can be accessed by the pod",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:06:02Z",
+      "lastTimestamp": "2026-11-11T17:06:02Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-8578cb8cc9-vcghd",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37411",
+        "uid": "45b5075e-4bec-4da0-93a4-c8c60d61db53"
+      }
+    },
+    {
+      "reason": "Created",
+      "message": "Container created",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:06:02Z",
+      "lastTimestamp": "2026-11-11T17:06:02Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-8578cb8cc9-vcghd",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37411",
+        "uid": "45b5075e-4bec-4da0-93a4-c8c60d61db53"
+      }
+    },
+    {
+      "reason": "Started",
+      "message": "Container started",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:06:02Z",
+      "lastTimestamp": "2026-11-11T17:06:02Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-8578cb8cc9-vcghd",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37411",
+        "uid": "45b5075e-4bec-4da0-93a4-c8c60d61db53"
+      }
+    },
+    {
+      "reason": "Killing",
+      "message": "Stopping container postgres",
+      "count": 1,
+      "firstTimestamp": "2026-11-11T17:07:17Z",
+      "lastTimestamp": "2026-11-11T17:07:17Z",
+      "object": {
+        "apiVersion": "v1",
+        "fieldPath": "spec.containers{postgres}",
+        "kind": "Pod",
+        "name": "postgres-8578cb8cc9-vcghd",
+        "namespace": "proof-miniflux",
+        "resourceVersion": "37411",
+        "uid": "45b5075e-4bec-4da0-93a4-c8c60d61db53"
+      }
+    }
+  ],
+  "scope": "Read-only post-cleanup events; deleted container termination states not available. Events do not prove precise cause of every restart."
+}

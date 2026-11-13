@@ -1,0 +1,59 @@
+{
+  "records": [
+    {
+      "sha256": "7ba275056416cfd372a81ad1ff269db26094f70d861fff00de7e1cfc419183c8",
+      "phase": "before mutation",
+      "observed_at": 1794426732.9897642,
+      "pods": [
+        {
+          "uid": "4a6fb5dc-5471-4012-be90-ca84a3d71e76",
+          "containers": [
+            {
+              "name": "collabora",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T19:51:39Z"
+                }
+              },
+              "lastState": {},
+              "current_logs": {
+                "file": "current-log-f4fbb4fc7d07330189f88d5f.txt",
+                "sha256": "6eb44c35e52d0623c7ed80b3d641814877e96b5c2b48554e06d7428b254dcd1c",
+                "bytes": 243843
+              }
+            }
+          ]
+        },
+        {
+          "uid": "fcb62a01-8757-41f2-981a-55003b050ceb",
+          "containers": [
+            {
+              "name": "wopi-fixture",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T19:51:40Z"
+                }
+              },
+              "lastState": {},
+              "current_logs": {
+                "file": "current-log-f2c51ea9445bf126bf7e26f3.txt",
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bytes": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sha256": "eeb0b8b2aaef7de3d414734bd6ca00babc37f7f8315ebaae42ad4d690d010d99",
+      "phase": "before mutation",
+      "observed_at": 1794426697.5802581,
+      "pods": []
+    }
+  ],
+  "raw_logs_private": true,
+  "previous_logs_inapplicable_when_restart_count_zero": true
+}

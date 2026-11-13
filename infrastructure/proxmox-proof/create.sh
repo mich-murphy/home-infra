@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Explicitly approved, isolated proof VM ONLY. Run on Proxmox.
+set -euo pipefail
+[[ ${APPROVE_TALOS_PROOF:-} == 120 ]] || { echo 'Set APPROVE_TALOS_PROOF=120 after review'; exit 1; }
+[[ ! -e /etc/pve/qemu-server/120.conf ]]
+# Stage this read-only helper alongside create.sh. Reject inherited all-guests
+# backup membership BEFORE creating a VM that could write to production storage.
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+python3 "$SCRIPT_DIR/backup-safety.py" --host
+MEMORY_MIB=${MEMORY_MIB:-2560}
+[[ $MEMORY_MIB == 2560 || $MEMORY_MIB == 3072 ]] || { echo 'Only approved 2560/3072MiB profiles allowed' >&2; exit 1; }
+AVAIL=$(awk '/MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
+(( AVAIL >= MEMORY_MIB + 1536 + 384 )) || { echo "Insufficient headroom: ${AVAIL}MiB"; exit 1; }
+umask 077
+mkdir -p /root/.local/state/home-infra/talos-proof
+awk '/SwapFree:/{f=$2}/SwapTotal:/{t=$2}END{print t-f}' /proc/meminfo > /root/.local/state/home-infra/talos-proof/swap-baseline-kib
+cp /proc/vmstat /root/.local/state/home-infra/talos-proof/vmstat-baseline
+cp /proc/pressure/memory /root/.local/state/home-infra/talos-proof/psi-baseline
+qm create 120 --name talos-proof --smbios1 uuid=555e8603-58e6-4fb6-a190-378a3f11c257 \
+ --cores 2 --cpu x86-64-v2-AES --memory "$MEMORY_MIB" --balloon 0 \
+ --machine q35 --bios ovmf --efidisk0 local-zfs:0,efitype=4m,pre-enrolled-keys=0 \
+ --scsihw virtio-scsi-pci --scsi0 local-zfs:32,discard=on --scsi1 local-zfs:64,discard=on \
+ --ide2 local:iso/talos-proof-v1.14.5-amd64.iso,media=cdrom --boot 'order=scsi0;ide2' \
+ --serial0 socket --vga std --ostype l26 --onboot 0 --agent 0 \
+ --args '-S -netdev user,id=proofnet,net=172.31.250.0/24,dhcpstart=172.31.250.10,ipv6=off,hostfwd=tcp:127.0.0.1:50120-172.31.250.10:50000,hostfwd=tcp:127.0.0.1:64120-172.31.250.10:6443,hostfwd=tcp:127.0.0.1:18080-172.31.250.10:30080,hostfwd=tcp:127.0.0.1:18443-172.31.250.10:30443 -device virtio-net-pci,netdev=proofnet,mac=02:00:00:00:01:20'
+echo 'Created but NOT started. Use start.sh: QEMU -S pauses CPUs until isolation is installed.'

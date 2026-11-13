@@ -1,0 +1,35 @@
+{
+  "observed_utc": "2026-11-12T03:29:15.530562+00:00",
+  "run_id": "07bf73a7-dc8f-4001-91f8-490365dad0cc",
+  "result": "CREATED_DECLARED_PREREQUISITES",
+  "failure_class": null,
+  "created_policy_uids": {
+    "nextcloud-to-postgres-egress": "26afbe42-bacb-41b3-953c-4eb8340c6c63",
+    "nextcloud-to-postgres-ingress": "5fb49249-d2ff-4540-93d3-80398f975c96",
+    "nextcloud-to-redis-egress": "d64a6d32-d7c3-4270-ada8-99472608e0ef",
+    "nextcloud-to-redis-ingress": "7c7c45b8-42ce-4111-9870-db83fba246e8"
+  },
+  "existing_seven_uid_specs_unchanged": true,
+  "native_network_policy_uids": {
+    "default-deny": "530fb1e1-444f-402a-a3ee-285c820741ca",
+    "dns": "eb34a8a2-f7a7-406c-af42-a21ea0fb7eea",
+    "nextcloud-to-postgres-egress": "26afbe42-bacb-41b3-953c-4eb8340c6c63",
+    "nextcloud-to-postgres-ingress": "5fb49249-d2ff-4540-93d3-80398f975c96",
+    "nextcloud-to-redis-egress": "d64a6d32-d7c3-4270-ada8-99472608e0ef",
+    "nextcloud-to-redis-ingress": "7c7c45b8-42ce-4111-9870-db83fba246e8"
+  },
+  "policy_scope": "same-namespace Nextcloud-to-PostgreSQL TCP5432 and Redis TCP6379 only",
+  "default_deny_and_dns_unchanged": true,
+  "source_sha256": "d7721225da035f99f8cce9adb0480fcdbbcbb009af2e796be41e74d7c2462617",
+  "document_sha256": {
+    "nextcloud-to-postgres-egress": "fd7e44bdceaa70d3ca915dd05fb7a293baf293c10b854f18bf73d6d8d45a6d3b",
+    "nextcloud-to-postgres-ingress": "850d5c865c100527ece8f2882b304de5bf866e26441bed6cc5b5e474399283f3",
+    "nextcloud-to-redis-egress": "088ac6efbb9dc5fd4fd68f9fccf4e4cb4444a7095221c1ed1b195dc05f09baed",
+    "nextcloud-to-redis-ingress": "e54595c120b485f31e97a989e258d6f4ec2090dd2594f83a5af7b46fe607470f"
+  },
+  "workloads_started": false,
+  "host_or_production_policy_changes": false,
+  "receipt_issued_final_equal": true,
+  "active_receipt_absent": true,
+  "native_functional_acceptance": false
+}

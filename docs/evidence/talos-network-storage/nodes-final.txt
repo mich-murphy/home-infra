@@ -1,0 +1,2 @@
+NAME          STATUS   ROLES           AGE   VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE          KERNEL-VERSION          CONTAINER-RUNTIME
+talos-proof   Ready    control-plane   14m   v1.36.5   172.31.250.10   <none>        Talos (v1.14.5)   6.18.58-talos (amd64)   containerd://2.3.7

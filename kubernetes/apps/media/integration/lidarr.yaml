@@ -1,0 +1,362 @@
+# Explicit integration replica; maintain alongside isolated base.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lidarr-dns-and-validation
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: lidarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lidarr
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-validation
+    ports:
+    - port: 8686
+      protocol: TCP
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lidarr-to-qbittorrent
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: lidarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lidarr
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: qbittorrent
+    ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lidarr-to-sabnzbd
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: lidarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lidarr
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: sabnzbd
+    ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lidarr-to-prowlarr
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: lidarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lidarr
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: prowlarr
+    ports:
+    - protocol: TCP
+      port: 9696
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lidarr-config
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: lidarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: proof-local
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lidarr
+  namespace: proof-media-pipeline
+  labels: &id001
+    app.kubernetes.io/name: lidarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  selector: *id001
+  ports:
+  - name: http
+    port: 8686
+    targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lidarr
+  namespace: proof-media-pipeline
+  labels: &id001
+    app.kubernetes.io/name: lidarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: *id001
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+      - name: lidarr
+        image: ghcr.io/linuxserver/lidarr:3.1.6.5079-ls48@sha256:a91ef0642c15c9bd7c4260fee98fa99972c61601e37c8a96411d6a9cf0e9ad40
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TZ
+          value: Etc/UTC
+        - name: PUID
+          value: '1000'
+        - name: PGID
+          value: '1000'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - SETUID
+            - SETGID
+            - DAC_OVERRIDE
+            - FOWNER
+            - KILL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 1000m
+            memory: 384Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+          readOnly: false
+        - name: fixture
+          mountPath: /data
+          readOnly: false
+        - name: music
+          mountPath: /music
+          readOnly: false
+          subPath: music
+        ports:
+        - name: http
+          containerPort: 8686
+        startupProbe:
+          tcpSocket:
+            port: http
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 3
+        livenessProbe:
+          tcpSocket:
+            port: http
+          periodSeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 5
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: lidarr-config
+      - name: fixture
+        persistentVolumeClaim:
+          claimName: data
+      - name: music
+        persistentVolumeClaim:
+          claimName: data
+      - name: seed
+        secret:
+          secretName: lidarr-bootstrap
+          items:
+          - key: seed
+            path: seed
+      - name: shared-data
+        persistentVolumeClaim:
+          claimName: data
+      terminationGracePeriodSeconds: 30
+      initContainers:
+      - name: prepare-shared-data
+        image: ghcr.io/linuxserver/lidarr:3.1.6.5079-ls48@sha256:a91ef0642c15c9bd7c4260fee98fa99972c61601e37c8a96411d6a9cf0e9ad40
+        command:
+        - /bin/sh
+        - -ec
+        - mkdir -p /data/torrents /data/usenet/incomplete /data/usenet/complete /data/media/movies
+          /data/media/tv /data/music
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - name: shared-data
+          mountPath: /data
+      - name: seed-fresh-config
+        image: ghcr.io/linuxserver/lidarr:3.1.6.5079-ls48@sha256:a91ef0642c15c9bd7c4260fee98fa99972c61601e37c8a96411d6a9cf0e9ad40
+        command:
+        - /bin/sh
+        - -ec
+        - mkdir -p /config/.; if [ ! -e /config/config.xml ]; then cp /seed/seed /config/config.xml;
+          chmod 600 /config/config.xml; chown 1000:1000 /config/config.xml; fi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+          runAsUser: 0
+          runAsGroup: 0
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: seed
+          mountPath: /seed
+          readOnly: true
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lidarr-from-proof-gateway
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: lidarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: lidarr
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-gateway
+    ports:
+    - protocol: TCP
+      port: 8686
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: lidarr
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: lidarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  parentRefs:
+  - name: proof
+    namespace: proof-gateway
+  hostnames:
+  - pipeline-lidarr.proof.invalid
+  rules:
+  - backendRefs:
+    - name: lidarr
+      port: 8686
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: lidarr-from-proof-cilium-ingress
+  namespace: proof-media-pipeline
+  labels:
+    app.kubernetes.io/name: lidarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: lidarr
+  ingress:
+  - fromEntities:
+    - ingress
+    toPorts:
+    - ports:
+      - port: '8686'
+        protocol: TCP

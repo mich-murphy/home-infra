@@ -1,0 +1,209 @@
+# Fresh synthetic-fixture experiment; memory ceilings unproven until live evidence.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: proof-jellyplex-watched
+  labels:
+    app.kubernetes.io/name: jellyplex-watched
+    app.kubernetes.io/part-of: talos-proof
+    pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: proof-jellyplex-watched
+  labels:
+    app.kubernetes.io/name: jellyplex-watched
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dns-and-validation
+  namespace: proof-jellyplex-watched
+  labels:
+    app.kubernetes.io/name: jellyplex-watched
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: []
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-plex
+  namespace: proof-jellyplex-watched
+  labels:
+    app.kubernetes.io/name: jellyplex-watched
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-plex
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: plex
+    ports:
+    - protocol: TCP
+      port: 33240
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-jellyfin
+  namespace: proof-jellyplex-watched
+  labels:
+    app.kubernetes.io/name: jellyplex-watched
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-jellyfin
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: jellyfin
+    ports:
+    - protocol: TCP
+      port: 8096
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: config
+  namespace: proof-jellyplex-watched
+  labels:
+    app.kubernetes.io/name: jellyplex-watched
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: proof-local
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jellyplex-watched
+  namespace: proof-jellyplex-watched
+  labels: &id001
+    app.kubernetes.io/name: jellyplex-watched
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  schedule: 0 4 * * *
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 180
+      template:
+        metadata:
+          labels: *id001
+        spec:
+          automountServiceAccountToken: false
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          containers:
+          - name: jellyplex-watched
+            image: luigi311/jellyplex-watched:main@sha256:c0fca5c52a66fe7e7cb8b6d746ef6675e2eef977369a1ccaf51718dd7a6eb064
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: TZ
+              value: Etc/UTC
+            - name: DRYRUN
+              value: 'True'
+            - name: RUN_ONLY_ONCE
+              value: 'True'
+            - name: MAX_THREADS
+              value: '1'
+            - name: DEBUG_LEVEL
+              value: ERROR
+            - name: PLEX_BASEURL
+              value: http://plex.proof-plex.svc:33240
+            - name: JELLYFIN_BASEURL
+              value: http://jellyfin.proof-jellyfin.svc:8096
+            - name: LOG_FILE
+              value: /data/run.log
+            - name: MARK_FILE
+              value: /data/marked.log
+            - name: USER_MAPPING
+              value: '{"proof":"proof"}'
+            - name: WHITELIST_USERS
+              value: proof
+            - name: WHITELIST_LIBRARY
+              value: Proof
+            - name: SYNC_FROM_PLEX_TO_JELLYFIN
+              value: 'True'
+            - name: SYNC_FROM_JELLYFIN_TO_PLEX
+              value: 'True'
+            - name: PLEX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: bootstrap
+                  key: plex-token
+            - name: JELLYFIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: bootstrap
+                  key: jellyfin-token
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                cpu: 1000m
+                memory: 192Mi
+            volumeMounts:
+            - name: config
+              mountPath: /data
+              readOnly: false
+          volumes:
+          - name: config
+            persistentVolumeClaim:
+              claimName: config
+          terminationGracePeriodSeconds: 30
+          restartPolicy: Never

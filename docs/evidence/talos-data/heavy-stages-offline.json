@@ -1,0 +1,32 @@
+{
+  "status": "offline-prepared-not-live-tested",
+  "utc": "2026-11-11T14:32:07.288858+00:00",
+  "base_commit": "015a809c7886557bb06c8f3d58f95ec8a736be97",
+  "render_sha256": "9daa7f8b1ebb8a16f3dd2fc49b4d5f3124d420d4c620727d225cba7a7b2c24ac",
+  "checks": {
+    "data_offline_tests": 37,
+    "rendered_safety": "passed",
+    "oidc_audience_offline_cases": 13,
+    "python_compile": "passed",
+    "diff_check": "passed"
+  },
+  "runtime_mutations": 0,
+  "live_acceptance": false,
+  "stage_limits_mib": {
+    "nextcloud/web": 1088,
+    "nextcloud/cron": 640,
+    "nextcloud/collabora": 640,
+    "nextcloud/full": 1728,
+    "immich/app": 1216,
+    "immich/ml": 1024,
+    "immich/full": 2240
+  },
+  "reserve_mib": 192,
+  "limitations": [
+    "OPS holds live lease; data waits until after OPS/media.",
+    "No heavy live result, inference fit, WOPI editing or integrated Immich indexing/search acceptance.",
+    "Clean DB restore keeps original app files PVC; not file-volume disaster recovery.",
+    "Cgroup sampling has documented gaps; no whole-run peak/headroom claim.",
+    "No platform/global/DNS policy modification."
+  ]
+}

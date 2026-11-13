@@ -1,0 +1,957 @@
+{
+  "scope": "sanitized bounded native workflow observations; NOT full acceptance",
+  "observations": [
+    {
+      "service": "jellyfin",
+      "observed_utc": "2026-11-11T20:04:40.832937+00:00",
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ],
+      "pods": [
+        {
+          "name": "jellyfin-7fddfb87-vztz2",
+          "uid": "1b20911e-44fe-4a4c-816a-6d62b929359b",
+          "created": "2026-11-11T20:03:55Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "jellyfin",
+              "image": "sha256:995797bf87597b4247190e0034827f7887b34e75a4f603374591eab4f44172cb",
+              "imageID": "docker.io/jellyfin/jellyfin@sha256:fea863d0cd9ec445985d9c75fc6ed64e38a1d2766cf0c250a33d553f4fc1b771",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T20:04:16Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup_error": null,
+              "cgroup": {
+                "memory.current": [
+                  "411389952"
+                ],
+                "memory.peak": [
+                  "536866816"
+                ],
+                "memory.stat": [
+                  "anon 89194496",
+                  "file 317128704",
+                  "kernel 4866048",
+                  "kernel_stack 360448",
+                  "pagetables 1490944",
+                  "sec_pagetables 0",
+                  "percpu 480",
+                  "sock 4096",
+                  "vmalloc 73728",
+                  "shmem 62283776",
+                  "zswap 0",
+                  "zswapped 0",
+                  "file_mapped 142020608",
+                  "file_dirty 0",
+                  "file_writeback 0",
+                  "swapcached 0",
+                  "anon_thp 0",
+                  "file_thp 0",
+                  "shmem_thp 0",
+                  "inactive_anon 129085440",
+                  "active_anon 22278144",
+                  "inactive_file 101068800",
+                  "active_file 153743360",
+                  "unevictable 0",
+                  "slab_reclaimable 1775160",
+                  "slab_unreclaimable 1145016",
+                  "slab 2920176",
+                  "workingset_refault_anon 0",
+                  "workingset_refault_file 14570",
+                  "workingset_activate_anon 0",
+                  "workingset_activate_file 13678",
+                  "workingset_restore_anon 0",
+                  "workingset_restore_file 1",
+                  "workingset_nodereclaim 0",
+                  "pgdemote_kswapd 0",
+                  "pgdemote_direct 0",
+                  "pgdemote_khugepaged 0",
+                  "pgdemote_proactive 0",
+                  "pgscan 63459",
+                  "pgsteal 62955",
+                  "pswpin 0",
+                  "pswpout 0",
+                  "pgscan_kswapd 32882",
+                  "pgscan_direct 30577",
+                  "pgscan_khugepaged 0",
+                  "pgscan_proactive 0",
+                  "pgsteal_kswapd 32668",
+                  "pgsteal_direct 30287",
+                  "pgsteal_khugepaged 0",
+                  "pgsteal_proactive 0",
+                  "pgfault 93404",
+                  "pgmajfault 492",
+                  "pgrefill 11283",
+                  "pgactivate 597",
+                  "pgdeactivate 0",
+                  "pglazyfree 0",
+                  "pglazyfreed 0",
+                  "swpin_zero 0",
+                  "swpout_zero 0",
+                  "zswpin 0",
+                  "zswpout 0",
+                  "zswpwb 0",
+                  "thp_fault_alloc 0",
+                  "thp_collapse_alloc 0",
+                  "thp_swpout 0",
+                  "thp_swpout_fallback 0"
+                ],
+                "memory.events": [
+                  "low 0",
+                  "high 0",
+                  "max 0",
+                  "oom 0",
+                  "oom_kill 0",
+                  "oom_group_kill 0"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "service": "jellyfin",
+      "observed_utc": "2026-11-11T20:07:29.071156+00:00",
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ],
+      "pods": [
+        {
+          "name": "jellyfin-7fddfb87-w42mn",
+          "uid": "c5752259-a6d0-4b18-ab0d-3645532522b6",
+          "created": "2026-11-11T20:05:18Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "jellyfin",
+              "image": "sha256:995797bf87597b4247190e0034827f7887b34e75a4f603374591eab4f44172cb",
+              "imageID": "docker.io/jellyfin/jellyfin@sha256:fea863d0cd9ec445985d9c75fc6ed64e38a1d2766cf0c250a33d553f4fc1b771",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T20:05:19Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup_error": null,
+              "cgroup": {
+                "memory.current": [
+                  "410075136"
+                ],
+                "memory.peak": [
+                  "536866816"
+                ],
+                "memory.stat": [
+                  "anon 118448128",
+                  "file 287408128",
+                  "kernel 4194304",
+                  "kernel_stack 360448",
+                  "pagetables 1650688",
+                  "sec_pagetables 0",
+                  "percpu 480",
+                  "sock 0",
+                  "vmalloc 73728",
+                  "shmem 91070464",
+                  "zswap 0",
+                  "zswapped 0",
+                  "file_mapped 172765184",
+                  "file_dirty 1474560",
+                  "file_writeback 0",
+                  "swapcached 0",
+                  "anon_thp 0",
+                  "file_thp 0",
+                  "shmem_thp 0",
+                  "inactive_anon 75911168",
+                  "active_anon 133496832",
+                  "inactive_file 135430144",
+                  "active_file 60907520",
+                  "unevictable 0",
+                  "slab_reclaimable 863128",
+                  "slab_unreclaimable 1226504",
+                  "slab 2089632",
+                  "workingset_refault_anon 0",
+                  "workingset_refault_file 6406",
+                  "workingset_activate_anon 0",
+                  "workingset_activate_file 4092",
+                  "workingset_restore_anon 0",
+                  "workingset_restore_file 0",
+                  "workingset_nodereclaim 0",
+                  "pgdemote_kswapd 0",
+                  "pgdemote_direct 0",
+                  "pgdemote_khugepaged 0",
+                  "pgdemote_proactive 0",
+                  "pgscan 72945",
+                  "pgsteal 66680",
+                  "pswpin 0",
+                  "pswpout 0",
+                  "pgscan_kswapd 66372",
+                  "pgscan_direct 6573",
+                  "pgscan_khugepaged 0",
+                  "pgscan_proactive 0",
+                  "pgsteal_kswapd 60248",
+                  "pgsteal_direct 6432",
+                  "pgsteal_khugepaged 0",
+                  "pgsteal_proactive 0",
+                  "pgfault 134049",
+                  "pgmajfault 735",
+                  "pgrefill 2921",
+                  "pgactivate 1168",
+                  "pgdeactivate 0",
+                  "pglazyfree 0",
+                  "pglazyfreed 0",
+                  "swpin_zero 0",
+                  "swpout_zero 0",
+                  "zswpin 0",
+                  "zswpout 0",
+                  "zswpwb 0",
+                  "thp_fault_alloc 0",
+                  "thp_collapse_alloc 0",
+                  "thp_swpout 0",
+                  "thp_swpout_fallback 0"
+                ],
+                "memory.events": [
+                  "low 0",
+                  "high 0",
+                  "max 0",
+                  "oom 0",
+                  "oom_kill 0",
+                  "oom_group_kill 0"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "service": "plex",
+      "observed_utc": "2026-11-11T20:12:13.786920+00:00",
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ],
+      "pods": [
+        {
+          "name": "plex-7d686fbc69-49wgv",
+          "uid": "1ba00018-724e-4a6e-b316-c5f83923f169",
+          "created": "2026-11-11T20:08:21Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "local-unclaimed-adapter",
+              "image": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+              "imageID": "ghcr.io/linuxserver/tautulli@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T20:08:22Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup_error": null,
+              "cgroup": {
+                "memory.current": [
+                  "27840512"
+                ],
+                "memory.peak": [
+                  "31551488"
+                ],
+                "memory.stat": [
+                  "anon 13758464",
+                  "file 12500992",
+                  "kernel 1507328",
+                  "kernel_stack 49152",
+                  "pagetables 614400",
+                  "sec_pagetables 0",
+                  "percpu 480",
+                  "sock 0",
+                  "vmalloc 73728",
+                  "shmem 0",
+                  "zswap 0",
+                  "zswapped 0",
+                  "file_mapped 9646080",
+                  "file_dirty 0",
+                  "file_writeback 0",
+                  "swapcached 0",
+                  "anon_thp 0",
+                  "file_thp 0",
+                  "shmem_thp 0",
+                  "inactive_anon 12533760",
+                  "active_anon 1179648",
+                  "inactive_file 7884800",
+                  "active_file 4616192",
+                  "unevictable 0",
+                  "slab_reclaimable 542952",
+                  "slab_unreclaimable 214872",
+                  "slab 757824",
+                  "workingset_refault_anon 0",
+                  "workingset_refault_file 0",
+                  "workingset_activate_anon 0",
+                  "workingset_activate_file 0",
+                  "workingset_restore_anon 0",
+                  "workingset_restore_file 0",
+                  "workingset_nodereclaim 0",
+                  "pgdemote_kswapd 0",
+                  "pgdemote_direct 0",
+                  "pgdemote_khugepaged 0",
+                  "pgdemote_proactive 0",
+                  "pgscan 1942",
+                  "pgsteal 1508",
+                  "pswpin 0",
+                  "pswpout 0",
+                  "pgscan_kswapd 1942",
+                  "pgscan_direct 0",
+                  "pgscan_khugepaged 0",
+                  "pgscan_proactive 0",
+                  "pgsteal_kswapd 1508",
+                  "pgsteal_direct 0",
+                  "pgsteal_khugepaged 0",
+                  "pgsteal_proactive 0",
+                  "pgfault 10492",
+                  "pgmajfault 31",
+                  "pgrefill 611",
+                  "pgactivate 383",
+                  "pgdeactivate 0",
+                  "pglazyfree 0",
+                  "pglazyfreed 0",
+                  "swpin_zero 0",
+                  "swpout_zero 0",
+                  "zswpin 0",
+                  "zswpout 0",
+                  "zswpwb 0",
+                  "thp_fault_alloc 0",
+                  "thp_collapse_alloc 0",
+                  "thp_swpout 0",
+                  "thp_swpout_fallback 0"
+                ],
+                "memory.events": [
+                  "low 0",
+                  "high 0",
+                  "max 0",
+                  "oom 0",
+                  "oom_kill 0",
+                  "oom_group_kill 0"
+                ]
+              }
+            },
+            {
+              "name": "plex",
+              "image": "sha256:54297791dce6edfce6eea8e74e1350f312b4a92af511a97a3a94c41e264e769e",
+              "imageID": "docker.io/plexinc/pms-docker@sha256:6d778d41daae68f89115aa87a44ae14a96b23e71a2093da173b5a9aac4091336",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T20:08:22Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup_error": null,
+              "cgroup": {
+                "memory.current": [
+                  "267460608"
+                ],
+                "memory.peak": [
+                  "319447040"
+                ],
+                "memory.stat": [
+                  "anon 162627584",
+                  "file 97083392",
+                  "kernel 7467008",
+                  "kernel_stack 1441792",
+                  "pagetables 1847296",
+                  "sec_pagetables 0",
+                  "percpu 1056",
+                  "sock 32768",
+                  "vmalloc 73728",
+                  "shmem 4096",
+                  "zswap 0",
+                  "zswapped 0",
+                  "file_mapped 41771008",
+                  "file_dirty 12288",
+                  "file_writeback 0",
+                  "swapcached 0",
+                  "anon_thp 0",
+                  "file_thp 0",
+                  "shmem_thp 0",
+                  "inactive_anon 157085696",
+                  "active_anon 4145152",
+                  "inactive_file 74285056",
+                  "active_file 24084480",
+                  "unevictable 0",
+                  "slab_reclaimable 2565984",
+                  "slab_unreclaimable 1467184",
+                  "slab 4033168",
+                  "workingset_refault_anon 0",
+                  "workingset_refault_file 2029",
+                  "workingset_activate_anon 0",
+                  "workingset_activate_file 13",
+                  "workingset_restore_anon 0",
+                  "workingset_restore_file 0",
+                  "workingset_nodereclaim 0",
+                  "pgdemote_kswapd 0",
+                  "pgdemote_direct 0",
+                  "pgdemote_khugepaged 0",
+                  "pgdemote_proactive 0",
+                  "pgscan 13418",
+                  "pgsteal 12549",
+                  "pswpin 0",
+                  "pswpout 0",
+                  "pgscan_kswapd 13418",
+                  "pgscan_direct 0",
+                  "pgscan_khugepaged 0",
+                  "pgscan_proactive 0",
+                  "pgsteal_kswapd 12549",
+                  "pgsteal_direct 0",
+                  "pgsteal_khugepaged 0",
+                  "pgsteal_proactive 0",
+                  "pgfault 196647",
+                  "pgmajfault 144",
+                  "pgrefill 3493",
+                  "pgactivate 443",
+                  "pgdeactivate 0",
+                  "pglazyfree 13008",
+                  "pglazyfreed 308",
+                  "swpin_zero 0",
+                  "swpout_zero 0",
+                  "zswpin 0",
+                  "zswpout 0",
+                  "zswpwb 0",
+                  "thp_fault_alloc 0",
+                  "thp_collapse_alloc 0",
+                  "thp_swpout 0",
+                  "thp_swpout_fallback 0"
+                ],
+                "memory.events": [
+                  "low 0",
+                  "high 0",
+                  "max 0",
+                  "oom 0",
+                  "oom_kill 0",
+                  "oom_group_kill 0"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "service": "tautulli",
+      "observed_utc": "2026-11-11T20:12:15.725598+00:00",
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ],
+      "pods": [
+        {
+          "name": "tautulli-898456c4f-rlm5z",
+          "uid": "6a01852d-f50f-4967-9664-08fe010e6ec4",
+          "created": "2026-11-11T20:09:32Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "seed-fresh-config",
+              "image": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+              "imageID": "ghcr.io/linuxserver/tautulli@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+              "restartCount": 0,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://a6d03f9d256e834ef41277808c84e4fc9ad263c5998f851e966ca3b38f87710d",
+                  "exitCode": 0,
+                  "finishedAt": "2026-11-11T20:09:36Z",
+                  "reason": "Completed",
+                  "startedAt": "2026-11-11T20:09:36Z"
+                }
+              },
+              "lastState": {},
+              "init": true,
+              "cgroup_error": null,
+              "cgroup": {}
+            },
+            {
+              "name": "tautulli",
+              "image": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+              "imageID": "ghcr.io/linuxserver/tautulli@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T20:09:37Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup_error": null,
+              "cgroup": {
+                "memory.current": [
+                  "102813696"
+                ],
+                "memory.peak": [
+                  "112271360"
+                ],
+                "memory.stat": [
+                  "anon 73355264",
+                  "file 23527424",
+                  "kernel 5959680",
+                  "kernel_stack 507904",
+                  "pagetables 1302528",
+                  "sec_pagetables 0",
+                  "percpu 1056",
+                  "sock 4096",
+                  "vmalloc 73728",
+                  "shmem 0",
+                  "zswap 0",
+                  "zswapped 0",
+                  "file_mapped 10575872",
+                  "file_dirty 0",
+                  "file_writeback 0",
+                  "swapcached 0",
+                  "anon_thp 0",
+                  "file_thp 0",
+                  "shmem_thp 0",
+                  "inactive_anon 70066176",
+                  "active_anon 3260416",
+                  "inactive_file 22994944",
+                  "active_file 532480",
+                  "unevictable 0",
+                  "slab_reclaimable 3378624",
+                  "slab_unreclaimable 661232",
+                  "slab 4039856",
+                  "workingset_refault_anon 0",
+                  "workingset_refault_file 67",
+                  "workingset_activate_anon 0",
+                  "workingset_activate_file 0",
+                  "workingset_restore_anon 0",
+                  "workingset_restore_file 0",
+                  "workingset_nodereclaim 0",
+                  "pgdemote_kswapd 0",
+                  "pgdemote_direct 0",
+                  "pgdemote_khugepaged 0",
+                  "pgdemote_proactive 0",
+                  "pgscan 6292",
+                  "pgsteal 6072",
+                  "pswpin 0",
+                  "pswpout 0",
+                  "pgscan_kswapd 6292",
+                  "pgscan_direct 0",
+                  "pgscan_khugepaged 0",
+                  "pgscan_proactive 0",
+                  "pgsteal_kswapd 6072",
+                  "pgsteal_direct 0",
+                  "pgsteal_khugepaged 0",
+                  "pgsteal_proactive 0",
+                  "pgfault 196057",
+                  "pgmajfault 78",
+                  "pgrefill 129",
+                  "pgactivate 114",
+                  "pgdeactivate 0",
+                  "pglazyfree 0",
+                  "pglazyfreed 0",
+                  "swpin_zero 0",
+                  "swpout_zero 0",
+                  "zswpin 0",
+                  "zswpout 0",
+                  "zswpwb 0",
+                  "thp_fault_alloc 0",
+                  "thp_collapse_alloc 0",
+                  "thp_swpout 0",
+                  "thp_swpout_fallback 0"
+                ],
+                "memory.events": [
+                  "low 0",
+                  "high 0",
+                  "max 0",
+                  "oom 0",
+                  "oom_kill 0",
+                  "oom_group_kill 0"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "service": "pinchflat",
+      "observed_utc": "2026-11-11T20:16:34.010687+00:00",
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ],
+      "pods": [
+        {
+          "name": "pinchflat-fccbb9568-7h7qc",
+          "uid": "089ed926-0240-432f-a25a-1199beaa770e",
+          "created": "2026-11-11T20:13:02Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "pinchflat",
+              "image": "sha256:73c09865113935331f04f1f9ff4733e7b0ee785fe9d3613b0745a98d4899de53",
+              "imageID": "ghcr.io/kieraneglin/pinchflat@sha256:4e975edf58f0861a5cbfe8fc6aac4851ff5a02dfc3f05ffeea4982e3084a5a4a",
+              "restartCount": 2,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T20:16:32Z"
+                }
+              },
+              "lastState": {
+                "terminated": {
+                  "containerID": "containerd://ceefe691926bb844b18a8365dcbf47f46b121c43c212d434859668315e01836c",
+                  "exitCode": 137,
+                  "finishedAt": "2026-11-11T20:16:20Z",
+                  "reason": "OOMKilled",
+                  "startedAt": "2026-11-11T20:13:10Z"
+                }
+              },
+              "init": false,
+              "cgroup_error": null,
+              "cgroup": {
+                "memory.current": [
+                  "265183232"
+                ],
+                "memory.peak": [
+                  "268435456"
+                ],
+                "memory.stat": [
+                  "anon 172822528",
+                  "file 83394560",
+                  "kernel 8929280",
+                  "kernel_stack 507904",
+                  "pagetables 1527808",
+                  "sec_pagetables 0",
+                  "percpu 1056",
+                  "sock 0",
+                  "vmalloc 73728",
+                  "shmem 45035520",
+                  "zswap 0",
+                  "zswapped 0",
+                  "file_mapped 63029248",
+                  "file_dirty 45056",
+                  "file_writeback 0",
+                  "swapcached 0",
+                  "anon_thp 0",
+                  "file_thp 0",
+                  "shmem_thp 0",
+                  "inactive_anon 0",
+                  "active_anon 217767936",
+                  "inactive_file 7053312",
+                  "active_file 31305728",
+                  "unevictable 0",
+                  "slab_reclaimable 6093872",
+                  "slab_unreclaimable 664784",
+                  "slab 6758656",
+                  "workingset_refault_anon 0",
+                  "workingset_refault_file 14511",
+                  "workingset_activate_anon 0",
+                  "workingset_activate_file 301",
+                  "workingset_restore_anon 0",
+                  "workingset_restore_file 102",
+                  "workingset_nodereclaim 0",
+                  "pgdemote_kswapd 0",
+                  "pgdemote_direct 0",
+                  "pgdemote_khugepaged 0",
+                  "pgdemote_proactive 0",
+                  "pgscan 6332",
+                  "pgsteal 6306",
+                  "pswpin 0",
+                  "pswpout 0",
+                  "pgscan_kswapd 0",
+                  "pgscan_direct 6332",
+                  "pgscan_khugepaged 0",
+                  "pgscan_proactive 0",
+                  "pgsteal_kswapd 0",
+                  "pgsteal_direct 6306",
+                  "pgsteal_khugepaged 0",
+                  "pgsteal_proactive 0",
+                  "pgfault 108192",
+                  "pgmajfault 54",
+                  "pgrefill 81",
+                  "pgactivate 103",
+                  "pgdeactivate 0",
+                  "pglazyfree 0",
+                  "pglazyfreed 0",
+                  "swpin_zero 0",
+                  "swpout_zero 0",
+                  "zswpin 0",
+                  "zswpout 0",
+                  "zswpwb 0",
+                  "thp_fault_alloc 0",
+                  "thp_collapse_alloc 0",
+                  "thp_swpout 0",
+                  "thp_swpout_fallback 0"
+                ],
+                "memory.events": [
+                  "low 0",
+                  "high 0",
+                  "max 136",
+                  "oom 0",
+                  "oom_kill 0",
+                  "oom_group_kill 0"
+                ]
+              }
+            },
+            {
+              "name": "rss-fixture",
+              "image": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+              "imageID": "ghcr.io/linuxserver/tautulli@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T20:13:03Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup_error": null,
+              "cgroup": {
+                "memory.current": [
+                  "21135360"
+                ],
+                "memory.peak": [
+                  "24784896"
+                ],
+                "memory.stat": [
+                  "anon 14520320",
+                  "file 5144576",
+                  "kernel 1306624",
+                  "kernel_stack 49152",
+                  "pagetables 606208",
+                  "sec_pagetables 0",
+                  "percpu 480",
+                  "sock 0",
+                  "vmalloc 73728",
+                  "shmem 0",
+                  "zswap 0",
+                  "zswapped 0",
+                  "file_mapped 290816",
+                  "file_dirty 4096",
+                  "file_writeback 0",
+                  "swapcached 0",
+                  "anon_thp 0",
+                  "file_thp 0",
+                  "shmem_thp 0",
+                  "inactive_anon 0",
+                  "active_anon 14491648",
+                  "inactive_file 274432",
+                  "active_file 4870144",
+                  "unevictable 0",
+                  "slab_reclaimable 355368",
+                  "slab_unreclaimable 207400",
+                  "slab 562768",
+                  "workingset_refault_anon 0",
+                  "workingset_refault_file 374",
+                  "workingset_activate_anon 0",
+                  "workingset_activate_file 352",
+                  "workingset_restore_anon 0",
+                  "workingset_restore_file 0",
+                  "workingset_nodereclaim 0",
+                  "pgdemote_kswapd 0",
+                  "pgdemote_direct 0",
+                  "pgdemote_khugepaged 0",
+                  "pgdemote_proactive 0",
+                  "pgscan 1074",
+                  "pgsteal 1070",
+                  "pswpin 0",
+                  "pswpout 0",
+                  "pgscan_kswapd 1074",
+                  "pgscan_direct 0",
+                  "pgscan_khugepaged 0",
+                  "pgscan_proactive 0",
+                  "pgsteal_kswapd 1070",
+                  "pgsteal_direct 0",
+                  "pgsteal_khugepaged 0",
+                  "pgsteal_proactive 0",
+                  "pgfault 169371",
+                  "pgmajfault 12",
+                  "pgrefill 24",
+                  "pgactivate 4",
+                  "pgdeactivate 0",
+                  "pglazyfree 0",
+                  "pglazyfreed 0",
+                  "swpin_zero 0",
+                  "swpout_zero 0",
+                  "zswpin 0",
+                  "zswpout 0",
+                  "zswpwb 0",
+                  "thp_fault_alloc 0",
+                  "thp_collapse_alloc 0",
+                  "thp_swpout 0",
+                  "thp_swpout_fallback 0"
+                ],
+                "memory.events": [
+                  "low 0",
+                  "high 0",
+                  "max 0",
+                  "oom 0",
+                  "oom_kill 0",
+                  "oom_group_kill 0"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "service": "pinchflat",
+      "observed_utc": "2026-11-11T20:16:36.451587+00:00",
+      "limitations": [
+        "cgroup counters cover only current container lifetime; prior termination status retained separately",
+        "point observations do not measure an unsampled startup peak if memory.peak is unavailable"
+      ],
+      "pods": [
+        {
+          "name": "pinchflat-fccbb9568-7h7qc",
+          "uid": "089ed926-0240-432f-a25a-1199beaa770e",
+          "created": "2026-11-11T20:13:02Z",
+          "phase": "Running",
+          "reason": null,
+          "containers": [
+            {
+              "name": "pinchflat",
+              "image": "sha256:73c09865113935331f04f1f9ff4733e7b0ee785fe9d3613b0745a98d4899de53",
+              "imageID": "ghcr.io/kieraneglin/pinchflat@sha256:4e975edf58f0861a5cbfe8fc6aac4851ff5a02dfc3f05ffeea4982e3084a5a4a",
+              "restartCount": 2,
+              "state": {
+                "terminated": {
+                  "containerID": "containerd://f26d8b522e5793920b4f9d6e556892f483aa35a565498acc2242e55c672d77ad",
+                  "exitCode": 137,
+                  "finishedAt": "2026-11-11T20:16:35Z",
+                  "reason": "OOMKilled",
+                  "startedAt": "2026-11-11T20:16:32Z"
+                }
+              },
+              "lastState": {
+                "terminated": {
+                  "containerID": "containerd://ceefe691926bb844b18a8365dcbf47f46b121c43c212d434859668315e01836c",
+                  "exitCode": 137,
+                  "finishedAt": "2026-11-11T20:16:20Z",
+                  "reason": "OOMKilled",
+                  "startedAt": "2026-11-11T20:13:10Z"
+                }
+              },
+              "init": false,
+              "cgroup_error": null,
+              "cgroup": {}
+            },
+            {
+              "name": "rss-fixture",
+              "image": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+              "imageID": "ghcr.io/linuxserver/tautulli@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+              "restartCount": 0,
+              "state": {
+                "running": {
+                  "startedAt": "2026-11-11T20:13:03Z"
+                }
+              },
+              "lastState": {},
+              "init": false,
+              "cgroup_error": null,
+              "cgroup": {
+                "memory.current": [
+                  "20905984"
+                ],
+                "memory.peak": [
+                  "24784896"
+                ],
+                "memory.stat": [
+                  "anon 14524416",
+                  "file 5144576",
+                  "kernel 1138688",
+                  "kernel_stack 49152",
+                  "pagetables 495616",
+                  "sec_pagetables 0",
+                  "percpu 480",
+                  "sock 0",
+                  "vmalloc 73728",
+                  "shmem 0",
+                  "zswap 0",
+                  "zswapped 0",
+                  "file_mapped 331776",
+                  "file_dirty 4096",
+                  "file_writeback 0",
+                  "swapcached 0",
+                  "anon_thp 0",
+                  "file_thp 0",
+                  "shmem_thp 0",
+                  "inactive_anon 0",
+                  "active_anon 14462976",
+                  "inactive_file 274432",
+                  "active_file 4870144",
+                  "unevictable 0",
+                  "slab_reclaimable 336368",
+                  "slab_unreclaimable 166800",
+                  "slab 503168",
+                  "workingset_refault_anon 0",
+                  "workingset_refault_file 374",
+                  "workingset_activate_anon 0",
+                  "workingset_activate_file 352",
+                  "workingset_restore_anon 0",
+                  "workingset_restore_file 0",
+                  "workingset_nodereclaim 0",
+                  "pgdemote_kswapd 0",
+                  "pgdemote_direct 0",
+                  "pgdemote_khugepaged 0",
+                  "pgdemote_proactive 0",
+                  "pgscan 1074",
+                  "pgsteal 1070",
+                  "pswpin 0",
+                  "pswpout 0",
+                  "pgscan_kswapd 1074",
+                  "pgscan_direct 0",
+                  "pgscan_khugepaged 0",
+                  "pgscan_proactive 0",
+                  "pgsteal_kswapd 1070",
+                  "pgsteal_direct 0",
+                  "pgsteal_khugepaged 0",
+                  "pgsteal_proactive 0",
+                  "pgfault 174364",
+                  "pgmajfault 12",
+                  "pgrefill 24",
+                  "pgactivate 4",
+                  "pgdeactivate 0",
+                  "pglazyfree 0",
+                  "pglazyfreed 0",
+                  "swpin_zero 0",
+                  "swpout_zero 0",
+                  "zswpin 0",
+                  "zswpout 0",
+                  "zswpwb 0",
+                  "thp_fault_alloc 0",
+                  "thp_collapse_alloc 0",
+                  "thp_swpout 0",
+                  "thp_swpout_fallback 0"
+                ],
+                "memory.events": [
+                  "low 0",
+                  "high 0",
+                  "max 0",
+                  "oom 0",
+                  "oom_kill 0",
+                  "oom_group_kill 0"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "observed_utc": "2026-11-12T02:37:17.353411+00:00",
+  "source_run_id": "34a6bc9c-7a6a-46b3-ac59-528c84233bca",
+  "scope": "independent released initialization / retained UID integrity review; NOT functional or binding acceptance",
+  "unchanged_journal_count": 36,
+  "issued_final_receipt_bytes_identical": true,
+  "receipt_mode": "0600",
+  "active_receipt_absent": true,
+  "created_objects": [
+    {
+      "resource": "configmap/nextcloud-apache-proof",
+      "uid": "66536af3-566b-4c49-98b4-2a32b24257da"
+    },
+    {
+      "resource": "pvc/nextcloud-data",
+      "uid": "a8243a0f-baab-4fb3-a1d4-441274a27efc"
+    },
+    {
+      "resource": "pvc/redis-data",
+      "uid": "169af8e3-4a76-4821-83b6-e6f19815f48f"
+    },
+    {
+      "resource": "pvc/postgres-data",
+      "uid": "f8d5b400-5256-4565-942e-633c7dd4546e"
+    },
+    {
+      "resource": "service/postgres",
+      "uid": "b3d7ce25-1b83-4f9c-b843-0c9af25b2707"
+    },
+    {
+      "resource": "deployment/nextcloud",
+      "uid": "8f625c5f-8836-4d9e-9177-59f022847ee5"
+    },
+    {
+      "resource": "deployment/postgres",
+      "uid": "13c28e8e-92c1-4f44-b441-ebaa73271a8c"
+    },
+    {
+      "resource": "service/redis",
+      "uid": "393015eb-5586-4e7e-8ae5-c9dda65f4869"
+    },
+    {
+      "resource": "cronjob/nextcloud-cron",
+      "uid": "4f38af51-147c-4c51-a25d-f70249c63d66"
+    },
+    {
+      "resource": "service/nextcloud",
+      "uid": "027a9663-acf8-4ad3-b26f-1d43d0e4c174"
+    },
+    {
+      "resource": "deployment/redis",
+      "uid": "66e0bc57-bfb3-469d-8e4f-3629df4f16f9"
+    }
+  ],
+  "all_created_controllers_stopped": true,
+  "three_PVCs_pending_without_volume": true,
+  "nextcloud_PV_refs": 0,
+  "proof_or_job_helper_pods": 0,
+  "prior_binding_intent_or_create": false,
+  "pending_preserved": true
+}

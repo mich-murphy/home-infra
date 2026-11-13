@@ -1,0 +1,51 @@
+{
+  "group": "miniflux",
+  "checks": [
+    "TLS Gateway route selected: miniflux.proof.invalid",
+    "Miniflux fetches synthetic RSS over explicitly allowed fixture flow",
+    "Miniflux entry update persists",
+    "TLS Gateway route selected: miniflux.proof.invalid",
+    "Miniflux feed survives PostgreSQL pod replacement",
+    "clean restore uses distinct fresh PVC UID and PV: postgres",
+    "clean PostgreSQL PVC contains no source public tables before restore",
+    "full PostgreSQL logical backup restores into clean PVC cluster",
+    "TLS Gateway route selected: miniflux.proof.invalid",
+    "Miniflux authenticated application entry/read-state/content SHA256 match after clean-PVC restore",
+    "TLS Gateway route selected: miniflux.proof.invalid",
+    "Miniflux feed/category CRUD completed"
+  ],
+  "limitations": [
+    "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate."
+  ],
+  "recovery_transients": [
+    {
+      "path": "/v1/feeds/2",
+      "statuses": [
+        401
+      ],
+      "recovered_within_seconds": 1
+    }
+  ],
+  "backup_sha256": "82bf0913c61e66498293348a3154424afc323f2bf898829da4b0c64518ed5627",
+  "restore_volumes": [
+    {
+      "app": "postgres",
+      "source_pvc": "postgres-data",
+      "source_uid": "04d80385-d11a-481e-b666-81162c795a0a",
+      "restored_pvc": "postgres-restore-a339e76c4720",
+      "restored_uid": "2344508f-981b-484b-b450-52cbac4b25c6",
+      "restored_pv": "pvc-2344508f-981b-484b-b450-52cbac4b25c6"
+    }
+  ],
+  "status": "functional-checks-passed-with-limitations",
+  "endpoint": "https://127.0.0.1:64120",
+  "node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+  "gateway": "CA-verified https://miniflux.proof.invalid via127.0.0.1:18443\u219230310",
+  "initial_failures": [
+    "Scheduler factor0 rejected; corrected to1 in manifest.",
+    "Initial immediate Gateway POST503; healthGET convergence added before non-idempotent mutation.",
+    "After PG replacement one stale-pool auth401 recovered within1second using same credentials; explicitly recorded."
+  ],
+  "cleanup": "All group pods scaled0 and waited deleted before next group; final all-proof labelled pods query found no resources.",
+  "initial_crashloop_restarts": 5
+}

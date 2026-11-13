@@ -1,0 +1,18 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: radarr
+  namespace: proof-radarr
+  labels:
+    app.kubernetes.io/name: radarr
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  parentRefs:
+  - name: proof
+    namespace: proof-gateway
+  hostnames:
+  - radarr.proof.invalid
+  rules:
+  - backendRefs:
+    - name: radarr
+      port: 7878

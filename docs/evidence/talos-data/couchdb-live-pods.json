@@ -1,0 +1,16 @@
+[
+  {
+    "name": "couchdb-5d5b7bf87-d9r59",
+    "uid": "db41ce26-4b2e-41b5-8bb4-638184f2fb6d",
+    "node": "talos-proof",
+    "containers": [
+      {
+        "name": "couchdb",
+        "imageID": "docker.io/library/couchdb@sha256:907eab5b7e55ab7cfd241d39b90b2a335ea40bef82acee5a37388c08bf201dda",
+        "restarts": 0,
+        "ready": true,
+        "lastState": {}
+      }
+    ]
+  }
+]

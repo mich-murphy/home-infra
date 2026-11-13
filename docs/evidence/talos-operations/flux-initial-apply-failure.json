@@ -1,0 +1,51 @@
+{
+  "admission": {
+    "time": "2026-11-11T15:06:37.088000+00:00",
+    "available_bytes": 1462370304,
+    "required_bytes": 939524096,
+    "controller_ceiling_mib": 384,
+    "reserve_mib": 512,
+    "admitted": true,
+    "memory_source": "kubelet node stats summary",
+    "commit": "5d9a9926106f76346950af20e8afc0ef346ac548"
+  },
+  "result": "apply failed; cleanup suspension also failed; Deployment deletion attempted in finally; subsequent guarded run completed and final absence independently verified",
+  "diagnosis": "subprocess output withheld; exact first-apply cause not retained; no flag/RBAC/network/resource changes made before successful retry",
+  "baseline_measurement": [
+    {
+      "time": "2026-11-11T15:06:39.091668+00:00",
+      "stage": "baseline",
+      "memory": {
+        "time": "2026-11-11T15:06:35Z",
+        "availableBytes": 1462370304,
+        "usageBytes": 2511626240,
+        "workingSetBytes": 1498054656,
+        "rssBytes": 963485696,
+        "pageFaults": 3340508,
+        "majorPageFaults": 3866,
+        "psi": {
+          "full": {
+            "total": 148830,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          },
+          "some": {
+            "total": 201572,
+            "avg10": 0,
+            "avg60": 0,
+            "avg300": 0
+          }
+        }
+      },
+      "conditions": {
+        "NetworkUnavailable": "False",
+        "MemoryPressure": "False",
+        "DiskPressure": "False",
+        "PIDPressure": "False",
+        "Ready": "True"
+      },
+      "controllers": []
+    }
+  ]
+}

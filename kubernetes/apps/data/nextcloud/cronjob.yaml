@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-cron
+spec:
+  schedule: '*/5 * * * *'
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 180
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/part-of: talos-proof
+            app.kubernetes.io/name: nextcloud
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            runAsUser: 33
+            runAsGroup: 33
+          containers:
+          - name: cron
+            image: nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2
+            command:
+            - php
+            - -f
+            - /var/www/html/cron.php
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            resources:
+              requests:
+                cpu: 25m
+                memory: 64Mi
+              limits:
+                cpu: 500m
+                memory: 192Mi
+            env:
+            - name: REDIS_HOST
+              value: redis
+            envFrom:
+            - secretRef:
+                name: proof-credentials
+            volumeMounts:
+            - name: html
+              mountPath: /var/www/html
+          volumes:
+          - name: html
+            persistentVolumeClaim:
+              claimName: nextcloud-data

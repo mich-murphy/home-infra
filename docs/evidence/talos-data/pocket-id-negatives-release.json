@@ -1,0 +1,63 @@
+{
+  "observed_at": 1794423428.587018,
+  "proof_pods": [],
+  "active_proof_controllers": [],
+  "lease_archived_mode": "0600",
+  "live_lease_removed": true,
+  "post_release_memory": {
+    "kubelet_available_mib": 1195,
+    "talos_available_mib": 1099,
+    "available_mib": 1099,
+    "measured_at": 1794423428.4132
+  },
+  "old_files_unchanged": [
+    {
+      "name": "couchdb-documents.json",
+      "sha256": "277793be71c5818fb01c8d82032a674f60f5602fc995d0aa2e21458c43daf7c8",
+      "unchanged": true
+    },
+    {
+      "name": "miniflux-postgres.dump",
+      "sha256": "82bf0913c61e66498293348a3154424afc323f2bf898829da4b0c64518ed5627",
+      "unchanged": true
+    },
+    {
+      "name": "wallabag-mariadb.sql",
+      "sha256": "4caadbe4724f6dd0c859ba888c6952e1a04a364d8bbae752ec52f791f6c2f1aa",
+      "unchanged": true
+    },
+    {
+      "name": "pocket-id-logical-export.zip",
+      "sha256": "963c674f9118fa0164258933d11d2089431b21f88438abae8e3d3d3e83331fbb",
+      "unchanged": true
+    },
+    {
+      "name": "pocket-virtual-authenticator.json",
+      "sha256": "752e5f404b1414239679c477e8d58bfc19e70a512745605412ae84dde91ae69c",
+      "unchanged": true
+    },
+    {
+      "name": "pocket-browser-result.json",
+      "sha256": "91eea5a94c91265d73ea74375ffb924452a97980718947046c716e9ddf2a126a",
+      "unchanged": true
+    },
+    {
+      "name": "pocket-id-result.json",
+      "sha256": "3b46f573b862f8ddcf7a15844444358ef39f73c374092e239c6c6ec5b35f3bfa",
+      "unchanged": true
+    },
+    {
+      "name": "credentials.json",
+      "sha256": "565a7018a9ed43b14d2fe72ab4296fddf788810ccef748203d515ae7dc92c23d",
+      "unchanged": true
+    }
+  ],
+  "same_existing_user_and_credential_all_three_runs": true,
+  "existing_credential_ids_sha256": "53b047b8cacba4e9d5be1cd5aca22b7465557c3768ef7052ffb7944bfbf18f45",
+  "new_archive": {
+    "file": "pocket-id-logical-export-2ac8e48c49ae47c9b14d351911f57905.zip",
+    "bytes": 245848,
+    "mode": "0o600",
+    "sha256": "d998837984d57b2573f45f67f615c467c10b83392bf7354f154460bf3ea6d4c4"
+  }
+}

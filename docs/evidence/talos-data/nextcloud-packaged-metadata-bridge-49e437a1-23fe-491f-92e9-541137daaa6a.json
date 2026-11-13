@@ -1,0 +1,27 @@
+{
+  "scope": "EXACT_PACKAGED_METADATA_ONLY_NOT_BLANKET_EQUIVALENCE",
+  "image": "nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+  "platform": {
+    "os": "linux",
+    "architecture": "amd64"
+  },
+  "manifest_digest": "sha256:3139d734aa878e9da89b610112734056c0df55279dd6a4578573c0803c293ef3",
+  "config_digest": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+  "overrides": {
+    "version.php": {
+      "git_sha256": "0c5e1bfe12870e43d2a9965063d97dd261a351e96d6d81f854b29857ceac5e25",
+      "git_bytes": 870,
+      "packaged_sha256": "91f47176c67a94f3e33e4fcee8f272cfc72210614b25906fa228cc27c72b07ea",
+      "packaged_bytes": 446
+    }
+  },
+  "evidence_sha256": {
+    "docs/evidence/talos-data/nextcloud-public-image-parity-412faf37-f124-44b2-b52a-418ad71f9cd0.json": "f87968488ba9e65f8883ac866846a5fd145fca8b5ab2c73153e345d87f51516d",
+    "docs/evidence/talos-data/nextcloud-cron-source-review-97384394-9c9c-47d4-8d17-50e63b9b62fd.json": "d9449bb2556ccde76b1c49a6d620114a5f3dd79e647cc91b0c7f15b16a4df101",
+    "docs/evidence/talos-data/nextcloud-cron-docker-config-source.json": "34cfd5be9029d13f925a30436dfda1547fe762334c4ab04defcab8335b7a08fe"
+  },
+  "parent_review_identity": {
+    "path": "docs/evidence/talos-acceptance/nextcloud-public-image-review-a8a4347c61c34638a3b4946fb331c769.json",
+    "sha256": "675b4458f0a166c605050e8af0d3eb120061e3f6f3936844a02d107ff4e26384"
+  }
+}

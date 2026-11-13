@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collabora
+  labels: &id001
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: collabora
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: collabora
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: collabora
+        image: collabora/code:26.04.6.1.1@sha256:95f29f1c0a1778999125f53f058d968fe0afb37c95e32ebfb9f3444140faebd2
+        ports:
+        - containerPort: 9980
+        env:
+        - name: aliasgroup1
+          value: https://nextcloud.proof.invalid:443
+        - name: aliasgroup2
+          value: http://wopi-fixture.proof-nextcloud.svc.cluster.local:8082
+        - name: aliasgroup3
+          value: http://nextcloud:80
+        - name: dictionaries
+          value: en_US
+        - name: extra_params
+          value: --o:ssl.enable=false --o:ssl.termination=true --o:mount_jail_tree=false
+            --o:num_prespawn_children=1
+        envFrom:
+        - secretRef:
+            name: proof-credentials
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - AUDIT_WRITE
+            - CHOWN
+            - DAC_OVERRIDE
+            - FOWNER
+            - FSETID
+            - KILL
+            - MKNOD
+            - NET_BIND_SERVICE
+            - NET_RAW
+            - SETFCAP
+            - SETGID
+            - SETPCAP
+            - SETUID
+            - SYS_CHROOT
+        resources:
+          requests:
+            cpu: 25m
+            memory: 384Mi
+          limits:
+            cpu: 1000m
+            memory: 768Mi
+        startupProbe:
+          httpGet: &id002
+            path: /hosting/discovery
+            port: 9980
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 90
+        readinessProbe:
+          httpGet: *id002
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        livenessProbe:
+          httpGet: *id002
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collabora
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: collabora
+spec:
+  selector:
+    app.kubernetes.io/name: collabora
+  ports:
+  - name: http
+    port: 9980
+    targetPort: 9980

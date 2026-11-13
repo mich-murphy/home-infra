@@ -11,6 +11,25 @@ hand and recorded here so it can be re-applied after a reinstall.
 - `en_AU.UTF-8` is generated so forwarded client locales do not trip Perl
   warnings in the PVE tooling.
 
+## Kernel boot policy — approved maintenance2026-11-13
+
+The host currently runs **7.0.14-24-pve** with **`kho=off`** in
+`/etc/kernel/cmdline`, propagated through `proxmox-boot-tool refresh` to both managed
+systemd-boot ESPs. The user approved the newest installed kernel plus the parameter;
+no kernel pin or permanent loader-default change was made. This disables KHO's
+movable-only scratch allocation: postboot KHO output was absent and CmaTotal/CmaFree
+were both0. It does not prove KHO was the sole cause of the earlier swap event.
+
+One explicitly approved host reboot restarted production guests. Docker was held
+until NAS health and five exact NFS sources were verified; original Docker units,
+VM102onboot1 and backup-storage settings were restored.36original containers
+returned running/31healthy/5without healthchecks. The original VM configs, backup
+job/exclusions, ARC/swappiness/zram settings and proof swap baseline were preserved.
+VM111 andVM120 remain off. See [maintenance outcome and limits](talos-proof-host-memory-remediation.md)
+and [sanitized evidence](evidence/talos-acceptance/kho-maintenance-completed-f7a723ea8a0d4640a2e586022501ce5a.json).
+The short post-recovery observation is not a capacity/soak guarantee or permission
+to start the proof VM. No future reboot or production change is pre-authorized.
+
 ## Thermal and fan policy
 
 Two oneshot units in `/etc/systemd/system`, both `WantedBy=multi-user.target`:
@@ -55,7 +74,7 @@ Daily vzdump to TrueNAS.
 | Item | Value |
 | --- | --- |
 | PVE storage | `truenas-backups`, NFSv4.2, the TrueNAS `slow/backups/proxmox` export, content `backup` |
-| Job | `backup-truenas-daily`, 02:30, all guests except Ubuntu templates 9001 and 9003, snapshot mode, zstd, `repeat-missed` |
+| Job | `backup-truenas-daily`, 02:30, all guests except Ubuntu templates 9001 and 9003 and isolated proof VM120, snapshot mode, zstd, `repeat-missed` |
 | Retention | `keep-daily=7,keep-weekly=4,keep-monthly=3` on both job and storage |
 | TrueNAS side | dataset, export and snapshot task recorded in [truenas-storage.md](truenas-storage.md) |
 

@@ -1,0 +1,59 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: protocol-fixture-only
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: download-protocols
+  policyTypes:
+  - Ingress
+  - Egress
+  egress: []
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-qbittorrent
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: qbittorrent
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 6881
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-protocol-fixture-only
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: qbittorrent
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-qbittorrent
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: download-protocols
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 6881
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress

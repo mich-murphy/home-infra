@@ -1,0 +1,56 @@
+{
+  "group": "wallabag",
+  "checks": [
+    "TLS Gateway route selected: wallabag.proof.invalid",
+    "Wallabag OAuth password login and live fixture URL capture/extraction via trusted TLS Gateway",
+    "Wallabag HTTP update/archive/star operations persist",
+    "Wallabag export contains the HTTP-captured article and exact content SHA256",
+    "TLS Gateway route selected: wallabag.proof.invalid",
+    "Wallabag HTTP article survives MariaDB pod replacement",
+    "clean restore uses distinct fresh PVC UID and PV: mariadb",
+    "TLS Gateway route selected: wallabag.proof.invalid",
+    "Wallabag existing user OAuth relogin and captured article/archive/content SHA256 survive clean MariaDB PVC restore",
+    "Wallabag HTTP delete confirmed by404 on restored instance",
+    "TLS Gateway route selected: wallabag.proof.invalid",
+    "Wallabag source article cleaned up through authenticated HTTP API"
+  ],
+  "limitations": [
+    "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate.",
+    "Only proof namespace-local fixture FQDN is exempted from Graby private-IP rejection by SHA-pinned source adapter; Cilium DNS+exact fixture8080 only, no Internet or production egress.",
+    "Synchronous capture proved; Redis queue/import-worker job integration not claimed.",
+    "PHP single on-demand worker is bounded synthetic workload, not production throughput."
+  ],
+  "article_content_sha256": "776281cc58d4ac7357609e41bdad7c083337751f9b8e0ae30c369aabf78df105",
+  "recovery_transients": [
+    {
+      "path": "/api/entries/4.json",
+      "statuses": [
+        500
+      ],
+      "recovered_within_seconds": 1
+    }
+  ],
+  "backup_sha256": "4caadbe4724f6dd0c859ba888c6952e1a04a364d8bbae752ec52f791f6c2f1aa",
+  "restore_volumes": [
+    {
+      "app": "mariadb",
+      "source_pvc": "mariadb-data",
+      "source_uid": "6e8d81ac-4551-46be-9640-431ddbbd100c",
+      "restored_pvc": "mariadb-restore-0c5af14fdf29",
+      "restored_uid": "ad3caf6d-1fec-409e-9651-30900678e6f3",
+      "restored_pv": "pvc-ad3caf6d-1fec-409e-9651-30900678e6f3"
+    }
+  ],
+  "status": "functional-checks-passed-with-limitations",
+  "initial_failures": [
+    "Symfony dev CLI missing DebugBundle; explicit prod env fixed.",
+    "Generic FOS client constructor lacks required User; owner-aware Doctrine FQN bootstrap fixed.",
+    "Fixture8081 rejected by Graby allowed ports; moved to8080.",
+    "Graby private-IP SSRF rejection; explicit proof-only exact fixture FQDN adapter added, no subnet/Internet allowance."
+  ],
+  "endpoint": "https://127.0.0.1:64120",
+  "node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+  "gateway": "CA-verified https://wallabag.proof.invalid via18443\u219230310",
+  "cleanup": "All four deployments scaled0; waited all namespace pods deleted; global talos-proof-labelled pods query returned No resources",
+  "resource_qualification": "Latest container cgroup peaks/events recorded; earlier replaced containers not sampled. Wallabag/fixture peaks near limits; no production-capacity/headroom acceptance."
+}

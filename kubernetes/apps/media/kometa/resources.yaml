@@ -1,0 +1,287 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: proof-kometa
+  labels:
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+    pod-security.kubernetes.io/enforce: baseline
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: proof-kometa
+  labels:
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dns-and-validation
+  namespace: proof-kometa
+  labels:
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress: []
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-plex
+  namespace: proof-kometa
+  labels:
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-plex
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: plex
+    ports:
+    - protocol: TCP
+      port: 33240
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: config
+  namespace: proof-kometa
+  labels:
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: proof-local
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kometa
+  namespace: proof-kometa
+  labels: &id001
+    app.kubernetes.io/name: kometa
+    app.kubernetes.io/part-of: talos-proof
+spec:
+  schedule: 0 4 * * *
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 180
+      template:
+        metadata:
+          labels: *id001
+        spec:
+          automountServiceAccountToken: false
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          containers:
+          - name: kometa
+            image: kometateam/kometa:nightly@sha256:c89cd9404aaf13ec5174ee2ddeafcf02887ea53593c1bfc4ef9e9c04a75ddbfe
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: TZ
+              value: Etc/UTC
+            - name: HTTPS_PROXY
+              value: http://127.0.0.1:18081
+            - name: HTTP_PROXY
+              value: http://127.0.0.1:18081
+            - name: NO_PROXY
+              value: localhost,127.0.0.1,.svc
+            - name: REQUESTS_CA_BUNDLE
+              value: /proof-contract-tls/ca.crt
+            - name: SSL_CERT_FILE
+              value: /proof-contract-tls/ca.crt
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                cpu: 1000m
+                memory: 384Mi
+            volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: false
+            - name: collection-fixture
+              mountPath: /proof-fixtures
+              readOnly: true
+            - name: metadata-contract-tls
+              mountPath: /proof-contract-tls
+              readOnly: true
+            args:
+            - --run
+            - --read-only-config
+            - --config
+            - /config/config.yml
+          volumes:
+          - name: config
+            persistentVolumeClaim:
+              claimName: config
+          - name: seed
+            secret:
+              secretName: bootstrap
+              items:
+              - key: seed
+                path: seed
+          - name: collection-fixture
+            configMap:
+              name: nonempty-collection-fixture
+          - name: metadata-contract-code
+            configMap:
+              name: metadata-contract-code
+          - name: metadata-contract-key
+            secret:
+              secretName: bootstrap
+              items:
+              - key: api-key
+                path: api-key
+          - name: metadata-contract-tls
+            secret:
+              secretName: metadata-contract-tls
+              defaultMode: 292
+          terminationGracePeriodSeconds: 30
+          initContainers:
+          - name: metadata-contract
+            restartPolicy: Always
+            image: ghcr.io/linuxserver/tautulli:v2.18.2-ls251@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5
+            command:
+            - python3
+            - -B
+            - /proof-contract/metadata-proxy.py
+            args:
+            - --fixtures
+            - /proof-contract/tmdb-contract.json
+            - --key-file
+            - /proof-contract-key/api-key
+            - --certificate
+            - /proof-contract-tls/tls.crt
+            - --private-key
+            - /proof-contract-tls/tls.key
+            securityContext:
+              runAsUser: 1000
+              runAsGroup: 1000
+              runAsNonRoot: true
+              readOnlyRootFilesystem: true
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+            resources:
+              requests:
+                cpu: 10m
+                memory: 24Mi
+              limits:
+                cpu: 200m
+                memory: 128Mi
+            volumeMounts:
+            - name: metadata-contract-code
+              mountPath: /proof-contract
+              readOnly: true
+            - name: metadata-contract-key
+              mountPath: /proof-contract-key
+              readOnly: true
+            - name: metadata-contract-tls
+              mountPath: /proof-contract-tls
+              readOnly: true
+            startupProbe:
+              exec:
+                command:
+                - python3
+                - -c
+                - import urllib.request; urllib.request.urlopen("http://127.0.0.1:18081/proof-contract-evidence",timeout=2).read()
+              periodSeconds: 2
+              failureThreshold: 15
+          - name: seed-fresh-config
+            image: kometateam/kometa:nightly@sha256:c89cd9404aaf13ec5174ee2ddeafcf02887ea53593c1bfc4ef9e9c04a75ddbfe
+            command:
+            - /bin/sh
+            - -ec
+            - mkdir -p /config/.; if [ ! -e /config/config.yml ]; then cp /seed/seed
+              /config/config.yml; chmod 600 /config/config.yml; chown 1000:1000 /config/config.yml;
+              fi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+                add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - FOWNER
+              runAsUser: 0
+              runAsGroup: 0
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                cpu: 200m
+                memory: 128Mi
+            volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: seed
+              mountPath: /seed
+              readOnly: true
+          restartPolicy: Never
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nonempty-collection-fixture
+  namespace: proof-kometa
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: kometa
+data:
+  collections.yml: "collections:\n  Proof Synthetic Collection:\n    plex_search:\n\
+    \      all:\n        title: Proof Fixture\n    minimum_items: 1\n    sync_mode:\
+    \ sync\n    collection_mode: hide\n    build_collection: true\n"

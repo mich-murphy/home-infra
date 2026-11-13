@@ -1,0 +1,62 @@
+{
+  "status": "partial-workflow-failed-edit-save-not-proved",
+  "utc": "2026-11-11T15:57:06.783834+00:00",
+  "scope": "Only CODE + fixture under renewed retry lease; no Nextcloud/PG/Redis/ML activation",
+  "authorization": {
+    "new_retry_receipt": true,
+    "max_attempts": 2,
+    "consumed_attempts": 2,
+    "controller_limits_mib": {
+      "collabora": 768,
+      "wopi-fixture": 64
+    },
+    "reserve_mib": 192,
+    "required_admission_mib": 1024
+  },
+  "passed_component_edges": [
+    "Verified public TLS discovery and real CODE WSS/document rendering",
+    "CODE CheckFileInfo HTTP200",
+    "CODE GetFile HTTP200,30 fixture bytes",
+    "CODE LOCK HTTP200",
+    "Mac API tunnel negative bad-token HTTP401",
+    "Mac API tunnel wrong-lock PutFile HTTP409; file SHA unchanged"
+  ],
+  "not_proved": [
+    "Editor marker input/PutFile save",
+    "Close/reopen of saved edit",
+    "Explicit non-allowlisted host denial",
+    "Full Nextcloud Office integration",
+    "Safe resource headroom"
+  ],
+  "failures": [
+    "Attempt1 loaded readonly with first-use version-tour overlay; diagnostic extra Python could not read callback state; fixture kernel evidence unavailable. OOM cause not established.",
+    "Attempt2 successfully closed known welcome-close control and opened Viewing menu; locator requested Editing but actual UI label is Editing Mode. No typing or Save occurred."
+  ],
+  "offline_followup": "Exact observed Editing Mode selector corrected AFTER both attempts; not live rerun.",
+  "resource": {
+    "code_peak_bytes_both_attempts": 804855808,
+    "code_limit_bytes": 805306368,
+    "code_peak_mib": 767.5703125,
+    "remaining_at_peak_bytes": 450560,
+    "code_max_events": 0,
+    "code_oom": 0,
+    "code_oom_kill": 0,
+    "fixture_attempt2_peak_bytes": 53903360,
+    "fixture_attempt2_max_events": 0,
+    "fixture_attempt2_oom": 0,
+    "qualification": "Peak within0.43MiB of CODE limit while only read-only loading; not editing/capacity acceptance."
+  },
+  "cleanup": [
+    {
+      "selected_replicas": 0,
+      "pod_deletion_confirmed": true,
+      "global_labelled_pod_count": 0
+    },
+    {
+      "selected_replicas": 0,
+      "pod_deletion_confirmed": true,
+      "global_labelled_pod_count": 0
+    }
+  ],
+  "release": "Both attempts consumed; both controllers0 and global labelled pod count0; live window released. No further activation."
+}

@@ -1,0 +1,55 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: protocol-fixture-only
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: download-protocols
+  policyTypes:
+  - Ingress
+  - Egress
+  egress: []
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-sabnzbd
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: sabnzbd
+    ports:
+    - protocol: TCP
+      port: 8119
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-protocol-fixture-only
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: sabnzbd
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: proof-sabnzbd
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: download-protocols
+    ports:
+    - protocol: TCP
+      port: 8119
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress

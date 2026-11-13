@@ -1,0 +1,393 @@
+{
+  "captured_utc": "2026-11-11T12:04:21.819491+00:00",
+  "method": "allocated KiB; du -x; hard 8-second per-path timeout; max four scans; timeout/error means UNKNOWN not zero",
+  "scans": [
+    {
+      "container": "kometa",
+      "source": "/var/lib/docker/volumes/kometa-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec kometa timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "932108\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "lidarr",
+      "source": "/var/lib/docker/volumes/lidarr-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec lidarr timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "2997300\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "lidarr",
+      "source": "/mnt/data",
+      "target": "/data",
+      "command": "sudo -n docker exec lidarr timeout 8 du -skx /data",
+      "exit_code": 0,
+      "stdout": "4319922550\t/data",
+      "stderr": ""
+    },
+    {
+      "container": "lidarr",
+      "source": "/mnt/music",
+      "target": "/music",
+      "command": "sudo -n docker exec lidarr timeout 8 du -skx /music",
+      "exit_code": 0,
+      "stdout": "305305352\t/music",
+      "stderr": ""
+    },
+    {
+      "container": "nextcloud-cron",
+      "source": "/var/lib/docker/volumes/nextcloud-html/_data",
+      "target": "/var/www/html",
+      "command": "sudo -n docker exec nextcloud-cron timeout 8 du -skx /var/www/html",
+      "exit_code": 0,
+      "stdout": "948676\t/var/www/html",
+      "stderr": ""
+    },
+    {
+      "container": "nextcloud-cron",
+      "source": "/mnt/nextcloud/nextcloud-data",
+      "target": "/var/www/html/data",
+      "command": "sudo -n docker exec nextcloud-cron timeout 8 du -skx /var/www/html/data",
+      "exit_code": 0,
+      "stdout": "1548115\t/var/www/html/data",
+      "stderr": ""
+    },
+    {
+      "container": "radarr",
+      "source": "/var/lib/docker/volumes/radarr-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec radarr timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "536356\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "immich",
+      "source": "/var/lib/docker/volumes/f5b26395d8a0b6f3b4990b4265bc25719a38ce0a9ac47933e6069118641cd954/_data",
+      "target": "/data",
+      "command": "sudo -n docker exec immich timeout 8 du -skx /data",
+      "exit_code": 0,
+      "stdout": "4\t/data",
+      "stderr": ""
+    },
+    {
+      "container": "immich",
+      "source": "/mnt/photos",
+      "target": "/usr/src/app/upload",
+      "command": "sudo -n docker exec immich timeout 8 du -skx /usr/src/app/upload",
+      "exit_code": 124,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "container": "immich-ml",
+      "source": "/var/lib/docker/volumes/immich-ml-cache/_data",
+      "target": "/cache",
+      "command": "sudo -n docker exec immich-ml timeout 8 du -skx /cache",
+      "exit_code": 0,
+      "stdout": "1748992\t/cache",
+      "stderr": ""
+    },
+    {
+      "container": "tautulli",
+      "source": "/var/lib/docker/volumes/tautulli-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec tautulli timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "434712\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "sabnzbd",
+      "source": "/var/lib/docker/volumes/sabnzbd-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec sabnzbd timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "266892\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "sabnzbd",
+      "source": "/mnt/data/usenet",
+      "target": "/data/usenet",
+      "command": "sudo -n docker exec sabnzbd timeout 8 du -skx /data/usenet",
+      "exit_code": 0,
+      "stdout": "60699997\t/data/usenet",
+      "stderr": ""
+    },
+    {
+      "container": "nextcloud-redis",
+      "source": "/var/lib/docker/volumes/nextcloud-cache/_data",
+      "target": "/data",
+      "command": "sudo -n docker exec nextcloud-redis timeout 8 du -skx /data",
+      "exit_code": 0,
+      "stdout": "11004\t/data",
+      "stderr": ""
+    },
+    {
+      "container": "sonarr",
+      "source": "/var/lib/docker/volumes/sonarr-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec sonarr timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "366012\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "nextcloud-postgres",
+      "source": "/var/lib/docker/volumes/nextcloud-db/_data",
+      "target": "/var/lib/postgresql",
+      "command": "sudo -n docker exec nextcloud-postgres timeout 8 du -skx /var/lib/postgresql",
+      "exit_code": 0,
+      "stdout": "99264\t/var/lib/postgresql",
+      "stderr": ""
+    },
+    {
+      "container": "miniflux-db",
+      "source": "/var/lib/docker/volumes/miniflux-db/_data",
+      "target": "/var/lib/postgresql",
+      "command": "sudo -n docker exec miniflux-db timeout 8 du -skx /var/lib/postgresql",
+      "exit_code": 0,
+      "stdout": "100012\t/var/lib/postgresql",
+      "stderr": ""
+    },
+    {
+      "container": "couchdb",
+      "source": "/var/lib/docker/volumes/couchdb-data/_data",
+      "target": "/opt/couchdb/data",
+      "command": "sudo -n docker exec couchdb timeout 8 du -skx /opt/couchdb/data",
+      "exit_code": 0,
+      "stdout": "729724\t/opt/couchdb/data",
+      "stderr": ""
+    },
+    {
+      "container": "wallabag",
+      "source": "/var/lib/docker/volumes/wallabag-data/_data",
+      "target": "/var/www/wallabag/web/assets/images",
+      "command": "sudo -n docker exec wallabag timeout 8 du -skx /var/www/wallabag/web/assets/images",
+      "exit_code": 0,
+      "stdout": "4\t/var/www/wallabag/web/assets/images",
+      "stderr": ""
+    },
+    {
+      "container": "wallabag-mariadb",
+      "source": "/var/lib/docker/volumes/wallabag-db/_data",
+      "target": "/var/lib/mysql",
+      "command": "sudo -n docker exec wallabag-mariadb timeout 8 du -skx /var/lib/mysql",
+      "exit_code": 0,
+      "stdout": "179508\t/var/lib/mysql",
+      "stderr": ""
+    },
+    {
+      "container": "seerr",
+      "source": "/var/lib/docker/volumes/seerr-data/_data",
+      "target": "/app/config",
+      "command": "sudo -n docker exec seerr timeout 8 du -skx /app/config",
+      "exit_code": 0,
+      "stdout": "5736\t/app/config",
+      "stderr": ""
+    },
+    {
+      "container": "jellyfin",
+      "source": "/var/lib/docker/volumes/jellyfin-cache/_data",
+      "target": "/cache",
+      "command": "sudo -n docker exec jellyfin timeout 8 du -skx /cache",
+      "exit_code": 0,
+      "stdout": "351904\t/cache",
+      "stderr": ""
+    },
+    {
+      "container": "jellyfin",
+      "source": "/var/lib/docker/volumes/jellyfin-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec jellyfin timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "5191992\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "jellyfin",
+      "source": "/mnt/data/media",
+      "target": "/data/media",
+      "command": "sudo -n docker exec jellyfin timeout 8 du -skx /data/media",
+      "exit_code": 0,
+      "stdout": "3813570570\t/data/media",
+      "stderr": ""
+    },
+    {
+      "container": "jellyplex-watched",
+      "source": "/var/lib/docker/volumes/jellyplex-watched-data/_data",
+      "target": "/data",
+      "command": "sudo -n docker exec jellyplex-watched timeout 8 du -skx /data",
+      "exit_code": 0,
+      "stdout": "372\t/data",
+      "stderr": ""
+    },
+    {
+      "container": "pocket-id",
+      "source": "/var/lib/docker/volumes/pocketid-data/_data",
+      "target": "/app/data",
+      "command": "sudo -n docker exec pocket-id timeout 8 du -skx /app/data",
+      "exit_code": 0,
+      "stdout": "53736\t/app/data",
+      "stderr": ""
+    },
+    {
+      "container": "traefik",
+      "source": "/var/lib/docker/volumes/traefik-data/_data",
+      "target": "/letsencrypt",
+      "command": "sudo -n docker exec traefik timeout 8 du -skx /letsencrypt",
+      "exit_code": 0,
+      "stdout": "20\t/letsencrypt",
+      "stderr": ""
+    },
+    {
+      "container": "plex",
+      "source": "/var/lib/docker/volumes/plex-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec plex timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "7469852\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "plex",
+      "source": "/var/lib/docker/volumes/plex-transcode/_data",
+      "target": "/transcode",
+      "command": "sudo -n docker exec plex timeout 8 du -skx /transcode",
+      "exit_code": 0,
+      "stdout": "20\t/transcode",
+      "stderr": ""
+    },
+    {
+      "container": "beszel",
+      "source": "/var/lib/docker/volumes/beszel-data/_data",
+      "target": "/beszel_data",
+      "command": "sudo -n docker exec beszel timeout 8 du -skx /beszel_data",
+      "exit_code": 127,
+      "stdout": "OCI runtime exec failed: exec failed: unable to start container process: exec: \"timeout\": executable file not found in $PATH",
+      "stderr": ""
+    },
+    {
+      "container": "qbittorrent",
+      "source": "/var/lib/docker/volumes/qbittorrent-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec qbittorrent timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "48752\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "qbittorrent",
+      "source": "/mnt/data/torrents",
+      "target": "/data/torrents",
+      "command": "sudo -n docker exec qbittorrent timeout 8 du -skx /data/torrents",
+      "exit_code": 0,
+      "stdout": "904458383\t/data/torrents",
+      "stderr": ""
+    },
+    {
+      "container": "portainer",
+      "source": "/var/lib/docker/volumes/portainer-data/_data",
+      "target": "/data",
+      "command": "sudo -n docker exec portainer timeout 8 du -skx /data",
+      "exit_code": 127,
+      "stdout": "OCI runtime exec failed: exec failed: unable to start container process: exec: \"timeout\": executable file not found in $PATH",
+      "stderr": ""
+    },
+    {
+      "container": "prowlarr",
+      "source": "/var/lib/docker/volumes/prowlarr-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec prowlarr timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "145484\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "audiobookshelf",
+      "source": "/var/lib/docker/volumes/audiobookshelf-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec audiobookshelf timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "638648\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "audiobookshelf",
+      "source": "/var/lib/docker/volumes/audiobookshelf-metadata/_data",
+      "target": "/metadata",
+      "command": "sudo -n docker exec audiobookshelf timeout 8 du -skx /metadata",
+      "exit_code": 0,
+      "stdout": "652316\t/metadata",
+      "stderr": ""
+    },
+    {
+      "container": "audiobookshelf",
+      "source": "/mnt/audiobooks",
+      "target": "/data/audiobooks",
+      "command": "sudo -n docker exec audiobookshelf timeout 8 du -skx /data/audiobooks",
+      "exit_code": 0,
+      "stdout": "30527877\t/data/audiobooks",
+      "stderr": ""
+    },
+    {
+      "container": "recyclarr",
+      "source": "/var/lib/docker/volumes/recyclarr-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec recyclarr timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "82744\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "recyclarr",
+      "source": "/srv/portainer/portainer-compose-unpacker/stacks/recyclarr/home-infra/docker/recyclarr/custom-formats",
+      "target": "/config/custom-formats",
+      "command": "sudo -n docker exec recyclarr timeout 8 du -skx /config/custom-formats",
+      "exit_code": 0,
+      "stdout": "4\t/config/custom-formats",
+      "stderr": ""
+    },
+    {
+      "container": "pinchflat",
+      "source": "/var/lib/docker/volumes/pinchflat-data/_data",
+      "target": "/config",
+      "command": "sudo -n docker exec pinchflat timeout 8 du -skx /config",
+      "exit_code": 0,
+      "stdout": "376048\t/config",
+      "stderr": ""
+    },
+    {
+      "container": "pinchflat",
+      "source": "/mnt/data/media/youtube",
+      "target": "/downloads",
+      "command": "sudo -n docker exec pinchflat timeout 8 du -skx /downloads",
+      "exit_code": 0,
+      "stdout": "233267409\t/downloads",
+      "stderr": ""
+    },
+    {
+      "container": "qbitwebui",
+      "source": "/var/lib/docker/volumes/qbitwebui-data/_data",
+      "target": "/data",
+      "command": "sudo -n docker exec qbitwebui timeout 8 du -skx /data",
+      "exit_code": 0,
+      "stdout": "8804\t/data",
+      "stderr": ""
+    },
+    {
+      "container": "immich-postgres",
+      "source": "/var/lib/immich-postgres",
+      "target": "/var/lib/postgresql/data",
+      "command": "sudo -n docker exec immich-postgres timeout 8 du -skx /var/lib/postgresql/data",
+      "exit_code": 0,
+      "stdout": "486676\t/var/lib/postgresql/data",
+      "stderr": ""
+    }
+  ]
+}

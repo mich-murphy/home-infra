@@ -1,0 +1,556 @@
+# Talos isolated proof delivery — coordinator brief
+
+## Current disposition — containment repair verified locally; capacity approval required
+
+User directs continued delivery with `openai/gpt-6.1-sol` workers at medium effort,
+resolving ordinary failures internally and escalating only genuine authority or
+information blockers. Reconciled clean HEAD`0862d3b518f1279b76e02989d46dd42b0d1eafe1`,
+PR2005/open, base`a2c549e7`; all seven source-specific CI runs passed. Actual PR
+checkout`b3c6771482e37a6474cadae490d2ded6e9f4cd07` has that exact base/head pair.
+Prior capacity worker completed, classifier stopped at turn limit with explicit
+file handoff/release, CI worker completed; parent accepted their source-tied results.
+No prior live grant survives. General continuation does not silently renew the
+consumed start or approve a new RAM profile, guard deployment or app activation.
+
+Parent owns brief, integration, source acceptance and shared/full gates.
+- Worker`3b7a66bb-d765-49e` explicitly owns only the existing capacity document:
+  source-tied comparison of3584/4096 candidates and an implementable bounded approval
+  proposal. No profile/lifecycle code changes or runtime access.
+- Read-only triage worker`8d323537-4401-488` completed; resume expired. It identified
+  real headless deadline/descendant gaps and separated prepared-but-unrun app work.
+- Explicitly reassigned design to`f78fd014-7810-465`, then accepted only a narrower
+  Worker containment repair: `scripts/talos-proof-media-headless-integration.py`,
+  its existing integration test file and one NEW evidence leaf. No historical
+  evidence edits, decoder/guard/profile changes or activation wiring.
+All use bounded turns and actual status/steering tools; no peer-messaging claim.
+Parent/design review rejected a cosmetic shared deadline: blocking guards/headers,
+reader-thread teardown and source.close require a separate containment design.
+Whole-operation deadline stays OPEN. Parent found the concrete wait/reap-before-
+final-killpg hazard; accepted exclusive unreaped-leader lifetime plus real owned
+child/grandchild tests, with no escaped-group or remote-cancellation claim.
+Capacity worker completed a source-tied3584 candidate proposal; parent reviewed
+actual RAM rejection, creation, install and baseline-preserving enrollment code.
+No profile extension or live approval has occurred. All three workers finished and
+released their scopes; parent owns integration. VM120/111 remain left OFF, production
+unchanged, safety budgets/STOPs preserved.
+
+Accepted narrow implementation`c38471bcac9acfb56194d1431487f4349f61017f`:
+[Worker containment evidence](evidence/talos-media/headless-worker-containment-57407af2-2af0-4e2a-9555-e60688b9938d.md).
+Parent inspected intermediate code and required independent bootstrap cleanup and
+no new waitpid after ownership loss. Parent then caught an unconditional Darwin
+kqueue in a mandatory CI regression; corrected to Darwin NOTE_EXIT / Linux exact-PID
+WNOWAIT, unsupported platforms fail rather than skip. Parent re-ran28 integration
+tests and checked final hashes plus unchanged decoder/historical evidence. The
+nominal two-second cleanup budget is not a hard wall-time guarantee. Exclusive
+waiter/no auto-reaping assumptions and same-PGID-only scope remain explicit;
+local cleanup proves neither remote cancellation nor a whole-operation deadline.
+Both public CLIs and run() retain their unconditional activation HOLD.
+
+Full locked offline gate atc38471bc ran once, exit0/76.42s: **556 Python tests in43
+suites,443 resources/9 schema summaries,17 locked CRDs**, real PHP/OTP and JS checks,
+no unittest/schema skips or failures. Only parent documentation was uncommitted.
+Private`diagnostics/worker-containment-static-gate-5655acbe-2831-47aa-be93-5ce49a56a030`,
+output SHA`4af25b9fb681a7203a9dcd32bb0d670e0dd453557c4aeff12ca173ba5ab12a28`.
+Lifecycle READY/STOP output was mocked, not runtime. Entire hook remained unavailable.
+Actual Linux descendant evidence must come from the source-tied CI run, not Darwin
+branch doubles; parent verifies checkout/merge and final conclusions after push.
+
+**Next genuine escalation:** approve the [3584MiB measurement proposal](talos-proof-guest-capacity.md#minimum-new-human-approval-and-bounded-execution-contract).
+It selects+512 rather than+1024; analogous floor5504 is not fresh admission.
+Only after explicit approval: reviewed3584-only profile/enrollment/deployment,
+fresh backup/production/identity/memory gates, one guarded platform-only start,
+read-only complete verification and300s observation, then OFF. No apps, threshold
+reduction, pressure/reclaim, production tuning, reboot, or automatic retry. Parent
+added explicit backup/VM111/canonical111 checks and rejection of blanket lifetime-zero
+restart predicates. Rollback is proof-only while OFF and separately explicit.
+
+Remaining requirements are not an invitation to build redundant scaffolding:
+Nextcloud/WOPI/Pinchflat/Immich and most recovery preparations need real approved
+application windows/capacity; headless needs a separately reviewed deadline/topology
+and native source/flush/settings/pagination/profile contract; Arr integration still
+needs exact owner/profile wiring. Etcd destructive recovery, security alternatives,
+representative concurrency/parity and migration remain separate decisions/grants.
+
+## Prior accepted slice — offline capacity analysis and Flux classifier
+
+User said continue after the bounded recovery report. Scope: existing-capture guest
+capacity analysis and a tested resource-specific offline verifier. VM120 stays OFF;
+no new start, resize, runtime/API/SSH, production mutation, GC/cache pressure,
+application activation or smaller budget/guard threshold. Last832MiB admission
+failure and all earlier failures remain retained. A capacity proposal is not authority.
+
+Reconciled `0c0b8d97947cf6947f693678eb6fcf3f9cbfd042`, clean worktree before this
+parent brief update; same PR2005/main. All six CI runs for that head passed. Prior executor
+0915 and reviewer a1 verified completed/released. Parent owns brief/root docs,
+integration, source review and acceptance; no old private verifier is reused.
+- New worker`4eb2b57b-d887-4cf`: owns only new`docs/talos-proof-guest-capacity.md`,
+  offline named-capture analysis/public research; no commit or runtime authority.
+- Worker`64e6218d-200d-4b7`: parent accepted the read-only design, then assigned
+  only new`scripts/talos-proof-flux-state.py`, its focused test file and one new
+  evidence leaf. Pure saved-JSON classification; no collector or runtime authority.
+Both use requested`openai/gpt-6.1-sol`/medium thinking, bounded assignments.
+Capacity worker completed its correction/review slice. Parent independently checked
+10 original capture hashes and the669.2734375MiB/162.7265625MiB arithmetic. The
+initial draft repeated the rejected source-suspension predicate; parent caught it,
+worker acknowledged and corrected it against the controlling parent review before
+acceptance. Classifier worker reached its turn limit after19 tests and a historical
+INCOMPLETE replay; resumed narrowly to fix parent-found registry-port image parsing,
+strengthen malformed-input regressions and finish the evidence handoff.
+Subagent progress/status/steering available; peer communication remains unavailable.
+The final classifier resume also reached its turn limit after producing the complete
+21-test/evidence handoff and explicit release. No worker remains running or holds
+runtime authority. Parent accepted actual files, not the aborted completion label.
+
+Accepted [capacity analysis](talos-proof-guest-capacity.md): physical2823.265625 minus
+node working set2153.9921875 equals kubelet669.2734375MiB; shortfall162.7265625MiB
+against unchanged832. Higher Talos memory/cache/slab cannot manufacture admission.
+This point-time refusal is not proof of a leak or permanent3GiB impossibility.
+Hypothetical4GiB startup floor6016 leaves only46MiB against stale6062; no resize
+safety is established. Keep OFF; genuine additional capacity needs a separately
+reviewed decision and new approval, not tuning or production memory borrowing.
+
+Accepted classifier commit`869624fa71de208c871c3c7335d0fb379a5d52d3` and
+[implementation/replay handoff](evidence/talos-acceptance/flux-state-offline-04f24d16-fd2a-4cca-bf10-e17465a12297.md).
+Pure saved-JSON evaluation distinguishes fetch/apply intent, complete versus missing
+inventory and observed policy violations versus evidence gaps. Native execution
+exceptions require explicit identity/spec/owner bindings, not an absence boolean.
+No collector, runtime action, universal suspension predicate or automatic authority.
+Native stopped-world/CronJob/platform/storage/admission gates remain independent.
+Parent reviewed source/tests, re-ran21 tests and independently reproduced historical
+INCOMPLETE/no suspension block; no uncollected Kustomization state was fabricated.
+Parent verified all12 capacity references and6 historical replay hashes.
+
+Full locked offline gate ran once at869624fa, exit0/62.94s: **543 Python tests in43
+suites,443 resources in9 schema summaries,17 locked CRDs**, mandatory real PHP/OTP
+and JS checks; no unittest/schema skips or failures. Only parent documentation was
+uncommitted; code/tests were committed and unchanged. Private receipt directory:
+`diagnostics/offline-capacity-flux-gate-f443cdb2-85e3-4c22-9867-7baba5abd237`,
+output SHA`2f008a1f583f2ba2d40442a789e8046acb3e43985fdd90fa745bb8ec283dc574`.
+READY/STOP messages in that log are mocked lifecycle tests, not live operations.
+Entire Git hook was unavailable and skipped; this does not substitute for the gate.
+New push/CI must be tied to its actual source/merge checkout. No static result clears
+current memory, incomplete live Flux inventory, application or migration blockers.
+
+## Prior disposition — 2026-11-13: VM120 OFF; CI repaired, app admission blocked
+
+The one authorized guarded start succeeded and preserved node/storage identities;
+applications/helpers remained stopped. Initial120s and additional300s observations
+had zero host swap/page-I/O delta. Talos verified active XFS`/dev/sdb1` at
+`/var/mnt/proof`, separate device8:17. No file/database integrity acceptance.
+
+**VM120 was subsequently administratively stopped through its guard because the
+executor added an overbroad Flux predicate. This was NOT a host resource-guard
+failure.** It required`suspend:true` on every Flux custom resource, beyond the
+approved inspection contract. The retained GitRepository's field was absent,
+exactly as the operations generator/cleanup leaves it; no Flux controller or app
+Pod was observed. Source-fetch intent without a controller is not active reconciliation.
+Executor acknowledged the error in private`correction-summary.json` SHA
+`0df3396bbcbe2c8a3fc3351405785aa7a821bbb7ec6d6d8508dd004ce104051f`.
+Independent read-only reviewera1e79b1a confirmed; parent reviewed actual cleanup code.
+The failed predicate, original interpretation and stop remain preserved, not rewritten.
+
+Last fresh paired guest observation: Talos1363.70MiB / kubelet669.27MiB;
+**conservative669.27 < required832MiB**. No Nextcloud diagnostic/app grant. These
+are now historical observations with VMoff, not current admission. Kustomization
+and later Flux inventory were not collected after the mistaken refusal; do not
+infer their current state. Future verification needs complete inventory followed
+by kind-specific evaluation, not the archived blanket predicate. Native CronJob
+suspension and absent app/helper/controller barriers remain unchanged.
+
+Parent accepted bounded observed startup/identity/storage-metadata/absence/production
+continuity facts, not a continued-running endpoint, complete Flux inspection, workload
+capacity, sole historical cause or application acceptance. One start consumed; no
+restart/repair/tuning/activation queued. All runtime ownership released. Parent
+rehashed43/185/207manifest-covered files and directly checked raw node/controller/
+ownerUID/PV/mount/device/final-off captures. Parent correction controls interpretation:
+[review](evidence/talos-acceptance/guarded-platform-parent-review-8954422ca5934f0d9fda169a62f7a71d.json),
+[initial result](evidence/talos-acceptance/guarded-platform-recovery-e941dfb9-dd97-4dbc-a9f5-11a5ecfe8d65.json),
+[retained addendum](evidence/talos-acceptance/guarded-platform-recovery-addendum-6e99e19d-7e0b-4875-8b77-2f392107046b.json).
+
+CI image repair7c258787 passed full522/443offline gate and all seven watched CI
+runs at754a6476 (both Talos triggers + five other workflows). Old failures and
+old-image live evidence remain historical. Current Wallabag/SAB Git pins were NOT
+applied. Next useful work is an evidence-backed guest-capacity plan and corrected
+read-only verification before any separately authorized new start/application slice;
+no smaller reserve, pressure trick or unreviewed resource change to force admission.
+
+## Continuation execution history — guarded platform recovery (2026-11-13)
+
+User approved CI investigation, a fresh guarded VM120 start and read-only platform
+verification, explicitly keeping applications stopped; requested gpt-6.1-sol workers
+at medium effort. This supersedes the earlier no-start hold only for this bounded
+recovery. No diagnostic/native application grant, etcd reset, data repair, production
+mutation, VM resize, guard change/bypass or automatic restart after refusal/stop.
+
+Reconciled checkout: `cd003a97302b98d578a76938fc9433e0e5bdcfea`, branch
+`feat/talos-live-proof`, clean before this brief update; PR2005 same head/open/main.
+Latest Talos43345591546 failed the image contract; Nix/Actions/Docker/Terraform/
+Ansible all succeeded. Historical maintenance and failure evidence remains retained.
+
+Parent owns this brief, runtime authority/execution, integration and acceptance.
+Prior executor4fa8130e, reviewerf08abd79 and lifecycle owner0bd982bd were verified
+completed through live status; lifecycle owner explicitly released live scope.
+No old worker resumed. Current assignments (read-only until explicitly extended):
+- `c079ef29-df6a-46c`: CI checkout/image-contract diagnosis, no code/pin changes.
+- `0915fefa-9bed-490`: offline guarded-start and read-only verification review;
+  no SSH/API/runtime actions. Lifecycle review explicitly reassigned after release.
+Both requested `openai/gpt-6.1-sol`, medium thinking,12-turn bounds. Actual tool activity
+verified startup. CI worker completed diagnosis; lifecycle reviewer hit its turn limit
+after reporting safe stale-incarnation handling and was explicitly resumed for8turns.
+No runtime work or repository edits were performed by either worker at this checkpoint.
+Available subagent tools support status/progress/resume/steering; session peer
+communication is unavailable. No missing capability is being silently emulated.
+
+Acceptance pending: explain/fix CI without hiding source drift; fresh4992MiB host
+admission through existing guard; verified guard/isolation/node/API/storage identity;
+applications/controllers stopped and CronJobs suspended; passive host/node observation
+without pressure tricks. Stop/refusal means leave VMoff. No application activation
+from a successful recovery. Parent will review exact live plan before execution;
+ordinary failures remain internal unless authority or a genuine blocker is missing.
+
+CI finding accepted after parent independently checked main's exact five commits and
+four changed paths: PR synthetic merges use base`a2c549e7`, bringing newer Compose
+MariaDB/WallabagRedis/SABnzbd while proof pins remain old. Current main is still that
+base. Preserve merge-ref testing/current-Compose parity. Parent will integrate that
+reviewed base, then explicitly assign only affected declarative proof pins for static
+alignment; no live apply or acceptance transfer from old image evidence. No test
+weakening/head-only checkout/frozen-digest allowlist. Former data ownerc31 and media
+owner0e6 were verified completed; affected pin ownership may now be explicitly
+reassigned. Optional broader test/workflow hardening is not part of this repair.
+
+Parent integrated reviewed main in21d9464a. CI worker explicitly received four
+manifest paths plus one new evidence leaf, committed7c258787 (seven image lines
+only), and released implementation. Parent reviewed actual diff and exact pins:
+focused data/media parity tests and120/188/82-resource static renders pass; old
+Wallabag/SAB runtime acceptance remains old-image-only. Worker now owns one full
+locked-toolchain gate execution; no source edits/push/live work. Parent schedules
+all other full gates and CI watching to avoid overlap.
+
+Lifecycle review completed. Stale pre-maintenance incarnation is safely replaced
+by start; boot-ID comparison prevents stale cleanup targeting a new process. No
+enrollment/reset-failed needed; stale PID/config drift blocks. Parent accepted the
+inherent preboot gap on historical stopped-state/111-file continuity, not a claim
+that boot itself prevents workload restart. First postboot global GET barriers must
+establish absence; unexpected workloads require proof-stop containment, not app edits.
+Executor0915fefa explicitly reassigned to fresh read-only host/source preflight in
+one new private UUID capture; startup/tunnel/API remain withheld until parent review.
+It first requested exact updated HEAD/baseline paths; parent supplied full7c258787
+and named maintenance/diagnostic captures. No live action had occurred at that request.
+Recovery gates remain pending; do not treat scope acknowledgement as results.
+
+Full static gate at7c258787 passed once (64.95s, exit0):522Python methods/42suites,
+443rendered resources/9schema summaries,17locked CRDs, no unittest/schema skips/errors.
+Mandatory PHP/OTP and browser contracts included; no full-gate rerun. Parent read
+and independently rehashed/count-checked private log
+`diagnostics/full-static-gate-0e0d65a0-899c-47fd-8735-b40131c73063/output.log`,
+SHA`896e251a68346ac7c5c9c82b01bf7e5e5943faa1b685314c221c7051e14ad71e`.
+Worker captured clean source/diff before/after. Subsequent parent edits are brief/
+readiness docs only. Separate workflow generation/actionlint awaits CI. Static repair
+accepted; existing failed CI retained. New CI at754a6476 is now green: Talos PR
+43348830643 and push43348823234 independently watched success; Nix43348830746,
+Actions43348830653,Docker43348830685,Terraform43348830651,Ansible43348830656 also
+watched success. Parent independently checked live run metadata and rehashed private
+summary`diagnostics/ci-watch-23b6e5a9-b3a7-415e-aba0-7c96f0d34cb5/summary.json`
+SHA`a20813e729e5a7fde8311e2d616370d0e136b6c3622f8f9d924eeeef94ef4276`.
+PR checkoutf5bc3759 has intended maina2c549e7 and feature754a6476 parents; all repaired
+manifest/Compose blobs match. CI worker completed/released; no live authority.
+
+Fresh recovery preflight completed in private
+`diagnostics/guarded-platform-recovery-201099d8-0301-4c6b-8b14-512b51cf5d05`.
+Parent rehashed43manifest-covered files, checked all6deployed source hashes/profile/
+KHO/off gates. Host6027–6146MiB versus4992required; swap/page/PSI deltas0; original24KiB
+baseline retained; production36metadata unchanged. Current101/102PID/startticks
+captured for this window; no claim of PID continuity since maintenance (that baseline
+lacked these fields). Preflight requested privateb47846review was absent because the
+parent supplied the wrong location: exact artifact exists under tracked
+`docs/evidence/talos-acceptance/nextcloud-diagnostic-failure-review-b47846fac38c4b8a899f090b6c0a66fc.json`.
+Parent read it; missing-path observation preserved. Final preflightJSON correctly
+records754a6476, correcting worker prose7c258787; intervening changes were docs only.
+
+Parent issued exact single-start authorizationd6479f34-b075-41e6-904d-5dc11bafcf96,
+expiring for startup2026-11-13T02:36:18.520648Z, in that private capture. Executor0915
+may refresh gates, invoke existing supervised start once, establish owned management
+forwards, perform selected GET/read-only metadata and120s passive observation, compare
+production metadata, and use existing guard stop only for fail-closed containment.
+No retry/app activation/reconciliation/production changes. Capture both successful
+and failed outcomes; timeout is unknown. Subsequent start/verification acceptance
+is pending, not inferred from this grant. Parent owns docs/final acceptance.
+Parent subsequently observed one actual wrapper invocation, exit0, fresh6062MiB
+admission and independent same-process validation: QEMU23124/startticks484997/
+scopeinode13500, guard23177 active/running/watchdog15s, startup receipt complete;
+observed host4695MiB available/swap0. Original receipts archived before wrapper
+replacement. Parent sent acknowledgement/continued bounded verification instruction;
+no app grant. Initial recovery then completed: sole expected Ready node; initial/final
+native stopped-world barriers; three retained Nextcloud bindings; production101/102
+PID/startticks/config and36container projections unchanged against this preflight;
+111canonical unchanged; owned tunnel closed.25host samples/120.009s: min2926MiB,
+swap0, page deltas0/0, sampledPSI delta rates0. Evidence leaf
+`guarded-platform-recovery-e941dfb9-dd97-4dbc-a9f5-11a5ecfe8d65.json`; parent rehashed
+185files and independently checked exact9platformPod inventory/cardinality/ownerUID
+chains and4Gi/4Gi/1Gi capacities with hostname-only PVaffinity in raw captures.
+
+**Acceptance gap/correction:** initial private validator used prefix/namespace and
+substring-affinity predicates, weaker than its prose. Actual data passes parent exact
+review, but worker was directed to use exact follow-up assertions and retain original
+results. Talos proc/mount metadata was omitted; kubelet available686.32→687.68MiB
+is below832MiB diagnostic admission. Parent explicitly reassigned bounded read-only
+follow-up: exactTalos memory/mount metadata, paired dual-min, component stats, one
+optional fixed300s passive window and fresh strict final barriers. ZERO further
+starts/application actions; no cache pressure/tuning/GC. Preserve initial manifest/
+evidence; add separate append-only follow-up. Platform acceptance remains pending
+these missing checks; no application grant or capacity claim.
+
+## Prior checkpoint — 2026-11-13 maintenance completed
+
+User explicitly approved execution with delayed on-site BMC recovery, selected the
+newest installed kernel, and approved temporary Docker service/socket startup holds.
+Parent performed one host reboot: **7.0.14-24-pve + kho=off**. KHO output absent,
+CmaTotal/CmaFree0; host/NAS pools healthy.36original containers running/31healthy/
+5without healthchecks, IDs/images/creation/mounts unchanged. All five NFS sources
+verified before Docker startup. Docker units restored enabled/active; VM102onboot1
+and all four VM config hashes restored. Backup properties/mount/job/exclusions
+unchanged; storage.cfg byte hash differs only because PVE reordered the same
+four-item `local.content` set. All other storage fields identical. No full-config
+overwrite to conceal serialization; original bytes and failed comparisons retained.
+
+Original swappiness60/ARC3GiB/zram priority100/proof24KiB baseline retained. Bounded
+120-second post-recovery host observation: min6215.44MiB available, swap0, page-I/O
+deltas0. This is NOT soak/capacity/causal proof. Kernel+parameter changed together;
+original initiating allocation and VM102 shutdown-delay cause remain unestablished.
+VM102 shutdown command failed after301.26s (QGA guest-shutdown timeout), then guest
+stopped without another request/force. Other credential-agent/PATH/autofs/audit
+failures are retained in the completion evidence; no credential or image changes.
+
+**VM111/120 remain off; no proof grant or invocation.**111canonical files unchanged,
+no effective PENDING. Temporary NAS key removed. Host/source production restarts
+were explicitly approved maintenance, not migration or an unchanged-uptime claim.
+Evidence: `docs/evidence/talos-acceptance/kho-maintenance-completed-f7a723ea8a0d4640a2e586022501ce5a.json`.
+Private capture `diagnostics/host-maintenance-execution-8ecc697f-c493-4cc9-bfc8-f85bdae041dd`
+has301artifacts+manifest,35host/7guest remote receipts; approximate shutdown-request
+through full-health verification22.93min (not exact per-service outage).
+
+Latest watched Talos CI at164030df **FAILED43332534447**: MariaDB image-contract
+mismatch (CI current-image set54f493ea versus prooff4054da2; local branch Compose
+and proof bothf4054da2). Log`/tmp/talos-proof-ci-164030df.e2KBGY`; no blind rerun,
+image upgrade or test weakening. Nix43332534444/Actions43332534530 passed separately.
+Maintenance changed documentation/evidence only in this repository.
+
+> **Historical guard stop — 2026-11-12:** VM120 is STOPPED. The deployed guard reported
+> `sustained host swap IO` at07:18:58UTC and confirmed the original QEMU exited.
+> Fresh diagnostic admission subsequently failed at its first read-only Kubernetes
+> query (connection reset); candidateb450 received NO receipt and ran ZERO times.
+> Leave VM120 off: no restart/resume, baseline reset, threshold change or bypass.
+> More live work requires explicit new guarded-start authorization under
+> https://github.com/mich-murphy/home-infra/blob/feat/talos-live-proof/docs/talos-proof-host-lifecycle.md.
+> Evidence: `docs/evidence/talos-acceptance/guard-stop-before-diagnostic-634f727438df495397f768820517280c.json`.
+> Underlying workload causing swap IO and post-stop guest integrity are unestablished.
+> User requires cause resolution before proceeding. Read-only investigation found
+> default-enabled KHO with2850MiB movable-only scratch; this is a confirmed allocator
+> restriction, NOT proven sole incident causation. See the proposed maintenance plan:
+> https://github.com/mich-murphy/home-infra/blob/feat/talos-live-proof/docs/talos-proof-host-memory-remediation.md.
+> No production boot change/reboot or new proof start is authorized.
+
+## Earlier root-cause investigation — user-directed, 2026-11-12
+
+Identify and resolve the underlying cause before proceeding; restarting or relaxing
+the guard is not resolution. Parent owns bounded read-only existing host telemetry,
+private immutable captures, integration and all edits. Worker `f08abd79-f0e6-4d1`
+is an independent OFFLINE read-only guard-semantics/evidence reviewer (8 turns),
+with no runtime or file-write authority. VM120 stays off; no production mutations,
+new instrumentation, ARC/sysctl changes, credential access or application grants.
+Acceptance requires distinguishing the immediate stop condition from attributable
+resource demand, an authorized cause-directed remedy, and verification without
+lowering existing safety gates. Reviewer completed both bounded read-only audits:
+trigger consistent with conservative policy; KHO contributor credible, incident-time
+allocator link unproved. Parent captured21private artifacts, unchanged111canonical
+files, same-boot kernel/config/KHO scratch metadata and historical host/VM RRD.
+Kernel7.0.14-17-pve enables KHO by default; scratch regions296+1242+1312=2850MiB,
+CmaTotal0/currentCmaFree~1446MiB. Both production VMs have PCI passthrough; their
+combined~20.41GiB host charges and proof~2.78GiB were stable near the stop. ARC
+shrank~430MiB before swap growth; current swapped residency is not initiator
+attribution. No guard defect demonstrated, no harmful-pressure/OOM claim inferred.
+Evidence `docs/evidence/talos-acceptance/guard-root-cause-investigation-6233d4277cec4d84bc87857368eba77f.json`.
+Recommended targeted `kho=off` mitigation requires separately approved production
+host maintenance/downtime, rollback and post-boot verification. It is NOT applied
+or a proven historical cause. Exact causal attribution and resolution remain pending;
+no application work proceeds merely because a startup window is approved.
+
+## Earlier maintenance execution request — preflight history
+
+User explicitly directed execution despite no current BMC, accepting recovery once
+on-site. Do not re-request that same console waiver. Parent preflight capture:
+`diagnostics/host-maintenance-execution-8ecc697f-c493-4cc9-bfc8-f85bdae041dd`.
+No production mutation/shutdown/reboot or queued execution. VM120 remains off.
+36containers31healthy/5nohealth; host+NASpools healthy; NFSactive. Existing five
+NFSautomount units precede local-fs→sysinit→basic→Docker. Both ESPcurrentkernel/initrd
+hashes match `/boot`; both defaultproxmox-* and already contain newer7.0.14-24,
+while running7.0.14-17 has no pin. NASadmin viaProxmox timedout; established
+Dockerjump succeeded. Full NAShealth verification afterreboot therefore needs
+Docker's OS before application workloads. Requested two narrow additional changes:
+one-boot currentkernel selection and temporary persistent Docker.service/socket
+startup masks (both currentlyenabled/active), then exact restoration after NAS/NFS
+checks. These additions await explicitapproval under the linked maintenanceplan.
+Only documented existingNAS credentials used privately; temporary0600keyremoved.
+No credential values logged. Initial keyformat assertionfailed beforefilecreation;
+correct OpenSSH retrievalsucceeded. Local recorderhelper editor-createdthenchmod600
+(notO_EXCL), codeonly; capture recordsO_EXCL. Originalfailures/evidence preserved.
+
+### Earlier maintenance planning approval
+
+User approved **planning** the coordinated KHO mitigation window. Parent is sole
+writer/collector; no new worker or runtime lease. Read-only capture
+`diagnostics/host-maintenance-plan-f055d402-4bfb-4a8c-b730-1ec2b7869c0f` confirms
+systemd-boot257.13, two configured managed ESPs, `/etc/kernel/cmdline` with no KHO
+override; no refresh/edit was run. VM101 order1/up60, VM102 order2, bothonboot1;
+111/120 remain off. The60-second delay is not NAS readiness. Proxmox's enabled,
+mounted backup-only NFS storage depends on101 too. Sole swap is lz4 zram, not disk;
+guard activity does not establish disk thrashing. Initial unsupported task-query
+flag failed and is retained; corrected active query returned0, not future clearance.
+Plan now specifies90-minute allowance, console/rollback gates, proposed temporary
+102onboot0 and backup-storage disable/clean-unmount, graceful102→101shutdown,
+NAS/export readiness before102recovery, and exact restoration of temporary settings.
+These production changes are **proposed only** and require explicit execution
+approval, selected window/timezone and independent console/operator. Guest NFS/
+Docker startup interlocks must be verified before execution; no implicit service
+hold or forced shutdown. VM120 remains off. Root cause remains unresolved.
+
+## Scope and checkout
+- Dedicated worktree `/Users/mm/dev/home-infra-talos-proof`, branch `feat/talos-live-proof`, original task base `8de8c051`; reviewed current main`a2c549e7` integrated in21d9464a for source parity. Managed with `gh stack`.
+- Draft PR **https://github.com/mich-murphy/home-infra/pull/2005**. Push with `gh stack submit --auto`; CI watch uses `gh run watch <id> --interval 60 --exit-status`, one watcher per session.
+- Original `/Users/mm/dev/home-infra` has extensive pre-existing changes: never modify/stage/reset it. Historical `origin/feature/talos-kubernetes` is reference only; its Docker/GPU/network cutover is forbidden.
+- Deliver maintainable declarative replicas and resource-safe, staged live functional/isolation/recovery evidence. **No migration approval or full-concurrency claim.**
+- Default remains no production service/guest/storage/network mutations, ARC/sysctl tuning or GPU reassignment. **One explicit exception was executed on2026-11-13:** approved KHO/new-kernel host maintenance, dependency-ordered guest restarts, temporary Docker startup/VM102onboot/backup-storage holds, all restored. This closed maintenance window is not standing authority for further production changes. Read-only discovery and dedicated proof work remain separately scoped.
+- Fresh synthetic data/credentials; private material outside Git, directories0700/files0600, never stdout.
+- Explicit new-VM membership safeguard: existing02:30 `backup-truenas-daily` all-guests job would include120 and write proof data to production NAS. Parent changed ONLY its exclusion list9001,9003→9001,9003,120; compared complete before/after objects, all other fields/existing-guest membership unchanged. No backup triggered. Receipt `docs/evidence/talos-acceptance/proof-backup-exclusion.json`; this limited existing-job configuration exception is disclosed, not hidden as 'no Proxmox changes'.
+
+## Historical ownership and release ledger (current disposition above controls)
+Parent owns this brief, integration, root app Kustomization, CI/static gates, `talos/`, main platform/operator docs and final acceptance. Shared worktree: explicit-path commits only; do not edit active worker files.
+
+Workers use `openai/gpt-6.1-sol`. Resumes requesting200turns still encounter a hard30turn/five-turn-warning cutoff: inspect actual state, preserve safe checkpoint, resume explicitly. Maximum3 active workers is the coordination target; stopped workers retain file ownership until reassigned.
+
+| Worker | Ownership | Current state |
+|---|---|---|
+| `b3689397-1069-4a2` | inventory docs/evidence | COMPLETE9520a571;36 source containers; discovery IDs/starttimes/restarts/health unchanged. |
+| `d03adc99-6042-4c0` | former node implementation | ABORTED/STOPPED; ownership reassigned. Do not resume without new scope. |
+| `6befdde0-8478-4ba` | former platform/bootstrap owner | COMPLETEa0e27380; live storage/policy/Gateway proof; fixtures0; lease released; session expired. Bootstrap ownership explicitly reassigned below. |
+| `72a968e4-2b56-467` | `kubernetes/bootstrap/`, related architecture/target-override evidence | COMPLETE4e2fd1a2: confirmed/fixed short/combined kubectl server flags, Helm/environment/proxy/preferences overrides;11 offline tests. Parent reviewed parser and ran full gate; no live mutation. |
+| `0bd982bd-f35e-44e` | `infrastructure/proxmox-proof/`, `tests/talos-proof-host_test.py`, host-lifecycle doc/evidence | COMPLETE61a2fb1a+82e20ee0; actual crash/watchdog fail-closed proof passed; exclusive host outage lease RELEASED. No more host mutation planned. |
+| `aded9180-673d-409` | former data owner | COMPLETE/STOPPED3b070339; four groups passed bounded live workflows/restores, all pods deleted, lease released. Ownership explicitly reassigned below. |
+| `2fab86f6-2fc2-4ab` | former data owner | COMPLETE/STOPPED35cb469d; both768MiB WOPI retries consumed, editing still unproved, pods deleted/released. Context78%; ownership explicitly reassigned below. |
+| `c23fdbf1-a0ad-487` | former data owner | COMPLETE/STOPPED34ef3547 Pocket-ID protocol negatives and retained credential across replacement/freshPVC passed; f48c234f seventh TXT WOPI failed/released. |
+| `5c1f1773-1e98-412` | former data owner | COMPLETE/expired5622c159: Wallabag image/native Redis-import/replacement/freshDB restore passed, imagePVC retained; optionalODT prepared offline. |
+| `c78404d7-3f8c-4cd` | former data owner | COMPLETE/expired179afcab+67a61058: nativeODT failure/release; complete observed-dialog/focus/nativeSave corrections and27-source nativecron plan OFFLINE only. |
+| `4d3565f8-3b10-461` / `fc9f0009-cd78-458` | former data owners | COMPLETE/expiredff667cea+14199547: draft then serial nativecron runner, PHP lint/mocked tests; NOT live-ready after parent failure-path/identity review. |
+| `1adfc7c7-2cee-4be` | former data owner | COMPLETE/expiredb4acdca9:93offline tests/PHP lint, owned-job cleanup/cleanup-only scopes/identity/replay fixes; not live-ready without initialization. |
+| `f22530bb-8b3d-415` | former data owner | COMPLETE237ea686: stopped-object/read-only PVC binder and canonical quantities;90offline methods/PHP lint. NOT live-ready until review/new exact initialization grant. No PVCs created. |
+| `5526425f-cd5d-4f7` | read-only data acceptance review | COMPLETE:6concrete gaps at237ea686; initialization/native grants withheld despite static success. |
+| `179dd28c-5cf7-4e9` | former data owner | COMPLETE0420ea1b:6review repairs/133offline methods; parent closure11bda18d blocks legacy cron apply/deactivate. No initialization performed. |
+| `cd1538b3-3f70-40d` | former data owner | COMPLETE4507fd70/c1e2ec63: actual preflight found exact service-account alias mismatch; corrected exact equivalence/101 offline tests and captured Deployment+Pod replay. Session released; no initialization invocation. |
+| `a31dfd29-a26f-4b8` | former ALL DATA owner | COMPLETE14b767a3: separate GET-only preflight-release/read-only diagnostic scopes, private failure context and exact packaged-version bridge;180focused/regression tests. No runtime/PENDING release. Ownership transferred to c31. |
+| `76c1a180-e186-4df` | read-only DATA acceptance review | COMPLETE: HOLD for missing global Job/DS barriers, non-independent partial cleanup, sparse historical evidence and unverified transitive parent-review reference. Reviewb664f372 preserved; no grant. |
+| `c31ceb9d-9304-466` | ALL DATA except immutable image/source/parent acceptance evidence and root docs/gates | 57af7334+73d77e51 repairs reviewed; parent488-method gate and real12-event/81-file replay passed. GET-release356c45a4 completedcb79c944. Diagnostic43c01d48 failed metadata hash gate, stopped/released, onefailed-result+clean/84oldfilesunchanged (27607487). OFFLINE fix1c15551b: fixed ConfigMap projection reader+15realPHP tests;199focused tests/no skips. COMPLETED; parent reviewed fixed reader/real-PHP tests and511-method full gate passed. Historical4515capturefiles+111canonicalfiles independently rehashed (b47846fa). No live grant. |
+| `0e6c4f21-7bb0-409` | ALL MEDIA except parent RPC/indexer tests and root docs/gates/platform | COMPLETED41059033/41offline tests: prepared framing/backlog/cardinality fixes; unresolved deadlines/flush/session/settings/pagination/descendants. CLI andrun()BLOCKED; no native acceptance. Session expired, no resumed work. |
+| `2b0687bd-fead-4e2` | ONEnewUUID media source-evidence Markdown only; all code READONLY | COMPLETED10ab9a9b: pinnedTautulli source stores native session IDs temporarily but omits them from persisted history; default120s threshold, websocket monitoring, full-form CSRF/settings semantics and pagination/DB durability limits. Weaker fresh-client oracle proposed, NOT accepted; no runtime authority. |
+| `0d8f96ca-be71-468` | Focused diagnostic preflight code/tests/plan+new leaf only; other DATA/mainSupervisor READONLY | COMPLETED736f7de1+e0a056fa. Parent reviewed all3followups: bothcaptures beforepatches, journal failures preserve independentcleanup, allownedcontainer logs plus fixed-absolute-path exec gated on nonresource execution envelope.99focused tests and parent522-method fullgate passed. Workerpreparedv2; parentfa1eeb13 supersedes it with v3kill-after. Tool/loader paths now independently metadata-verified; no live invocation established. No runtime/private state/grant/source-PHP changes. |
+| `bcbbb5df-a33c-442` | ONEnewUUID DATA public-image evidence leaf; all code/other evidence READONLY | COMPLETED6061a960: both exact images/20layers/tool+loader paths. Parent rehashed63artifacts and independently checked layers/path bytes (bd429134). Initial helper creation O_EXCL deviation retained; no image execution/ABI/runtime acceptance. |
+| `4fa8130e-4996-479` | NEWprivate capture wrapper/metadata and laternewUUID DATA leaf only; allcode READONLY | COMPLETED corrected immutable plan e7f5fdb4 underdiagnostics/fa754b6c-075b-4edd-b83d-c80d5316f6c6; parent reviewed HOME=/Users/mm and projectPyYaml Python -I -B smokecheck. Candidateb450 NEVERissued/run: firstparentAPIquery reset, VMguardstopconfirmed. No live handoff. Finalwrapperbbf87538 underdiagnostics/fb9f63b9-4c18-4800-bb8b-c72995f54dd9/bin/b3dcda8c-40ea-442f-aee5-f55756090747/kubectl usesfixedGNUtimeout9.11/600s+1s andownedgroupcleanup;7syntheticcases passed, notremote-completion/exhaustivereapingproof. Oldwrappers/plans retained. ParentrequiresCLIHOME=/Users/mm (Talospaths dependonPath.home), fixedPyYaml-enabledprojectPython -I -B smokecheck, cleannewplan replacingmalformedtext. Kubectlchild/testHOMEprivate.111files=102JSON+9logs unchanged. No API/SSH/runtime/receipt/journal mutation/grant. |
+| `84fa1af1-6f98-495` | former headless-component owner | COMPLETEdb029fdb:18unit/6real workstation decoder checks, CLIblocked pendingintegration. No credentials/proof runtime; DarwinRSSwatchdog is not hard memory ceiling. |
+| `29c8006d-b17b-4bf` | ALL MEDIA except parent RPC/indexer tests and root tooling/docs | COMPLETE224430b9: guarded headless adapter/exec trampoline,53unit+6workstation checks. CLI remainsBLOCKED pending512/192activation wiring, native API/settings/history review and separate grant. No proof/runtime/credential access; browser401 remains failed. |
+| `475e6728-5f5f-4a4` | read-only headless acceptance review | COMPLETE: HOLD; actual adapter strips required length, queued-report watermark false-positive, unproved session correlation, incomplete aggregate cardinality and deadline gaps. Reviewa1fdd277 preserved; CLI staysBLOCKED/no grant. |
+| `4495fff5-d966-418` | new public-image parity evidence only | COMPLETEc64c4a49: exact anonymous amd64 image22layers/DiffIDs,34/35matches; version.php packaged build/channel metadata differs. Parent independently verified22layers/DiffIDs/version and moved64private artifacts outside Git unchanged; original placement error retained. No runtime/old-error recovery. |
+| `3a63b030-2464-411` | former media owner | COMPLETE/STOPPEDfac87a05; no live tests. Ownership explicitly reassigned below, excluding reserved protocol paths. |
+| `9a411d61-32dc-4b3` | former media owner | COMPLETE/STOPPED7ac9f65c: qbit+BEP3 and SAB+NNTP actual transfer/restart/distinct-PVC recovery passed; all pods deleted, receipts revoked. Context84%; ownership explicitly reassigned below. |
+| `9046870e-b0ef-4e2` | former media owner | COMPLETE547c4f82 / retention expired; prepared guarded native browser and immutable H264 fixture, not live acceptance. Ownership transferred below. |
+| `efc62ce9-3fcd-477` | former media owner | COMPLETE/STOPPEDd65fce12 browser pass/Plex failures; ba8ee3db nativePlex discovery/Jellyfin lifecycle/qbit security proposal; f5bfb69b+d7edfcad optional Pinchflat native-provider profile prepared,101offline tests, not live acceptance. |
+| `95734501-f843-410` | former media owner | COMPLETE36bee5fb: pinned auth review and3correlated Pinchflat memcg OOMs; no live followup. |
+| `0436e724-b523-45c` | former indexer fixture owner | COMPLETEbe4eb7dc,3paths transferred to media:7socket tests, Prowlarr compatibility/wiring unproved. Public research remains authorized; offline does not forbid it. |
+| `7d27c46f-467f-437` | former media owner | COMPLETE/expireda9083295+0b7d0ca4+67ad549c: provider-only384+128+192=704, exact receipt/template checks, settled snapshots, child-OOM stop and strict foreign-pod barriers. No live execution. Parent provider integration0b94edb5 committed; ALL media, including indexer paths, transferred to18d65119. |
+| `18d65119-866d-498` | former media owner | COMPLETE2082/fbbd/2d41004a/5b07cfbb: zero-activation canonical-CPU refusal, then one704MiB activation/RPC failure/release. Source-backed MFA/error/shutdown fixes OFFLINE; no further grant. Parent takes workstation RPC regression/environment integration and indexer-test timeout diagnostics after completion; other media has no active writer. |
+| `ba9af874-b505-439` | new stock-workstation evidence only | COMPLETEdf17cae9+90126bb1: exact public script reports2025.05.22; one-item RSS recognized. HTML blocked by extra subprocess guard at ffmpeg -bsfs (absent on fixed PATH), no MP4 requests/download/metadata acceptance. All own processes closed; no proof runtime. |
+| `6056df3c-50ce-4fd` | public image research, no repo writes | COMPLETE: anonymous exact image/layer/ELF inspection; parent rehashed index/manifest/config/all7compressed layers/3selected files. Runtime compatibility unproved. |
+| `f0c49c93-7f24-47b` | read-only etcd research | COMPLETE: supported same-VM proposal, but separate-target policy requires human exception; no reset/reboot authority. |
+| `9775baeb-9e78-45a` | former five reserved new arr/recovery paths | COMPLETE/STOPPEDb476f7ab, transferred to95734501:21offline tests and import/recovery/resource primitives. Operational import unconditionally blocked pending wiring; recovery has no live execution path. No acceptance claim. |
+| `92845ffb-b585-46d` | former read-only researcher | COMPLETE/expired: pinned Pinchflat intentionally has limited generic-source handling; RSS→metadata-bearing HTML→MP4 is smallest candidate, not a proved pipeline. Bundled yt-dlp version cannot be inferred from tag. |
+| `fe72c227-6bed-45f` | former three Pinchflat fixture paths | COMPLETE/STOPPEDa7c107a9, transferred to media owner.13offline socket tests; payloads deliberately not playable, no extractor smoke/pass. |
+| `78bc6cb3-78bb-492` | former reserved protocol paths | COMPLETE590f7fae: real local BEP3/NNTP socket fixtures/tests. Ownership explicitly transferred to9a411; real qbit/SAB completion still unproved. |
+| `2f71adc3-4f23-46d` | former operations owner | COMPLETE/STOPPED2336d137; reassigned below. |
+| `e5f5b3c8-110f-455` | former operations owner | COMPLETEacca13fc; session expired, ownership reassigned below. |
+| `49ae7710-2963-401` | `kubernetes/operations/`, operations scripts/tests/doc/evidence | COMPLETE3848e4cf: real Flux drift/path rollback/RBAC passed and released.4cdf5c48 adds CRD Established sequencing/private failure receipts/local retention safety;19 offline tests. New sequencing not live retested. |
+| `3f2f0609-5c07-48a` | new host-isolation files only | COMPLETE/RELEASED090a97e5: actual node TCP rejection passed on second/final unit start. First loader failure preserved, no starts remain. Parent independently rehashed raw receipt and reparsed all5policy snapshots/counters/controls. Child UDP/IPv6 remains disabled/unproved; original lifecycle/enforcement unchanged. |
+
+**Historical pre-maintenance checkpoint: NO active live grant; VM120 STOPPED after guard failure.** Parent fresh admission stopped at its first Kubernetes GET; no receipt was created, no diagnostic invoked,111canonicalfiles unchanged/no pending. Guard journal reports sustainedhostswapIO at07:18:58.243605UTC and confirmed QEMUexit at07:18:58.453797UTC. Read-only host status: PIDfileabsent/guardfailed, available5390.094MiB/swap6328KiB; originalbaseline24KiB preserved, historical28KiB distinct. Lastsuccessfulguard sample2595MiB/swap4652KiB; failing swap-page counts unlogged, no responsible-workload attribution. Deployedguard/lifecycle/unit hashes match frozen repository; VMUUID/3072MiB configuration retained. Leaveoff; explicit new guarded-start authorization required. No start/reset/threshold change attempted. Parent source review and all4515capturefiles confirm43recorded2logrequests,bothPHPhelper,zeroexec; PG/Redis rawPodstate exists but current/previous logs and cgroup counters were not captured before shutdown. Do not extend helperOOM0 to backends. 0d8 completed narrow diagnostic-only capture in736f7de1+e0a056fa; parent reviewed the followups and522/443 fullgate passed. Anonymous metadata now establishes both fixed reader paths and loader in both pinned images:6061a960, parent63-artifact/20-layer reviewbd429134. No live ABI/cgroup access/timing claim. Parent took over the focused command change: v3 profile requires `/usr/bin/timeout --kill-after=1s 2 /bin/cat ...`; missing/disabled/extended escalation options rejected, TERM→KILL is not guaranteed completion/reaping. Full522/443 gate passed again at `/tmp/talos-proof-static-08108df4-fe28-433d-a26b-e99fc4b96a59.log`. Executor4fa is preparing offline only. Historical gap remains; no new grant/runtime retry. Diagnostic43c01d48 ran exactlyonce and FAILED at `reviewed packaged metadata drift`, expected86a6fd49…/actualunavailable. No HTML inventory/SQL/Redis checks, install/fixture/aging/cron/web/CODE or main rerun. Helper exit1/restarts0/capturedOOM0/kill0; capture preceded UID retirement, both backend stop patches succeeded, global absence/stopped controllers/suspensions confirmed. Onefailed-result+clean,84oldcanonicalfilesunchanged/exactreceiptarchivedbeforeremoval/issuedcopyunchanged (27607487). Current unavailable-hash cause and original RuntimeException cause remain unobserved. Source1c15551b fixes ordinary-source guard rejecting normal ConfigMap projections via a fixed confined8192-byte reader; parses verified bytes, source/PVC link prohibition unchanged. Fifteen actualPHP8.5.7 regressions plus184related tests passed, not live acceptance. Parentwired locked `talos-proof-php-tools`/mandatorygate/CI; integrated511Python/42suites and443resources passed without skips. Parent independently rehashed4515capturefiles+111canonicalfiles, reparsed actualROPod/exit1/restart0/97316864Bpeak/OOM0/failed-result+clean, verified84oldfilesunchanged/issued-active-snapshot-archive exactequality/activeabsence/no pending (`nextcloud-diagnostic-failure-review-b47846fac38c4b8a899f090b6c0a66fc.json`). Historical artifact review, not fresh runtime observation or native acceptance. Parent independently rehashed980 GET-release capture files+81canonical originals, verified receipt retirement and onepending/oneclean, then freshly observed exact ReadyNode/namespace/allproof+storagehelper absence/controllers0/suspensions: dual-min1173.171875MiB, host2638.457MiB/guardACTIVE/VMUUID3072/swap28KiB(original24 retained). Separate NEWauthorizationd99fded6 binds5sources/4artifacts/transitive review/exact documents; observations alone were not authority. GET-only release356c45a4 completedcb79c944:15UIDs/6policies/originalPHP/absence verified, exactly3local events includingoneclean; no Kubernetes mutation/activation/native acceptance. Original pending event and all failed evidence remain unchanged.
+
+Historical native33d6df9f invocation074094b6 failed at read-only preflight: payload ran/RuntimeException, exact gate/message lost; no install/fixture/before/cron/assert/cleanup phase. Maincurrent/peak94810112B/oom0/kill0, no capacity claim. Helper captured/UID-retired, backends stopped, retained identities/51oldfiles unchanged; receipt archived/released. Parent independently rehashed51old+30new files and reparsed actual read-only preflight Pod/exit1/log/receipt authority (`nextcloud-native-failure-review-320eb83b065948108cf7672f6157a58b.json`). Backend startup may have written PG/Redis volumes; no renewed emptiness claim from that failed run. Pre-windowdual-min1158.546MiB/host1948MiB is historical, not authority. The subsequent GET-only release did not erase failure or authorize diagnosis automatically. Public exact-image inspection found34/35matching files: onlyversion.php differs between git and packaged stable/build metadata. Parent independently verifiedindex/manifest/config/22compressedlayers/all22DiffIDs/version (`nextcloud-public-image-review-a8a4347c61c34638a3b4946fb331c769.json`); historical runtime gate is still unrecovered. Runtime artifact pin must be exact and original source hashes retained. The reviewed process model keeps lightweight parent+one heavy PHP child, same192MiB cgroup—not one process/capacity acceptance. Bindingb808f115 completed/released:3Bound originalPVCs, native empty/read-only XFS8:17 checks, helperpeak3973120B/exit0/oom0/oom_kill0, helperretired;51journals/15UIDs/receipt independently reviewed in `nextcloud-binding-release-review-45b09a7595b54a5c9dcb8198abf93279.json`. Automatic-provisioner lifetime log/cgroup gap retained. Parent additionally created only4already-declared namespace backend policies, preserving7existingUID/specs/default-deny/DNS; no host/production policy change (`nextcloud-network-prerequisites-07bf73a7-dc8f-4001-91f8-490365dad0cc.json`). Original initialization34a6bc9c ran once and released before binding: all11 authorized declarations created/stopped, 3PVCsPending/no volume assignments, no binding intent/Job. Parent independently rehashed36 journals, checked11 retained UIDs/Secret identity, issued/final receipt equality0600/active-path absence, no proof/helper Pods or Nextcloud PV refs (`nextcloud-initialization-release-review-f2bce029f368495cb195c5c3066ea56a.json`). The pre-window1150.91MiB dual-min/host1811MiB are historical observations, not renewed authority. Original pending event remains immutable; the separately authorized successful binding appended one clean event. No delete/recreate/retry. Actual352MiB binding envelope retains conservative832MiB admission. Pinchflat49eae0a3 was refused before mutation/activation by equivalent CPU1/1000m spelling;2082 fixes canonical comparison, fbbd requires both fresh memory readings without legacy fallback. NEW77f1f267 window then admitted704=384main+128fixture+192reserve, ran ONE activation/exercise and stopped at missing RPC structured output. Both receipts archived/revoked; no retry/restart/recovery. Parent independently rehashed214oldfiles, retained STOP, checked original/revoked authority fields, all proof/helper pods absent, deployments/statefulsets/daemonsets/jobs stopped and schedules suspended. Fresh observation1176kubelet/1162Talos minimum1162, host1877/guardACTIVE/swap28KiB(original24unchanged). `post-rss384-release-review-c875839b84df40d3ad7853f03ee8ad92.json`. Stopped384provider profile remains; base256 cannot undercharge it. STOP remains blocking until explicit review/run-history binding; no acknowledgement issued. Following the operator's continuation clarification, ordinary review/preflight/implementation work proceeds autonomously; only genuine authority gaps require operator action. Parent chose the declared new nextcloud-data name (not an adopted alias), independently reviewed11 document hashes, and created only an empty0700 canonical journal directory after confirming no UUID journals in the untouched legacy directory. No credential generation/copy or state migration. Binding did not automatically promote authority: parent independently reviewed artifacts and issued the separate native receipt above. That native run subsequently failed preflight as recorded above; native acceptance remains absent.
+
+Parent's later proof-only RAM window completed successfully in ONE start; lease released after API/node/guard/CA/nonce and existing-guest checks. All prior data receipts revoked. Operations receipts archived under `operations{,-flux}.released-20261111T141718Z.json`, active paths absent. A receipt is coordination, not a defense against a malicious administrator.
+
+## Live platform and access
+- Private `$STATE=$HOME/.local/state/home-infra/talos-proof`.
+- `KUBECONFIG=$STATE/config/kubeconfig`; API **https://127.0.0.1:64120**.
+- `TALOSCONFIG=$STATE/config/talosconfig`; matching binary `$STATE/bin/talosctl`1.14.5; endpoint127.0.0.1:50120, node172.31.250.10; SSH control socket `$STATE/ssh-control`.
+- Sole node **talos-proof**, hostname same, UID **4845bfd5-3bdb-453d-8503-83b43edb7a1e**, Ready. Kubernetes1.36.5, Cilium1.20.4, GatewayAPI1.6.1, local-path0.0.37.
+- VM120, UUID **555e8603-58e6-4fb6-a190-378a3f11c257**, **3072MiB now** (initial2560),2vCPU,x86-64-v2-AES,32GiB OS+64GiB data; noGPU/bridged NIC; QEMU slirp172.31.250.10/24.
+- Dedicated XFS `/dev/sdb1` mounted `/var/mnt/proof`; `proof-local` Retain/WaitForFirstConsumer, cleanup disabled. Mayastor rejected on measured capacity/upstream engine minimums and lack of single-node replicated durability.
+- Gateway namespace/name `proof-gateway/proof`; synthetic `*.proof.invalid`, public CA `$STATE/config/proof-gateway-ca.crt`.
+- Current actual forwards: localhost18080→node30659, localhost18443→node30310,50120→50000,64120→6443. New Gateway may allocate new NodePorts; GatewayClassConfig cannot pin them. Only VM120 arguments changed.
+- Supervised `talos-proof-guard.service` ACTIVE; start through guarded service/wrapper only, not `qm start`/`qm resume`. Enrollment bound to UUID/config and exact PID/starttime/boot incarnation; paused boot→isolation→READY→resume; pidfd cleanup. `onboot=0`.
+
+## Measured capacity and experiments
+- Host31834MiB; existing VM101 TrueNAS and VM102 Docker each10GiB, VM111 stopped.36 source Docker containers use3609.792MiB idle excluding cache/peaks: full concurrent replication cannot fit this proof VM.
+- Initial fresh post-stop4546MiB failed3072+1536+384=4992MiB admission. Later independent host availability rose; after all apps stopped, parent re-tested: **fresh5168MiB passed4992**, changed ONLY VM120 to3072, re-enrolled exact config while preserving24KiB original swap baseline, and supervised one cold start. VM101/102 PID/startticks/config hashes unchanged. No permission for3.5–4GiB or changing existing guests/host tuning. Evidence `docs/evidence/talos-acceptance/ram-admission-3072.json`.
+- After final restart, guest available1082–1083MiB (earlier warm platform~814MiB). CouchDB working set~91MiB; post-test guest~928MiB; subsequent idle989MiB. Re-measure; do not reuse optimistic old measurements.
+- Historical host lifecycle snapshot available2171MiB; parent later2457MiB. After3072 boot host2438MiB, swap24KiB and IO9pages unchanged. Guest actual total2823MiB; Talos available1403–1420 but kubelet available642–706MiB because working-set accounting includes large active file cache (RSS~889MiB, workingSet~2135MiB). **These metrics are not interchangeable.** Flux896MiB gate refused; new app receipts use the conservative minimum. No cache-drop/pressure tricks or threshold reduction; ordinary workload evolution may warrant a fresh observation.
+- Ordinary image pulls/workflows and cleanup later naturally changed cache accounting: fresh kubelet1396/Talos1304 passed the unchanged Flux896 gate. No cache manipulation or limit reduction. Flux transition kubelet minimum930.3 stayed above512 reserve. After cleanup/WOPI attempts, fresh kubelet1196/Talos1228; host1742 then1902MiB with guard active during the normal source backup window. ML1216 and web1280 are not automatically admissible from these smaller fresh minima.
+- Parent16:50 checkpoint: all app/helper pods absent, guard active, host1946MiB, exact swap28KiB/IO10pages. This is4KiB/1page above original24KiB/9, below existing guard thresholds; enrollment baseline was NOT reset. Earlier rounded `free -m` zero is not proof of byte-identical swap. Guest kubelet1264/Talos1173: only fresh minimum counts.
+- Guard uses actual PSI-total deltas: full>=1% or some>=5% sustained30s, hard available1536MiB, swap growth64MiB and sustained swap-I/O protection. Earlier decaying avg10 false stops were corrected, not hidden.
+- K8s1.36.6 API exited139/empty logs/no OOM; CPU change alone did not fix it.1.36.5 plus kubelet restart worked; both binaries ran `--version`; root cause not conclusively upstream. Official factory installer required; obsolete ghcr.io installer404.
+- Talos1.14 hostname uses `HostnameConfig auto: off`; control-plane taint removal requires `$patch: delete`, not null. Stale empty former proof node alone was removed before storage/apps existed.
+
+## Evidence and acceptance checkpoints
+### Platform — bounded acceptance
+- a0e27380: actual NodePort HTTP200 and trusted TLS200, nonce matches persisted file; wrong hosts404, wrong CA and outside SNI fail; PVC replacement UID/readback; correlated Cilium BPF policy-drop verdicts against known-running fixtures.
+- Storage helper verifies dedicated XFS mount/device, rejecting OS-disk fallback. Platform target guard pins endpoint/TLS/context/node UID/name/IP. Follow-up4e2fd1a2 confirmed/fixed short/combined `-s` and Helm environment/proxy/TLS/preferences overrides;11 tests including mock mutator no-execution. Parent reviewed actual parser and successfully used guarded read-only API/node checks after RAM change. Existing datapath proof did not use override flags and remains applicable. App infrastructure labels avoid hard-deny API trap; per-frontend policies replace blanket grants.
+- 82e20ee0: actual guard SIGKILL→proof QEMU stopped; SIGSTOP→15s watchdog→proof QEMU stopped; supervised recovery, fresh cgroup counter growth;5of6 approved cold attempts. Source101/102 PIDs/starttimes/config hashes unchanged. Supervisor deployed hashes match source.
+- Parent independent node/guard checks and exact pre-fault nonce readback after all stops: `docs/evidence/talos-acceptance/platform-after-faults.md`.
+- **Actual node TCP isolation88f5a202/090a97e5 PASS:** same fresh owned endpoint, before/after controls each1accept/response; node acceptance0, adjacent targetless predicate0→2 and unchanged existing10/8 REJECT0→2. Sole scoped OUTPUT entry supplies cgroup attribution; no source-port/TRACE/full5tuple claim. Parent recomputed private receipt SHA and all5normalized policy snapshots equal. Original64MiB plan refused measured29.35MiB transport; explicit96MiB plan raised initialhostfloor1888, during1792. First external-timeout loader failure preserved; approved Perl alarm correction passed second/final start. Root peak12.695/32MiB, no listeners/rules/processes remain, guard/VM101/102/120 identities/configs unchanged, host2016/swap28/IO10. Original24/9baseline unchanged. No cgroup joins/new deny/module/sysctl/route/prod endpoint probes. Host window released, no starts remain.
+- NOT proven: host reboot, every startup failure, comprehensive DNS/IPv6/bypass coverage, disk loss or Talos control-plane disaster recovery. Historical timeout-only evidence stays unaccepted; new controlled TCP result does not repair its broader gaps.
+
+### Applications
+- CouchDB778d1360: trusted Gateway401 auth denial, document create/read, pod replacement persistence, distinct clean PVC/PV logical restore and canonical SHA256 match, restored data survives another replacement. Source claim reattached; all pods deleted. `docs/evidence/talos-data/couchdb-live-*.json`.
+- Original CouchDB778d1360 did not prove revision/conflict/replication/security. **Follow-up5421ecc7 now passes** revision update/stale409, design-view execution, allowed member/outsider read+write403, authenticated same-instance loopback replication/deletion propagation, actual security+hashed proof-user records restored from immutable archive to distinct fresh PVC, then tenant/view checks repeated. CORS and representative production datasets remain unproved. CouchDB observed peaks193.851/256MiB, max/OOM0, restart0; no production capacity claim.
+- Miniflux and Pocket-ID **worker live PASS404a716d**, including distinct clean-PVC restore. Miniflux proves authenticated feed/read state/content hash; initial schedulerfactor0 caused5 restarts, fixed1, and one DB-pool401 after DB restart recovered within1s (not a global authentication retry). Pocket-ID proves actual Chrome WebAuthn registration/fresh-cookie login, OIDC PKCE/JWKS signature/claims/userinfo/unknown-client rejection, same user/passkey after pod replacement and clean-PVC import. Browser uses exact independently CA-verified leaf-SPKI pin; no physical authenticator/attestation claim. Parent reviewed evidence and found audience-substring validation bug; corrected to exact string or array membership with13 pure validation cases.
+- Wallabag **bounded HTTP/recovery PASS3b070339**: OAuth login, live fixture URL extraction, read/update/archive/star, exact-content export, MariaDB replacement, distinct fresh-PVC restore/existing-user login/state/hash, delete→404. Only exact fixture FQDN receives SHA-pinned Graby SSRF adapter exception; no Internet/subnet opening.192MiB app/64MiB fixture latest cgroup peaks nearly filled limits, no latest OOM/max events; earlier replaced peaks unknown. NOT production capacity/20–25% headroom; Redis async integration was pending at3b070339, superseded narrowly below. All pods deleted. Parent independently matched all four data archive hashes/private0600 modes and source/restore live PVC UIDs: `data-archive-identity-check.json`.
+- Expanded Miniflux5421ecc7 passes exact article, star/bookmark/read state and theme/page-size preferences through PG replacement and distinct fresh-PVC restore. Initial app pod restarted2times, exact causes not captured; retained BackOff events do not identify cause. Post-DB401 recovered1s. PG peak139.512MiB, app36.469MiB; fixture63.992/64MiB predominantly file cache, max/OOM0, no capacity claim. Original four archives remain byte-hash/mode identical; new results/archives append-only. All groups/pods/jobs cleaned, CronJobs suspended, receipts removed.
+- Full Nextcloud/Immich group limits exceed current capacity; do not bypass192MiB reserve. Authorized explicit component stages may establish narrower evidence with full integration marked BLOCKED. Collabora privilege-escalation exception is documented, not global privileged containers.
+- Public pinned Immich CPU ONNX artifacts downloaded/hashed on workstation, not yet preloaded/inferred; no app Internet access granted.
+- Media65650feb: Pinchflat profileCRUD/restart/fresh-PVC and Audiobookshelf real fixture stream/range/progress/bookmarks/restart/three-PVC recovery passed. Pinchflat provider download unproved; qbit startup but401 auth failure. Initial stale Talos fallback and unsound448-vs576 helper overlap preserved. b06ae56f adds actual batch-runner negative tests proving remaining Job pods prevent apply/scale/rollout; anonymous readiness retries503 only, never auth401/403. Exact qbit5.3 source rejects explicit external Host18443 against8080 before domains; hostname-only route rewrite prepared, credentials retained, repair not live validated. Wrong credentials can also401 in5.3. All remaining player/import/helper/real transfer workflows mandatory; stdlib provider socket tests are not real-client acceptance.
+- WOPI ee4075bc/35cb469d **editing FAILURE** across four640MiB attempts and two explicitly renewed768MiB attempts. HTTPS discovery/canvas/WSS and real CheckFileInfo/GetFile/LOCK200 passed; bad-token401 and wrong-lock409 preserved file SHA. No typing/accepted PutFile/reopen or wrong-host denial passed. Welcome overlay then wrong `Editing` vs observed `Editing Mode` selector blocked retry; selector corrected offline only. Callback diagnostics now persist, fixture handles bounded HTTP1.1/100-continue. CODE peak767.57/768MiB, max/OOM0; sampled anon272MiB/file251MiB included245MiB inactive file, so inclusive peak is not equivalent to anonymous usage, but editing capacity remains unmeasured. All pods deleted, both retries consumed/released; no further WOPI grant.
+- Media7ac9f65c **real download/recovery PASS**: qbit BEP3 handshake1/pieces2/32044payload bytes and completed torrent/on-disk SHA; SAB NNTP auth1/body1/32044payload bytes and completed history/SHA. Both pass fixture-OFF restart and distinct two-PVC read-before-write recovery. Preserved qbit initial progress1/error/no-file, fresh-directory UID correction and actual new zero-counter fixture before recheck; preserved SAB whitelist/API/lowercase AUTHINFO/name-normalization failures. All pods/helpers deleted; parent independently confirmed and revoked receipts. At7ac9f65c native browser gate remained open: manual Origin-only401 was not proof of browser failure; see d65fce12 follow-up below. Parent reviewed helper no-scale regression and503-only readiness gate. These are WAV transfers, not arr import/MP4/provider parity.
+- Operations acca13fc: actual monitor/alerts, offnode distinct clean-PVC file recovery; private etcd snapshot12,443,680bytes **capture only**. Historical Flux642.2<896 refusal retained. **New real Flux3848e4cf PASS** after genuinely changed fresh capacity: pinned source/applied SHA `5d9a9926106f76346950af20e8afc0ef346ac548`, observed1→drift→1→2→1, fixture identity denied Deployment creation/Secret reads; pinned imageIDs/restarts0, kubelet transition minimum930.3>512. Initial admitted apply failed with cause not retained; unchanged retry passed. Controllers deleted, zero ops/app pods, receipt archived/released15:08:36UTC.4cdf5c48 fixes missing CRD Established barrier and retains future failures privately; missing barrier is not conclusively the historical cause. New sequencing live UNTESTED. Local marked-monitor retention/reload test passed with synthetic-age prune, never snapshot/archive deletion;19 offline tests.
+
+- **Native qbit browser d65fce12 PASS (bounded):** real controls/login204, CDP on-wire same-origin Fetch Metadata, prefs200, hostile same-site form carrying exact authenticated `QBT_SID_8080` value denied, preference unchanged. Six prior harness failures retained (interception headers/navigation race/legacy cookie assumptions). Cookie lacked Secure behind TLS termination: security gap retained, no app setting disabled/rotated. Plex adapter collision32401/restart5 fixed to33240; fixed forwarded client-IP incompatibility after direct localhost200/adapter401. Library creation then400invalid-language; no playback/history pass. Tautulli and Jellyfin not started. All pods deleted/receipts revoked. Future media archives and attempt/restore receipts UUID/exclusive and append-only; old archives unchanged.
+
+- **Pocket-ID34ef3547 bounded follow-up PASS:** same preexisting user/credential fingerprint with `registered_new_credential:false` in retained state, replacement and distinct fresh-PVC import. Genuine positive OIDC plus redeemed-code replay400invalid_grant/no tokens, fresh-code wrongPKCE400invalid_grant/no tokens, and unregistered redirect issuer-error/no code/zero callbacks all passed. HTTP guard, allWS blocked, exact CA-verifiedSPKI; restarts/OOM0, peak103.488/192MiB. Original archives/authenticator unchanged. Physical passkey/attestation and source database migration remain unproved.
+- **Wallabag5622c159 bounded follow-up PASS:** actual SVG fetch/local HTTP readback/hash, native importer→Redis depth1/API absence→real worker/API content/read/star, repeated with fresh processes after Redis replacement. Article/image survive MariaDB replacement and distinct freshDB PVC; IMAGE PVC RETAINED, not fresh image recovery. Transient500 recovered1s, one cgroup observation gap, inclusive app192/fixture64 peaks hit limits/maxOOM0.36 current logs/13 private manifests captured;79 prior private files unchanged; all pods deleted/released. Actual declared group576+reserve192=768; parent mistakenly stated1120 and worker conservatively enforced1120 for this window—no resource reduction or hidden admission change.
+- **WOPI further failures preserved:** f48c234f seventh TXT attempt selected Editing Mode but format-loss Continue-editing modal blocked writes; CODE inclusive peak768/maxOOM0. Subsequent ONE nativeODT attempt loaded realODT with `docLoaded:true`, `permission:edit`, CheckFileInfo/GetFile/LOCK; session-expiry warning blocked welcome-tour close. No marker input, acceptedPutFile/save/reopen/hostdeny. Bad-token401/wrong-lock409 preserve bytes. All pods/receipts released;312 preexisting private files unchanged. Observed-dialog correction and same-running-fixture alternate-DNS host-negative controls prepared OFFLINE, not passed. Eight failures total, not an Office/editing-capacity pass.
+
+- **Media756385cc released live checkpoint:** Jellyfin anonymous fresh client returned exact120214B/SHA of fixture, not a health page or reused auth cookie: security FAILURE, no lifecycle/ACL/recovery pass; existing library/users retained and setup marker absent. Plex guarded stopped adapter update changed only code-CM reference. Native personal agent explicitly offered `xn`; real scan/exactbytes/range/watched CRUD passed. Both browser attempts then failed media401; same-media controls isolate native Origin/Referer boundary, no stripping/disabled protection. No frames/Tautulli activity/history pass. Pinchflat RPC attempts failed (first generic cause unknown, second137); main restart2/lastOOMKilled137, current new-lifetime max/OOM0 does not erase prior kill. Additional BEAM overhead is candidate, not yet attribution; no provider/download pass. No new recovery/archive capture. Current/previous logs retained, all groups stopped/released. Parent separately captured immutable private proof-node kernel log for offline correlation, not raw publication.
+
+- **Pinchflat2d41004a native boundary:** stopped384 preparation/admission passed; runtime PID1/node/cookie syntax, expected bundled erl_call hash and oneBEAM before/after established. Successful shell transport returned NO structured result; queue pause unproved, stock downloader/Source/index/download/output hash NOT reached. Main peak384MiB/max2028, fixture28MiB; sampled OOM/restarts0 is not capacity/continuous-zero proof. Private UID-bound streams/status/current+previous requests preceded deliberate deletion. Outer watcher read raced scale0, retaining STOP/gap; original zero-gap result preserved with append-only forensic addendum. All released,214oldfiles unchanged, no recovery.
+- **5b07cfbb OFFLINE diagnosis:** exact OTP source and workstation fixture reproduce missing trailing whitespace returning Incomplete-form error, hidden by `-no_result_term`; exact historical live error remains unknown because successful-call stderr was not retained. MFA transport now requires JSON+explicit success sentinel and privately retains both output streams; graceful watcher join precedes intentional scale0. Four workstation OTP/Elixir methods are not Pinchflat runtime acceptance. No STOP bypass/new grant.
+- **Nextcloud initialization237ea686 OFFLINE:** create-only stopped resources and one64MiB read-only binding Job, up to3provisioner helpers32 each. Actual352MiB envelope conservatively retains832admission. At237ea686 no PVC/native install/cron execution had occurred. Later076ac7e8 created11stopped declarations/3PendingPVCs but blocked before binding; native acceptance remains absent.
+
+### Static/CI
+- Strict schema gate downloads SHA256-locked exact Cilium/Gateway CRDs; **no missing-schema skips**. Apps defaults0, CronJobs suspended; namespaces/default-deny/probes/resources/security/digests/no host/NFS/no committed Secrets checked.
+- Latest completed parent full gate ate0a056fa+parentv3kill-after delta: **522Python methods/42suites, no unittest skips;443rendered resources, zero invalid/error/skipped**, browser syntax/offline suites, Alejandra/actionlint; log `/tmp/talos-proof-static-08108df4-fe28-433d-a26b-e99fc4b96a59.log`. Earlier e0-only522/443 pass retained at `/tmp/talos-proof-static-296ecae8-8ccf-42b7-bfa9-42d8400d27c5.log`. Includes15mandatory actualPHP8.5.7 filesystem regressions; not proof-image/app execution. Prior1c15551b+parentPHPtool integration511/443 retained at `/tmp/talos-proof-static-1860d5d2-008c-4445-8e2e-7b9e05e7712e.log`. Prior73d77e51 full488/443 retained at `/tmp/talos-proof-static-fc6a197d-ac33-4846-bf7e-a0639891c07c.log`. Runtime acceptance and unresolved media contracts remain separate. Prior14b767a3 full484/443 retained at `/tmp/talos-proof-static-b5ee18db-fff2-44c7-a3b1-cd33235a69a6.log`. Earlier6b264f04 (includingdb029fdb)451/443 pass retained at `/tmp/talos-proof-static-9acd5360-89d8-44ad-8531-58c2345150a7.log`. Priorc1e2ec63 full406/443 log `/tmp/talos-proof-static-13da09c5-3d9f-4c3b-8626-62f651299610.log` retained. Prior90126bb1+parent integration:404Python/443resources, Alejandra/actionlint passed. Immutable log `/tmp/talos-proof-static-c25caa91-1a49-49e0-a759-5ff023be3971.log`. Prior395/443 run `89d9f15b-223d-420a-8381-f1c6485299de` retained. First run `fa7d8002-7dab-45cd-a077-621b41ed3b08` had4optional OTP tests skipped; preserved, not claimed complete. Full gate now requires flake.lock-pinned OTP27.3.4.12/Elixir1.18.4 loopback tooling and private umask; all4execute, not target-image acceptance. Previous353/443 run retained. Seven-case backup preflight remains precreation only, not continuous enforcement. A later local aggregate attempt timed out at240s with6/7indexer-test progress (`029f1549-3228-434e-ba58-88da433f5e74`), without a stack/root cause. Unchanged standalone7-test suite passed (`344bf1cc-b987-4b7a-9ba2-3bd57de260c8`); added60s owned socket-test stack/exit diagnostics, not a claimed root-cause fix. Full c25caa91 rerun passed. Pushed11bda18d CI passed; current repairs need fresh pushed CI. Parent primary-credential scan:45known values, zero tracked/new-evidence matches; not an exhaustive unknown-secret detector.
+- Latest watched checkpointfa1eeb13: Talos43174707724/43174699411, Nix43174707627 and Actions43174707641 allSUCCESS, including parentv3escalation. Prior9fa87efb: Talos43172004594/43171998111, Nix43172004514 and Actions43172004454 allSUCCESS. Prior6876cb29: Talos43170138162/43170132019, Nix43170138103 and Actions43170138108 allSUCCESS. Includes initial736backend preparation and10abmedia source note; does NOT close parent source-review HOLD or cover active0d8followups. Priorb6cd834f: Talos43167531922/43167526388, Nix43167531906 and Actions43167532077 allSUCCESS, including mandatoryPHP projection tests. Prior13556d40: Talos43158890293/43158882809, Nix43158890343 and Actions43158890303 allSUCCESS. Earlierd5d3f711: Talos43156660136/43156653944, Nix43156660129 and Actions43156660132 allSUCCESS. Earlierb24f388f: Talos43151622860/43151617815, Nix43151622767 and Actions43151622763 allSUCCESS. Earlier11bda18d: Talos43135141151/43135135231, Nix43135141273 and Actions43135141159 allSUCCESS. Earlier watched Talos PR **43124730373** and push **43124721600 SUCCESS** on64215964; Nix43124730393/Actions43124730352 also watched/succeeded. This includes mandatory real workstation RPC regressions, not application acceptance or later repairs. **Historical sibling push43098895835 FAILED** on5ba46de3 despite its PR success: range test saw1036bytes before final7-byte post-write counter commit (expected1043). 0b7d0ca4 adds bounded synchronization/nonce acknowledgement, not pre-write counting or arbitrary sleep; subsequentad61CI passed, original failure not erased. Failure retained: https://github.com/mich-murphy/home-infra/actions/runs/43098895835
+- Newer worker commits/dirty work invalidate applicable CI. Finish with full gate, fresh push/watch, final no-touch source comparison.
+
+## Next actions / unresolved acceptance
+1. Review released704MiB RPC failure and offline MFA/shutdown correction; no retry/grant or STOP acknowledgement exists. Jellyfin stream auth remains unsupported in reviewed native source; LAN/proxy reclassification is not a fix. Plex browser auth stays blocked.
+2. **Continue separately authorized diagnostic resolution, not native cron yet.** Initialization/binding/policy history and3Bound retained volumes are established, not new work. GET-only release resolved original33d6pending without erasing its lost RuntimeException. Separate43diagnostic failed metadata hash before source/HTML/SQL/Redis checks, stopped/released with84oldfilesunchanged. Parent reviewed1c15551b fixed confined projection reader and511/443 gate, independently rehashed4515captures/111journals and exact receipts. Next: approved host mitigation is now completed and production recovered, but the short observation with proofVMoff is not proof-capacity acceptance or sole-cause attribution. Preserve the host and guest shutdown failures and the separate CI image-contract failure. No automatic proof startup or application grant. VM120 stays off. A later guarded-start verification experiment requires explicit separate authority and does not itself clear the application hold. No new application grant or startup bypass. Executor plan/recorder, parentv3fa1eeb13 full522/443+CI and public image metadata are reviewed, but do not authorize restart. Only after accepted host-remediation verification and a separately approved guarded start, re-establish node/API/storage/identity and integrity observations, then obtain fresh global absence/dual832MiB/host-guard observations and a NEW one-shot diagnostic receipt if all admission conditions hold; old receipts cannot be reused. No reset/auth repair/main rerun or application acceptance. Keep backend writes and both unknown causes explicit. Preserve8WOPI failures; corrected UI unrun. Etcd proposal still needs a separate human policy exception (`docs/talos-proof-etcd-recovery-plan.md`); snapshot hash/embedded checksum is NOT a restore.
+3. Parent independently checked6new archive hashes/modes and6distinct live source/restore PVC/PV/XFS paths plus host receipt/policy/control consistency: `docs/evidence/talos-acceptance/followup-archive-and-host-review.json`. This is not a new functional replay. Pocket-ID negatives/retained credential and Wallabag image/native queue now passed narrowly; parent independently matched newest2archive hashes/0600 modes and2distinct live source/restore PVC/PV/path pairs in `pocket-wallabag-archive-review-ed9e5d54038c4ba79ff6c0c97a5571eb.json`; not a new functional replay or fresh image recovery. ML/web remain measured—not permanent—capacity gates. Native ODT editing still unproved after eight failures; no current data grant. Full Office/Immich integration remains required.
+4. Resolve/test bounded heavy-component profiles honestly; document any capacity or external-account boundary as BLOCKED, not PASS.
+5. Independently review results/identities/checksums; [all36-service readiness matrix](talos-proof-readiness.md) separates bounded passes from pending criteria. Parent mid-run and later post-node/browser comparisons found zero changes to all36 IDs/image references/imageIDs/creation/start/status/restarts/health; latest post-RSS384 checkpoint also found all36 unchanged/equal canonical projections (`source-post-rss384-comparison-7a8bf8ffc6ef46c3afb3128881ef3529.json`). Not final and not a claim ordinary app data never changes. Push/watch fresh CI.
+
+**Overall NOT migration-ready.** Mandatory remaining gates include per-service real workflows, meaningful media/helper integration, app-specific clean-PVC restores, off-node recovery and etcd recovery, representative resource peaks/soak, final source comparison, network negative coverage, physical/production identity parity, Collabora editing, and actual ML inference. Full concurrency, native production networking, historical-data migration, GPU parity and HA remain separate blocked/unproven claims.

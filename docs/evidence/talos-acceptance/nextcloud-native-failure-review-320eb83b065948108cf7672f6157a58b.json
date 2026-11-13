@@ -1,0 +1,38 @@
+{
+  "reviewed_utc": "2026-11-12T04:35:28.530922+00:00",
+  "scope": "offline independent historical preflight-failure artifact and receipt review; NOT current runtime observation, pending release or functional acceptance",
+  "run_id": "33d6df9f-c2a8-459f-8eef-bc5fc3bfbdc1",
+  "historical_journal_files_verified_unchanged": 51,
+  "new_private_files_verified": 30,
+  "failed_helper_job_uid": "533acd2d-4bea-43d0-8cd9-acaa04684dbf",
+  "failed_helper_pod_uid": "753a1862-ee71-4aa4-ab09-2055fcc5c6c8",
+  "actual_single_container_readonly_html_and_preflight_phase_verified": true,
+  "helper_exit_code": 1,
+  "helper_restarts": 0,
+  "payload_status": "BLOCKED_OR_FAILED",
+  "error_type": "RuntimeException",
+  "exact_error_gate_recovered": false,
+  "cgroup_bytes": {
+    "memory.current": 94810112,
+    "memory.peak": 94810112
+  },
+  "cgroup_events": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "reached_phases": [
+    "preflight"
+  ],
+  "pending_retained": true,
+  "receipt_active_path_absent": true,
+  "issued_final_receipt_authority_fields_equal": true,
+  "changed_observation_fields": [],
+  "postfailure_snapshot_sha256": "0016cd54d548afacc444e43e2d830263691c259127e223b67e533349a1883dbc",
+  "backend_startup_may_have_written_retained_volumes": true,
+  "volume_contents_reinspected": false,
+  "native_functional_acceptance": false
+}

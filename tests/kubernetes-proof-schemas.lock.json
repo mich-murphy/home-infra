@@ -1,0 +1,16 @@
+{
+  "artifacts": [
+    {
+      "url": "https://raw.githubusercontent.com/cilium/cilium/v1.20.4/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumnetworkpolicies.yaml",
+      "sha256": "62c6de8f358da125b94468d39187edb1cea157d79503fdc50ccec8a6aaa79a76"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/cilium/cilium/v1.20.4/pkg/k8s/apis/cilium.io/client/crds/v2/ciliumclusterwidenetworkpolicies.yaml",
+      "sha256": "ae65e44fdee9da399cb7257a8464f197bea5270fdc213f6343700309c39abad6"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/cilium/cilium/v1.20.4/pkg/k8s/apis/cilium.io/client/crds/v2alpha1/ciliumgatewayclassconfigs.yaml",
+      "sha256": "8e06be025a6bd04dab073ba4396e382278ff19059c7d1183aaa11fed4f530946"
+    }
+  ]
+}

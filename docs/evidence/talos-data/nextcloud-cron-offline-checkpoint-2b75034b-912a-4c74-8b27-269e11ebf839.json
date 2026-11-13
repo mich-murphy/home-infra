@@ -1,0 +1,51 @@
+{
+  "status": "OFFLINE_PAYLOAD_PREPARED_LIVE_INTEGRATION_BLOCKED",
+  "live_grant": false,
+  "native_execution": false,
+  "cluster_host_credential_archive_mutation": false,
+  "budget_mib": {
+    "postgres": 384,
+    "redis": 64,
+    "serial_cli_or_cron": 192,
+    "reserve": 192,
+    "total": 832
+  },
+  "validation": {
+    "offline_unit_tests": {
+      "command": "python3 tests/talos-proof-nextcloud-cron_test.py",
+      "passed": 8,
+      "external_commands": "all subprocess.run forbidden except explicitly mocked forensic API responses"
+    },
+    "python_compile": "passed",
+    "git_diff_check": "passed",
+    "php_syntax_runtime": "NOT_RUN_NO_LOCAL_INTERPRETER"
+  },
+  "future_observations_not_performed": [
+    "actual image/core parity",
+    "full retained PVC/database/Secret identity/state inventory",
+    "Redis config and authenticated native access",
+    "native maintenance:install",
+    "native fixture creation",
+    "native cron expired-token deletion and control survival",
+    "cgroup fit",
+    "restoration"
+  ],
+  "blocking_gates": [
+    "guarded serial receipt/endpoint/context/node UID/expiry/dual-memory supervisor",
+    "read-only retained-state and Docker/Redis parity preflight",
+    "proven-empty one-shot installer or retained native status verification",
+    "durable off-pod restore-safe journal and finally recovery",
+    "fresh-process before observation and actual native CronJob-derived execution with strict due interval",
+    "successful forensics before phase deletion and all-pod absence barriers",
+    "PHP syntax/API/runtime validation"
+  ],
+  "files": {
+    "scripts/talos-proof-nextcloud-cron.py": "808d588a99229a6db19e4d4aa920347fb3344194004753220c3fd2e2c9e9cdb5",
+    "scripts/talos-proof-nextcloud-cron.php": "2061df50f6279955f0eb2162d2276a462d1b4279c6bd067aebfca0fefd2742c5",
+    "tests/talos-proof-nextcloud-cron_test.py": "56e6d5cf2c622f7e6a9a6ffbc807e1f005b4545217856179763bf54198fbd1fa",
+    "scripts/talos-proof-data.py": "c675056518ce5e3d5c96228598be5a32945699443fde053bd1b8e1366714fdb7",
+    "tests/talos-proof-data-live.py": "90cf63e77d58e4d8cd272f5922d30e3f2fb232092fbb31b02ac0552a71691686",
+    "docs/talos-proof-nextcloud-cron-plan.md": "5e1ecdfbf4618556528cd013a6e766c728868fb003d95511a1b3bf5f667509d7",
+    "docs/talos-proof-data.md": "edb7bf9657b6acfeb5e8213d85cf5618bce8cff6fe46431040a712dbb8ec36ac"
+  }
+}

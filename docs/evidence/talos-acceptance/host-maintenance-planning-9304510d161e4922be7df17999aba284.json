@@ -1,0 +1,67 @@
+{
+  "observed_utc": "2026-11-12T08:47:27.825231+00:00",
+  "scope": "user-approved maintenance planning; NOT execution authorization",
+  "bootloader": "systemd-boot257.13-1~deb13u1",
+  "confirmed_by": [
+    "EFI BootCurrent selected path",
+    "bootctl current bootloader status"
+  ],
+  "managed_esp_configuration_count": 2,
+  "esp_contents_health_verified": false,
+  "kernel": "7.0.14-17-pve",
+  "kernel_command_line_file": "/etc/kernel/cmdline",
+  "command_line_sha256": "a926178e51c62166d77ab30c89caba9dd2c40397f630a66009466c2734c199ed",
+  "existing_kho_parameter": false,
+  "propagation_proposed_not_executed": "proxmox-boot-tool refresh",
+  "production_guest_startup": {
+    "101": {
+      "onboot": 1,
+      "order": 1,
+      "up_seconds": 60,
+      "agent": false
+    },
+    "102": {
+      "onboot": 1,
+      "order": 2,
+      "agent": true
+    }
+  },
+  "guest_startup_storage_interlocks_verified": false,
+  "backup_storage": {
+    "type": "nfs",
+    "content": "backup",
+    "mount": "/mnt/pve/truenas-backups",
+    "mounted": true,
+    "explicit_disable_property_present": false
+  },
+  "backup_schedule_local": "02:30 Australia/Melbourne",
+  "backup_exclusions": [
+    "9001",
+    "9003",
+    "120"
+  ],
+  "unsupported_task_query_preserved": true,
+  "corrected_active_tasks_observed": 0,
+  "future_task_clearance": false,
+  "swap_devices": [
+    {
+      "device_is_zram": true,
+      "type": "partition",
+      "size_kib": 3911844,
+      "used_kib": 6328,
+      "priority": 100
+    }
+  ],
+  "swap_is_disk_io_evidence": false,
+  "planning_allowance_minutes": 90,
+  "window_selected": false,
+  "console_access_confirmed": false,
+  "production_mutations": 0,
+  "host_reboots": 0,
+  "vm120_left_off": true,
+  "canonical_files_unchanged": 111,
+  "capture": "diagnostics/host-maintenance-plan-f055d402-4bfb-4a8c-b730-1ec2b7869c0f",
+  "manifest": "manifest-cdcca949-9ac4-47e4-a616-dc3e31745d4b.json",
+  "manifest_sha256": "1829465cd204741dbdec6ebc07f5b6fed249a9dcbf6a80318355228e1f59bbf0",
+  "plan": "docs/talos-proof-host-memory-remediation.md"
+}

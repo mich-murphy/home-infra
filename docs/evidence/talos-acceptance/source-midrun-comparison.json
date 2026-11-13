@@ -1,0 +1,378 @@
+{
+  "captured_utc": "2026-11-11T14:59:29.995939+00:00",
+  "scope": "Read-only Docker metadata checkpoint during proof work, not final comparison or claim that normal application data never changes",
+  "container_count": 36,
+  "baseline_count": 36,
+  "compared_fields": [
+    "id",
+    "image_id",
+    "created",
+    "started",
+    "status",
+    "restart_count",
+    "health"
+  ],
+  "changes": [],
+  "containers": [
+    {
+      "id": "d39927050db0dd7b88c665dc7bd95c9680af33ac13744b2459e4aab557560d11",
+      "name": "/kometa",
+      "image_id": "sha256:40d6dd961ecbd75e18635213ddb04e73e8678cf78f828efc01d0a5fcd36924fe",
+      "created": "2026-11-11T12:01:42.064767283Z",
+      "started": "2026-11-11T12:01:42.506644856Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": null
+    },
+    {
+      "id": "c1eb14328613dc96924ca1a758892511c27b624c1bdc331d30bff52b9b36baa1",
+      "name": "/lidarr",
+      "image_id": "sha256:264333502478464c62b851430e03b27d11068f732fefb5dfb2030154fb14e131",
+      "created": "2026-11-11T12:01:26.676710978Z",
+      "started": "2026-11-11T12:01:30.277879986Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "e9fe824fbcb110ae755166e2226e61f3711ccee279675690c223dabe26437f60",
+      "name": "/nextcloud-cron",
+      "image_id": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+      "created": "2026-11-10T12:51:41.984368363Z",
+      "started": "2026-11-10T12:51:58.437801979Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": null
+    },
+    {
+      "id": "f691f199b3e21925025490268803370a9b8b1962b5fa5a1e3ea91059b28f3a89",
+      "name": "/nextcloud",
+      "image_id": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+      "created": "2026-11-10T12:51:40.717448751Z",
+      "started": "2026-11-10T12:51:52.783704442Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "edc6a1769acbc9e9c68873464042474f8c8e3bb0582f1d6acb9957314c2fe599",
+      "name": "/miniflux",
+      "image_id": "sha256:fd622fa7310da7f0c2c5cd627a2fd38f23e8250b28eaf8698f6353215fe1b686",
+      "created": "2026-11-10T12:51:22.326123414Z",
+      "started": "2026-11-10T12:51:23.111056554Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "6e8cbdc851cb87e76e9400d64743c87f35aa72c3e4ae7073c632cfa765da01fd",
+      "name": "/radarr",
+      "image_id": "sha256:4b074edfbc1b5928636cc57a9f18827f441e812b4a1ddd05cfae22ca1e1dcb01",
+      "created": "2026-11-09T13:26:25.676200935Z",
+      "started": "2026-11-09T13:26:29.257622106Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "e2eabe1d064abc5d60409af18fed0bbb3ded0706451224ded30bbeb1550b88f6",
+      "name": "/immich",
+      "image_id": "sha256:fb0c7c1a1b2a553c1c60e4bbb3d999d3d1483c9a223807e0856cd42d30b9cbea",
+      "created": "2026-11-09T13:16:39.655443862Z",
+      "started": "2026-11-09T13:16:40.586957508Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "40f10c767fd922230444edcd11d8e04384435b7c20f2f119b48d7ccd627435de",
+      "name": "/immich-ml",
+      "image_id": "sha256:52479c9b30bd5870f5e61ac383075b9e22a0eadff80ecc690f7de7c9d952b1c7",
+      "created": "2026-11-09T13:16:39.655219485Z",
+      "started": "2026-11-09T13:16:40.085117341Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "c041fc9954605df2fd6fc212b24444a8bdfc4ed1f71f904a4a23eecd2183a2ea",
+      "name": "/tautulli",
+      "image_id": "sha256:037cfdb3f8bb179483e3551a9cc8ba6dfecbd96641ee96de889eb7066c0991a3",
+      "created": "2026-11-09T13:11:37.564785231Z",
+      "started": "2026-11-09T13:11:41.422803559Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "c85b6f0b9b09c39cb613ecd49de8546f7350f37e7a9e0ab5d2751260e700758c",
+      "name": "/sabnzbd",
+      "image_id": "sha256:3ec9eef2aca6ede916b9b1cdd62003389e16a08a6cb9be78f9820cd606391578",
+      "created": "2026-11-09T13:11:17.363705916Z",
+      "started": "2026-11-09T13:11:21.180996114Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "26bb3a9bbaec96f84348246a0efe5ea096a4e35ccb352acd4e48bc35cf3c80a5",
+      "name": "/nextcloud-office",
+      "image_id": "sha256:1c7d52e1015357baa73d4924510c05b767cbc0040a91d80881f4590c8610aa91",
+      "created": "2026-11-08T11:27:00.683850039Z",
+      "started": "2026-11-08T11:27:01.434226178Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "e64398dc6ec0145f9d3d8854e59dbac1c3dd3634f476fa75cdf7497c8c3134ea",
+      "name": "/nextcloud-redis",
+      "image_id": "sha256:978293674c6b207a799aa6003064828846a7771cd521603c41e9a4c7f28ec4dc",
+      "created": "2026-11-08T11:27:00.683626659Z",
+      "started": "2026-11-08T11:27:01.43069805Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "7281c09580462694fcfe636c7ddc7584eeee76bef13ecb5f7bcb034a721d770c",
+      "name": "/wallabag-redis",
+      "image_id": "sha256:d8642290c6a46f22d8ba0de16c5006b66a63b13412e5b8624912aaeecbc7f525",
+      "created": "2026-11-08T11:26:19.45896663Z",
+      "started": "2026-11-08T11:26:19.730769777Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "0309b9e7d01c9170f621335087aff72ea2ca4fdd0cd7e3f35d9474a748240bd0",
+      "name": "/sonarr",
+      "image_id": "sha256:0c43ea3c808ca131e5d23695e40907de0149851716395a764cd0d1787c936ba7",
+      "created": "2026-11-07T12:16:25.420856569Z",
+      "started": "2026-11-07T12:16:28.951479646Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "63105138684a9f716f4ca48cfcfb508941f6d43eb1b2bf6ae2ab29407152d405",
+      "name": "/nextcloud-postgres",
+      "image_id": "sha256:8bca9649e52d948114ccc8164b55b7ab26b64e729893e420114bb5c87bf7c7cc",
+      "created": "2026-11-07T11:16:32.719717834Z",
+      "started": "2026-11-07T11:16:32.960552672Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "ff23c78016d7e94d3eabad4e3d288c27cf8a45405402e86de1f6c62ba5ed3d09",
+      "name": "/miniflux-db",
+      "image_id": "sha256:8bca9649e52d948114ccc8164b55b7ab26b64e729893e420114bb5c87bf7c7cc",
+      "created": "2026-11-07T11:16:19.964636191Z",
+      "started": "2026-11-07T11:16:20.201861403Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "5fc1b9a107a8e7798c2452341e0071ad898f55b817309532ebf80595bbd4ad6c",
+      "name": "/couchdb",
+      "image_id": "sha256:5d03dcfbdfdcfae9aa374ece6d2099383a52e1c892b91b18c8c2b01ff33dd034",
+      "created": "2026-11-05T12:41:26.520685411Z",
+      "started": "2026-11-05T12:41:28.064967845Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "c4186b89a568713f4cb8bb945035583801f1c7314d15f8f62ec033295cbd0193",
+      "name": "/wallabag",
+      "image_id": "sha256:59be8425089e9930dbe20bc644cf902ceeeb66cd3d849e9587dc25b9aac2f0a2",
+      "created": "2026-10-31T10:36:21.225592687Z",
+      "started": "2026-10-31T10:36:22.306780761Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "9ebeb9c0c99fc3aa0df4460ac4a0bf14d52ad38f4c690b5929abc4ab4f20d364",
+      "name": "/wallabag-mariadb",
+      "image_id": "sha256:10731763b027649b7cbcbcf76e8c35a0f4f4240475473839e122ea5f19de29a1",
+      "created": "2026-10-28T10:46:19.511869885Z",
+      "started": "2026-10-28T10:46:19.862667628Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "ff2c07f166645145a9116e0bad0640d894821a22ea271986e79e19001d067b57",
+      "name": "/seerr",
+      "image_id": "sha256:61f6fa0cf472caa95736d00fa624aea848f687b2ac899c2370a509de93e8abba",
+      "created": "2026-10-27T10:02:20.2534678Z",
+      "started": "2026-10-27T10:02:20.822939313Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "a1f7348e488cfadf562e11f7f8a4c8fa692b83a77df9e5512efe7d2acc3e63ab",
+      "name": "/jellyfin",
+      "image_id": "sha256:995797bf87597b4247190e0034827f7887b34e75a4f603374591eab4f44172cb",
+      "created": "2026-10-27T01:31:14.142700865Z",
+      "started": "2026-10-27T01:32:48.606145449Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "68105d4ba7cdedecab3f3fb20e3365f976f3a32c987bb86f1ae95cda9b4713a2",
+      "name": "/jellyplex-watched",
+      "image_id": "sha256:4e875186a553158498e9d68487703991aa0512c8255f7262e62ea1d8185fe7ec",
+      "created": "2026-10-27T01:14:15.680346252Z",
+      "started": "2026-10-27T01:34:02.388327015Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": null
+    },
+    {
+      "id": "e319c1f779ae4271d36229184725ddf0ad7c9c52dc260123b3b61aba121b1a11",
+      "name": "/pocket-id",
+      "image_id": "sha256:018fa74af2636c0940bbef537beb048532d4a50d837d9b250404a3fcb210500f",
+      "created": "2026-10-27T01:12:14.193767895Z",
+      "started": "2026-10-27T01:12:14.569428629Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "38566f55d8d947542133617c88cbff0dcdf17a23d74bda6614387328fb17705e",
+      "name": "/traefik",
+      "image_id": "sha256:3733df53e74cd0df7d1b839168e30d2bd7f5e77dd6214ef3d8056ee1f21392b7",
+      "created": "2026-10-27T01:12:13.79753247Z",
+      "started": "2026-10-27T01:12:14.421809706Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "eecaf1a8e46e55bf6ddfc3633e674244c7c9cbd1ff9ab93218c64fb9953a6eca",
+      "name": "/plex",
+      "image_id": "sha256:54297791dce6edfce6eea8e74e1350f312b4a92af511a97a3a94c41e264e769e",
+      "created": "2026-10-27T00:57:47.491424954Z",
+      "started": "2026-10-27T00:57:56.481062809Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "782dff20c32b82b51669190a81cc97c222df1027aa1c8fca144f55c9ced78cfc",
+      "name": "/beszel",
+      "image_id": "sha256:3906c5c0e19bf611f160a8ffb0a2637c80f8e2491af180be0e83939f666bd60d",
+      "created": "2026-10-27T00:56:39.450869212Z",
+      "started": "2026-10-27T00:56:39.698791169Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "11b898249fab9daeb07021da74eb76451f4532720ea879a3c284ab4c9af5b8c2",
+      "name": "/qbittorrent",
+      "image_id": "sha256:d4f0b8622da58717c2baa61cc05e3d597b72032121a2cba9af29f0e334461346",
+      "created": "2026-10-27T00:56:24.932198362Z",
+      "started": "2026-10-27T00:56:35.314896239Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "4db21e0aaf5fffb64e2c589c76c0e4c6e0af040a67f07f620690f0bdae3f6986",
+      "name": "/portainer",
+      "image_id": "sha256:398e92fbba00c8ec4e0dfe6eab403027d27bae95d86196fb0f88b284dab7025d",
+      "created": "2026-10-26T11:26:54.651578691Z",
+      "started": "2026-10-26T22:50:56.807279491Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": null
+    },
+    {
+      "id": "c08adf67c51423f5ef0765c4206cb4fa5f012dd87cfb903a241fe4ccb01b35b2",
+      "name": "/docker-socket-proxy",
+      "image_id": "sha256:a14e639cf2a202e87bb83f21ff041885098f295dbbbb18e2f3a8f078f90dfdcc",
+      "created": "2026-10-26T11:26:54.651569048Z",
+      "started": "2026-10-26T22:50:56.623482064Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "dc5c541ac88041c8285b60419fa7bf97f344aeaf4df4845e5a88d946b1ef4283",
+      "name": "/prowlarr",
+      "image_id": "sha256:0a339d838e29651e2919e2a1b80be1100080b5ee8b1522ed11b5619230d1d432",
+      "created": "2026-10-26T08:57:05.937074126Z",
+      "started": "2026-10-26T22:50:56.592879505Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "e8f330d0f51c58f0f75bdb011abe6712e15c55877f5ff337203540fcc31d3762",
+      "name": "/audiobookshelf",
+      "image_id": "sha256:428769644edafa69beffc66ea45e4e1458a0f2b52e77e914d46068ca4b9fe53b",
+      "created": "2026-10-26T08:56:21.834586248Z",
+      "started": "2026-10-26T22:50:56.586839047Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "13f03ff7966d7a77eb8d31bb890cebd4524d351e56b0cd10568dea6c15e85ada",
+      "name": "/recyclarr",
+      "image_id": "sha256:e01acf089048efe5b315858054563e724f080240864a0fa6b35f63ac08e876ff",
+      "created": "2026-10-13T12:04:27.662840551Z",
+      "started": "2026-10-26T22:50:56.435118227Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": null
+    },
+    {
+      "id": "f9a32abb9d77c2d860804082a5e94a6f41191f7342aa9acb60c50f660e4003ee",
+      "name": "/pinchflat",
+      "image_id": "sha256:73c09865113935331f04f1f9ff4733e7b0ee785fe9d3613b0745a98d4899de53",
+      "created": "2026-09-13T12:39:15.311467857Z",
+      "started": "2026-10-26T22:50:57.785972351Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "38647f9e167392613e5576f5d9b3929dc2ee56299643e1fc28241c24bbcf33fc",
+      "name": "/qbitwebui",
+      "image_id": "sha256:86027d8080a77ae8025763f386a02f4ba16d724954053683e91d916077385843",
+      "created": "2026-09-13T12:38:47.845803463Z",
+      "started": "2026-10-26T22:50:57.800070934Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "75f770d45570d51f82faf03b601dc8f53e3e445a9c05071a0b08f66464fbd6a1",
+      "name": "/immich-redis",
+      "image_id": "sha256:8c78a9d757ed2b3c05956ce9337aad063df88a5ba371dd5418b4f66cfb5b1b4d",
+      "created": "2026-06-11T01:46:57.002251507Z",
+      "started": "2026-10-26T22:50:56.725490068Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    },
+    {
+      "id": "105db2fe48b84c0c87c4d3e832fe9c016e3be5ae6f62b4b6406d703146c5a94a",
+      "name": "/immich-postgres",
+      "image_id": "sha256:178719aeb38df6f0ce8edc1d8320008379fcf04eb3444e76419cc98d9861e331",
+      "created": "2026-06-10T11:18:27.492421741Z",
+      "started": "2026-10-26T22:50:56.429941512Z",
+      "status": "running",
+      "restart_count": 0,
+      "health": "healthy"
+    }
+  ]
+}

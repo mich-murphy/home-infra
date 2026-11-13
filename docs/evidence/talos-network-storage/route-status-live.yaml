@@ -1,0 +1,52 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"gateway.networking.k8s.io/v1","kind":"HTTPRoute","metadata":{"annotations":{},"name":"fixture","namespace":"proof-network-test"},"spec":{"hostnames":["fixture.proof.invalid"],"parentRefs":[{"name":"proof","namespace":"proof-gateway"}],"rules":[{"backendRefs":[{"name":"fixture","port":8080}]}]}}
+  creationTimestamp: "2026-11-11T12:46:36Z"
+  generation: 1
+  name: fixture
+  namespace: proof-network-test
+  resourceVersion: "2020"
+  uid: 68117a52-a5a1-49d4-af2c-ab1f05cf0d22
+spec:
+  hostnames:
+  - fixture.proof.invalid
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: proof
+    namespace: proof-gateway
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: fixture
+      port: 8080
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+status:
+  parents:
+  - conditions:
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Accepted HTTPRoute
+      observedGeneration: 1
+      reason: Accepted
+      status: "True"
+      type: Accepted
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Service reference is valid
+      observedGeneration: 1
+      reason: ResolvedRefs
+      status: "True"
+      type: ResolvedRefs
+    controllerName: io.cilium/gateway-controller
+    parentRef:
+      group: gateway.networking.k8s.io
+      kind: Gateway
+      name: proof
+      namespace: proof-gateway

@@ -1,0 +1,41 @@
+{
+  "offline_only": true,
+  "no_grant_or_runtime_calls": true,
+  "run_id": "34a6bc9c-7a6a-46b3-ac59-528c84233bca",
+  "all_eleven_captured_objects_pass": true,
+  "passed_resources": [
+    "configmap/nextcloud-apache-proof",
+    "cronjob/nextcloud-cron",
+    "deployment/nextcloud",
+    "deployment/postgres",
+    "deployment/redis",
+    "pvc/nextcloud-data",
+    "pvc/postgres-data",
+    "pvc/redis-data",
+    "service/nextcloud",
+    "service/postgres",
+    "service/redis"
+  ],
+  "source_sha256": {
+    "/Users/mm/dev/home-infra-talos-proof/scripts/talos-proof-nextcloud-initialize.py": "54c60fae97462f00ccda11665825bd97482c20236d5d84fabd87c2309d28a089",
+    "/Users/mm/dev/home-infra-talos-proof/scripts/talos-proof-nextcloud-cron-supervisor.py": "a73efa4c9be5b4607241de6b7368e4e7939a3c96006cfea48045d9dbffbbd756"
+  },
+  "tests": {
+    "initializer": 35,
+    "supervisor": 30,
+    "compiler": 8,
+    "data": 42,
+    "data_wopi": 14,
+    "data_workflows": 20,
+    "total": 149
+  },
+  "private_candidate_plan": "/Users/mm/.local/state/home-infra/talos-proof/diagnostics/bind-created-offline-candidate-plan-35e212e0-cec4-4f53-98d5-19ba8869f589.json",
+  "private_replay": "/Users/mm/.local/state/home-infra/talos-proof/diagnostics/bind-created-all11-offline-replay-6e121648-6aa7-46f4-91b3-dd132dab5606.json",
+  "original_pending_and_36_journals_unchanged": true,
+  "original_receipt_still_released": true,
+  "new_authorization_fields": "parent placeholders only; not issued",
+  "limitations": [
+    "Historical snapshots only; fresh runtime admission and parent grant still required.",
+    "No binding/helper/native execution or functional acceptance."
+  ]
+}

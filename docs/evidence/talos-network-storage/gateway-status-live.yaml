@@ -1,0 +1,111 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"gateway.networking.k8s.io/v1","kind":"Gateway","metadata":{"annotations":{},"name":"proof","namespace":"proof-gateway"},"spec":{"gatewayClassName":"proof-cilium","listeners":[{"allowedRoutes":{"namespaces":{"from":"Selector","selector":{"matchLabels":{"app.kubernetes.io/part-of":"talos-proof"}}}},"hostname":"*.proof.invalid","name":"http","port":80,"protocol":"HTTP"},{"allowedRoutes":{"namespaces":{"from":"Selector","selector":{"matchLabels":{"app.kubernetes.io/part-of":"talos-proof"}}}},"hostname":"*.proof.invalid","name":"https","port":443,"protocol":"HTTPS","tls":{"certificateRefs":[{"name":"proof-tls"}],"mode":"Terminate"}}]}}
+  creationTimestamp: "2026-11-11T12:40:58Z"
+  generation: 1
+  name: proof
+  namespace: proof-gateway
+  resourceVersion: "2022"
+  uid: 008e2c41-5fcc-46de-a721-bf961882763b
+spec:
+  gatewayClassName: proof-cilium
+  listeners:
+  - allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            app.kubernetes.io/part-of: talos-proof
+    hostname: '*.proof.invalid'
+    name: http
+    port: 80
+    protocol: HTTP
+  - allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            app.kubernetes.io/part-of: talos-proof
+    hostname: '*.proof.invalid'
+    name: https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - group: ""
+        kind: Secret
+        name: proof-tls
+      mode: Terminate
+status:
+  addresses:
+  - type: IPAddress
+    value: 172.31.250.10
+  conditions:
+  - lastTransitionTime: "2026-11-11T12:41:18Z"
+    message: Gateway successfully scheduled
+    observedGeneration: 1
+    reason: Accepted
+    status: "True"
+    type: Accepted
+  - lastTransitionTime: "2026-11-11T12:46:36Z"
+    message: Gateway Programmed
+    observedGeneration: 1
+    reason: Programmed
+    status: "True"
+    type: Programmed
+  listeners:
+  - attachedRoutes: 1
+    conditions:
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Resolved Refs
+      observedGeneration: 1
+      reason: ResolvedRefs
+      status: "True"
+      type: ResolvedRefs
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Listener Accepted
+      observedGeneration: 1
+      reason: Accepted
+      status: "True"
+      type: Accepted
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Listener Programmed
+      observedGeneration: 1
+      reason: Programmed
+      status: "True"
+      type: Programmed
+    name: http
+    supportedKinds:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute
+  - attachedRoutes: 1
+    conditions:
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Resolved Refs
+      observedGeneration: 1
+      reason: ResolvedRefs
+      status: "True"
+      type: ResolvedRefs
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Listener Accepted
+      observedGeneration: 1
+      reason: Accepted
+      status: "True"
+      type: Accepted
+    - lastTransitionTime: "2026-11-11T12:46:36Z"
+      message: Listener Programmed
+      observedGeneration: 1
+      reason: Programmed
+      status: "True"
+      type: Programmed
+    name: https
+    supportedKinds:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute

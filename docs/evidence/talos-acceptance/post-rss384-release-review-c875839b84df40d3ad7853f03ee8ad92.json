@@ -1,0 +1,52 @@
+{
+  "observed_at": "2026-11-11T23:59:56.145521+00:00",
+  "scope": "Independent parent read-only release/214-file integrity review; NOT activation or capacity authority",
+  "node_uid": "4845bfd5-3bdb-453d-8503-83b43edb7a1e",
+  "all_proof_and_helper_pods_absent": true,
+  "proof_controllers_stopped_and_schedules_suspended": true,
+  "nextcloud_pvc_count": 0,
+  "retained_pinchflat_limits": {
+    "pinchflat": {
+      "cpu": "1",
+      "memory": "384Mi"
+    },
+    "rss-fixture": {
+      "cpu": "200m",
+      "memory": "128Mi"
+    }
+  },
+  "protected_file_count": 214,
+  "protected_current_hashes_match_before_and_after": true,
+  "protected_manifest_sha256": "27c1316b3483fe628a959a4675dd48a936993a0f0f620ca96800f5ccb1b391bb",
+  "retained_stop_sha256": "197372ba5f9c0466e2c8befc64f1d0f585871e41ffbbfb8905521f2b35d35e83",
+  "stop_disposition": "Preserved; no acknowledgement/override or new activation authorized",
+  "leases": [
+    {
+      "run_id": "49eae0a3-75d7-44e1-b5d8-103211169c8e",
+      "active_path_absent": true,
+      "issued_sha256": "0e520e5a59ac176ecd96ccf823b6f8e9cdc91296abd863773c9292117fd61eb3",
+      "revoked_sha256": "f06d5f49db3604e7d59e0e78ec6672973b756553ddc28f2bbc81d72b59bb089f",
+      "immutable_authority_fields_match": true
+    },
+    {
+      "run_id": "77f1f267-3749-4f10-acb2-3f2c3d2781ea",
+      "active_path_absent": true,
+      "issued_sha256": "9622564aab2438245da7f8ef0f9d3502694b065a4cfdbdfa99e33003fd5196bd",
+      "revoked_sha256": "fc70c035d0de1a9005d5b0472244eda38c1669ed9bcbf07854e2583dbff88118",
+      "immutable_authority_fields_match": true
+    }
+  ],
+  "kubelet_available_mib": 1176,
+  "talos_available_mib": 1162,
+  "minimum_available_mib": 1162,
+  "host": {
+    "guard": "active",
+    "available_mib": 1877,
+    "swap_used_kib": 28
+  },
+  "original_host_swap_baseline_kib": 24,
+  "limitations": [
+    "No new functional replay, downloader result, capacity, restart or recovery acceptance",
+    "RPC error was hidden historically; offline reproduction does not establish exact lost live return term"
+  ]
+}

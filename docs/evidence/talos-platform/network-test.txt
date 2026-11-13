@@ -1,0 +1,42 @@
+PUBLIC
+HTTP/2 200
+date: Wed, 11 Nov 2026 12:35:32 GMT
+content-type: text/html; charset=utf-8
+server: cloudflare
+last-modified: Sun, 08 Nov 2026 18:05:34 GMT
+allow: GET, HEAD
+accept-ranges: bytes
+age: 1283
+cf-cache-status: HIT
+cf-ray: a58d56622c745c0a-SYD
+alt-svc: h3=":443"; ma=86400
+
+DENY-TEST:http://172.31.250.2:8006
+curl: (28) Connection timed out after 3002 milliseconds
+BLOCKED
+DENY-TEST:http://172.31.250.2:22
+curl: (28) Connection timed out after 3002 milliseconds
+BLOCKED
+DENY-TEST:http://172.31.250.2:50120
+curl: (28) Connection timed out after 3002 milliseconds
+BLOCKED
+DENY-TEST:http://10.77.1.100:8006
+curl: (28) Connection timed out after 3001 milliseconds
+BLOCKED
+DENY-TEST:http://10.77.20.100:80
+curl: (28) Connection timed out after 3002 milliseconds
+BLOCKED
+DENY-TEST:http://192.168.1.1:80
+curl: (28) Connection timed out after 3002 milliseconds
+BLOCKED
+DENY-TEST:http://100.100.100.100:80
+curl: (28) Connection timed out after 3002 milliseconds
+BLOCKED
+DENY-TEST:http://169.254.169.254:80
+curl: (28) Connection timed out after 3002 milliseconds
+BLOCKED
+DENY-TEST:http://[::1]:8006
+curl: (7) Failed to connect to ::1 port 8006 after 0 ms: Could not connect to server
+BLOCKED
+ISOLATION-PASS
+172.31.250.10: pulled image docker.io/curlimages/curl@sha256:935d9100e9ba842cdb060de42472c7ca90cfe9a7c96e4dacb55e79e560b3ff40

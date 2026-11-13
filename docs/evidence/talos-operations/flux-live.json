@@ -1,0 +1,34 @@
+{
+  "started": "2026-11-11T15:06:54.220723+00:00",
+  "ended": "2026-11-11T15:07:52.591290+00:00",
+  "commit": "5d9a9926106f76346950af20e8afc0ef346ac548",
+  "transitions": [
+    {
+      "expected": "1",
+      "observed": "1"
+    },
+    {
+      "expected": "drift",
+      "observed": "drift"
+    },
+    {
+      "expected": "1",
+      "observed": "1"
+    },
+    {
+      "expected": "2",
+      "observed": "2"
+    },
+    {
+      "expected": "1",
+      "observed": "1"
+    }
+  ],
+  "source_revision": "sha1:5d9a9926106f76346950af20e8afc0ef346ac548",
+  "applied_revision": "sha1:5d9a9926106f76346950af20e8afc0ef346ac548",
+  "negative_rbac": {
+    "create deployments": "no",
+    "get secrets": "no"
+  },
+  "rollback": "fixture path v2 to v1, same immutable commit"
+}

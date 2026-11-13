@@ -1,0 +1,60 @@
+{
+  "observed_at": 1794416991.929894,
+  "original_parent_crosschecked_archives": [
+    {
+      "group": "couchdb",
+      "file": "couchdb-documents.json",
+      "bytes": 67,
+      "mode": "0o600",
+      "sha256": "277793be71c5818fb01c8d82032a674f60f5602fc995d0aa2e21458c43daf7c8",
+      "matches_parent_original_digest": true
+    },
+    {
+      "group": "miniflux",
+      "file": "miniflux-postgres.dump",
+      "bytes": 51490,
+      "mode": "0o600",
+      "sha256": "82bf0913c61e66498293348a3154424afc323f2bf898829da4b0c64518ed5627",
+      "matches_parent_original_digest": true
+    },
+    {
+      "group": "pocket-id",
+      "file": "pocket-id-logical-export.zip",
+      "bytes": 245497,
+      "mode": "0o600",
+      "sha256": "963c674f9118fa0164258933d11d2089431b21f88438abae8e3d3d3e83331fbb",
+      "matches_parent_original_digest": true
+    },
+    {
+      "group": "wallabag",
+      "file": "wallabag-mariadb.sql",
+      "bytes": 37453,
+      "mode": "0o600",
+      "sha256": "4caadbe4724f6dd0c859ba888c6952e1a04a364d8bbae752ec52f791f6c2f1aa",
+      "matches_parent_original_digest": true
+    }
+  ],
+  "expanded_archives": [
+    {
+      "group": "couchdb",
+      "file": "couchdb-logical-ccf926c1a3f741419d7a682b453fd83e.json",
+      "bytes": 1087,
+      "mode": "0o600",
+      "sha256": "6029a4f6ea9478f5709eca293247ae81f8519890ff8c3812aafd8b740a5f4afb",
+      "hashed_user_record_count": 2,
+      "contains_plaintext_password_field": false,
+      "security_member_count": 1,
+      "design_document_present": true
+    },
+    {
+      "group": "miniflux",
+      "file": "miniflux-postgres-ce130815fcef407fa03422cc67acbfa8.dump",
+      "bytes": 51495,
+      "mode": "0o600",
+      "sha256": "683cac5e58e468fcbbe6746da4c69546d186467de27fefccc3d3934d60c876f1"
+    }
+  ],
+  "all_proof_cronjobs_suspended": true,
+  "active_proof_jobs": 0,
+  "private_state_mode": "0o700"
+}

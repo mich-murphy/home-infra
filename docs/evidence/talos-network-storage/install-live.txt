@@ -1,0 +1,50 @@
+gateway-gatewayclasses-1.6.1.yaml verified
+gateway-gateways-1.6.1.yaml verified
+gateway-httproutes-1.6.1.yaml verified
+gateway-referencegrants-1.6.1.yaml verified
+gateway-grpcroutes-1.6.1.yaml verified
+gateway-backendtlspolicies-1.6.1.yaml verified
+gateway-tlsroutes-1.6.1.yaml verified
+cilium-1.20.4.tgz verified
+customresourcedefinition.apiextensions.k8s.io/backendtlspolicies.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/gatewayclasses.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/gateways.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/grpcroutes.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/httproutes.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/referencegrants.gateway.networking.k8s.io serverside-applied
+customresourcedefinition.apiextensions.k8s.io/tlsroutes.gateway.networking.k8s.io serverside-applied
+Release "cilium" does not exist. Installing it now.
+NAME: cilium
+LAST DEPLOYED: Wed Nov 11 23:40:54 2026
+NAMESPACE: kube-system
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+You have successfully installed Cilium.
+
+Your release version is 1.20.4.
+
+For any further help, visit https://docs.cilium.io/en/v1.20/gettinghelp
+namespace/local-path-storage created
+namespace/proof-gateway created
+namespace/proof-validation created
+storageclass.storage.k8s.io/proof-local created
+serviceaccount/local-path-provisioner-service-account created
+role.rbac.authorization.k8s.io/local-path-provisioner-role created
+clusterrole.rbac.authorization.k8s.io/local-path-provisioner-role created
+rolebinding.rbac.authorization.k8s.io/local-path-provisioner-bind created
+clusterrolebinding.rbac.authorization.k8s.io/local-path-provisioner-bind created
+configmap/local-path-config created
+Warning: would violate PodSecurity "restricted:latest": allowPrivilegeEscalation != false (container "local-path-provisioner" must set securityContext.allowPrivilegeEscalation=false), unrestricted capabilities (container "local-path-provisioner" must set securityContext.capabilities.drop=["ALL"]), runAsNonRoot != true (pod or container "local-path-provisioner" must set securityContext.runAsNonRoot=true), seccompProfile (pod or container "local-path-provisioner" must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
+deployment.apps/local-path-provisioner created
+gateway.gateway.networking.k8s.io/proof created
+gatewayclass.gateway.networking.k8s.io/proof-cilium created
+resource mapping not found for name: "talos-proof-boundaries" namespace: "" from "/Users/mm/dev/home-infra-talos-proof/kubernetes/platform": no matches for kind "CiliumClusterwideNetworkPolicy" in version "cilium.io/v2"
+ensure CRDs are installed first
+resource mapping not found for name: "storage-controller-boundary" namespace: "local-path-storage" from "/Users/mm/dev/home-infra-talos-proof/kubernetes/platform": no matches for kind "CiliumNetworkPolicy" in version "cilium.io/v2"
+ensure CRDs are installed first
+resource mapping not found for name: "validation-to-proof" namespace: "proof-validation" from "/Users/mm/dev/home-infra-talos-proof/kubernetes/platform": no matches for kind "CiliumNetworkPolicy" in version "cilium.io/v2"
+ensure CRDs are installed first
+resource mapping not found for name: "proof-nodeport" namespace: "proof-gateway" from "/Users/mm/dev/home-infra-talos-proof/kubernetes/platform": no matches for kind "CiliumGatewayClassConfig" in version "cilium.io/v2alpha1"
+ensure CRDs are installed first

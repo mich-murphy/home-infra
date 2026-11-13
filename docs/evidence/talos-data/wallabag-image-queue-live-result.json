@@ -1,0 +1,1166 @@
+{
+  "group": "wallabag",
+  "stage": null,
+  "checks": [
+    "TLS Gateway route selected: wallabag.proof.invalid",
+    "Wallabag OAuth password login and live fixture URL capture/extraction via trusted TLS Gateway",
+    "Wallabag extraction rewrites actual fixture image to local image storage",
+    "Wallabag fetched local SVG retains exact synthetic dimensions/color",
+    "Wallabag actual importer queues one entry without synchronous import",
+    "Wallabag real Redis source queue contains exactly one pending import",
+    "Wallabag queued article is not visible before actual worker",
+    "Wallabag actual Redis worker drains source/processing with no failed/error jobs",
+    "Wallabag actual consumer import visible through authenticated API with content/read/star state",
+    "Wallabag actual importer queues one entry without synchronous import",
+    "Wallabag real Redis source queue contains exactly one pending import",
+    "Wallabag queued article is not visible before actual worker",
+    "Wallabag actual Redis worker drains source/processing with no failed/error jobs",
+    "Wallabag actual consumer import visible through authenticated API with content/read/star state",
+    "Wallabag HTTP update/archive/star operations persist",
+    "Wallabag export contains the HTTP-captured article and exact content SHA256",
+    "TLS Gateway route selected: wallabag.proof.invalid",
+    "Wallabag HTTP article survives MariaDB pod replacement",
+    "Wallabag extraction rewrites actual fixture image to local image storage",
+    "Wallabag fetched local SVG retains exact synthetic dimensions/color",
+    "Wallabag downloaded image hash persists with article after replacement/DB restore",
+    "clean restore uses distinct fresh PVC UID and PV: mariadb",
+    "TLS Gateway route selected: wallabag.proof.invalid",
+    "Wallabag existing user OAuth relogin and captured article/archive/content SHA256 survive clean MariaDB PVC restore",
+    "Wallabag extraction rewrites actual fixture image to local image storage",
+    "Wallabag fetched local SVG retains exact synthetic dimensions/color",
+    "Wallabag downloaded image hash persists with article after replacement/DB restore",
+    "Wallabag HTTP delete confirmed by404 on restored instance",
+    "TLS Gateway route selected: wallabag.proof.invalid",
+    "Wallabag source article cleaned up through authenticated HTTP API"
+  ],
+  "limitations": [
+    "Frontend tests use verified TLS Gateway; backend-only ML ping uses API port-forward. Negative isolation/drop-verdict tests remain a platform acceptance gate.",
+    "Proof-only exact fixture FQDN extractor private-IP exception; no general subnet/Internet exemption.",
+    "Synthetic SVG download and actual bounded Redis import worker only. Redis replacement uses fresh producer/worker connections; no transparent in-flight reconnect, queued-message persistence or exactly-once claim. Image PVC is retained during MariaDB-only recovery."
+  ],
+  "downloaded_image_sha256": "374a79521a94551d740b0f1340fda1ce6d1782dcafcdd5c8a15bb9c885f6f231",
+  "memory_observations": [
+    {
+      "app": "redis",
+      "reason": "before replacement",
+      "time": 1794425112.851286,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 18223104
+        },
+        "memory.peak": {
+          "bytes": 66392064
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 5038080,
+          "file": 11501568,
+          "kernel": 1605632,
+          "kernel_stack": 131072,
+          "pagetables": 729088,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 5554176,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 409600,
+          "active_anon": 4558848,
+          "inactive_file": 10424320,
+          "active_file": 1077248,
+          "unevictable": 0,
+          "slab_reclaimable": 403776,
+          "slab_unreclaimable": 247560,
+          "slab": 651336,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 1921,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 1824,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 14541,
+          "pgsteal": 14167,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 12274,
+          "pgscan_direct": 2267,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 11950,
+          "pgsteal_direct": 2217,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 5982,
+          "pgmajfault": 27,
+          "pgrefill": 332,
+          "pgactivate": 72,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "cd67b6c8-b7ba-45d2-acba-57a7810898f2",
+          "containers": [
+            {
+              "name": "redis",
+              "image": "sha256:d8642290c6a46f22d8ba0de16c5006b66a63b13412e5b8624912aaeecbc7f525",
+              "imageID": "docker.io/library/redis@sha256:71885d8cc6e42f2bc0aa2eb853bfc4be200b5108a46ac50e117ae1df0531fb80",
+              "containerID": "containerd://d951de69eb164ab415882e65d2577c946d0c05a86b050d02aa6f96d4dffb5482",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "mariadb",
+      "reason": "before replacement",
+      "time": 1794425126.609529,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 123191296
+        },
+        "memory.peak": {
+          "bytes": 137142272
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 62427136,
+          "file": 57802752,
+          "kernel": 2772992,
+          "kernel_stack": 294912,
+          "pagetables": 847872,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 36143104,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 48128000,
+          "active_anon": 14209024,
+          "inactive_file": 18157568,
+          "active_file": 39645184,
+          "unevictable": 0,
+          "slab_reclaimable": 1176616,
+          "slab_unreclaimable": 357248,
+          "slab": 1533864,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 1740,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 1710,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 5629,
+          "pgsteal": 5215,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 5629,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 5215,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 96510,
+          "pgmajfault": 66,
+          "pgrefill": 6824,
+          "pgactivate": 185,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "7b17f1db-3bcf-4be3-986b-a534975c06d9",
+          "containers": [
+            {
+              "name": "mariadb",
+              "image": "sha256:10731763b027649b7cbcbcf76e8c35a0f4f4240475473839e122ea5f19de29a1",
+              "imageID": "docker.io/library/mariadb@sha256:f4054da26e3a9dd6c8b5cc97363e544408b15c0fb369d7359c25dc04826eb6e1",
+              "containerID": "containerd://8f7806178f3521b3920e8b2e5cc73516f5360ce57803fd46405271c44e8a1747",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "wallabag",
+      "reason": "before scale0",
+      "time": 1794425140.089232,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 148615168
+        },
+        "memory.peak": {
+          "bytes": 201326592
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 13721600,
+          "file": 100614144,
+          "kernel": 34209792,
+          "kernel_stack": 147456,
+          "pagetables": 1331200,
+          "sec_pagetables": 0,
+          "percpu": 864,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 31776768,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 59326464,
+          "file_dirty": 12288,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 507904,
+          "active_anon": 44933120,
+          "inactive_file": 64360448,
+          "active_file": 4476928,
+          "unevictable": 0,
+          "slab_reclaimable": 31921752,
+          "slab_unreclaimable": 710560,
+          "slab": 32632312,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 23935,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 13856,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 962,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 48645,
+          "pgsteal": 44363,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 11098,
+          "pgscan_direct": 37547,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 10931,
+          "pgsteal_direct": 33432,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 216362,
+          "pgmajfault": 324,
+          "pgrefill": 6313,
+          "pgactivate": 6761,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "54fb5586-70ba-4e07-be39-254840c842a5",
+          "containers": [
+            {
+              "name": "wallabag",
+              "image": "sha256:59be8425089e9930dbe20bc644cf902ceeeb66cd3d849e9587dc25b9aac2f0a2",
+              "imageID": "docker.io/wallabag/wallabag@sha256:2e9d9fbbba6feee060109351d1235386fa4ac495f98c82d94a250d56feaeaeeb",
+              "containerID": "containerd://205e55681d844069f8a34b33d18b4d5b8e11c1db892210752e32c87b24c39e23",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "mariadb",
+      "reason": "before scale0",
+      "time": 1794425204.407231,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 103415808
+        },
+        "memory.peak": {
+          "bytes": 103432192
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 62160896,
+          "file": 39276544,
+          "kernel": 1953792,
+          "kernel_stack": 212992,
+          "pagetables": 937984,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 6557696,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 23855104,
+          "active_anon": 38203392,
+          "inactive_file": 22839296,
+          "active_file": 16437248,
+          "unevictable": 0,
+          "slab_reclaimable": 374848,
+          "slab_unreclaimable": 332096,
+          "slab": 706944,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 3279,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 3140,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 0,
+          "pgsteal": 0,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 0,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 0,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 124918,
+          "pgmajfault": 68,
+          "pgrefill": 0,
+          "pgactivate": 0,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "4bdf2ff9-f9cb-43ba-a4de-cfc98735c8a8",
+          "containers": [
+            {
+              "name": "mariadb",
+              "image": "sha256:10731763b027649b7cbcbcf76e8c35a0f4f4240475473839e122ea5f19de29a1",
+              "imageID": "docker.io/library/mariadb@sha256:f4054da26e3a9dd6c8b5cc97363e544408b15c0fb369d7359c25dc04826eb6e1",
+              "containerID": "containerd://4b5d0e0ae0f5aeba6d30ca1fc1205e0715a3e245fcf11291ebd34d359df04fb0",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "wallabag",
+      "reason": "before scale0",
+      "time": 1794425241.539604,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 167849984
+        },
+        "memory.peak": {
+          "bytes": 201314304
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 15482880,
+          "file": 128663552,
+          "kernel": 23621632,
+          "kernel_stack": 147456,
+          "pagetables": 1277952,
+          "sec_pagetables": 0,
+          "percpu": 864,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 31825920,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 58695680,
+          "file_dirty": 1708032,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 0,
+          "active_anon": 47251456,
+          "inactive_file": 57266176,
+          "active_file": 39571456,
+          "unevictable": 0,
+          "slab_reclaimable": 21400408,
+          "slab_unreclaimable": 697944,
+          "slab": 22098352,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 6577,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 1480,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 43,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 22621,
+          "pgsteal": 19995,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 145,
+          "pgscan_direct": 22476,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 68,
+          "pgsteal_direct": 19927,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 88176,
+          "pgmajfault": 158,
+          "pgrefill": 761,
+          "pgactivate": 5003,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "ec14c9ef-fa7c-46d2-a2ea-f3d8083df7f9",
+          "containers": [
+            {
+              "name": "wallabag",
+              "image": "sha256:59be8425089e9930dbe20bc644cf902ceeeb66cd3d849e9587dc25b9aac2f0a2",
+              "imageID": "docker.io/wallabag/wallabag@sha256:2e9d9fbbba6feee060109351d1235386fa4ac495f98c82d94a250d56feaeaeeb",
+              "containerID": "containerd://37726e1bcd371c196e313442ce3d2921c53cdfcbd62a634f1a29f62e334acba1",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "mariadb",
+      "reason": "before scale0",
+      "time": 1794425243.39798,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 100704256
+        },
+        "memory.peak": {
+          "bytes": 107376640
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 63119360,
+          "file": 34013184,
+          "kernel": 3735552,
+          "kernel_stack": 294912,
+          "pagetables": 991232,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 7184384,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 61366272,
+          "active_anon": 1748992,
+          "inactive_file": 23605248,
+          "active_file": 10407936,
+          "unevictable": 0,
+          "slab_reclaimable": 1987928,
+          "slab_unreclaimable": 360992,
+          "slab": 2348920,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 11,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 4734,
+          "pgsteal": 3993,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 4734,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 3993,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 148591,
+          "pgmajfault": 99,
+          "pgrefill": 53,
+          "pgactivate": 706,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "d48e3891-3b2c-43c4-9078-42310efe3941",
+          "containers": [
+            {
+              "name": "mariadb",
+              "image": "sha256:10731763b027649b7cbcbcf76e8c35a0f4f4240475473839e122ea5f19de29a1",
+              "imageID": "docker.io/library/mariadb@sha256:f4054da26e3a9dd6c8b5cc97363e544408b15c0fb369d7359c25dc04826eb6e1",
+              "containerID": "containerd://5bf44d27aac8f2ee8d9841c314e92e6d9a51b28ff3183ff97967d124e175e8ee",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "fixture",
+      "reason": "suite final observation",
+      "time": 1794425269.492335,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 41054208
+        },
+        "memory.peak": {
+          "bytes": 67108864
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 9547776,
+          "file": 29278208,
+          "kernel": 2162688,
+          "kernel_stack": 49152,
+          "pagetables": 667648,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 9216000,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 15302656,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 9736192,
+          "active_anon": 8925184,
+          "inactive_file": 18391040,
+          "active_file": 1638400,
+          "unevictable": 0,
+          "slab_reclaimable": 987240,
+          "slab_unreclaimable": 363896,
+          "slab": 1351136,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 22030,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 15886,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 23,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 42960,
+          "pgsteal": 41296,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 7381,
+          "pgscan_direct": 35579,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 6941,
+          "pgsteal_direct": 34355,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 8684,
+          "pgmajfault": 190,
+          "pgrefill": 550,
+          "pgactivate": 760,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "c4623e4a-7062-463f-9d51-6ad3d3f26a03",
+          "containers": [
+            {
+              "name": "fixture",
+              "image": "sha256:b5cf942dc492381f281322afb9feb6074f6cfd8cbdf3ff8e6f38c20b51460f5a",
+              "imageID": "docker.io/library/nextcloud@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+              "containerID": "containerd://532b81033e464c0e7e86f876b0692096d2a2f476584f3fcf6ea37308563fcdab",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "mariadb",
+      "reason": "suite final observation",
+      "time": 1794425269.852661,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 85549056
+        },
+        "memory.peak": {
+          "bytes": 85549056
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 61652992,
+          "file": 21893120,
+          "kernel": 1732608,
+          "kernel_stack": 278528,
+          "pagetables": 708608,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 487424,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 58445824,
+          "active_anon": 3108864,
+          "inactive_file": 5128192,
+          "active_file": 16764928,
+          "unevictable": 0,
+          "slab_reclaimable": 309016,
+          "slab_unreclaimable": 339256,
+          "slab": 648272,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 47,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 0,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 45,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 158,
+          "pgsteal": 123,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 158,
+          "pgscan_direct": 0,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 123,
+          "pgsteal_direct": 0,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 89562,
+          "pgmajfault": 28,
+          "pgrefill": 22,
+          "pgactivate": 17,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "90a2cc85-4c3b-469c-a2b5-eab5fcfb4462",
+          "containers": [
+            {
+              "name": "mariadb",
+              "image": "sha256:10731763b027649b7cbcbcf76e8c35a0f4f4240475473839e122ea5f19de29a1",
+              "imageID": "docker.io/library/mariadb@sha256:f4054da26e3a9dd6c8b5cc97363e544408b15c0fb369d7359c25dc04826eb6e1",
+              "containerID": "containerd://6d9f35d6b04ec9ac7ba78ad28d44b1833949f014cc882e6bbfed9f07f3b6c2a2",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "redis",
+      "reason": "suite final observation",
+      "time": 1794425270.195502,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 45957120
+        },
+        "memory.peak": {
+          "bytes": 66826240
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 5033984,
+          "file": 39686144,
+          "kernel": 1327104,
+          "kernel_stack": 131072,
+          "pagetables": 712704,
+          "sec_pagetables": 0,
+          "percpu": 480,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 0,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 13549568,
+          "file_dirty": 0,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 1810432,
+          "active_anon": 3166208,
+          "inactive_file": 38313984,
+          "active_file": 1372160,
+          "unevictable": 0,
+          "slab_reclaimable": 149248,
+          "slab_unreclaimable": 236520,
+          "slab": 385768,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 165,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 85,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 5737,
+          "pgsteal": 5490,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 5651,
+          "pgscan_direct": 86,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 5433,
+          "pgsteal_direct": 57,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 5901,
+          "pgmajfault": 25,
+          "pgrefill": 536,
+          "pgactivate": 72,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "dc2bd5c1-a1ed-45c7-88ce-4e2f06d9375a",
+          "containers": [
+            {
+              "name": "redis",
+              "image": "sha256:d8642290c6a46f22d8ba0de16c5006b66a63b13412e5b8624912aaeecbc7f525",
+              "imageID": "docker.io/library/redis@sha256:71885d8cc6e42f2bc0aa2eb853bfc4be200b5108a46ac50e117ae1df0531fb80",
+              "containerID": "containerd://d6d2b92c128b68726874f0858a1a27504e08689aedcf4d2fbe0382c6a392d6a2",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "app": "wallabag",
+      "reason": "suite final observation",
+      "time": 1794425270.5437381,
+      "cgroup": {
+        "memory.current": {
+          "bytes": 149004288
+        },
+        "memory.peak": {
+          "bytes": 201326592
+        },
+        "memory.events": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0,
+          "oom_group_kill": 0
+        },
+        "memory.stat": {
+          "anon": 15478784,
+          "file": 112185344,
+          "kernel": 21327872,
+          "kernel_stack": 147456,
+          "pagetables": 1384448,
+          "sec_pagetables": 0,
+          "percpu": 864,
+          "sock": 0,
+          "vmalloc": 73728,
+          "shmem": 29945856,
+          "zswap": 0,
+          "zswapped": 0,
+          "file_mapped": 31629312,
+          "file_dirty": 2023424,
+          "file_writeback": 0,
+          "swapcached": 0,
+          "anon_thp": 0,
+          "file_thp": 0,
+          "shmem_thp": 0,
+          "inactive_anon": 0,
+          "active_anon": 45363200,
+          "inactive_file": 49197056,
+          "active_file": 33042432,
+          "unevictable": 0,
+          "slab_reclaimable": 18995920,
+          "slab_unreclaimable": 700992,
+          "slab": 19696912,
+          "workingset_refault_anon": 0,
+          "workingset_refault_file": 15392,
+          "workingset_activate_anon": 0,
+          "workingset_activate_file": 652,
+          "workingset_restore_anon": 0,
+          "workingset_restore_file": 0,
+          "workingset_nodereclaim": 0,
+          "pgdemote_kswapd": 0,
+          "pgdemote_direct": 0,
+          "pgdemote_khugepaged": 0,
+          "pgdemote_proactive": 0,
+          "pgscan": 8635,
+          "pgsteal": 7507,
+          "pswpin": 0,
+          "pswpout": 0,
+          "pgscan_kswapd": 3418,
+          "pgscan_direct": 5217,
+          "pgscan_khugepaged": 0,
+          "pgscan_proactive": 0,
+          "pgsteal_kswapd": 3344,
+          "pgsteal_direct": 4163,
+          "pgsteal_khugepaged": 0,
+          "pgsteal_proactive": 0,
+          "pgfault": 96358,
+          "pgmajfault": 95,
+          "pgrefill": 389,
+          "pgactivate": 1112,
+          "pgdeactivate": 0,
+          "pglazyfree": 0,
+          "pglazyfreed": 0,
+          "swpin_zero": 0,
+          "swpout_zero": 0,
+          "zswpin": 0,
+          "zswpout": 0,
+          "zswpwb": 0,
+          "thp_fault_alloc": 0,
+          "thp_collapse_alloc": 0,
+          "thp_swpout": 0,
+          "thp_swpout_fallback": 0
+        }
+      },
+      "pods": [
+        {
+          "uid": "2b11d085-e7a4-41bf-930d-88a3ace10fba",
+          "containers": [
+            {
+              "name": "wallabag",
+              "image": "sha256:59be8425089e9930dbe20bc644cf902ceeeb66cd3d849e9587dc25b9aac2f0a2",
+              "imageID": "docker.io/wallabag/wallabag@sha256:2e9d9fbbba6feee060109351d1235386fa4ac495f98c82d94a250d56feaeaeeb",
+              "containerID": "containerd://2f989d78deaacfa5a5aa1a7ebadbfb362fe377ee3546ba743aefb43b7f8a8a1d",
+              "restartCount": 0,
+              "ready": true,
+              "started": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "forensic_observations": [
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "3877fb811cd8e6c0b588bfc81d7323b8cec0dd050cb3c32135ecdd008dd64c30"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "6ec7c4e62514c2f814564abae1cc8175dd010d2c4a87300c010f2f78a3e8f073"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "c978e258dc2da9cfcbaf7cb902c72065132873a4767df97c83a80721d445a5b4"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "cc14c57e240000522bc5ad4f1bc991dbf6f27af9ba97f72981c40adebc7b1ee7"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "2dfbe4fb4fd3ec800a2d4b01adddaa1c920db91463b5d2294c95ccb9407b2c8b"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "8c641a98108c6374594109addfd8ae87b86ceced4eb51d7514435d3ed90d0dc0"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "cc835c16119cb728ec4858ad1d09d3651161fb4f7eea2269a40f07fb04ad11a6"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "f141fd366a326e4e974d42e278b4cbe507dd1dfbf95f1530aea581986b682450"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "759fa057949ba960dc0f2d54cd2baf86b4f8ac6dbaaf10ade64d01ba3ce50ef5"
+    },
+    {
+      "phase": "before destructive suite mutation",
+      "sha256": "820db1d6e3fc31313dadef962851f5a98ca083a0083d984705cb5c871724dea6"
+    }
+  ],
+  "article_content_sha256": "4647ca1f3279493a4b744fada828ee9c4abb4c597f2bd17cc03455ac875fb9e6",
+  "recovery_transients": [
+    {
+      "path": "/api/entries/5.json",
+      "statuses": [
+        500
+      ],
+      "recovered_within_seconds": 1
+    }
+  ],
+  "backup_sha256": "fcf984dc2b991b12cf4d72b63934e98601279789ab88a18f0d46de6d9853940e",
+  "memory_observation_gaps": [
+    {
+      "app": "wallabag",
+      "reason": "before scale0",
+      "error": "RuntimeError"
+    }
+  ],
+  "restore_volumes": [
+    {
+      "app": "mariadb",
+      "source_pvc": "mariadb-data",
+      "source_uid": "6e8d81ac-4551-46be-9640-431ddbbd100c",
+      "restored_pvc": "mariadb-restore-ea757412caf5",
+      "restored_uid": "2fd0b08e-4b96-4088-a819-be8f92f6dcbf",
+      "restored_pv": "pvc-2fd0b08e-4b96-4088-a819-be8f92f6dcbf"
+    }
+  ],
+  "status": "functional-checks-passed-with-limitations",
+  "workflow_execution": "completed-under-validated-live-lease"
+}

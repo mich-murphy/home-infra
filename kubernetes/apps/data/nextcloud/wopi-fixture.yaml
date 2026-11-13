@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wopi-fixture
+  labels: &id001
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: wopi-fixture
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wopi-fixture
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsUser: 33
+        runAsGroup: 33
+        fsGroup: 33
+      containers:
+      - name: wopi-fixture
+        image: ghcr.io/immich-app/immich-machine-learning:v3.3.6@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2
+        command:
+        - python
+        - /fixture/wopi.py
+        ports:
+        - containerPort: 8082
+        envFrom:
+        - secretRef:
+            name: proof-credentials
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - name: source
+          mountPath: /fixture
+          readOnly: true
+        - name: data
+          mountPath: /data
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: 8082
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 12
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8082
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 12
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8082
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 12
+      volumes:
+      - name: source
+        configMap:
+          name: wopi-fixture-source
+      - name: data
+        emptyDir:
+          sizeLimit: 2Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wopi-fixture
+  labels:
+    app.kubernetes.io/part-of: talos-proof
+    app.kubernetes.io/name: wopi-fixture
+spec:
+  selector:
+    app.kubernetes.io/name: wopi-fixture
+  ports:
+  - name: http
+    port: 8082
+    targetPort: 8082
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: collabora-to-wopi
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: collabora
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: wopi-fixture
+    ports:
+    - protocol: TCP
+      port: 8082
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wopi-from-collabora
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: wopi-fixture
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: collabora
+    ports:
+    - protocol: TCP
+      port: 8082

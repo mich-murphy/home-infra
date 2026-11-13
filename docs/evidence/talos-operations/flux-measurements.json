@@ -1,0 +1,269 @@
+[
+  {
+    "time": "2026-11-11T15:06:54.903527+00:00",
+    "stage": "baseline",
+    "memory": {
+      "time": "2026-11-11T15:06:45Z",
+      "availableBytes": 1241980928,
+      "usageBytes": 2547281920,
+      "workingSetBytes": 1718444032,
+      "rssBytes": 1122430976,
+      "pageFaults": 3453636,
+      "majorPageFaults": 4023,
+      "psi": {
+        "full": {
+          "total": 172469,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        },
+        "some": {
+          "total": 234250,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        }
+      }
+    },
+    "conditions": {
+      "NetworkUnavailable": "False",
+      "MemoryPressure": "False",
+      "DiskPressure": "False",
+      "PIDPressure": "False",
+      "Ready": "True"
+    },
+    "controllers": []
+  },
+  {
+    "time": "2026-11-11T15:07:18.238587+00:00",
+    "stage": "fixture-1",
+    "memory": {
+      "time": "2026-11-11T15:07:16Z",
+      "availableBytes": 1019424768,
+      "usageBytes": 2531598336,
+      "workingSetBytes": 1941000192,
+      "rssBytes": 1239171072,
+      "pageFaults": 3615479,
+      "majorPageFaults": 5019,
+      "psi": {
+        "full": {
+          "total": 207322,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        },
+        "some": {
+          "total": 278915,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        }
+      }
+    },
+    "conditions": {
+      "NetworkUnavailable": "False",
+      "MemoryPressure": "False",
+      "DiskPressure": "False",
+      "PIDPressure": "False",
+      "Ready": "True"
+    },
+    "controllers": [
+      {
+        "name": "kustomize-controller-84576c795c-xcp2g",
+        "containers": [
+          {
+            "name": "manager",
+            "image": "sha256:ff8644229e5831e74152b4f223e9b4f09203c535e393f0045fa2337a6c3ada8a",
+            "imageID": "ghcr.io/fluxcd/kustomize-controller@sha256:37db29b25dae35b881a5e064acedb0cc954442da453a39eaa0eab7a90dbecc4e",
+            "restartCount": 0
+          }
+        ]
+      },
+      {
+        "name": "source-controller-7c9dcdbfdd-x55f4",
+        "containers": [
+          {
+            "name": "manager",
+            "image": "sha256:56af4cb17fea42cca31a7b76f7b1016f0d5e754b1bdd9224b83e72e1e86956af",
+            "imageID": "ghcr.io/fluxcd/source-controller@sha256:611b6bca3eae95bcff471414d1fb14a4ab83d7f14e609cccef2bd389c121f37e",
+            "restartCount": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "time": "2026-11-11T15:07:48.541738+00:00",
+    "stage": "fixture-1",
+    "memory": {
+      "time": "2026-11-11T15:07:46Z",
+      "availableBytes": 975474688,
+      "usageBytes": 2547023872,
+      "workingSetBytes": 1984950272,
+      "rssBytes": 1270157312,
+      "pageFaults": 3636133,
+      "majorPageFaults": 5590,
+      "psi": {
+        "full": {
+          "total": 209784,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        },
+        "some": {
+          "total": 281385,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        }
+      }
+    },
+    "conditions": {
+      "NetworkUnavailable": "False",
+      "MemoryPressure": "False",
+      "DiskPressure": "False",
+      "PIDPressure": "False",
+      "Ready": "True"
+    },
+    "controllers": [
+      {
+        "name": "kustomize-controller-84576c795c-xcp2g",
+        "containers": [
+          {
+            "name": "manager",
+            "image": "sha256:ff8644229e5831e74152b4f223e9b4f09203c535e393f0045fa2337a6c3ada8a",
+            "imageID": "ghcr.io/fluxcd/kustomize-controller@sha256:37db29b25dae35b881a5e064acedb0cc954442da453a39eaa0eab7a90dbecc4e",
+            "restartCount": 0
+          }
+        ]
+      },
+      {
+        "name": "source-controller-7c9dcdbfdd-x55f4",
+        "containers": [
+          {
+            "name": "manager",
+            "image": "sha256:56af4cb17fea42cca31a7b76f7b1016f0d5e754b1bdd9224b83e72e1e86956af",
+            "imageID": "ghcr.io/fluxcd/source-controller@sha256:611b6bca3eae95bcff471414d1fb14a4ab83d7f14e609cccef2bd389c121f37e",
+            "restartCount": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "time": "2026-11-11T15:07:50.084039+00:00",
+    "stage": "fixture-2",
+    "memory": {
+      "time": "2026-11-11T15:07:46Z",
+      "availableBytes": 975474688,
+      "usageBytes": 2547023872,
+      "workingSetBytes": 1984950272,
+      "rssBytes": 1270157312,
+      "pageFaults": 3636133,
+      "majorPageFaults": 5590,
+      "psi": {
+        "full": {
+          "total": 209784,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        },
+        "some": {
+          "total": 281385,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        }
+      }
+    },
+    "conditions": {
+      "NetworkUnavailable": "False",
+      "MemoryPressure": "False",
+      "DiskPressure": "False",
+      "PIDPressure": "False",
+      "Ready": "True"
+    },
+    "controllers": [
+      {
+        "name": "kustomize-controller-84576c795c-xcp2g",
+        "containers": [
+          {
+            "name": "manager",
+            "image": "sha256:ff8644229e5831e74152b4f223e9b4f09203c535e393f0045fa2337a6c3ada8a",
+            "imageID": "ghcr.io/fluxcd/kustomize-controller@sha256:37db29b25dae35b881a5e064acedb0cc954442da453a39eaa0eab7a90dbecc4e",
+            "restartCount": 0
+          }
+        ]
+      },
+      {
+        "name": "source-controller-7c9dcdbfdd-x55f4",
+        "containers": [
+          {
+            "name": "manager",
+            "image": "sha256:56af4cb17fea42cca31a7b76f7b1016f0d5e754b1bdd9224b83e72e1e86956af",
+            "imageID": "ghcr.io/fluxcd/source-controller@sha256:611b6bca3eae95bcff471414d1fb14a4ab83d7f14e609cccef2bd389c121f37e",
+            "restartCount": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "time": "2026-11-11T15:07:51.631966+00:00",
+    "stage": "fixture-1",
+    "memory": {
+      "time": "2026-11-11T15:07:46Z",
+      "availableBytes": 975474688,
+      "usageBytes": 2547023872,
+      "workingSetBytes": 1984950272,
+      "rssBytes": 1270157312,
+      "pageFaults": 3636133,
+      "majorPageFaults": 5590,
+      "psi": {
+        "full": {
+          "total": 209784,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        },
+        "some": {
+          "total": 281385,
+          "avg10": 0,
+          "avg60": 0,
+          "avg300": 0
+        }
+      }
+    },
+    "conditions": {
+      "NetworkUnavailable": "False",
+      "MemoryPressure": "False",
+      "DiskPressure": "False",
+      "PIDPressure": "False",
+      "Ready": "True"
+    },
+    "controllers": [
+      {
+        "name": "kustomize-controller-84576c795c-xcp2g",
+        "containers": [
+          {
+            "name": "manager",
+            "image": "sha256:ff8644229e5831e74152b4f223e9b4f09203c535e393f0045fa2337a6c3ada8a",
+            "imageID": "ghcr.io/fluxcd/kustomize-controller@sha256:37db29b25dae35b881a5e064acedb0cc954442da453a39eaa0eab7a90dbecc4e",
+            "restartCount": 0
+          }
+        ]
+      },
+      {
+        "name": "source-controller-7c9dcdbfdd-x55f4",
+        "containers": [
+          {
+            "name": "manager",
+            "image": "sha256:56af4cb17fea42cca31a7b76f7b1016f0d5e754b1bdd9224b83e72e1e86956af",
+            "imageID": "ghcr.io/fluxcd/source-controller@sha256:611b6bca3eae95bcff471414d1fb14a4ab83d7f14e609cccef2bd389c121f37e",
+            "restartCount": 0
+          }
+        ]
+      }
+    ]
+  }
+]

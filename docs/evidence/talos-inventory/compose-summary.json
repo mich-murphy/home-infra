@@ -1,0 +1,548 @@
+[
+  {
+    "file": "docker/arrs/compose.yml",
+    "service": "radarr",
+    "image": "ghcr.io/linuxserver/radarr:6.4.4.10685-ls326@sha256:51a9ac2a9eb47afc833541e5fd6c11b86eb9f810694c22fa2429e3078e9194b2",
+    "depends_on": null,
+    "volumes": [
+      "radarr-data:/config",
+      {
+        "type": "bind",
+        "source": "/mnt/data",
+        "target": "/data",
+        "bind": {
+          "propagation": "rslave"
+        }
+      }
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/arrs/compose.yml",
+    "service": "sonarr",
+    "image": "ghcr.io/linuxserver/sonarr:4.0.20.3014-ls329@sha256:44b06045a98bc1f237b9ffefc4b28dab64cb29305e4a2a94875ae93b5224e4cc",
+    "depends_on": null,
+    "volumes": [
+      "sonarr-data:/config",
+      {
+        "type": "bind",
+        "source": "/mnt/data",
+        "target": "/data",
+        "bind": {
+          "propagation": "rslave"
+        }
+      }
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/arrs/compose.yml",
+    "service": "lidarr",
+    "image": "ghcr.io/linuxserver/lidarr:3.1.6.5079-ls48@sha256:a91ef0642c15c9bd7c4260fee98fa99972c61601e37c8a96411d6a9cf0e9ad40",
+    "depends_on": null,
+    "volumes": [
+      "lidarr-data:/config",
+      {
+        "type": "bind",
+        "source": "/mnt/data",
+        "target": "/data",
+        "bind": {
+          "propagation": "rslave"
+        }
+      },
+      {
+        "type": "bind",
+        "source": "/mnt/music",
+        "target": "/music",
+        "bind": {
+          "propagation": "rslave"
+        }
+      }
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/arrs/compose.yml",
+    "service": "prowlarr",
+    "image": "ghcr.io/linuxserver/prowlarr:2.6.5.5623-ls165@sha256:b3b00047ed20f6ce2b16780145cb6a0acb51c9e28ea6aa6f5dcd33c7034f1797",
+    "depends_on": null,
+    "volumes": [
+      "prowlarr-data:/config"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/audiobookshelf/compose.yml",
+    "service": "audiobookshelf",
+    "image": "ghcr.io/advplyr/audiobookshelf:2.37.2@sha256:b897c33f05972fb1bf484f7487bc878fa91ec8691335c1db6e2929c3a7658efa",
+    "depends_on": null,
+    "volumes": [
+      {
+        "type": "bind",
+        "source": "/mnt/audiobooks",
+        "target": "/data/audiobooks",
+        "bind": {
+          "propagation": "rslave"
+        }
+      },
+      "audiobookshelf-data:/config",
+      "audiobookshelf-metadata:/metadata"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/beszel/compose.yml",
+    "service": "beszel",
+    "image": "henrygd/beszel:0.21.1@sha256:8514a69d9bbbcb74f371a3205561ee231fc0289739cea64e8131f341d695b770",
+    "depends_on": null,
+    "volumes": [
+      "beszel-data:/beszel_data"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/couchdb/compose.yml",
+    "service": "couchdb",
+    "image": "couchdb:3.5.3@sha256:907eab5b7e55ab7cfd241d39b90b2a335ea40bef82acee5a37388c08bf201dda",
+    "depends_on": null,
+    "volumes": [
+      "couchdb-data:/opt/couchdb/data"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/downloads/compose.yml",
+    "service": "qbittorrent",
+    "image": "lscr.io/linuxserver/qbittorrent:5.3.0_v2.1.2-ls485@sha256:75ecbb1c89ab7b0a21c4bde40b4820e4f1649d2d56d83b91913422155e8d2a5f",
+    "depends_on": null,
+    "volumes": [
+      "qbittorrent-data:/config",
+      {
+        "type": "bind",
+        "source": "/mnt/data/torrents",
+        "target": "/data/torrents",
+        "bind": {
+          "propagation": "rslave"
+        }
+      }
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/downloads/compose.yml",
+    "service": "qbitwebui",
+    "image": "ghcr.io/mkbula/qbitwebui:2.44.2@sha256:75907e7013dedbc87226b9c095ac00b64d4eea814fd5550ccbde114d3f216b22",
+    "depends_on": null,
+    "volumes": [
+      "qbitwebui-data:/data",
+      {
+        "type": "bind",
+        "source": "/mnt/data/torrents",
+        "target": "/data/torrents",
+        "bind": {
+          "propagation": "rslave"
+        }
+      }
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/downloads/compose.yml",
+    "service": "sabnzbd",
+    "image": "ghcr.io/linuxserver/sabnzbd:5.1.3-ls280@sha256:693c208f697d0b411410edd92a98b52c8c754c01f5c078a975cbc892044260f5",
+    "depends_on": null,
+    "volumes": [
+      "sabnzbd-data:/config",
+      {
+        "type": "bind",
+        "source": "/mnt/data/usenet",
+        "target": "/data/usenet",
+        "bind": {
+          "propagation": "rslave"
+        }
+      }
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/immich/compose.yml",
+    "service": "immich-server",
+    "image": "ghcr.io/immich-app/immich-server:v3.3.6@sha256:e1981983b1c13f6024b57d72e7ecae3342eed1581201ab09fb248932d86c593a",
+    "depends_on": {
+      "redis": {
+        "condition": "service_healthy"
+      },
+      "database": {
+        "condition": "service_started"
+      }
+    },
+    "volumes": [
+      "${UPLOAD_LOCATION}:/usr/src/app/upload",
+      "/etc/localtime:/etc/localtime:ro"
+    ],
+    "devices": [
+      "/dev/dri:/dev/dri"
+    ]
+  },
+  {
+    "file": "docker/immich/compose.yml",
+    "service": "immich-ml",
+    "image": "ghcr.io/immich-app/immich-machine-learning:v3.3.6@sha256:14367bfb374b8576ddf49abd67c5ca0190a4c7fcf6303cdad65d7f7bf1a50bc2",
+    "depends_on": null,
+    "volumes": [
+      "immich-ml-cache:/cache"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/immich/compose.yml",
+    "service": "redis",
+    "image": "docker.io/valkey/valkey:9.0.1@sha256:546304417feac0874c3dd576e0952c6bb8f06bb4093ea0c9ca303c73cf458f63",
+    "depends_on": null,
+    "volumes": null,
+    "devices": null
+  },
+  {
+    "file": "docker/immich/compose.yml",
+    "service": "database",
+    "image": "ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23",
+    "depends_on": null,
+    "volumes": [
+      "${DB_DATA_LOCATION}:/var/lib/postgresql/data"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/init/compose.yml",
+    "service": "portainer",
+    "image": "portainer/portainer-ee:lts@sha256:8166e2376756d1ad3194e336cd1707c28a5764af7acc8bb9f21a5f28d1903566",
+    "depends_on": [
+      "traefik"
+    ],
+    "volumes": [
+      "portainer-data:/data",
+      {
+        "type": "bind",
+        "source": "/run",
+        "target": "/var/run",
+        "read_only": true,
+        "bind": {
+          "recursive": "disabled"
+        }
+      }
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/init/compose.yml",
+    "service": "docker-socket-proxy",
+    "image": "ghcr.io/tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459",
+    "depends_on": null,
+    "volumes": [
+      {
+        "type": "bind",
+        "source": "/run",
+        "target": "/host-run",
+        "read_only": true,
+        "bind": {
+          "recursive": "disabled"
+        }
+      }
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/init/compose.yml",
+    "service": "traefik",
+    "image": "traefik:v3.7.17@sha256:f4bb143d1135a579b630ed491e17ec50f6f7c9c6a30585ff3d385471d2a86f5a",
+    "depends_on": [
+      "docker-socket-proxy"
+    ],
+    "volumes": [
+      "traefik-data:/letsencrypt",
+      "./traefik.yml:/traefik.yml:ro",
+      "./traefik-dynamic.yml:/traefik-dynamic.yml:ro"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/init/compose.yml",
+    "service": "pocket-id",
+    "image": "ghcr.io/pocket-id/pocket-id:v2.19.2@sha256:3ee23895d6a3adb5dd5de801a4fd31fc31b960e6dfbea9b5200e33cf477695eb",
+    "depends_on": [
+      "traefik"
+    ],
+    "volumes": [
+      "pocketid-data:/app/data"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/jellyfin/compose.yml",
+    "service": "jellyfin",
+    "image": "jellyfin/jellyfin:12.4@sha256:fea863d0cd9ec445985d9c75fc6ed64e38a1d2766cf0c250a33d553f4fc1b771",
+    "depends_on": null,
+    "volumes": [
+      "jellyfin-data:/config",
+      "jellyfin-cache:/cache",
+      {
+        "type": "bind",
+        "source": "/mnt/data/media",
+        "target": "/data/media",
+        "read_only": true,
+        "bind": {
+          "propagation": "rslave"
+        }
+      },
+      {
+        "type": "bind",
+        "source": "/mnt/music",
+        "target": "/data/music",
+        "read_only": true,
+        "bind": {
+          "propagation": "rslave"
+        }
+      }
+    ],
+    "devices": [
+      "/dev/dri:/dev/dri"
+    ]
+  },
+  {
+    "file": "docker/jellyplex-watched/compose.yml",
+    "service": "jellyplex-watched",
+    "image": "luigi311/jellyplex-watched:main@sha256:c0fca5c52a66fe7e7cb8b6d746ef6675e2eef977369a1ccaf51718dd7a6eb064",
+    "depends_on": null,
+    "volumes": [
+      "jellyplex-watched-data:/data"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/miniflux/compose.yml",
+    "service": "miniflux",
+    "image": "miniflux/miniflux:2.3.5@sha256:8fd6c3c434ecc3d4083306f83e03c0bb74c632e0f8378da5ead7e1773b0b89c9",
+    "depends_on": {
+      "miniflux-db": {
+        "condition": "service_healthy"
+      }
+    },
+    "volumes": null,
+    "devices": null
+  },
+  {
+    "file": "docker/miniflux/compose.yml",
+    "service": "miniflux-db",
+    "image": "postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+    "depends_on": null,
+    "volumes": [
+      "miniflux-db:/var/lib/postgresql"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/nextcloud/compose.yml",
+    "service": "nextcloud",
+    "image": "nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+    "depends_on": {
+      "nextcloud-postgres": {
+        "condition": "service_healthy"
+      },
+      "nextcloud-redis": {
+        "condition": "service_healthy"
+      },
+      "nextcloud-office": {
+        "condition": "service_healthy"
+      }
+    },
+    "volumes": [
+      "nextcloud-html:/var/www/html",
+      {
+        "type": "bind",
+        "source": "/mnt/nextcloud/nextcloud-data",
+        "target": "/var/www/html/data",
+        "bind": {
+          "propagation": "rslave"
+        }
+      }
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/nextcloud/compose.yml",
+    "service": "nextcloud-cron",
+    "image": "nextcloud:35.0.2-apache@sha256:786c102155d2717ba0f53a62b3fdd7a1354edc48e800b94dbe32294d9a5752a2",
+    "depends_on": {
+      "nextcloud": {
+        "condition": "service_healthy"
+      }
+    },
+    "volumes": [
+      "nextcloud-html:/var/www/html",
+      {
+        "type": "bind",
+        "source": "/mnt/nextcloud/nextcloud-data",
+        "target": "/var/www/html/data",
+        "bind": {
+          "propagation": "rslave"
+        }
+      }
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/nextcloud/compose.yml",
+    "service": "nextcloud-postgres",
+    "image": "postgres:18.6@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
+    "depends_on": null,
+    "volumes": [
+      "nextcloud-db:/var/lib/postgresql"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/nextcloud/compose.yml",
+    "service": "nextcloud-redis",
+    "image": "redis:8.10.3@sha256:1f88291b4c57bdf249f02eb085a8669889b2d2954e91d4de5118a5da6b78dd53",
+    "depends_on": null,
+    "volumes": [
+      "nextcloud-cache:/data"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/nextcloud/compose.yml",
+    "service": "nextcloud-office",
+    "image": "collabora/code:26.04.6.1.1@sha256:95f29f1c0a1778999125f53f058d968fe0afb37c95e32ebfb9f3444140faebd2",
+    "depends_on": null,
+    "volumes": null,
+    "devices": null
+  },
+  {
+    "file": "docker/pinchflat/compose.yml",
+    "service": "pinchflat",
+    "image": "ghcr.io/kieraneglin/pinchflat:v2025.6.6@sha256:4e975edf58f0861a5cbfe8fc6aac4851ff5a02dfc3f05ffeea4982e3084a5a4a",
+    "depends_on": null,
+    "volumes": [
+      {
+        "type": "bind",
+        "source": "/mnt/data/media/youtube",
+        "target": "/downloads",
+        "bind": {
+          "propagation": "rslave"
+        }
+      },
+      "pinchflat-data:/config"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/plex/compose.yml",
+    "service": "plex",
+    "image": "plexinc/pms-docker:1.43.5.11079-b3b13e506@sha256:6d778d41daae68f89115aa87a44ae14a96b23e71a2093da173b5a9aac4091336",
+    "depends_on": null,
+    "volumes": [
+      "plex-data:/config",
+      "plex-transcode:/transcode",
+      {
+        "type": "bind",
+        "source": "/mnt/data/media",
+        "target": "/data/media",
+        "read_only": true,
+        "bind": {
+          "propagation": "rslave"
+        }
+      },
+      {
+        "type": "bind",
+        "source": "/mnt/music",
+        "target": "/data/music",
+        "read_only": true,
+        "bind": {
+          "propagation": "rslave"
+        }
+      }
+    ],
+    "devices": [
+      "/dev/dri:/dev/dri"
+    ]
+  },
+  {
+    "file": "docker/plex/compose.yml",
+    "service": "tautulli",
+    "image": "ghcr.io/linuxserver/tautulli:v2.18.2-ls251@sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+    "depends_on": null,
+    "volumes": [
+      "tautulli-data:/config"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/plex/compose.yml",
+    "service": "seerr",
+    "image": "ghcr.io/seerr-team/seerr:v3.5.1@sha256:d8fab675b55ad293ded98fd71efcfd46054cbad9746534ae1cc4794a88c0b3be",
+    "depends_on": null,
+    "volumes": [
+      "seerr-data:/app/config"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/plex/compose.yml",
+    "service": "kometa",
+    "image": "kometateam/kometa:nightly@sha256:c89cd9404aaf13ec5174ee2ddeafcf02887ea53593c1bfc4ef9e9c04a75ddbfe",
+    "depends_on": null,
+    "volumes": [
+      "kometa-data:/config:rw"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/recyclarr/compose.yml",
+    "service": "recyclarr",
+    "image": "ghcr.io/recyclarr/recyclarr:8.7.3@sha256:9c6c74d52cfc6f740a5a3624aa83867e171bb70b90453ddb7a4048b8c80445f9",
+    "depends_on": null,
+    "volumes": [
+      "recyclarr-data:/config",
+      "./recyclarr.yml:/config/recyclarr.yml:ro",
+      "./settings.yml:/config/settings.yml:ro",
+      "./custom-formats:/config/custom-formats:ro"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/wallabag/compose.yml",
+    "service": "wallabag",
+    "image": "wallabag/wallabag:2.6.15.1@sha256:2e9d9fbbba6feee060109351d1235386fa4ac495f98c82d94a250d56feaeaeeb",
+    "depends_on": {
+      "db": {
+        "condition": "service_healthy"
+      },
+      "redis": {
+        "condition": "service_healthy"
+      }
+    },
+    "volumes": [
+      "wallabag-data:/var/www/wallabag/web/assets/images"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/wallabag/compose.yml",
+    "service": "db",
+    "image": "mariadb:13.0.2@sha256:f4054da26e3a9dd6c8b5cc97363e544408b15c0fb369d7359c25dc04826eb6e1",
+    "depends_on": null,
+    "volumes": [
+      "wallabag-db:/var/lib/mysql"
+    ],
+    "devices": null
+  },
+  {
+    "file": "docker/wallabag/compose.yml",
+    "service": "redis",
+    "image": "redis:8.10.3-alpine@sha256:71885d8cc6e42f2bc0aa2eb853bfc4be200b5108a46ac50e117ae1df0531fb80",
+    "depends_on": null,
+    "volumes": null,
+    "devices": null
+  }
+]
