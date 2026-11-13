@@ -1,11 +1,15 @@
 # Service-by-service proof readiness
 
-Current status: 2026-11-12. **VM120 is stopped; no production cutover is approved.**
+Current status: 2026-11-13. **VM120 remains stopped; no production cutover is approved.**
+Approved host maintenance completed on kernel7.0.14-24-pve with`kho=off`;
+KHO output/CMA-free restriction removed and36production containers recovered.
+[Maintenance evidence](evidence/talos-acceptance/kho-maintenance-completed-f7a723ea8a0d4640a2e586022501ce5a.json)
+is not proof-workload or capacity acceptance. No proof startup/grant occurred.
 The guard reported sustained host swap IO at07:18:58UTC and confirmed QEMU exit.
 A later read-only admission failed before any new receipt or diagnostic invocation.
-The VM is left off pending root-cause remediation/verification and separate guarded-start
-authorization. The [KHO investigation and maintenance proposal](talos-proof-host-memory-remediation.md)
-is not an applied fix or proven incident attribution. Historical
+The VM is left off pending separate guarded-start authority and fresh verification.
+The [KHO maintenance outcome](talos-proof-host-memory-remediation.md) verifies the
+mitigation, not sole incident attribution or a representative soak. Historical
 passes below remain evidence of their named windows, not current running state or
 post-stop integrity. See [the stop evidence](evidence/talos-acceptance/guard-stop-before-diagnostic-634f727438df495397f768820517280c.json).
 

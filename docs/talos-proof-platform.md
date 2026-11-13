@@ -1,5 +1,21 @@
 # Talos proof platform
 
+## Current checkpoint — 2026-11-13 host mitigation completed; proof off
+
+Explicitly approved production maintenance completed one host reboot onto
+7.0.14-24-pve with`kho=off`. KHO output is absent and CmaTotal/CmaFree are0.
+Production VM101/102 and all36original containers recovered; VM111/120 remain off.
+Temporary Docker startup holds, VM102autostart and host backup-storage settings
+were restored. Original guard limits, swap baseline, ARC and swappiness settings
+were not changed. [Maintenance evidence](evidence/talos-acceptance/kho-maintenance-completed-f7a723ea8a0d4640a2e586022501ce5a.json)
+preserves the delayed VM102 shutdown failure and other diagnostics.
+
+The120-second host observation with proof off recorded swap0/no swap-page delta.
+Kernel and boot parameter changed together: the KHO restriction is removed, but
+sole historical cause, representative capacity and proof recovery are not proved.
+No new proof startup/application authority follows. Earlier checkpoints below
+remain historical, including the original guard stop.
+
 ## Current state — 2026-11-12: stopped by guard
 
 At07:18:58UTC the resource guard reported `sustained host swap IO`; its stop

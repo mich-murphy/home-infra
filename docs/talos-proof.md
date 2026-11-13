@@ -1,13 +1,18 @@
 # Isolated Talos proof: operator guide
 
 > **Not approved for migration.** This is a separate, resource-bounded proof profile.
-> Docker remains authoritative and unchanged. A passing static CI job is not a
+> Docker remains authoritative. Approved2026-11-13 host maintenance restarted
+> production guests; all36container identities/images/mounts were retained and
+> runtime/health recovered. This is not migration or unchanged-uptime evidence.
+> A passing static CI job is not a
 > functional, recovery, capacity or production-readiness verdict. Current live
 > acceptance and outstanding corrections are in [the delivery record](talos-proof-delivery.md).
 >
-> **2026-11-12: VM120 is stopped.** The guard reported sustained host swap IO and
-> confirmed QEMU exit at07:18:58UTC. No subsequent diagnostic receipt was issued
-> or run. Leave the VM off; explicit new authorization through the
+> **2026-11-13: VM120 remains stopped.** The prior day's guard stop is retained.
+> Approved host mitigation installed kernel7.0.14-24-pve with`kho=off`; production
+> recovered, but no proof startup or diagnostic receipt/invocation occurred.
+> See [maintenance outcome and limits](talos-proof-host-memory-remediation.md).
+> Leave the proof VM off; explicit new authorization through the
 > [guarded lifecycle procedure](talos-proof-host-lifecycle.md) is required before
 > further live work. Do not reset the baseline, relax thresholds or use direct
 > `qm start`. Historical evidence below is not a current running-state claim.

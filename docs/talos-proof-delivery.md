@@ -1,6 +1,41 @@
 # Talos isolated proof delivery — coordinator brief
 
-> **Current blocker — 2026-11-12:** VM120 is STOPPED. The deployed guard reported
+## Current checkpoint — 2026-11-13 maintenance completed
+
+User explicitly approved execution with delayed on-site BMC recovery, selected the
+newest installed kernel, and approved temporary Docker service/socket startup holds.
+Parent performed one host reboot: **7.0.14-24-pve + kho=off**. KHO output absent,
+CmaTotal/CmaFree0; host/NAS pools healthy.36original containers running/31healthy/
+5without healthchecks, IDs/images/creation/mounts unchanged. All five NFS sources
+verified before Docker startup. Docker units restored enabled/active; VM102onboot1
+and all four VM config hashes restored. Backup properties/mount/job/exclusions
+unchanged; storage.cfg byte hash differs only because PVE reordered the same
+four-item `local.content` set. All other storage fields identical. No full-config
+overwrite to conceal serialization; original bytes and failed comparisons retained.
+
+Original swappiness60/ARC3GiB/zram priority100/proof24KiB baseline retained. Bounded
+120-second post-recovery host observation: min6215.44MiB available, swap0, page-I/O
+deltas0. This is NOT soak/capacity/causal proof. Kernel+parameter changed together;
+original initiating allocation and VM102 shutdown-delay cause remain unestablished.
+VM102 shutdown command failed after301.26s (QGA guest-shutdown timeout), then guest
+stopped without another request/force. Other credential-agent/PATH/autofs/audit
+failures are retained in the completion evidence; no credential or image changes.
+
+**VM111/120 remain off; no proof grant or invocation.**111canonical files unchanged,
+no effective PENDING. Temporary NAS key removed. Host/source production restarts
+were explicitly approved maintenance, not migration or an unchanged-uptime claim.
+Evidence: `docs/evidence/talos-acceptance/kho-maintenance-completed-f7a723ea8a0d4640a2e586022501ce5a.json`.
+Private capture `diagnostics/host-maintenance-execution-8ecc697f-c493-4cc9-bfc8-f85bdae041dd`
+has301artifacts+manifest,35host/7guest remote receipts; approximate shutdown-request
+through full-health verification22.93min (not exact per-service outage).
+
+Latest watched Talos CI at164030df **FAILED43332534447**: MariaDB image-contract
+mismatch (CI current-image set54f493ea versus prooff4054da2; local branch Compose
+and proof bothf4054da2). Log`/tmp/talos-proof-ci-164030df.e2KBGY`; no blind rerun,
+image upgrade or test weakening. Nix43332534444/Actions43332534530 passed separately.
+Maintenance changed documentation/evidence only in this repository.
+
+> **Historical guard stop — 2026-11-12:** VM120 is STOPPED. The deployed guard reported
 > `sustained host swap IO` at07:18:58UTC and confirmed the original QEMU exited.
 > Fresh diagnostic admission subsequently failed at its first read-only Kubernetes
 > query (connection reset); candidateb450 received NO receipt and ran ZERO times.
@@ -15,7 +50,7 @@
 > https://github.com/mich-murphy/home-infra/blob/feat/talos-live-proof/docs/talos-proof-host-memory-remediation.md.
 > No production boot change/reboot or new proof start is authorized.
 
-## Active root-cause investigation — user-directed, 2026-11-12
+## Earlier root-cause investigation — user-directed, 2026-11-12
 
 Identify and resolve the underlying cause before proceeding; restarting or relaxing
 the guard is not resolution. Parent owns bounded read-only existing host telemetry,
@@ -40,7 +75,7 @@ host maintenance/downtime, rollback and post-boot verification. It is NOT applie
 or a proven historical cause. Exact causal attribution and resolution remain pending;
 no application work proceeds merely because a startup window is approved.
 
-## Maintenance execution request — console risk accepted; preflight adjustments pending
+## Earlier maintenance execution request — preflight history
 
 User explicitly directed execution despite no current BMC, accepting recovery once
 on-site. Do not re-request that same console waiver. Parent preflight capture:
@@ -84,7 +119,7 @@ hold or forced shutdown. VM120 remains off. Root cause remains unresolved.
 - Draft PR **https://github.com/mich-murphy/home-infra/pull/2005**. Push with `gh stack submit --auto`; CI watch uses `gh run watch <id> --interval 60 --exit-status`, one watcher per session.
 - Original `/Users/mm/dev/home-infra` has extensive pre-existing changes: never modify/stage/reset it. Historical `origin/feature/talos-kubernetes` is reference only; its Docker/GPU/network cutover is forbidden.
 - Deliver maintainable declarative replicas and resource-safe, staged live functional/isolation/recovery evidence. **No migration approval or full-concurrency claim.**
-- Never change/restart/stop Docker-host services or existing guests; no production storage, DNS/router changes, host ARC/sysctl tuning, GPU reassignment or production integrations. Read-only discovery permitted; mutate dedicated proof resources only.
+- Default remains no production service/guest/storage/network mutations, ARC/sysctl tuning or GPU reassignment. **One explicit exception was executed on2026-11-13:** approved KHO/new-kernel host maintenance, dependency-ordered guest restarts, temporary Docker startup/VM102onboot/backup-storage holds, all restored. This closed maintenance window is not standing authority for further production changes. Read-only discovery and dedicated proof work remain separately scoped.
 - Fresh synthetic data/credentials; private material outside Git, directories0700/files0600, never stdout.
 - Explicit new-VM membership safeguard: existing02:30 `backup-truenas-daily` all-guests job would include120 and write proof data to production NAS. Parent changed ONLY its exclusion list9001,9003→9001,9003,120; compared complete before/after objects, all other fields/existing-guest membership unchanged. No backup triggered. Receipt `docs/evidence/talos-acceptance/proof-backup-exclusion.json`; this limited existing-job configuration exception is disclosed, not hidden as 'no Proxmox changes'.
 
@@ -213,7 +248,7 @@ Parent's later proof-only RAM window completed successfully in ONE start; lease 
 
 ## Next actions / unresolved acceptance
 1. Review released704MiB RPC failure and offline MFA/shutdown correction; no retry/grant or STOP acknowledgement exists. Jellyfin stream auth remains unsupported in reviewed native source; LAN/proxy reclassification is not a fix. Plex browser auth stays blocked.
-2. **Continue separately authorized diagnostic resolution, not native cron yet.** Initialization/binding/policy history and3Bound retained volumes are established, not new work. GET-only release resolved original33d6pending without erasing its lost RuntimeException. Separate43diagnostic failed metadata hash before source/HTML/SQL/Redis checks, stopped/released with84oldfilesunchanged. Parent reviewed1c15551b fixed confined projection reader and511/443 gate, independently rehashed4515captures/111journals and exact receipts. Next: resolve the host root-cause/remediation hold first; KHO restriction is confirmed but incident attribution unproved, and proposed production maintenance is not authorized. VM120 stays off. A later guarded-start verification experiment requires explicit separate authority and does not itself clear the application hold. No new application grant or startup bypass. Executor plan/recorder, parentv3fa1eeb13 full522/443+CI and public image metadata are reviewed, but do not authorize restart. Only after accepted host-remediation verification and a separately approved guarded start, re-establish node/API/storage/identity and integrity observations, then obtain fresh global absence/dual832MiB/host-guard observations and a NEW one-shot diagnostic receipt if all admission conditions hold; old receipts cannot be reused. No reset/auth repair/main rerun or application acceptance. Keep backend writes and both unknown causes explicit. Preserve8WOPI failures; corrected UI unrun. Etcd proposal still needs a separate human policy exception (`docs/talos-proof-etcd-recovery-plan.md`); snapshot hash/embedded checksum is NOT a restore.
+2. **Continue separately authorized diagnostic resolution, not native cron yet.** Initialization/binding/policy history and3Bound retained volumes are established, not new work. GET-only release resolved original33d6pending without erasing its lost RuntimeException. Separate43diagnostic failed metadata hash before source/HTML/SQL/Redis checks, stopped/released with84oldfilesunchanged. Parent reviewed1c15551b fixed confined projection reader and511/443 gate, independently rehashed4515captures/111journals and exact receipts. Next: approved host mitigation is now completed and production recovered, but the short observation with proofVMoff is not proof-capacity acceptance or sole-cause attribution. Preserve the host and guest shutdown failures and the separate CI image-contract failure. No automatic proof startup or application grant. VM120 stays off. A later guarded-start verification experiment requires explicit separate authority and does not itself clear the application hold. No new application grant or startup bypass. Executor plan/recorder, parentv3fa1eeb13 full522/443+CI and public image metadata are reviewed, but do not authorize restart. Only after accepted host-remediation verification and a separately approved guarded start, re-establish node/API/storage/identity and integrity observations, then obtain fresh global absence/dual832MiB/host-guard observations and a NEW one-shot diagnostic receipt if all admission conditions hold; old receipts cannot be reused. No reset/auth repair/main rerun or application acceptance. Keep backend writes and both unknown causes explicit. Preserve8WOPI failures; corrected UI unrun. Etcd proposal still needs a separate human policy exception (`docs/talos-proof-etcd-recovery-plan.md`); snapshot hash/embedded checksum is NOT a restore.
 3. Parent independently checked6new archive hashes/modes and6distinct live source/restore PVC/PV/XFS paths plus host receipt/policy/control consistency: `docs/evidence/talos-acceptance/followup-archive-and-host-review.json`. This is not a new functional replay. Pocket-ID negatives/retained credential and Wallabag image/native queue now passed narrowly; parent independently matched newest2archive hashes/0600 modes and2distinct live source/restore PVC/PV/path pairs in `pocket-wallabag-archive-review-ed9e5d54038c4ba79ff6c0c97a5571eb.json`; not a new functional replay or fresh image recovery. ML/web remain measured—not permanent—capacity gates. Native ODT editing still unproved after eight failures; no current data grant. Full Office/Immich integration remains required.
 4. Resolve/test bounded heavy-component profiles honestly; document any capacity or external-account boundary as BLOCKED, not PASS.
 5. Independently review results/identities/checksums; [all36-service readiness matrix](talos-proof-readiness.md) separates bounded passes from pending criteria. Parent mid-run and later post-node/browser comparisons found zero changes to all36 IDs/image references/imageIDs/creation/start/status/restarts/health; latest post-RSS384 checkpoint also found all36 unchanged/equal canonical projections (`source-post-rss384-comparison-7a8bf8ffc6ef46c3afb3128881ef3529.json`). Not final and not a claim ordinary app data never changes. Push/watch fresh CI.

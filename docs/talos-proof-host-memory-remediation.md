@@ -1,8 +1,59 @@
 # Host swap stop: investigation and proposed maintenance
 
-**Status: execution approved and delayed-console risk explicitly accepted by user;
-preflight complete, two additional execution adjustments await approval. No production
-mutation or reboot performed. VM120 stays off.**
+**Status: approved maintenance COMPLETED on2026-11-13; production recovered.
+KHO restriction removed; exact original swap-event causation remains unproved.
+VM120 stays off.**
+
+The user subsequently selected the **newest installed kernel** instead of the
+proposed one-boot old-kernel selection and explicitly approved the temporary Docker
+service/socket holds. Those instructions supersede the earlier pending decisions
+below. One host reboot was performed; no kernel pin was applied.
+
+### Verified outcome
+
+- Running kernel **7.0.14-24-pve**, effective `kho=off`, new boot ID; KHO debugfs
+  output absent and CmaTotal/CmaFree both0. Kernel plus parameter is a two-variable
+  mitigation, not an isolated causal experiment.
+- Host and NAS pools healthy. All **36original containers** running,31healthy and
+ 5without health checks. IDs/images/creation times/mounts unchanged; restart/start
+  observations are recorded as approved maintenance, not an unchanged-uptime claim.
+  These are runtime/health/storage-continuity checks, not an application-level data
+  integrity or end-to-end functionality audit.
+- All five exact NFS exports verified before Docker startup. Original Docker
+  service/socket enabled/active states restored and owned masks removed.
+- VM102 onboot1 restored; all four captured VM configuration hashes match their
+  originals. Host backup storage properties/mount and backup job/exclusions restored.
+  PVE reordered only `local.content`'s four-item set during storage serialization:
+  raw storage.cfg hash differs, but every configuration field has the same meaning.
+  The original bytes and failed raw/string comparisons are retained, not overwritten.
+- Original swappiness60, ARC cap3GiB, lz4 zram priority100 and proof24KiB swap baseline
+  retained. New-boot120-second observation: minimum available6215.44MiB, swap usage0,
+  swap-in/out delta0. This is not representative soak/capacity or a no-recurrence proof.
+- VM101/102 running; VM111/120 off.111canonical proof files unchanged; no application
+  grant/invocation or native Nextcloud acceptance. Temporary NAS key removed.
+- Shutdown-request to full container-health verification was approximately22.93min;
+  this is an observation interval, not exact per-service downtime.
+
+**Retained failures:** VM102's shutdown command timed out after301.26s; the guest
+subsequently stopped without another request or force. Host journal identifies a
+QGA `guest-shutdown` timeout, not the underlying delay's cause. Postboot1Password
+read timed out and SSH agent signing failed; authenticated read-only NAS checks then
+used the existing temporary key directly, strict host checking intact, and no sudo.
+An unprivileged PATH failure was corrected with absolute ZFS paths. Initial `stat`
+on an idle automount did not activate NFS; explicit directory traversal succeeded
+and all sources were verified before unmasking. No failures are erased by recovery.
+
+Evidence: [maintenance completion](evidence/talos-acceptance/kho-maintenance-completed-f7a723ea8a0d4640a2e586022501ce5a.json).
+The initial completion manifest freezes301private artifacts, including35host
+rollback/mutation records and7guest hold records. A subsequent read-only confirmation
+also verified debugfs was mounted and the new kernel still compiles KHO/default-enable;
+its unknown-parameter warning did not name `kho`. The output absence is not merely
+an unmounted debugfs observation. Follow-up remains in the same private capture. Original guard-stop/RCA evidence remains immutable.
+The prior Talos CI failure for MariaDB image-contract drift is separate and unfixed;
+no image pin or test was changed during maintenance.
+
+### Earlier scope decisions and preflight (historical)
+
 
 After confirming BMC is currently unavailable, the user explicitly directed execution
 and accepted recovery waiting until they are on-site. That waives the immediate-console
@@ -14,10 +65,11 @@ workloads have been changed. Nothing is queued to run automatically.
 
 The user requires the underlying cause to be identified and resolved before further
 proof work. A restart, a quieter current snapshot, or a relaxed guard is not resolution.
-The user authorized the documented production maintenance, subject to the additional
-preflight scope decision below. VM120 startup remains excluded.
+The user authorized the documented production maintenance and subsequent adjustments.
+That execution is now complete; it is not standing authority for another reboot or
+unrelated changes. VM120 startup remains excluded.
 
-## Execution preflight and requested adjustments
+## Earlier execution preflight and requested adjustments
 
 Capture: `diagnostics/host-maintenance-execution-8ecc697f-c493-4cc9-bfc8-f85bdae041dd`.
 
@@ -259,10 +311,10 @@ Execution approval must explicitly cover:
 - If timing, recovery access, synchronization or health is uncertain, abort or
   escalate. Do not convert the maintenance plan into permission for unrelated fixes.
 
-**Current decision:** immediate-console risk has been explicitly accepted. Approval
-is now needed for the one-boot kernel selection and temporary Docker service/socket
-startup holds described above. No production changes are queued or applied. Refresh
-volatile task, health and timing checks immediately before mutation.
+**Decision outcome:** user chose the newest installed kernel, approved the Docker
+startup holds, and accepted delayed console recovery. Maintenance has completed as
+recorded above. No additional reboot or proof activation is queued. Further proof
+work requires its own fresh identity/resource/authority and acceptance checks.
 
 ## Verification and acceptance gates
 
