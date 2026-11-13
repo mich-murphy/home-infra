@@ -44,6 +44,36 @@ weakening/head-only checkout/frozen-digest allowlist. Former data ownerc31 and m
 owner0e6 were verified completed; affected pin ownership may now be explicitly
 reassigned. Optional broader test/workflow hardening is not part of this repair.
 
+Parent integrated reviewed main in21d9464a. CI worker explicitly received four
+manifest paths plus one new evidence leaf, committed7c258787 (seven image lines
+only), and released implementation. Parent reviewed actual diff and exact pins:
+focused data/media parity tests and120/188/82-resource static renders pass; old
+Wallabag/SAB runtime acceptance remains old-image-only. Worker now owns one full
+locked-toolchain gate execution; no source edits/push/live work. Parent schedules
+all other full gates and CI watching to avoid overlap.
+
+Lifecycle review completed. Stale pre-maintenance incarnation is safely replaced
+by start; boot-ID comparison prevents stale cleanup targeting a new process. No
+enrollment/reset-failed needed; stale PID/config drift blocks. Parent accepted the
+inherent preboot gap on historical stopped-state/111-file continuity, not a claim
+that boot itself prevents workload restart. First postboot global GET barriers must
+establish absence; unexpected workloads require proof-stop containment, not app edits.
+Executor0915fefa explicitly reassigned to fresh read-only host/source preflight in
+one new private UUID capture; startup/tunnel/API remain withheld until parent review.
+It first requested exact updated HEAD/baseline paths; parent supplied full7c258787
+and named maintenance/diagnostic captures. No live action had occurred at that request.
+Recovery gates remain pending; do not treat scope acknowledgement as results.
+
+Full static gate at7c258787 passed once (64.95s, exit0):522Python methods/42suites,
+443rendered resources/9schema summaries,17locked CRDs, no unittest/schema skips/errors.
+Mandatory PHP/OTP and browser contracts included; no full-gate rerun. Parent read
+and independently rehashed/count-checked private log
+`diagnostics/full-static-gate-0e0d65a0-899c-47fd-8735-b40131c73063/output.log`,
+SHA`896e251a68346ac7c5c9c82b01bf7e5e5943faa1b685314c221c7051e14ad71e`.
+Worker captured clean source/diff before/after. Subsequent parent edits are brief/
+readiness docs only. Separate workflow generation/actionlint awaits CI. Static repair
+accepted; live recovery still pending preflight review. Existing failed CI retained.
+
 ## Prior checkpoint — 2026-11-13 maintenance completed
 
 User explicitly approved execution with delayed on-site BMC recovery, selected the
