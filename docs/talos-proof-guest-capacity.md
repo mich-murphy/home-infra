@@ -171,82 +171,169 @@ The host kernel+`kho=off` mitigation changed two variables; exact historical swa
 causation remains unproved. Do not infer that guest cache caused the old host
 incident, or that this capture exonerates every other cause.
 
-## Bounded choices for parent review
+## Bounded capacity decision for parent review
 
-| Choice | Evidence and bound | Decision implication |
-| --- | --- | --- |
-| Preserve3 GiB, no change | Known final dual minimum669.27 <832 | Least operational risk now: leave OFF and diagnostic blocked. No retry justified by this analysis. |
-| Reviewed structural capacity/profile work | Cilium+API server dominate the Pod point samples; RSS/working-set differences justify investigation, not savings promises | Only a separately reviewed design preserving required networking, isolation, DNS, storage and control-plane semantics is credible. No demonstrated change here recovers163 MiB plus variability headroom. Do not pad receipts, drop caches, kill essential components, reduce replica/limit/reserve contracts or reinterpret accounting to fit. |
-| Larger proof VM or separate capacity | More physical capacity could address the constraint, but no larger profile was measured or approved | Requires a new capacity/host admission design, explicit profile enrollment and new human approval/start authority. Prefer separately provisioned non-production capacity if shared-host headroom cannot be established without taking production memory. |
+**Recommend 3584 MiB (+512) for one separately approved platform-only experiment,
+not 4096 MiB (+1024). Keep VM120 OFF pending approval.** Both larger profiles
+remain **UNAPPROVED**. This is a bounded measurement proposal, not a claim that
+3584 will pass832 or that3072 can never pass. No demonstrated structural change
+recovers the observed162.7265625 MiB deficit plus variability headroom without
+changing required platform semantics; no tuning/reclaim experiment is proposed.
 
-A4 GiB candidate's analogous startup floor is4096+1536+384 =**6016 MiB**.
-The stale6062 prestart observation is only46 MiB above that arithmetic floor:
-**it cannot establish4 GiB safety or current admission**. The384 allowance must be
-reviewed for the actual QEMU configuration and observed overhead; it is not an
-independently proven upper bound. Genuine fresh host headroom, competing workload
-variation, startup/transient peaks and rollback capability matter in addition to
-meeting a minimum. No linear extrapolation of final guest available guarantees a
-larger VM's budget. A4 GiB candidate is not established capacity for full Nextcloud,
-ML/heavy applications or all36 source containers. No production ARC, zram,
-swappiness, workload allocation or
-service configuration change is proposed.
+| Fixed RAM MiB | Increase from current | Analogous startup floor (RAM+1536+384) | Historical6062 minus floor, illustration only |
+| --- | ---: | ---: | ---: |
+| 3072 (current approved profile) | 0 | 4992 | 1070 |
+| 3584 (unapproved candidate) | 512 | 5504 | 558 |
+| 4096 (unapproved alternative) | 1024 | 6016 | 46 |
 
-## Recommended next decision and future gates
+3584 is the least-risk credible **measurement candidate** of these increases: it
+commits512 MiB less shared-host RAM than4096, with a smaller analogous admission
+floor, while testing additional capacity against a measured ~163 MiB deficit.
+Neither the512 increment nor these historical margins predict guest availability.
+4096 is not selected: no measurement demonstrates that its extra512 is needed,
+and the stale46 MiB arithmetic margin is especially weak evidence for a shared-host
+experiment. **None of1070/558/46 is fresh admission or a safety margin.** If fresh
+host evidence cannot justify3584 without production reallocation, stop this proposal;
+separate non-production capacity needs its own design/approval, not an automatic
+4096 fallback. No linear extrapolation guarantees either candidate's guest budget.
 
-**Accept the blocked3 GiB result; keep VM120 OFF.** Ask the parent to review this
-analysis and select whether to fund a separately approved larger/disposable proof
-capacity assessment (prefer separate capacity if the shared host lacks genuine
-margin), or stop this proof scope. There is no evidence-backed low-risk tuning
-change to recommend now. Parent review precedes any human request. This plan is
-not an approval and must not be used as a startup receipt.
+### Source-tied change surface — review before implementation
 
-If the parent later elects a capacity experiment, its separate reviewed plan must:
+Paths below were inspected at `0862d3b518f1279b76e02989d46dd42b0d1eafe1`.
+This document does not extend any allowlist or authorize deployment/enrollment.
 
-1. Specify exact capacity/location, changed configuration digest, permitted
-   actions, timebox, owner and **new** human resize/start approval. Existing
-   2560/3072 enrollment and the consumed start do not cover larger RAM. Any guard
-   implementation/enrollment extension requires its own reviewed change; none is
-   performed or authorized here.
-2. Before any start, freshly verify host kernel/`kho=off`, boot identity, production
-   health/storage and memory configuration; exact VM OFF identity/config/disks and
-   rollback baseline; no competing proof/lease; and usable recovery access. Measure
-   MemAvailable minimum, swap usage/baseline and pswpin/out deltas, PSI and competing
-   load over the reviewed prestart observation. Apply at least candidate RAM+1536+
-   reviewed QEMU overhead and separately justify extra variability/headroom. Stale
-   6062 or a single near-threshold value cannot substitute.
-3. Use only the newly reviewed guarded lifecycle, preserving fail-closed host
-   thresholds (available1536, swap growth65536 KiB, sustained swap I/O and PSI
-   criteria per the existing host lifecycle contract). Record QEMU/cgroup actual
-   usage/peak and overhead alongside host samples. Stop/contain on gate failure;
-   no automatic retry, guard bypass or memory borrowing from production.
-4. Start **platform-only**, no apps/helpers or Flux reconciliation. Verify exact
-   required Pod/controller ownership and inventory, native application controllers
-   at zero and native CronJobs suspended, node identity, mounts and storage
-   bindings. Inspect retained Flux resources kind-specifically: report GitRepository
-   fetch intent and controller absence without requiring source suspension; inspect
-   Kustomization against the reviewed apply/suspension policy and report later Flux
-   resource state/gaps. Do not generalize a kind's policy to every CRD, infer
-   uncollected state or reconcile to inspect it. Preserve failures instead of
-   editing historical evidence.
-   Repeat paired Talos MemAvailable and kubelet node available with raw timestamps,
-   capacity/allocatable, working set/RSS and per-component data. Require a new
-   reviewed observation window at least matching300seconds; it still would not
-   establish application peaks or long-term capacity.
-5. Keep application authority absent even if platform-only memory improves.
-   Before any separately approved diagnostic phase, obtain new parent-owned
-   receipts and independent dual832 checks under that phase's freshness rule
-   (kubelet at most30seconds old, not merely this capture's120second pairing).
-   Recheck immediately before each authorized create. No512 PHP/full-app or native
-   acceptance can be inferred from a passing diagnostic gate.
-6. Predetermine stop/rollback triggers: host guard breach, OOM/restart, unexpected
-   controller/app, failed approved kind-specific apply/scheduling, storage or
-   identity gate, or expired authority. An absent GitRepository suspension field
-   alone is not a stop trigger.
-   Contain the exact proof VM, close owned access, verify OFF and production health,
-   preserve evidence, and restore only explicitly authorized proof configuration
-   to its captured baseline while OFF. No production reallocation, data rollback,
-   destructive guest recovery or further start is implicit. End OFF with no leases
-   or application activation grant unless separately and explicitly approved.
+- `infrastructure/proxmox-proof/host_lifecycle.py`: `validate_config()` accepts
+  only2560/3072 and rejects3584/4096. `parse_config()` overlays permitted pending
+  memory/args, then validation still applies. `enroll()` validates the full effective
+  configuration, saves its exact `config_sha256` in private `identity.json`, and
+  retains the original `swap-baseline-kib` (**24 KiB**, never reset to current use).
+  `approved_config()` revalidates and checks that digest on startup and guard entry;
+  `start()` rechecks before resume. Merely setting VM RAM fails closed. A future
+  reviewed extension should add only3584, leaving4096 and all unrelated settings
+  rejected; re-enrollment is required after the authorized RAM-only change.
+- The same file's `MARGIN_MIB=1536`, `OVERHEAD_MIB=384` and `start()` implement
+  host admission; `ResourceCheck` retains the existing running thresholds. **384
+  is a fixed additive QEMU overhead allowance**, not guest reserve, measured QEMU
+  RSS/peak, or a proven upper bound. Review its adequacy for unchanged QEMU devices
+  before approval;5504 is only the analogous floor with that allowance. If review
+  requires a different allowance, return for a revised plan/approval, not an ad-hoc
+  threshold edit. Record actual QEMU/cgroup usage/peak during the experiment.
+- `infrastructure/proxmox-proof/create.sh` independently rejects RAM outside
+  2560/3072 and applies RAM+1536+384. Keep that policy aligned in any approved
+  profile patch; **do not run create.sh** for existing VM120 (it requires no config).
+  `infrastructure/proxmox-proof/validate.sh` validates generated Talos machine
+  configuration, not Proxmox RAM enrollment; it is not a larger-profile approval.
+- `tests/talos-proof-host_test.py`: `ConfigTests.test_approved_profiles_and_dynamic_ports`,
+  `test_unsafe_fields` (explicit3584/4096 rejections),
+  `test_approved_pending_overlay_validated`, and
+  `ResourceTests.test_fresh_admission_profiles` need reviewed candidate coverage:
+  approved3584/pending3584, continued4096 rejection, digest drift rejection and
+  exact5504 admission versus5503 refusal. Existing baseline/PSI/swap/identity/
+  startup-cleanup tests must remain unchanged in strength.
+- `infrastructure/proxmox-proof/install-supervisor.sh` installs `host_lifecycle.py`,
+  `resource-guard.py`, `isolation.sh`, `start.sh` and the two proof-only systemd
+  units, refusing active units. Scripts go to
+  `/root/.local/state/home-infra/talos-proof/`; units go to `/etc/systemd/system/`.
+  `talos-proof-start.service` and `talos-proof-guard.service` execute that private
+  state copy, **not this checkout**. Review exact deployed/source hashes and unit
+  contents before enrollment/start; no unit/wrapper/isolation behavior change is
+  proposed. Use the approved install path only while stopped, never a live guard
+  replacement. `start.sh` must remain the sole supervised start entry point.
+- Parent-owned `docs/talos-proof-host-lifecycle.md` must describe the newly approved
+  profile/admission/enrollment contract if approved; parent also owns delivery/root
+  docs and gate scheduling. This capacity document is the only change now. No
+  profile/guard implementation or private artifact change precedes human approval.
+
+### Minimum new human approval and bounded execution contract
+
+Offline analysis and the saved-evidence Flux classifier were already approved;
+**RAM/profile extension, deployment, enrollment and a new start were not**. Parent
+must first review this proposal. The next human request must explicitly authorize
+only the following scope (with named executor/reviewer and an absolute expiry):
+
+> Existing proof VM120, UUID `555e8603-58e6-4fb6-a190-378a3f11c257`:
+> increase fixed RAM only3072→3584 while OFF; implement/review the3584-only profile
+> extension and tests/docs; deploy only reviewed matching lifecycle files through
+> the proof-only install procedure and enroll the exact new configuration digest,
+> preserving disks, devices, isolation, all guard thresholds and original24 KiB
+> swap baseline. Permit **one** existing supervised guarded start, conditional on
+> fresh passing gates and parent release of the reviewed patch/deployment plan.
+> Permit owned management access for read-only node/platform, complete kind-specific
+> Flux, storage/mount/binding and production continuity checks, plus one bounded
+> passive observation. End OFF, close owned access, and verify production health.
+> Authorize proof-only RAM/configuration-enrollment rollback to the captured3072
+> baseline **while OFF** if desired; otherwise leave3584 OFF for parent disposition.
+> No second start is included, including after rollback.
+
+The approval must include a bounded lease: proposed maximum30 minutes for stopped
+preflight/configuration/deployment, then maximum20 minutes from wrapper invocation
+to OFF, with one fixed300-second passive platform window after identity/barrier
+checks. These are proposed operational timeboxes, not measured capacity thresholds.
+If review/implementation cannot fit, finish it offline and obtain a fresh scheduled
+execution lease; do not extend runtime or renew authority implicitly.
+
+1. **Review gate, still OFF:** after the human grant, prepare the minimal profile
+   patch/tests and parent-owned contract updates. Parent schedules the full offline
+   gate and reviews exact source/deployment hashes, rollback config/receipt capture,
+   owner/lease and recovery access before any host change. No unrelated profile,
+   device, host tuning, reboot or production allocation change. Preserve original
+   evidence and baseline privately; public docs expose no full config/credentials.
+2. **Fresh prestart gate:** verify kernel/`kho=off`, boot identity, production
+   health/storage/VM and36-container continuity against an owned fresh baseline;
+   exact VM120 OFF identity/config/disks, VM111 OFF, no competing proof lease or
+   effective pending application operation, and recovery access. Verify the reviewed
+   canonical Nextcloud111-file manifest unchanged. Recheck VM120 backup exclusion,
+   backup-job configuration and active/scheduled backup or migration conflicts;
+   no backup trigger, exclusion expansion or schedule change is authorized.
+   Observe host memory, swap/page-I/O, PSI and competing load for120seconds;
+   require the observed minimum and immediate wrapper sample to meet at least5504,
+   plus parent justification of variability/overhead adequacy without inventing a
+   new numeric safety threshold here. Keep the original24 KiB baseline. Historical
+   6062 and one near-floor sample cannot clear this gate. Recheck after resize/
+   install/enrollment; drift or insufficient headroom means no start.
+3. **One platform-only start:** use reviewed deployed matching lifecycle files and
+   the existing wrapper. Verify guard READY/isolation and exact incarnation before
+   proceeding. Preserve available1536 floor, swap growth65536 KiB, sustained swap
+   I/O and PSI/deadline criteria from the lifecycle contract. No automatic retry or
+   direct `qm start`/resume bypass. A failure or unknown timeout consumes this attempt
+   pending parent review, not permission to invoke it again.
+4. **Read-only verification and one300s passive window:** check sole node identity,
+   exact platform Pod/controller ownership, zero native app controllers, suspended
+   native CronJobs, no app/helper Pods (including terminal, terminating and
+   unlabelled objects), mounts and retained storage bindings.
+   Collect complete authorized Flux inventory; use resource-specific saved-evidence
+   classification and explicit controller identity/ownership review. Current
+   Kustomization remains **unobserved until collected**: historic cleanup is not
+   evidence. GitRepository absent `spec.suspend` with controllers absent is **not
+   a stop trigger**. Do not reconcile controllers to inspect them. Repeat timestamped
+   paired Talos/node available, capacity/allocatable, working set/RSS/component
+   readings at window endpoints alongside host/QEMU observations and production
+   continuity checks. No apps, helpers, pressure/reclaim/tuning or PVC repair.
+5. **Failure, endpoint and rollback:** host guard breach, new OOM or unexpected
+   restart, unexpected workload/controller, failed identity/storage/native or
+   approved kind-specific policy gate, incomplete mandatory evidence, lost access,
+   or lease expiry ends the experiment. Evidence gaps are incomplete, not invented
+   violations. Distinguish authorized boot recreation and retained historical
+   counters from new failures; no blanket lifetime-zero restart counter. Use the
+   existing exact-incarnation proof stop; verify OFF/cleanup and production health,
+   close only owned access, preserve successful/failed evidence. End OFF even on
+   success. Only if explicitly authorized, restore captured proof-only3072 RAM and
+   matching enrollment while stopped, verify digest/OFF, with no start or data
+   rollback. If safe restoration cannot be verified, remain OFF and escalate.
+6. **Parent review, not activation:** compare observed candidate results to this
+   historical3072 baseline with accounting/time-skew caveats; report every failed
+   or missing gate. A passing platform window establishes neither long soak nor
+   application capacity. Only a separately scoped/approved future diagnostic could
+   use fresh independent dual832 admission (kubelet at most30seconds old), rechecked
+   immediately before each authorized create. Passing could enable PG384+Redis64+
+   one serial CLI192+reserve192 diagnostic work—not full Nextcloud, PHP512/frontend/
+   Office, Immich/ML or all36 source containers. No application grant follows from
+   this experiment; parent retains receipts, delivery and acceptance ownership.
+
+No host tuning/reboot, production mutation, cache pressure/reclaim, controller
+reconciliation, app/helper activation, PVC repair or automatic retry is included.
+The genuine next escalation is this exact new human approval after parent review;
+no runtime action is authorized by the already-approved offline preparation.
 
 ## Evidence references (SHA-256)
 

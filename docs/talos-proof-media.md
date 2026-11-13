@@ -11,6 +11,15 @@ All three receipts archived/revoked; all app/helper pods and positive app desire
 replicas absent at release. No lifecycle/provider/recovery or full acceptance.
 The historical sections below are chronology/preparation, not a current lease.
 
+[Offline Worker containment repair](evidence/talos-media/headless-worker-containment-57407af2-2af0-4e2a-9555-e60688b9938d.md)
+retains an exclusively owned, unreaped process-group leader through the final group
+signal, then reaps;28 integration regressions include real local child/grandchild
+fixtures and nonreaping Darwin/Linux exit observation paths. This is same-PGID
+local preparation only, not escaped-descendant or remote-cancellation proof.
+The nominal cleanup budget does not close the whole-operation deadline gap.
+Both public headless CLIs and run() remain blocked; native attribution, producer
+flush, settings/pagination, profile wiring and browser401 remain unresolved.
+
 [Offline pinned auth/RPC followup](evidence/talos-media/native-auth-rpc-source-followup.md)
 finds no supported native require-auth stream switch in reviewed12.4 source;
 retained-state adoption is prepared but still fails closed on anonymous/outsider

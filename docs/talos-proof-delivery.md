@@ -1,6 +1,77 @@
 # Talos isolated proof delivery — coordinator brief
 
-## Current disposition — offline capacity analysis and Flux classifier accepted
+## Current disposition — containment repair verified locally; capacity approval required
+
+User directs continued delivery with `openai/gpt-6.1-sol` workers at medium effort,
+resolving ordinary failures internally and escalating only genuine authority or
+information blockers. Reconciled clean HEAD`0862d3b518f1279b76e02989d46dd42b0d1eafe1`,
+PR2005/open, base`a2c549e7`; all seven source-specific CI runs passed. Actual PR
+checkout`b3c6771482e37a6474cadae490d2ded6e9f4cd07` has that exact base/head pair.
+Prior capacity worker completed, classifier stopped at turn limit with explicit
+file handoff/release, CI worker completed; parent accepted their source-tied results.
+No prior live grant survives. General continuation does not silently renew the
+consumed start or approve a new RAM profile, guard deployment or app activation.
+
+Parent owns brief, integration, source acceptance and shared/full gates.
+- Worker`3b7a66bb-d765-49e` explicitly owns only the existing capacity document:
+  source-tied comparison of3584/4096 candidates and an implementable bounded approval
+  proposal. No profile/lifecycle code changes or runtime access.
+- Read-only triage worker`8d323537-4401-488` completed; resume expired. It identified
+  real headless deadline/descendant gaps and separated prepared-but-unrun app work.
+- Explicitly reassigned design to`f78fd014-7810-465`, then accepted only a narrower
+  Worker containment repair: `scripts/talos-proof-media-headless-integration.py`,
+  its existing integration test file and one NEW evidence leaf. No historical
+  evidence edits, decoder/guard/profile changes or activation wiring.
+All use bounded turns and actual status/steering tools; no peer-messaging claim.
+Parent/design review rejected a cosmetic shared deadline: blocking guards/headers,
+reader-thread teardown and source.close require a separate containment design.
+Whole-operation deadline stays OPEN. Parent found the concrete wait/reap-before-
+final-killpg hazard; accepted exclusive unreaped-leader lifetime plus real owned
+child/grandchild tests, with no escaped-group or remote-cancellation claim.
+Capacity worker completed a source-tied3584 candidate proposal; parent reviewed
+actual RAM rejection, creation, install and baseline-preserving enrollment code.
+No profile extension or live approval has occurred. All three workers finished and
+released their scopes; parent owns integration. VM120/111 remain left OFF, production
+unchanged, safety budgets/STOPs preserved.
+
+Accepted narrow implementation`c38471bcac9acfb56194d1431487f4349f61017f`:
+[Worker containment evidence](evidence/talos-media/headless-worker-containment-57407af2-2af0-4e2a-9555-e60688b9938d.md).
+Parent inspected intermediate code and required independent bootstrap cleanup and
+no new waitpid after ownership loss. Parent then caught an unconditional Darwin
+kqueue in a mandatory CI regression; corrected to Darwin NOTE_EXIT / Linux exact-PID
+WNOWAIT, unsupported platforms fail rather than skip. Parent re-ran28 integration
+tests and checked final hashes plus unchanged decoder/historical evidence. The
+nominal two-second cleanup budget is not a hard wall-time guarantee. Exclusive
+waiter/no auto-reaping assumptions and same-PGID-only scope remain explicit;
+local cleanup proves neither remote cancellation nor a whole-operation deadline.
+Both public CLIs and run() retain their unconditional activation HOLD.
+
+Full locked offline gate atc38471bc ran once, exit0/76.42s: **556 Python tests in43
+suites,443 resources/9 schema summaries,17 locked CRDs**, real PHP/OTP and JS checks,
+no unittest/schema skips or failures. Only parent documentation was uncommitted.
+Private`diagnostics/worker-containment-static-gate-5655acbe-2831-47aa-be93-5ce49a56a030`,
+output SHA`4af25b9fb681a7203a9dcd32bb0d670e0dd453557c4aeff12ca173ba5ab12a28`.
+Lifecycle READY/STOP output was mocked, not runtime. Entire hook remained unavailable.
+Actual Linux descendant evidence must come from the source-tied CI run, not Darwin
+branch doubles; parent verifies checkout/merge and final conclusions after push.
+
+**Next genuine escalation:** approve the [3584MiB measurement proposal](talos-proof-guest-capacity.md#minimum-new-human-approval-and-bounded-execution-contract).
+It selects+512 rather than+1024; analogous floor5504 is not fresh admission.
+Only after explicit approval: reviewed3584-only profile/enrollment/deployment,
+fresh backup/production/identity/memory gates, one guarded platform-only start,
+read-only complete verification and300s observation, then OFF. No apps, threshold
+reduction, pressure/reclaim, production tuning, reboot, or automatic retry. Parent
+added explicit backup/VM111/canonical111 checks and rejection of blanket lifetime-zero
+restart predicates. Rollback is proof-only while OFF and separately explicit.
+
+Remaining requirements are not an invitation to build redundant scaffolding:
+Nextcloud/WOPI/Pinchflat/Immich and most recovery preparations need real approved
+application windows/capacity; headless needs a separately reviewed deadline/topology
+and native source/flush/settings/pagination/profile contract; Arr integration still
+needs exact owner/profile wiring. Etcd destructive recovery, security alternatives,
+representative concurrency/parity and migration remain separate decisions/grants.
+
+## Prior accepted slice — offline capacity analysis and Flux classifier
 
 User said continue after the bounded recovery report. Scope: existing-capture guest
 capacity analysis and a tested resource-specific offline verifier. VM120 stays OFF;
