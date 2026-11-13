@@ -23,6 +23,12 @@ mitigation, not sole incident attribution or a representative soak. Historical
 passes below remain evidence of their named windows, not current running state or
 post-stop integrity. See [the stop evidence](evidence/talos-acceptance/guard-stop-before-diagnostic-634f727438df495397f768820517280c.json).
 
+The subsequent [offline capacity analysis](talos-proof-guest-capacity.md) quantifies
+a162.73MiB shortfall, not a proven leak or safe tuning opportunity. No larger profile
+is approved. A [tested saved-evidence Flux classifier](evidence/talos-acceptance/flux-state-offline-04f24d16-fd2a-4cca-bf10-e17465a12297.md)
+now distinguishes missing inventory from kind-specific policy violations; historical
+replay remains INCOMPLETE. It performs no live collection/action and grants no authority.
+
 This table maps all
 36 discovered running containers to their proof implementation and actual evidence.
 It is not a claim that36 replicas run concurrently: application defaults remain0,

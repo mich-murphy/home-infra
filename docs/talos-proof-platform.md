@@ -15,6 +15,11 @@ object while deleting Flux controllers; none were observed running. This was a
 verifier error, NOT another host swap/guard failure. Current Kustomization/later
 Flux inventory remains uncollected. No retry, app activation or configuration repair.
 See [parent-reviewed outcome/correction](evidence/talos-acceptance/guarded-platform-parent-review-8954422ca5934f0d9fda169a62f7a71d.json).
+The [offline capacity analysis](talos-proof-guest-capacity.md) reconciles actual
+memory accounting and the162.73MiB shortfall without promising reclaim or resize
+safety. The [saved-evidence classifier](evidence/talos-acceptance/flux-state-offline-04f24d16-fd2a-4cca-bf10-e17465a12297.md)
+has21 synthetic regressions; historical replay remains INCOMPLETE, not live acceptance.
+Neither offline slice changes the VM, lifecycle, admission rules or application authority.
 
 ## Prior checkpoint — 2026-11-13 host mitigation completed; proof off
 

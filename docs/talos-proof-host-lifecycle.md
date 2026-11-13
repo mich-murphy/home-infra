@@ -139,6 +139,20 @@ was not reached; do not infer current state from cleanup source. VM120 stays off
 with one start consumed/no retry. Last guest dual-min669.27MiB was below832MiB;
 no diagnostic/app authority. See [parent review and correction](evidence/talos-acceptance/guarded-platform-parent-review-8954422ca5934f0d9fda169a62f7a71d.json).
 
+### Saved-evidence Flux classification (offline only)
+
+`scripts/talos-proof-flux-state.py` consumes a bounded JSON bundle on stdin; it has
+no collector, subprocess/network, state writes, stop/start or authorization path.
+Its module docstring defines complete CRD/per-GVR captures and explicit reviewed
+native identity/spec/owner bindings. It distinguishes missing/partial evidence from
+kind-specific observations, does not require GitRepository suspension, and never
+uses an absence boolean or namespace alone to establish controller absence.
+Even `OK` cannot establish capture freshness/authenticity or baseline provenance.
+Native stopped-world/CronJob, node/storage and admission gates remain separate.
+[21 synthetic regressions and historical replay](evidence/talos-acceptance/flux-state-offline-04f24d16-fd2a-4cca-bf10-e17465a12297.md)
+are offline evidence only; the original partial capture remains INCOMPLETE.
+Do not wire its exit code to automatic containment or restart.
+
 ## Offline regression / outstanding proof
 
 `PYTHONDONTWRITEBYTECODE=1 python3 tests/talos-proof-host_test.py` performs only

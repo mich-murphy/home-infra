@@ -1,6 +1,66 @@
 # Talos isolated proof delivery — coordinator brief
 
-## Current disposition — 2026-11-13: VM120 OFF; CI repaired, app admission blocked
+## Current disposition — offline capacity analysis and Flux classifier accepted
+
+User said continue after the bounded recovery report. Scope: existing-capture guest
+capacity analysis and a tested resource-specific offline verifier. VM120 stays OFF;
+no new start, resize, runtime/API/SSH, production mutation, GC/cache pressure,
+application activation or smaller budget/guard threshold. Last832MiB admission
+failure and all earlier failures remain retained. A capacity proposal is not authority.
+
+Reconciled `0c0b8d97947cf6947f693678eb6fcf3f9cbfd042`, clean worktree before this
+parent brief update; same PR2005/main. All six CI runs for that head passed. Prior executor
+0915 and reviewer a1 verified completed/released. Parent owns brief/root docs,
+integration, source review and acceptance; no old private verifier is reused.
+- New worker`4eb2b57b-d887-4cf`: owns only new`docs/talos-proof-guest-capacity.md`,
+  offline named-capture analysis/public research; no commit or runtime authority.
+- Worker`64e6218d-200d-4b7`: parent accepted the read-only design, then assigned
+  only new`scripts/talos-proof-flux-state.py`, its focused test file and one new
+  evidence leaf. Pure saved-JSON classification; no collector or runtime authority.
+Both use requested`openai/gpt-6.1-sol`/medium thinking, bounded assignments.
+Capacity worker completed its correction/review slice. Parent independently checked
+10 original capture hashes and the669.2734375MiB/162.7265625MiB arithmetic. The
+initial draft repeated the rejected source-suspension predicate; parent caught it,
+worker acknowledged and corrected it against the controlling parent review before
+acceptance. Classifier worker reached its turn limit after19 tests and a historical
+INCOMPLETE replay; resumed narrowly to fix parent-found registry-port image parsing,
+strengthen malformed-input regressions and finish the evidence handoff.
+Subagent progress/status/steering available; peer communication remains unavailable.
+The final classifier resume also reached its turn limit after producing the complete
+21-test/evidence handoff and explicit release. No worker remains running or holds
+runtime authority. Parent accepted actual files, not the aborted completion label.
+
+Accepted [capacity analysis](talos-proof-guest-capacity.md): physical2823.265625 minus
+node working set2153.9921875 equals kubelet669.2734375MiB; shortfall162.7265625MiB
+against unchanged832. Higher Talos memory/cache/slab cannot manufacture admission.
+This point-time refusal is not proof of a leak or permanent3GiB impossibility.
+Hypothetical4GiB startup floor6016 leaves only46MiB against stale6062; no resize
+safety is established. Keep OFF; genuine additional capacity needs a separately
+reviewed decision and new approval, not tuning or production memory borrowing.
+
+Accepted classifier commit`869624fa71de208c871c3c7335d0fb379a5d52d3` and
+[implementation/replay handoff](evidence/talos-acceptance/flux-state-offline-04f24d16-fd2a-4cca-bf10-e17465a12297.md).
+Pure saved-JSON evaluation distinguishes fetch/apply intent, complete versus missing
+inventory and observed policy violations versus evidence gaps. Native execution
+exceptions require explicit identity/spec/owner bindings, not an absence boolean.
+No collector, runtime action, universal suspension predicate or automatic authority.
+Native stopped-world/CronJob/platform/storage/admission gates remain independent.
+Parent reviewed source/tests, re-ran21 tests and independently reproduced historical
+INCOMPLETE/no suspension block; no uncollected Kustomization state was fabricated.
+Parent verified all12 capacity references and6 historical replay hashes.
+
+Full locked offline gate ran once at869624fa, exit0/62.94s: **543 Python tests in43
+suites,443 resources in9 schema summaries,17 locked CRDs**, mandatory real PHP/OTP
+and JS checks; no unittest/schema skips or failures. Only parent documentation was
+uncommitted; code/tests were committed and unchanged. Private receipt directory:
+`diagnostics/offline-capacity-flux-gate-f443cdb2-85e3-4c22-9867-7baba5abd237`,
+output SHA`2f008a1f583f2ba2d40442a789e8046acb3e43985fdd90fa745bb8ec283dc574`.
+READY/STOP messages in that log are mocked lifecycle tests, not live operations.
+Entire Git hook was unavailable and skipped; this does not substitute for the gate.
+New push/CI must be tied to its actual source/merge checkout. No static result clears
+current memory, incomplete live Flux inventory, application or migration blockers.
+
+## Prior disposition — 2026-11-13: VM120 OFF; CI repaired, app admission blocked
 
 The one authorized guarded start succeeded and preserved node/storage identities;
 applications/helpers remained stopped. Initial120s and additional300s observations
