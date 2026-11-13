@@ -26,6 +26,8 @@ MODE = 'plex-tautulli-native-headless-v1'
 GROUP = 'media-plex-tautulli'
 LIMITS = {'plex': 512, 'tautulli': 192}
 ACTION_SECONDS = 3
+WORKER_CLEANUP_SECONDS = 2
+WORKER_TERM_GRACE_SECONDS = 1
 
 
 def canonical_sha(value):
@@ -231,24 +233,49 @@ class Worker:
     A timed-out request remains UNRESOLVED remote completion, even after local
     reap or a later stop acknowledgement: no acceptance, never retry playing.
     """
+    # Exclusive waiter ownership is a caller precondition: no foreign waitpid,
+    # SIGCHLD handler/auto-reaping, or access to _process before close completes.
+    # Python can check the visible SIGCHLD policy, not arbitrary foreign waiters
+    # or a native SA_NOCLDWAIT policy. This is NOT protection against those.
+    @staticmethod
+    def require_wait_policy():
+        h.require(signal.getsignal(signal.SIGCHLD) == signal.SIG_DFL,
+                  'owned API cleanup UNKNOWN: default SIGCHLD policy required')
+
     def __init__(self, binding):
+        self.require_wait_policy()  # before spawning or allocating IPC
+        # Serialization can fail; do it before owning any process or sockets.
+        data = json.dumps(binding).encode() + b'\n'
+        h.require(len(data) <= 4096, 'bounded owned worker bootstrap failed')
         self.connection, child = socket.socketpair()
-        self.connection.setblocking(False)
+        self._process = None
         self.buffer = b''
-        self.process = subprocess.Popen(worker_command(child.fileno()),
-                                        pass_fds=(child.fileno(),), close_fds=True,
-                                        start_new_session=True,
-                                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                        stderr=subprocess.DEVNULL)
-        child.close()
         self.pending = None
         self.closed = False
-        data = json.dumps(binding).encode() + b'\n'
+        self.cleanup_unknown = False
         try:
-            h.require(len(data) <= 4096 and self.connection.send(data) == len(data),
+            self.connection.setblocking(False)
+            self._process = subprocess.Popen(worker_command(child.fileno()),
+                                            pass_fds=(child.fileno(),), close_fds=True,
+                                            start_new_session=True,
+                                            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                            stderr=subprocess.DEVNULL)
+            child.close()
+            h.require(self.connection.send(data) == len(data),
                       'bounded owned worker bootstrap failed')
-        except Exception:
-            self.close()
+        except Exception as error:
+            # Independent closes: failure of one must not skip the other or
+            # process cleanup. Preserve the original bootstrap exception.
+            for endpoint in (child, self.connection):
+                try:
+                    endpoint.close()
+                except Exception:
+                    error.add_note('owned API IPC cleanup UNKNOWN after bootstrap failure')
+            if self._process is not None:
+                try:
+                    self.close()
+                except Exception:
+                    error.add_note('owned API cleanup UNKNOWN after bootstrap failure')
             raise
 
     def submit(self, action, payload=None):
@@ -271,7 +298,8 @@ class Worker:
             self.buffer += data
         h.require(len(self.buffer) <= 32768, 'API IPC result exceeds bound')
         if b'\n' not in self.buffer:
-            h.require(self.process.poll() is None, 'API worker exited/unknown outcome')
+            # Never reap the session leader here: retain its identity until
+            # the last group signal. EOF or action expiry detects failure.
             return None
         line, self.buffer = self.buffer.split(b'\n', 1)
         h.require(not self.buffer, 'unexpected extra API reply')
@@ -287,25 +315,56 @@ class Worker:
                 return result[1]
             time.sleep(0.01)  # bounded local IPC only; never used for CI
 
+    def _require_signal_ownership(self):
+        self.require_wait_policy()
+        h.require(self._process.returncode is None,
+                  'owned API cleanup UNKNOWN: leader already reaped')
+        # Successful Popen(start_new_session=True) establishes PID=SID=PGID.
+        # Do not query zombie SID/PGID: Darwin may return ESRCH before reap.
+        # Retained unreaped lifetime, not a liveness query, pins this identity.
+
     def close(self):
         if self.closed:
+            h.require(not self.cleanup_unknown, 'owned API cleanup UNKNOWN')
             return
         self.closed = True
-        self.connection.close()
-        # The existing guard may own a kubectl read subprocess. Bound the entire
-        # newly-created owned session, not only its leader; no discovery/scans.
+        deadline = time.monotonic() + WORKER_CLEANUP_SECONDS
+        failed = False
+        try:
+            self.connection.close()
+        except Exception:
+            failed = True  # IPC failure must not skip independent process cleanup
+        # Do not poll/wait between TERM and KILL, even when the leader exits.
+        # Its unreaped lifetime pins this numeric PID/PGID under the exclusive
+        # ownership precondition. No discovery, escaped-group claim, or remote
+        # cancellation claim. A changed/known-reaped identity fails closed.
         for sig in (signal.SIGTERM, signal.SIGKILL):
             try:
-                os.killpg(self.process.pid, sig)
+                self._require_signal_ownership()
+            except Exception:
+                # Do not initiate waitpid either: waiter ownership is unknown.
+                # Retain the handle for explicit owner disposition, not cleanup.
+                self.cleanup_unknown = True
+                raise h.Rejected('owned API cleanup UNKNOWN: ownership lost') from None
+            try:
+                os.killpg(self._process.pid, sig)
             except ProcessLookupError:
-                pass
+                pass  # the unreaped group may have no live members
+            except OSError:
+                failed = True
             if sig == signal.SIGTERM:
-                try:
-                    self.process.wait(timeout=1)
-                except subprocess.TimeoutExpired:
-                    pass
-        self.process.wait(timeout=1)
-        h.require(self.process.poll() is not None, 'owned API worker not reaped')
+                grace = min(deadline, time.monotonic() + WORKER_TERM_GRACE_SECONDS)
+                while time.monotonic() < grace:
+                    time.sleep(min(0.01, max(0, grace - time.monotonic())))
+        # This is the only reaping site. No group signals may follow it.
+        try:
+            remaining = deadline - time.monotonic()
+            h.require(remaining > 0, 'owned API cleanup budget exhausted')
+            self._process.wait(timeout=remaining)
+        except Exception:
+            failed = True
+        self.cleanup_unknown = failed or self._process.returncode is None
+        h.require(not self.cleanup_unknown, 'owned API cleanup UNKNOWN')
 
 
 class Pump:
